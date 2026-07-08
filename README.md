@@ -1,30 +1,51 @@
 # Social Media Travel Planner
 
-Turn saved social media posts into structured travel plans.
-
-Ingest posts from Instagram, TikTok, Pinterest, and similar platforms, extract places and activities, then build day-by-day itineraries.
+Ingest social media travel inspiration and build itineraries.
 
 ## Layout
 
 ```
-common/   shared models and helpers
-ingest/   social posts → TravelPost
-planner/  TravelPost[] → Itinerary
-scripts/  dev utilities (not imported by modules)
+travelplanner/   core library — models, pipeline, store, clients, sources
+server/          FastAPI backend (thin adapter over travelplanner)
+frontend/        React + Vite UI
+cli.py           batch link ingestion entry point
+data/posts/      ingested post records (gitignored)
 ```
 
-Data flows one way: `ingest → planner`.
+`travelplanner/` knows nothing about HTTP or the CLI. Both `cli.py` and `server/` call the same pipeline.
 
 ## Quick start
+
+### Backend + frontend
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -e .
+pip install -e ".[dev]"
 
-PYTHONPATH=. python3 scripts/plan_from_fixture.py
+# Terminal 1 — API
+uvicorn server.app:app --reload
+
+# Terminal 2 — UI
+cd frontend && npm install && npm run dev
+```
+
+Open http://localhost:5173
+
+### CLI batch ingest
+
+```bash
+cp .env.example .env   # set ENSEMBLEDATA_TOKEN + SUPADATA_API_KEY
+python3 cli.py links.txt
 ```
 
 ## Environment
 
-Copy `.env.example` to `.env` and fill in API keys when you wire up real platform integrations.
+- `ENSEMBLEDATA_TOKEN` — Instagram post details
+- `SUPADATA_API_KEY` — video place extraction (Supadata Extract API)
+
+## Tests
+
+```bash
+pytest
+```

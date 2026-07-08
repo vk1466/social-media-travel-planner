@@ -1,0 +1,436 @@
+from types import SimpleNamespace
+
+from travelplanner.models import ExtractedPlace, Place, PlaceLocation, PlaceMention, Platform, SavedPost
+from travelplanner.places import (
+  _geocode_queries,
+  is_visitable_place,
+  list_places,
+  load_all_places,
+  load_place,
+  locate_mention,
+  mentions_from_post,
+  place_key,
+  process_post_places,
+  reprocess_all_places,
+  slugify,
+  upsert_place,
+)
+from travelplanner.store import save_post
+
+
+def _fake_location(latitude: float, longitude: float, raw: dict) -> SimpleNamespace:
+  return SimpleNamespace(latitude=latitude, longitude=longitude, raw=raw)
+
+
+def _multnomah_falls_raw() -> dict:
+  return {
+    "place_id": 12345,
+    "name": "Multnomah Falls",
+    "display_name": "Multnomah Falls, Multnomah County, Oregon, United States",
+    "address": {
+      "city": "Portland",
+      "state": "Oregon",
+      "country": "United States",
+      "country_code": "us",
+    },
+  }
+
+
+def _sample_post(*, places=(), extracted_places=(), post_id: str = "post1") -> SavedPost:
+  return SavedPost(
+    post_id=post_id,
+    post_url=f"https://www.instagram.com/p/{post_id}/",
+    platform=Platform.INSTAGRAM,
+    media_kind="reel",
+    caption="a trip",
+    places=places,
+    extracted_places=extracted_places,
+    fetched_at="2026-07-06T21:15:04Z",
+  )
+
+
+def test_slugify_normalizes_accents_and_punctuation() -> None:
+  assert slugify("Águas Claras!") == "aguas-claras"
+  assert slugify("  Multnomah   Falls ") == "multnomah-falls"
+  assert slugify(None) == ""
+  assert slugify("") == ""
+
+
+def test_place_key_builds_from_hierarchy() -> None:
+  location = PlaceLocation(
+    display_name="Multnomah Falls",
+    country="United States",
+    country_code="US",
+    state_province="Oregon",
+    city="Portland",
+    latitude=45.5762,
+    longitude=-122.1158,
+  )
+  assert place_key(location) == "us-oregon-portland-multnomah-falls"
+
+
+def test_mentions_from_post_normalizes_both_hint_shapes() -> None:
+  post = _sample_post(
+    places=(
+      Place(place_name="Alfama", city="Lisbon", country="Portugal", latitude=38.7131, longitude=-9.1279),
+    ),
+    extracted_places=(
+      ExtractedPlace(
+        place_name="Belem Tower",
+        city="Lisbon",
+        country="Portugal",
+        state_province="Lisbon District",
+        details="Historic tower",
+        tips=("Go early",),
+        tags=("landmark",),
+      ),
+    ),
+  )
+
+  mentions = mentions_from_post(post)
+  assert mentions == (
+    PlaceMention(
+      place_name="Alfama",
+      city="Lisbon",
+      country="Portugal",
+      latitude=38.7131,
+      longitude=-9.1279,
+    ),
+    PlaceMention(
+      place_name="Belem Tower",
+      city="Lisbon",
+      country="Portugal",
+      state_province="Lisbon District",
+      details="Historic tower",
+      tips=("Go early",),
+      tags=("landmark",),
+    ),
+  )
+
+
+def test_geocode_queries_falls_back_to_simpler_queries() -> None:
+  mention = PlaceMention(
+    place_name="Picture Lake",
+    city="Mt. Baker",
+    state_province="Washington",
+    country="USA",
+  )
+  assert _geocode_queries(mention) == (
+    "Picture Lake, Mt. Baker, Washington, USA",
+    "Picture Lake, Washington, USA",
+    "Picture Lake, USA",
+  )
+
+
+def test_locate_mention_falls_back_when_first_query_fails(monkeypatch) -> None:
+  calls: list[str] = []
+
+  def fake_geocode(query):
+    calls.append(query)
+    if query == "Picture Lake, Mt. Baker, Washington, USA":
+      return None
+    if query == "Picture Lake, Washington, USA":
+      return _fake_location(48.777, -121.329, _multnomah_falls_raw())
+    return None
+
+  monkeypatch.setattr("travelplanner.places.geocoder.geocode", fake_geocode)
+
+  mention = PlaceMention(
+    place_name="Picture Lake",
+    city="Mt. Baker",
+    state_province="Washington",
+    country="USA",
+  )
+  location = locate_mention(mention)
+
+  assert calls == [
+    "Picture Lake, Mt. Baker, Washington, USA",
+    "Picture Lake, Washington, USA",
+  ]
+  assert location is not None
+  assert location.display_name == "Multnomah Falls"
+
+
+def test_locate_mention_falls_back_when_first_match_is_non_travel(monkeypatch) -> None:
+  remax_raw = {
+    "place_id": 999,
+    "name": "Brookings Oregon Real Estate - Remax Coast and Country",
+    "display_name": "Brookings Oregon Real Estate - Remax Coast and Country, Oregon",
+    "class": "office",
+    "type": "estate_agent",
+    "address": {
+      "city": "Brookings",
+      "state": "Oregon",
+      "country": "United States",
+      "country_code": "us",
+    },
+  }
+  calls: list[str] = []
+
+  def fake_geocode(query):
+    calls.append(query)
+    if query == "Oregon Coast, Oregon Coast, Oregon, USA":
+      return _fake_location(42.05, -124.28, remax_raw)
+    if query == "Oregon Coast, Oregon, USA":
+      return None
+    if query == "Oregon Coast, USA":
+      return None
+    return None
+
+  monkeypatch.setattr("travelplanner.places.geocoder.geocode", fake_geocode)
+
+  mention = PlaceMention(
+    place_name="Oregon Coast",
+    city="Oregon Coast",
+    state_province="Oregon",
+    country="USA",
+  )
+  assert locate_mention(mention) is None
+  assert calls == [
+    "Oregon Coast, Oregon Coast, Oregon, USA",
+    "Oregon Coast, Oregon, USA",
+    "Oregon Coast, USA",
+  ]
+
+
+def test_is_visitable_place_rejects_non_travel_offices() -> None:
+  remax = PlaceLocation(
+    display_name="Brookings Oregon Real Estate - Remax Coast and Country",
+    country="United States",
+    country_code="US",
+    state_province="Oregon",
+    city="Brookings",
+    osm_class="office",
+    osm_type="estate_agent",
+  )
+  assert is_visitable_place(remax) is False
+
+
+def test_locate_mention_uses_reverse_geocode_when_coordinates_known(monkeypatch) -> None:
+  calls = {}
+
+  def fake_reverse(latitude, longitude):
+    calls["reverse"] = (latitude, longitude)
+    return _fake_location(latitude, longitude, _multnomah_falls_raw())
+
+  def fail_geocode(query):
+    raise AssertionError("forward geocode should not run when coordinates are known")
+
+  monkeypatch.setattr("travelplanner.places.geocoder.reverse_geocode", fake_reverse)
+  monkeypatch.setattr("travelplanner.places.geocoder.geocode", fail_geocode)
+
+  mention = PlaceMention(place_name="Multnomah Falls", latitude=45.5762, longitude=-122.1158)
+  location = locate_mention(mention)
+
+  assert calls["reverse"] == (45.5762, -122.1158)
+  assert location == PlaceLocation(
+    display_name="Multnomah Falls",
+    continent="North America",
+    country="United States",
+    country_code="US",
+    state_province="Oregon",
+    city="Portland",
+    latitude=45.5762,
+    longitude=-122.1158,
+    provider_place_id="12345",
+  )
+
+
+def test_locate_mention_uses_forward_geocode_when_no_coordinates(monkeypatch) -> None:
+  calls = {}
+
+  def fake_geocode(query):
+    calls["query"] = query
+    return _fake_location(45.5762, -122.1158, _multnomah_falls_raw())
+
+  monkeypatch.setattr("travelplanner.places.geocoder.geocode", fake_geocode)
+
+  mention = PlaceMention(place_name="Multnomah Falls", city="Portland", country="USA")
+  location = locate_mention(mention)
+
+  assert calls["query"] == "Multnomah Falls, Portland, USA"
+  assert location is not None
+  assert location.city == "Portland"
+
+
+def test_locate_mention_returns_none_when_geocoder_finds_nothing(monkeypatch) -> None:
+  monkeypatch.setattr("travelplanner.places.geocoder.geocode", lambda query: None)
+  mention = PlaceMention(place_name="Nowhereville")
+  assert locate_mention(mention) is None
+
+
+def test_upsert_place_creates_new_place(tmp_path) -> None:
+  mention = PlaceMention(place_name="Multnomah Falls", tags=("waterfall", "hike"), tips=("Arrive early",))
+  location = PlaceLocation(
+    display_name="Multnomah Falls",
+    continent="North America",
+    country="United States",
+    country_code="US",
+    state_province="Oregon",
+    city="Portland",
+    latitude=45.5762,
+    longitude=-122.1158,
+  )
+
+  place_id = upsert_place(mention, location, "instagram:abc123", data_dir=tmp_path)
+
+  assert place_id == "us-oregon-portland-multnomah-falls"
+  place = load_place(place_id, data_dir=tmp_path)
+  assert place is not None
+  assert place.display_name == "Multnomah Falls"
+  assert place.tags == ("hike", "waterfall")
+  assert place.tips == ("Arrive early",)
+  assert place.source_post_ids == ("instagram:abc123",)
+  assert place.aliases == ()
+
+
+def test_upsert_place_merges_into_existing_place(tmp_path) -> None:
+  location = PlaceLocation(
+    display_name="Multnomah Falls",
+    continent="North America",
+    country="United States",
+    country_code="US",
+    state_province="Oregon",
+    city="Portland",
+    latitude=45.5762,
+    longitude=-122.1158,
+  )
+
+  first = PlaceMention(place_name="Multnomah Falls", tags=("waterfall",), tips=("Arrive early",))
+  upsert_place(first, location, "instagram:abc123", data_dir=tmp_path)
+
+  second = PlaceMention(
+    place_name="Mult Falls",
+    tags=("hike",),
+    tips=("Bring water", "Arrive early"),
+    details="Tallest waterfall in Oregon",
+  )
+  place_id = upsert_place(second, location, "youtube:xyz789", data_dir=tmp_path)
+
+  assert place_id == "us-oregon-portland-multnomah-falls"
+  places = load_all_places(data_dir=tmp_path)
+  assert len(places) == 1
+
+  merged = places[0]
+  assert merged.tags == ("hike", "waterfall")
+  assert merged.tips == ("Arrive early", "Bring water")
+  assert merged.aliases == ("Mult Falls",)
+  assert merged.details == ("Tallest waterfall in Oregon",)
+  assert merged.source_post_ids == ("instagram:abc123", "youtube:xyz789")
+
+
+def test_upsert_place_merges_near_duplicate_coordinates_without_shared_key(tmp_path) -> None:
+  first_location = PlaceLocation(
+    display_name="Multnomah Falls",
+    country_code="US",
+    state_province="Oregon",
+    city="Portland",
+    latitude=45.57620,
+    longitude=-122.11580,
+  )
+  upsert_place(PlaceMention(place_name="Multnomah Falls"), first_location, "instagram:abc", data_dir=tmp_path)
+
+  # Slightly different display name -> different slug key, but coordinates are
+  # within the near-duplicate radius, so it should merge into the same place.
+  second_location = PlaceLocation(
+    display_name="Multnomah Fall",
+    country_code="US",
+    state_province="Oregon",
+    city="Portland",
+    latitude=45.57621,
+    longitude=-122.11581,
+  )
+  place_id = upsert_place(PlaceMention(place_name="Multnomah Fall"), second_location, "youtube:xyz", data_dir=tmp_path)
+
+  assert place_id == "us-oregon-portland-multnomah-falls"
+  assert len(load_all_places(data_dir=tmp_path)) == 1
+
+
+def test_process_post_places_skips_mentions_that_fail_to_locate(monkeypatch, tmp_path) -> None:
+  post = _sample_post(places=(Place(place_name="Nowhereville"),))
+  monkeypatch.setattr("travelplanner.places.locate_mention", lambda mention: None)
+
+  place_ids = process_post_places(post, places_data_dir=tmp_path)
+
+  assert place_ids == ()
+  assert load_all_places(data_dir=tmp_path) == []
+
+
+def test_process_post_places_returns_ids_for_located_mentions(monkeypatch, tmp_path) -> None:
+  post = _sample_post(
+    extracted_places=(ExtractedPlace(place_name="Multnomah Falls", tags=("waterfall",)),),
+  )
+  location = PlaceLocation(
+    display_name="Multnomah Falls",
+    country_code="US",
+    state_province="Oregon",
+    city="Portland",
+    latitude=45.5762,
+    longitude=-122.1158,
+  )
+  monkeypatch.setattr("travelplanner.places.locate_mention", lambda mention: location)
+
+  place_ids = process_post_places(post, places_data_dir=tmp_path)
+
+  assert place_ids == ("us-oregon-portland-multnomah-falls",)
+  places = load_all_places(data_dir=tmp_path)
+  assert len(places) == 1
+  assert places[0].source_post_ids == ("instagram:post1",)
+
+
+def test_list_places_filters_by_tag_and_country(tmp_path) -> None:
+  oregon = PlaceLocation(
+    display_name="Multnomah Falls",
+    country="United States",
+    country_code="US",
+    state_province="Oregon",
+    city="Portland",
+    latitude=45.5762,
+    longitude=-122.1158,
+  )
+  lisbon = PlaceLocation(
+    display_name="Alfama",
+    country="Portugal",
+    country_code="PT",
+    city="Lisbon",
+    latitude=38.7131,
+    longitude=-9.1279,
+  )
+  upsert_place(PlaceMention(place_name="Multnomah Falls", tags=("waterfall", "hike")), oregon, "a:1", data_dir=tmp_path)
+  upsert_place(PlaceMention(place_name="Alfama", tags=("neighborhood",)), lisbon, "a:2", data_dir=tmp_path)
+
+  assert [p.display_name for p in list_places(data_dir=tmp_path)] == ["Alfama", "Multnomah Falls"]
+  assert [p.display_name for p in list_places(tag="hike", data_dir=tmp_path)] == ["Multnomah Falls"]
+  assert [p.display_name for p in list_places(country="Portugal", data_dir=tmp_path)] == ["Alfama"]
+  assert [p.display_name for p in list_places(country="pt", data_dir=tmp_path)] == ["Alfama"]
+  assert [p.display_name for p in list_places(state_province="Oregon", data_dir=tmp_path)] == ["Multnomah Falls"]
+  assert list_places(state_province="Texas", data_dir=tmp_path) == []
+
+
+def test_reprocess_all_places_rebuilds_library_and_updates_posts(monkeypatch, tmp_path) -> None:
+  posts_dir = tmp_path / "posts"
+  places_dir = tmp_path / "places"
+
+  post = _sample_post(extracted_places=(ExtractedPlace(place_name="Multnomah Falls"),), post_id="reelA")
+  save_post(post, data_dir=posts_dir)
+
+  location = PlaceLocation(
+    display_name="Multnomah Falls",
+    country_code="US",
+    state_province="Oregon",
+    city="Portland",
+    latitude=45.5762,
+    longitude=-122.1158,
+  )
+  monkeypatch.setattr("travelplanner.places.locate_mention", lambda mention: location)
+
+  reprocess_all_places(posts_data_dir=posts_dir, places_data_dir=places_dir)
+
+  places = load_all_places(data_dir=places_dir)
+  assert len(places) == 1
+
+  from travelplanner.store import load_post
+
+  reloaded = load_post(Platform.INSTAGRAM, "reelA", data_dir=posts_dir)
+  assert reloaded is not None
+  assert reloaded.place_ids == ("us-oregon-portland-multnomah-falls",)

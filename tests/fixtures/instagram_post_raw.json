@@ -1,0 +1,55 @@
+{
+  "__typename": "GraphVideo",
+  "id": "3035227396822402922",
+  "shortcode": "CofSzxwIgdq",
+  "edge_media_to_caption": {
+    "edges": [
+      {
+        "node": {
+          "text": "3 days in Lisbon you can't miss #lisbon #portugal"
+        }
+      }
+    ]
+  },
+  "edge_media_to_comment": {
+    "count": 13,
+    "edges": [
+      {
+        "node": {
+          "text": "The pastel de nata spot is Manteigaria!"
+        }
+      },
+      {
+        "node": {
+          "text": "Alfama at sunrise is unreal"
+        }
+      }
+    ]
+  },
+  "taken_at_timestamp": 1676047570,
+  "edge_media_preview_like": {
+    "count": 48210
+  },
+  "owner": {
+    "id": "9129067435",
+    "username": "wanderlust_ana"
+  },
+  "is_video": true,
+  "product_type": "clips",
+  "location": {
+    "pk": "726896",
+    "short_name": "Alfama",
+    "name": "Alfama",
+    "city": "Lisbon",
+    "country": "Portugal",
+    "lat": 38.7131,
+    "lng": -9.1279
+  },
+  "comments": [
+    {
+      "text": "The pastel de nata spot is Manteigaria!"
+    }
+  ],
+  "display_url": "https://cdn.example.com/noise.jpg",
+  "tracking_token": "drop-me"
+}
