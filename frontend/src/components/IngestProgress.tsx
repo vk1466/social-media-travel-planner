@@ -3,6 +3,7 @@ import type { JobLink } from "../api";
 interface IngestProgressProps {
   links: JobLink[];
   running: boolean;
+  onOpenPost?: (platform: string, postId: string) => void;
 }
 
 function statusLabel(link: JobLink): string {
@@ -24,24 +25,6 @@ function statusLabel(link: JobLink): string {
   }
 }
 
-function statusIcon(status: JobLink["status"]): string {
-  switch (status) {
-    case "pending":
-      return "○";
-    case "fetching":
-      return "⟳";
-    case "saved":
-      return "✓";
-    case "skipped":
-    case "unsupported":
-      return "–";
-    case "error":
-      return "✗";
-    default:
-      return "•";
-  }
-}
-
 function shortenUrl(postUrl: string): string {
   try {
     const url = new URL(postUrl);
@@ -52,7 +35,28 @@ function shortenUrl(postUrl: string): string {
   }
 }
 
-export function IngestProgress({ links, running }: IngestProgressProps) {
+function platformFromUrl(postUrl: string): string | null {
+  try {
+    const host = new URL(postUrl).hostname.replace(/^www\./, "");
+    if (host.includes("instagram.com")) {
+      return "instagram";
+    }
+    if (host.includes("youtube.com") || host.includes("youtu.be")) {
+      return "youtube";
+    }
+    if (host.includes("tiktok.com")) {
+      return "tiktok";
+    }
+    if (host.includes("reddit.com")) {
+      return "reddit";
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+export function IngestProgress({ links, running, onOpenPost }: IngestProgressProps) {
   if (links.length === 0) {
     return null;
   }
@@ -64,17 +68,31 @@ export function IngestProgress({ links, running }: IngestProgressProps) {
         {running && <span className="badge badge-running">Running</span>}
       </div>
       <ul className="progress-list">
-        {links.map((link) => (
-          <li key={link.post_url} className={`progress-item status-${link.status}`}>
-            <span className="progress-icon" aria-hidden="true">
-              {statusIcon(link.status)}
-            </span>
-            <div className="progress-copy">
-              <p className="progress-url">{shortenUrl(link.post_url)}</p>
-              <p className="progress-status">{statusLabel(link)}</p>
-            </div>
-          </li>
-        ))}
+        {links.map((link) => {
+          const platform = platformFromUrl(link.post_url);
+          const canOpenPost = link.status === "saved" && link.post_id && platform && onOpenPost;
+          return (
+            <li key={link.post_url} className={`progress-item status-${link.status}`}>
+              <span
+                className={`progress-indicator progress-indicator-${link.status}`}
+                aria-hidden="true"
+              />
+              <div className="progress-copy">
+                <p className="progress-url">{shortenUrl(link.post_url)}</p>
+                <p className="progress-status">{statusLabel(link)}</p>
+                {canOpenPost && (
+                  <button
+                    type="button"
+                    className="inline-link-button progress-open-button"
+                    onClick={() => onOpenPost(platform, link.post_id!)}
+                  >
+                    View saved post
+                  </button>
+                )}
+              </div>
+            </li>
+          );
+        })}
       </ul>
     </section>
   );

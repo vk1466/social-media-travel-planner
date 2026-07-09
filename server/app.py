@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from travelplanner.models import TAGS, CanonicalPlace, Platform, SavedPost
 from travelplanner.pipeline import ingest_link
 from travelplanner.hierarchy import link_places
-from travelplanner.places import list_places, load_place, place_to_dict
+from travelplanner.places import cleanup_all_data, list_places, load_place, place_to_dict, reprocess_all_places
 from travelplanner.store import delete_post, load_all_posts, load_post, post_to_dict
 
 from server.jobs import job_store
@@ -16,6 +16,7 @@ from server.schemas import (
   IngestRequest,
   IngestResponse,
   JobSchema,
+  MaintenanceResultSchema,
   PlaceDetailSchema,
   SavedPostSchema,
 )
@@ -118,6 +119,20 @@ def remove_post(platform: Platform, post_id: str) -> Response:
   if not deleted:
     raise HTTPException(status_code=404, detail="Post not found")
   return Response(status_code=204)
+
+
+@app.post("/api/places/reprocess", response_model=MaintenanceResultSchema)
+def reprocess_places() -> MaintenanceResultSchema:
+  """Rebuild the place library from saved posts without re-fetching links."""
+  reprocess_all_places()
+  return MaintenanceResultSchema()
+
+
+@app.post("/api/data/cleanup", response_model=MaintenanceResultSchema)
+def cleanup_data() -> MaintenanceResultSchema:
+  """Delete all saved posts and canonical places."""
+  posts_deleted, places_deleted = cleanup_all_data()
+  return MaintenanceResultSchema(posts_deleted=posts_deleted, places_deleted=places_deleted)
 
 
 @app.get("/api/tags", response_model=list[str])

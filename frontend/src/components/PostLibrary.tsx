@@ -1,24 +1,44 @@
 import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 
-import { deletePost, type SavedPost } from "../api";
+import { deletePost, type CanonicalPlace, type SavedPost } from "../api";
 import { PostCard } from "./PostCard";
 import { PostDetail } from "./PostDetail";
 
 interface PostLibraryProps {
   posts: SavedPost[];
+  places: CanonicalPlace[];
   onDeleted: () => void;
+  onNavigateToPlace?: (placeId: string) => void;
 }
 
 const PLATFORMS = ["all", "instagram", "youtube", "tiktok", "reddit"];
 
-export function PostLibrary({ posts, onDeleted }: PostLibraryProps) {
+export function PostLibrary({ posts, places, onDeleted, onNavigateToPlace }: PostLibraryProps) {
+  const { platform: routePlatform, postId: routePostId } = useParams();
+  const navigate = useNavigate();
   const [platformFilter, setPlatformFilter] = useState("all");
   const [selectedPost, setSelectedPost] = useState<SavedPost | null>(null);
+
+  const placeNamesById = Object.fromEntries(
+    places.map((place) => [place.place_id, place.display_name]),
+  );
 
   const filtered =
     platformFilter === "all"
       ? posts
       : posts.filter((post) => post.platform === platformFilter);
+
+  useEffect(() => {
+    if (!routePlatform || !routePostId) {
+      setSelectedPost(null);
+      return;
+    }
+    const match = posts.find(
+      (post) => post.platform === routePlatform && post.post_id === routePostId,
+    );
+    setSelectedPost(match ?? null);
+  }, [routePlatform, routePostId, posts]);
 
   useEffect(() => {
     if (!selectedPost) {
@@ -33,23 +53,34 @@ export function PostLibrary({ posts, onDeleted }: PostLibraryProps) {
     }
   }, [posts, selectedPost]);
 
+  const openPost = (post: SavedPost) => {
+    setSelectedPost(post);
+    navigate(`/posts/${post.platform}/${post.post_id}`);
+  };
+
+  const closePost = () => {
+    setSelectedPost(null);
+    navigate("/posts");
+  };
+
   return (
-    <section className="panel">
-      <div className="section-header">
-        <h2>Saved posts ({filtered.length})</h2>
-        <select
-          className="platform-filter"
-          value={platformFilter}
-          onChange={(event) => setPlatformFilter(event.target.value)}
-          aria-label="Filter by platform"
-        >
-          {PLATFORMS.map((platform) => (
-            <option key={platform} value={platform}>
-              {platform}
-            </option>
-          ))}
-        </select>
-      </div>
+    <section className="library-section">
+      {posts.length > 0 && (
+        <div className="library-toolbar">
+          <select
+            className="platform-filter"
+            value={platformFilter}
+            onChange={(event) => setPlatformFilter(event.target.value)}
+            aria-label="Filter by platform"
+          >
+            {PLATFORMS.map((platform) => (
+              <option key={platform} value={platform}>
+                {platform}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
       {filtered.length === 0 ? (
         <div className="empty-state">
@@ -61,14 +92,16 @@ export function PostLibrary({ posts, onDeleted }: PostLibraryProps) {
             <PostCard
               key={`${post.platform}-${post.post_id}`}
               post={post}
-              onSelect={setSelectedPost}
+              placeNamesById={placeNamesById}
+              onSelect={openPost}
+              onNavigateToPlace={onNavigateToPlace}
               onDelete={async () => {
                 await deletePost(post.platform, post.post_id);
                 if (
                   selectedPost?.platform === post.platform &&
                   selectedPost.post_id === post.post_id
                 ) {
-                  setSelectedPost(null);
+                  closePost();
                 }
                 onDeleted();
               }}
@@ -80,10 +113,11 @@ export function PostLibrary({ posts, onDeleted }: PostLibraryProps) {
       {selectedPost && (
         <PostDetail
           post={selectedPost}
-          onClose={() => setSelectedPost(null)}
+          onClose={closePost}
+          onNavigateToPlace={onNavigateToPlace}
           onDelete={async () => {
             await deletePost(selectedPost.platform, selectedPost.post_id);
-            setSelectedPost(null);
+            closePost();
             onDeleted();
           }}
         />

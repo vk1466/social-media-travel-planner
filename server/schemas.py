@@ -113,3 +113,8 @@ class JobSchema(BaseModel):
 
 class ErrorResponse(BaseModel):
   detail: str
+
+
+class MaintenanceResultSchema(BaseModel):
+  posts_deleted: int | None = None
+  places_deleted: int | None = None

@@ -18,7 +18,7 @@ from travelplanner.models import (
   Platform,
   SavedPost,
 )
-from travelplanner.store import DEFAULT_DATA_DIR, load_all_posts, save_post
+from travelplanner.store import DEFAULT_DATA_DIR, delete_all_posts, load_all_posts, save_post
 
 DEFAULT_PLACES_DIR = Path("data/places")
 
@@ -308,9 +308,32 @@ def _mention_from_extracted_place(extracted: ExtractedPlace) -> PlaceMention:
   )
 
 
+def _parent_mention_from_extracted(extracted: ExtractedPlace) -> PlaceMention | None:
+  if not extracted.parent_place_name:
+    return None
+  return PlaceMention(
+    place_name=extracted.parent_place_name,
+    state_province=extracted.state_province,
+    country=extracted.country,
+  )
+
+
 def mentions_from_post(post: SavedPost) -> tuple[PlaceMention, ...]:
   mentions = [_mention_from_place(place) for place in post.places]
   mentions.extend(_mention_from_extracted_place(extracted) for extracted in post.extracted_places)
+
+  existing_names = {mention.place_name.strip().lower() for mention in mentions}
+  parent_names_seen: set[str] = set()
+  for extracted in post.extracted_places:
+    parent_mention = _parent_mention_from_extracted(extracted)
+    if parent_mention is None:
+      continue
+    parent_key = parent_mention.place_name.strip().lower()
+    if parent_key in existing_names or parent_key in parent_names_seen:
+      continue
+    parent_names_seen.add(parent_key)
+    mentions.append(parent_mention)
+
   return tuple(mentions)
 
 
@@ -519,6 +542,29 @@ def load_all_places(data_dir: Path = DEFAULT_PLACES_DIR) -> list[CanonicalPlace]
     with path.open(encoding="utf-8") as handle:
       places.append(_place_from_dict(json.load(handle)))
   return places
+
+
+def delete_all_places(data_dir: Path = DEFAULT_PLACES_DIR) -> int:
+  """Remove every canonical place JSON file. Returns the number deleted."""
+  if not data_dir.exists():
+    return 0
+
+  deleted = 0
+  for path in data_dir.glob("*.json"):
+    path.unlink()
+    deleted += 1
+  return deleted
+
+
+def cleanup_all_data(
+  *,
+  posts_data_dir: Path = DEFAULT_DATA_DIR,
+  places_data_dir: Path = DEFAULT_PLACES_DIR,
+) -> tuple[int, int]:
+  """Delete all saved posts and canonical places."""
+  posts_deleted = delete_all_posts(data_dir=posts_data_dir)
+  places_deleted = delete_all_places(data_dir=places_data_dir)
+  return posts_deleted, places_deleted
 
 
 def _matches_ci(value: str | None, query: str) -> bool:

@@ -175,3 +175,16 @@ export async function fetchPlaceDetail(placeId: string): Promise<PlaceDetail> {
 export async function fetchTags(): Promise<string[]> {
   return request<string[]>("/api/tags");
 }
+
+export interface MaintenanceResult {
+  posts_deleted?: number | null;
+  places_deleted?: number | null;
+}
+
+export async function reprocessPlaces(): Promise<MaintenanceResult> {
+  return request<MaintenanceResult>("/api/places/reprocess", { method: "POST" });
+}
+
+export async function cleanupData(): Promise<MaintenanceResult> {
+  return request<MaintenanceResult>("/api/data/cleanup", { method: "POST" });
+}

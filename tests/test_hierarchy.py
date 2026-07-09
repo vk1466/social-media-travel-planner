@@ -158,7 +158,7 @@ def test_fetch_places_from_text_parses_structured_response(monkeypatch) -> None:
 
 
 def test_choose_group_name_returns_none_without_client(monkeypatch) -> None:
-  monkeypatch.setattr("travelplanner.clients.openai.get_client", lambda: None)
+  monkeypatch.setattr("travelplanner.hierarchy.get_client", lambda: None)
   assert choose_group_name(("Crater Lake Parkway", "Rim Village")) is None
 
 
@@ -207,6 +207,60 @@ def test_link_places_ig_tag_anchor_clusters_post_places(monkeypatch, tmp_path) -
   assert root is not None and child is not None
   assert root.parent_place_id is None
   assert child.parent_place_id == lake
+
+
+def test_link_places_parent_hint_wins_over_shorter_child_name(monkeypatch, tmp_path) -> None:
+  posts_dir = tmp_path / "posts"
+  places_dir = tmp_path / "places"
+
+  park = upsert_place(
+    PlaceMention(place_name="Smith Rock State Park", tags=("park",)),
+    PlaceLocation(
+      display_name="Smith Rock State Park",
+      country_code="US",
+      state_province="Oregon",
+      latitude=44.3665,
+      longitude=-121.1408,
+    ),
+    "instagram:post1",
+    data_dir=places_dir,
+  )
+  trail = upsert_place(
+    PlaceMention(place_name="Misery Ridge Trail", tags=("hike",)),
+    PlaceLocation(
+      display_name="Misery Ridge Trail",
+      country_code="US",
+      state_province="Oregon",
+      latitude=44.3670,
+      longitude=-121.1410,
+    ),
+    "instagram:post1",
+    data_dir=places_dir,
+  )
+
+  post = _sample_post(
+    extracted_places=(
+      ExtractedPlace(
+        place_name="Misery Ridge Trail",
+        state_province="Oregon",
+        country="USA",
+        parent_place_name="Smith Rock State Park",
+        tags=("hike",),
+      ),
+    ),
+    place_ids=(park, trail),
+    post_id="post1",
+  )
+  save_post(post, data_dir=posts_dir)
+
+  monkeypatch.setattr("travelplanner.hierarchy.choose_group_name", lambda names: None)
+  link_places(posts_data_dir=posts_dir, places_data_dir=places_dir)
+
+  root = load_place(park, data_dir=places_dir)
+  child = load_place(trail, data_dir=places_dir)
+  assert root is not None and child is not None
+  assert root.parent_place_id is None
+  assert child.parent_place_id == park
 
 
 def test_link_places_cross_post_name_proximity_cluster(monkeypatch, tmp_path) -> None:

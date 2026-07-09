@@ -21,6 +21,21 @@ function uniquePostCount(place: CanonicalPlace, children: CanonicalPlace[]): num
   return ids.size;
 }
 
+function ChildTags({ tags }: { tags: string[] }) {
+  if (tags.length === 0) {
+    return null;
+  }
+  return (
+    <span className="place-child-tags">
+      {tags.map((tag) => (
+        <span key={tag} className="tag-chip tag-chip-small">
+          {tag}
+        </span>
+      ))}
+    </span>
+  );
+}
+
 export function PlaceCard({ place, children = [], onSelect }: PlaceCardProps) {
   const childCount = children.length;
   const postCount = uniquePostCount(place, children);
@@ -67,6 +82,7 @@ export function PlaceCard({ place, children = [], onSelect }: PlaceCardProps) {
               <button type="button" className="place-child-link" onClick={() => onSelect(child)}>
                 {child.display_name}
               </button>
+              <ChildTags tags={child.tags} />
             </li>
           ))}
         </ul>

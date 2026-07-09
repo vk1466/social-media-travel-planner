@@ -154,6 +154,52 @@ def _deterministic_elect_root(members: list[CanonicalPlace]) -> CanonicalPlace:
   )
 
 
+def _parent_hints_from_posts(
+  posts: list[SavedPost],
+  places_by_id: dict[str, CanonicalPlace],
+) -> dict[str, str]:
+  """Directed child -> parent edges from extraction hints."""
+  hints: dict[str, str] = {}
+  for post in posts:
+    for extracted in post.extracted_places:
+      if not extracted.parent_place_name:
+        continue
+      child_id = _resolve_post_place_id(post, extracted.place_name, places_by_id)
+      if child_id is None:
+        continue
+      child_place = places_by_id[child_id]
+      parent_id = _find_place_id_by_name(
+        extracted.parent_place_name,
+        places_by_id,
+        region_place=child_place,
+      )
+      if parent_id is not None and parent_id != child_id:
+        hints[child_id] = parent_id
+  return hints
+
+
+def _elect_cluster_root(
+  members: list[CanonicalPlace],
+  parent_hints: dict[str, str],
+) -> CanonicalPlace:
+  member_ids = frozenset(member.place_id for member in members)
+  hinted_parent_ids = {
+    parent_hints[member.place_id]
+    for member in members
+    if parent_hints.get(member.place_id) in member_ids
+  }
+
+  if len(hinted_parent_ids) == 1:
+    parent_id = next(iter(hinted_parent_ids))
+    return next(member for member in members if member.place_id == parent_id)
+
+  if len(hinted_parent_ids) > 1:
+    candidates = [member for member in members if member.place_id in hinted_parent_ids]
+    return _deterministic_elect_root(candidates)
+
+  return _deterministic_elect_root(members)
+
+
 def choose_group_name(member_names: tuple[str, ...]) -> str | None:
   """Best attraction name for a cluster. Returns None to defer to deterministic election."""
   if not member_names:
@@ -260,6 +306,7 @@ def _cluster_places(
 def _apply_cluster_roots(
   places_by_id: dict[str, CanonicalPlace],
   clusters: _UnionFind,
+  parent_hints: dict[str, str],
 ) -> dict[str, CanonicalPlace]:
   groups: dict[str, list[CanonicalPlace]] = {}
   for place_id in places_by_id:
@@ -274,7 +321,7 @@ def _apply_cluster_roots(
 
     member_names = tuple(member.display_name for member in members)
     chosen_name = choose_group_name(member_names)
-    elected = _deterministic_elect_root(members)
+    elected = _elect_cluster_root(members, parent_hints)
 
     root = elected
     if chosen_name:
@@ -323,7 +370,8 @@ def link_places(
   posts = load_all_posts(data_dir=posts_data_dir)
 
   clusters = _cluster_places(places_by_id, posts)
-  updated = _apply_cluster_roots(places_by_id, clusters)
+  parent_hints = _parent_hints_from_posts(posts, places_by_id)
+  updated = _apply_cluster_roots(places_by_id, clusters, parent_hints)
 
   for place_id, place in updated.items():
     original = places_by_id.get(place_id)

@@ -145,3 +145,27 @@ def test_list_tags() -> None:
   response = client.get("/api/tags")
   assert response.status_code == 200
   assert "waterfall" in response.json()
+
+
+def test_reprocess_places_endpoint(monkeypatch) -> None:
+  called = {"reprocess": False}
+
+  def fake_reprocess() -> None:
+    called["reprocess"] = True
+
+  monkeypatch.setattr("server.app.reprocess_all_places", fake_reprocess)
+
+  client = TestClient(app)
+  response = client.post("/api/places/reprocess")
+  assert response.status_code == 200
+  assert response.json() == {"posts_deleted": None, "places_deleted": None}
+  assert called["reprocess"] is True
+
+
+def test_cleanup_data_endpoint(monkeypatch) -> None:
+  monkeypatch.setattr("server.app.cleanup_all_data", lambda: (2, 5))
+
+  client = TestClient(app)
+  response = client.post("/api/data/cleanup")
+  assert response.status_code == 200
+  assert response.json() == {"posts_deleted": 2, "places_deleted": 5}

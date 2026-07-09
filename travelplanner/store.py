@@ -124,3 +124,19 @@ def delete_post(
     return False
   path.unlink()
   return True
+
+
+def delete_all_posts(data_dir: Path = DEFAULT_DATA_DIR) -> int:
+  """Remove every saved post JSON file. Returns the number deleted."""
+  if not data_dir.exists():
+    return 0
+
+  deleted = 0
+  for platform in Platform:
+    platform_dir = data_dir / platform.value
+    if not platform_dir.exists():
+      continue
+    for path in platform_dir.glob("*.json"):
+      path.unlink()
+      deleted += 1
+  return deleted

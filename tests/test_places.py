@@ -3,6 +3,8 @@ from types import SimpleNamespace
 from travelplanner.models import ExtractedPlace, Place, PlaceLocation, PlaceMention, Platform, SavedPost
 from travelplanner.places import (
   _geocode_queries,
+  cleanup_all_data,
+  delete_all_places,
   is_visitable_place,
   list_places,
   load_all_places,
@@ -15,7 +17,7 @@ from travelplanner.places import (
   slugify,
   upsert_place,
 )
-from travelplanner.store import save_post
+from travelplanner.store import delete_all_posts, save_post
 
 
 def _fake_location(latitude: float, longitude: float, raw: dict) -> SimpleNamespace:
@@ -106,6 +108,83 @@ def test_mentions_from_post_normalizes_both_hint_shapes() -> None:
       tags=("landmark",),
     ),
   )
+
+
+def test_mentions_from_post_synthesizes_parent_from_parent_place_name() -> None:
+  post = _sample_post(
+    extracted_places=(
+      ExtractedPlace(
+        place_name="Misery Ridge Trail",
+        state_province="Oregon",
+        country="USA",
+        parent_place_name="Smith Rock State Park",
+        tags=("hike",),
+      ),
+    ),
+  )
+
+  mentions = mentions_from_post(post)
+  assert mentions == (
+    PlaceMention(
+      place_name="Misery Ridge Trail",
+      country="USA",
+      state_province="Oregon",
+      tags=("hike",),
+    ),
+    PlaceMention(
+      place_name="Smith Rock State Park",
+      country="USA",
+      state_province="Oregon",
+    ),
+  )
+
+
+def test_mentions_from_post_dedupes_same_parent_across_children() -> None:
+  post = _sample_post(
+    extracted_places=(
+      ExtractedPlace(
+        place_name="Misery Ridge Trail",
+        state_province="Oregon",
+        country="USA",
+        parent_place_name="Smith Rock State Park",
+      ),
+      ExtractedPlace(
+        place_name="Monkey Face",
+        state_province="Oregon",
+        country="USA",
+        parent_place_name="Smith Rock State Park",
+      ),
+    ),
+  )
+
+  mentions = mentions_from_post(post)
+  parent_mentions = [mention for mention in mentions if mention.place_name == "Smith Rock State Park"]
+  assert len(parent_mentions) == 1
+
+
+def test_mentions_from_post_skips_synthesis_when_parent_already_mentioned() -> None:
+  post = _sample_post(
+    extracted_places=(
+      ExtractedPlace(
+        place_name="Smith Rock State Park",
+        state_province="Oregon",
+        country="USA",
+        tags=("park",),
+      ),
+      ExtractedPlace(
+        place_name="Misery Ridge Trail",
+        state_province="Oregon",
+        country="USA",
+        parent_place_name="Smith Rock State Park",
+        tags=("hike",),
+      ),
+    ),
+  )
+
+  mentions = mentions_from_post(post)
+  park_mentions = [mention for mention in mentions if mention.place_name == "Smith Rock State Park"]
+  assert len(park_mentions) == 1
+  assert park_mentions[0].tags == ("park",)
 
 
 def test_geocode_queries_falls_back_to_simpler_queries() -> None:
@@ -378,6 +457,48 @@ def test_process_post_places_returns_ids_for_located_mentions(monkeypatch, tmp_p
   assert places[0].source_post_ids == ("instagram:post1",)
 
 
+def test_process_post_places_materializes_parent_from_parent_place_name(monkeypatch, tmp_path) -> None:
+  post = _sample_post(
+    extracted_places=(
+      ExtractedPlace(
+        place_name="Misery Ridge Trail",
+        state_province="Oregon",
+        country="USA",
+        parent_place_name="Smith Rock State Park",
+        tags=("hike",),
+      ),
+    ),
+  )
+
+  def fake_locate(mention: PlaceMention) -> PlaceLocation | None:
+    if mention.place_name == "Misery Ridge Trail":
+      return PlaceLocation(
+        display_name="Misery Ridge Trail",
+        country_code="US",
+        state_province="Oregon",
+        latitude=44.3670,
+        longitude=-121.1410,
+      )
+    if mention.place_name == "Smith Rock State Park":
+      return PlaceLocation(
+        display_name="Smith Rock State Park",
+        country_code="US",
+        state_province="Oregon",
+        latitude=44.3665,
+        longitude=-121.1408,
+      )
+    return None
+
+  monkeypatch.setattr("travelplanner.places.locate_mention", fake_locate)
+
+  place_ids = process_post_places(post, places_data_dir=tmp_path)
+
+  assert len(place_ids) == 2
+  places = {place.display_name: place for place in load_all_places(data_dir=tmp_path)}
+  assert "Misery Ridge Trail" in places
+  assert "Smith Rock State Park" in places
+
+
 def test_list_places_filters_by_tag_and_country(tmp_path) -> None:
   oregon = PlaceLocation(
     display_name="Multnomah Falls",
@@ -434,3 +555,31 @@ def test_reprocess_all_places_rebuilds_library_and_updates_posts(monkeypatch, tm
   reloaded = load_post(Platform.INSTAGRAM, "reelA", data_dir=posts_dir)
   assert reloaded is not None
   assert reloaded.place_ids == ("us-oregon-portland-multnomah-falls",)
+
+
+def test_delete_all_posts_and_places(tmp_path) -> None:
+  posts_dir = tmp_path / "posts"
+  places_dir = tmp_path / "places"
+
+  save_post(_sample_post(post_id="a"), data_dir=posts_dir)
+  save_post(_sample_post(post_id="b"), data_dir=posts_dir)
+
+  location = PlaceLocation(
+    display_name="Multnomah Falls",
+    country_code="US",
+    state_province="Oregon",
+    city="Portland",
+    latitude=45.5762,
+    longitude=-122.1158,
+  )
+  upsert_place(PlaceMention(place_name="Multnomah Falls"), location, "instagram:a", data_dir=places_dir)
+
+  posts_deleted, places_deleted = cleanup_all_data(
+    posts_data_dir=posts_dir,
+    places_data_dir=places_dir,
+  )
+
+  assert posts_deleted == 2
+  assert places_deleted == 1
+  assert delete_all_posts(data_dir=posts_dir) == 0
+  assert delete_all_places(data_dir=places_dir) == 0

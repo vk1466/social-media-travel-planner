@@ -1,12 +1,17 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState, lazy, Suspense } from "react";
 
 import { fetchPlaceDetail, type CanonicalPlace, type PlaceDetail as PlaceDetailData } from "../api";
 import { googleMapsUrl } from "../maps";
+import { DetailModal } from "./DetailModal";
+import { mappablePlaces } from "../placeMapUtils";
+
+const PlaceMap = lazy(() => import("./PlaceMap").then((module) => ({ default: module.PlaceMap })));
 
 interface PlaceDetailProps {
   place: CanonicalPlace;
   onClose: () => void;
   onNavigateToPlace?: (place: CanonicalPlace) => void;
+  onNavigateToPost?: (platform: string, postId: string) => void;
 }
 
 function locationBreadcrumb(place: CanonicalPlace): string {
@@ -14,7 +19,12 @@ function locationBreadcrumb(place: CanonicalPlace): string {
   return [city, stateProvince, country, continent].filter(Boolean).join(" · ") || "Location unknown";
 }
 
-export function PlaceDetail({ place: initialPlace, onClose, onNavigateToPlace }: PlaceDetailProps) {
+export function PlaceDetail({
+  place: initialPlace,
+  onClose,
+  onNavigateToPlace,
+  onNavigateToPost,
+}: PlaceDetailProps) {
   const [detail, setDetail] = useState<PlaceDetailData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -30,7 +40,7 @@ export function PlaceDetail({ place: initialPlace, onClose, onNavigateToPlace }:
         }
       } catch {
         if (!cancelled) {
-          setDetail({ place: initialPlace, source_posts: [] });
+          setDetail({ place: initialPlace, source_posts: [], children: [] });
         }
       } finally {
         if (!cancelled) {
@@ -45,141 +55,150 @@ export function PlaceDetail({ place: initialPlace, onClose, onNavigateToPlace }:
     };
   }, [initialPlace]);
 
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        onClose();
-      }
-    };
-    document.addEventListener("keydown", handleKeyDown);
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-      document.body.style.overflow = "";
-    };
-  }, [onClose]);
-
   const place = detail?.place ?? initialPlace;
   const sourcePosts = detail?.source_posts ?? [];
   const parent = detail?.parent ?? null;
   const children = detail?.children ?? [];
   const mapUrl = googleMapsUrl(place.location);
+  const mapPlaces = useMemo(() => [place, ...children], [place, children]);
 
   return (
-    <div className="detail-overlay" onClick={onClose} role="presentation">
-      <article
-        className="detail-panel"
-        onClick={(event) => event.stopPropagation()}
-        aria-labelledby="place-detail-title"
-      >
-        <header className="detail-header">
-          <div>
-            {parent && (
-              <p className="detail-eyebrow">
-                Part of{" "}
+    <DetailModal titleId="place-detail-title" onClose={onClose}>
+      <header className="detail-header">
+        <div>
+          {parent && (
+            <p className="detail-eyebrow">
+              Part of{" "}
+              <button
+                type="button"
+                className="inline-link-button"
+                onClick={() => onNavigateToPlace?.(parent)}
+              >
+                {parent.display_name}
+              </button>
+            </p>
+          )}
+          <p className="detail-eyebrow">{locationBreadcrumb(place)}</p>
+          <h2 id="place-detail-title">{place.display_name}</h2>
+          {place.aliases.length > 0 && (
+            <p className="detail-muted">also known as {place.aliases.join(", ")}</p>
+          )}
+        </div>
+        <button type="button" className="icon-button icon-button-close" onClick={onClose} aria-label="Close" />
+      </header>
+
+      {loading && <p className="detail-muted">Loading latest saved data…</p>}
+
+      {children.length > 0 && (
+        <section className="detail-section">
+          <h3>Activities &amp; spots here ({children.length})</h3>
+          <ul className="detail-list place-child-detail-list">
+            {children.map((child) => (
+              <li key={child.place_id}>
                 <button
                   type="button"
                   className="inline-link-button"
-                  onClick={() => onNavigateToPlace?.(parent)}
+                  onClick={() => onNavigateToPlace?.(child)}
                 >
-                  {parent.display_name}
+                  {child.display_name}
                 </button>
-              </p>
-            )}
-            <p className="detail-eyebrow">{locationBreadcrumb(place)}</p>
-            <h2 id="place-detail-title">{place.display_name}</h2>
-            {place.aliases.length > 0 && (
-              <p className="detail-muted">also known as {place.aliases.join(", ")}</p>
-            )}
+                {child.tags.length > 0 && (
+                  <span className="place-child-tags">
+                    {child.tags.map((tag) => (
+                      <span key={tag} className="tag-chip tag-chip-small">
+                        {tag}
+                      </span>
+                    ))}
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {place.tags.length > 0 && (
+        <section className="detail-section">
+          <h3>Tags</h3>
+          <div className="tag-list">
+            {place.tags.map((tag) => (
+              <span key={tag} className="tag-chip">
+                {tag}
+              </span>
+            ))}
           </div>
-          <button type="button" className="icon-button" onClick={onClose} aria-label="Close">
-            ✕
-          </button>
-        </header>
+        </section>
+      )}
 
-        {loading && <p className="detail-muted">Loading latest saved data…</p>}
+      {place.details.length > 0 && (
+        <section className="detail-section">
+          <h3>Details</h3>
+          <ul className="detail-list">
+            {place.details.map((detailText) => (
+              <li key={detailText}>{detailText}</li>
+            ))}
+          </ul>
+        </section>
+      )}
 
-        {children.length > 0 && (
-          <section className="detail-section">
-            <h3>Places within this attraction ({children.length})</h3>
-            <ul className="detail-list">
-              {children.map((child) => (
-                <li key={child.place_id}>
+      {place.tips.length > 0 && (
+        <section className="detail-section">
+          <h3>Tips</h3>
+          <ul className="detail-list">
+            {place.tips.map((tip) => (
+              <li key={tip}>{tip}</li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      <section className="detail-section">
+        <h3>Source posts ({sourcePosts.length})</h3>
+        {sourcePosts.length === 0 ? (
+          <p className="detail-muted">No saved posts found for this place.</p>
+        ) : (
+          <ul className="detail-list source-post-list">
+            {sourcePosts.map((post) => (
+              <li key={`${post.platform}-${post.post_id}`}>
+                {onNavigateToPost ? (
                   <button
                     type="button"
-                    className="inline-link-button"
-                    onClick={() => onNavigateToPlace?.(child)}
+                    className="inline-link-button source-post-button"
+                    onClick={() => onNavigateToPost(post.platform, post.post_id)}
                   >
-                    {child.display_name}
+                    <span className="badge badge-muted">{post.platform}</span>{" "}
+                    {post.caption ? post.caption.slice(0, 80) : post.post_url}
                   </button>
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
-
-        {place.tags.length > 0 && (
-          <section className="detail-section">
-            <h3>Tags</h3>
-            <div className="tag-list">
-              {place.tags.map((tag) => (
-                <span key={tag} className="tag-chip">
-                  {tag}
-                </span>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {place.details.length > 0 && (
-          <section className="detail-section">
-            <h3>Details</h3>
-            <ul className="detail-list">
-              {place.details.map((detailText) => (
-                <li key={detailText}>{detailText}</li>
-              ))}
-            </ul>
-          </section>
-        )}
-
-        {place.tips.length > 0 && (
-          <section className="detail-section">
-            <h3>Tips</h3>
-            <ul className="detail-list">
-              {place.tips.map((tip) => (
-                <li key={tip}>{tip}</li>
-              ))}
-            </ul>
-          </section>
-        )}
-
-        <section className="detail-section">
-          <h3>Source posts ({sourcePosts.length})</h3>
-          {sourcePosts.length === 0 ? (
-            <p className="detail-muted">No saved posts found for this place.</p>
-          ) : (
-            <ul className="detail-list source-post-list">
-              {sourcePosts.map((post) => (
-                <li key={`${post.platform}-${post.post_id}`}>
+                ) : (
                   <a href={post.post_url} target="_blank" rel="noreferrer">
                     <span className="badge badge-muted">{post.platform}</span>{" "}
                     {post.caption ? post.caption.slice(0, 80) : post.post_url}
                   </a>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
-        {mapUrl && (
-          <section className="detail-section">
-            <h3>Map</h3>
-            <a className="detail-open-link" href={mapUrl} target="_blank" rel="noreferrer">
+      {mappablePlaces(mapPlaces).length > 0 && (
+        <section className="detail-section">
+          <h3>Map</h3>
+          <Suspense fallback={<p className="loading-copy">Loading map…</p>}>
+            <PlaceMap places={mapPlaces} height="240px" showCaption={false} />
+          </Suspense>
+          {mapUrl && (
+            <a
+              className="detail-open-link detail-map-link"
+              href={mapUrl}
+              target="_blank"
+              rel="noreferrer"
+            >
               Open in Google Maps
             </a>
-          </section>
-        )}
-      </article>
-    </div>
+          )}
+        </section>
+      )}
+    </DetailModal>
   );
 }
