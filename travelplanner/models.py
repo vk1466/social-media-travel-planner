@@ -120,3 +120,16 @@ class CanonicalPlace:
   tips: tuple[str, ...] = ()
   source_post_ids: tuple[str, ...] = ()
   parent_place_id: str | None = None
+
+
+@dataclass(frozen=True)
+class Visit:
+  """One personal trip to a place. Places stay geography; visits hold when."""
+
+  visit_id: str
+  place_id: str
+  place_name: str
+  visited_from: str
+  visited_to: str | None = None
+  notes: str | None = None
+  created_at: str | None = None

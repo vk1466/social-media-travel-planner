@@ -3,11 +3,19 @@ from __future__ import annotations
 from fastapi import BackgroundTasks, FastAPI, HTTPException, Query, Response
 from fastapi.middleware.cors import CORSMiddleware
 
-from travelplanner.models import TAGS, CanonicalPlace, Platform, SavedPost
+from travelplanner.models import TAGS, CanonicalPlace, Platform, SavedPost, Visit
 from travelplanner.pipeline import ingest_link
 from travelplanner.hierarchy import link_places
 from travelplanner.places import cleanup_all_data, list_places, load_place, place_to_dict, reprocess_all_places
 from travelplanner.store import delete_post, load_all_posts, load_post, post_to_dict
+from travelplanner.visits import (
+  create_visit,
+  delete_visit,
+  list_visits,
+  load_visit,
+  visit_to_dict,
+  visited_place_ids,
+)
 
 from server.jobs import job_store
 from server.schemas import (
@@ -19,6 +27,9 @@ from server.schemas import (
   MaintenanceResultSchema,
   PlaceDetailSchema,
   SavedPostSchema,
+  VisitCreateRequest,
+  VisitDetailSchema,
+  VisitSchema,
 )
 
 app = FastAPI(title="Travel Post Ingest API", version="0.1.0")
@@ -53,6 +64,10 @@ def _post_to_schema(post: SavedPost) -> SavedPostSchema:
 
 def _place_to_schema(place: CanonicalPlace) -> CanonicalPlaceSchema:
   return CanonicalPlaceSchema(**place_to_dict(place))
+
+
+def _visit_to_schema(visit: Visit) -> VisitSchema:
+  return VisitSchema(**visit_to_dict(visit))
 
 
 def _sort_posts_newest_first(posts: list[SavedPost]) -> list[SavedPost]:
@@ -130,9 +145,74 @@ def reprocess_places() -> MaintenanceResultSchema:
 
 @app.post("/api/data/cleanup", response_model=MaintenanceResultSchema)
 def cleanup_data() -> MaintenanceResultSchema:
-  """Delete all saved posts and canonical places."""
-  posts_deleted, places_deleted = cleanup_all_data()
-  return MaintenanceResultSchema(posts_deleted=posts_deleted, places_deleted=places_deleted)
+  """Delete all saved posts, canonical places, and visits."""
+  posts_deleted, places_deleted, visits_deleted = cleanup_all_data()
+  return MaintenanceResultSchema(
+    posts_deleted=posts_deleted,
+    places_deleted=places_deleted,
+    visits_deleted=visits_deleted,
+  )
+
+
+@app.get("/api/visits", response_model=list[VisitDetailSchema])
+def list_all_visits() -> list[VisitDetailSchema]:
+  details: list[VisitDetailSchema] = []
+  for visit in list_visits():
+    place = load_place(visit.place_id)
+    details.append(
+      VisitDetailSchema(
+        visit=_visit_to_schema(visit),
+        place=_place_to_schema(place) if place is not None else None,
+      )
+    )
+  return details
+
+
+@app.get("/api/visits/place-ids", response_model=list[str])
+def list_visited_place_ids() -> list[str]:
+  return sorted(visited_place_ids())
+
+
+@app.post(
+  "/api/visits",
+  response_model=VisitDetailSchema,
+  status_code=201,
+  responses={400: {"model": ErrorResponse}},
+)
+def add_visit(request: VisitCreateRequest) -> VisitDetailSchema:
+  if not request.place_id and not (request.place_query and request.place_query.strip()):
+    raise HTTPException(status_code=400, detail="Provide place_id or place_query")
+  try:
+    visit = create_visit(
+      visited_from=request.visited_from,
+      visited_to=request.visited_to,
+      notes=request.notes,
+      place_id=request.place_id,
+      place_query=request.place_query,
+      city=request.city,
+      country=request.country,
+    )
+  except ValueError as exc:
+    raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+  place = load_place(visit.place_id)
+  return VisitDetailSchema(
+    visit=_visit_to_schema(visit),
+    place=_place_to_schema(place) if place is not None else None,
+  )
+
+
+@app.delete(
+  "/api/visits/{visit_id}",
+  status_code=204,
+  response_class=Response,
+  responses={404: {"model": ErrorResponse}},
+)
+def remove_visit(visit_id: str) -> Response:
+  if load_visit(visit_id) is None:
+    raise HTTPException(status_code=404, detail="Visit not found")
+  delete_visit(visit_id)
+  return Response(status_code=204)
 
 
 @app.get("/api/tags", response_model=list[str])

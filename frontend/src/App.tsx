@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 
-import { fetchPlaces, fetchPosts, startIngest, type CanonicalPlace } from "./api";
+import { fetchPlaces, fetchPosts, fetchVisits, startIngest, type CanonicalPlace } from "./api";
 import { DataMaintenance } from "./components/DataMaintenance";
 import { IngestProgress } from "./components/IngestProgress";
 import { LinkSubmitForm } from "./components/LinkSubmitForm";
 import { PlaceLibrary } from "./components/PlaceLibrary";
 import { PostLibrary } from "./components/PostLibrary";
+import { TravelHistory } from "./components/TravelHistory";
 import { useJob } from "./hooks/useJob";
 
 function BrandMark() {
@@ -27,6 +28,7 @@ function AppShell() {
   const location = useLocation();
   const [posts, setPosts] = useState<Awaited<ReturnType<typeof fetchPosts>>>([]);
   const [places, setPlaces] = useState<CanonicalPlace[]>([]);
+  const [visitCount, setVisitCount] = useState(0);
   const [jobId, setJobId] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [loadingPosts, setLoadingPosts] = useState(true);
@@ -35,14 +37,23 @@ function AppShell() {
   const switchedAfterIngest = useRef(false);
   const { job, error: jobError } = useJob(jobId);
 
-  const activeTab = location.pathname.startsWith("/places") ? "places" : "posts";
+  const activeTab = location.pathname.startsWith("/places")
+    ? "places"
+    : location.pathname.startsWith("/history")
+      ? "history"
+      : "posts";
 
   const refreshPosts = useCallback(async () => {
     setLoadingPosts(true);
     try {
-      const [nextPosts, nextPlaces] = await Promise.all([fetchPosts(), fetchPlaces()]);
+      const [nextPosts, nextPlaces, nextVisits] = await Promise.all([
+        fetchPosts(),
+        fetchPlaces(),
+        fetchVisits(),
+      ]);
       setPosts(nextPosts);
       setPlaces(nextPlaces);
+      setVisitCount(nextVisits.length);
     } finally {
       setLoadingPosts(false);
     }
@@ -151,6 +162,21 @@ function AppShell() {
               <span className="stat-value">{places.length}</span>
               <span className="stat-label">Places extracted</span>
             </div>
+            <div className="stat-card">
+              <span className="stat-icon" aria-hidden="true">
+                <svg width="18" height="18" viewBox="0 0 18 18">
+                  <path
+                    d="M3.5 9h11M9 3.5v11"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.4"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </span>
+              <span className="stat-value">{visitCount}</span>
+              <span className="stat-label">Trips logged</span>
+            </div>
           </div>
         </section>
 
@@ -194,6 +220,15 @@ function AppShell() {
             onClick={() => navigate("/places")}
           >
             Places ({places.length})
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === "history"}
+            className={`view-tab ${activeTab === "history" ? "view-tab-active" : ""}`}
+            onClick={() => navigate("/history")}
+          >
+            Travel history ({visitCount})
           </button>
         </nav>
 
@@ -244,6 +279,16 @@ function AppShell() {
               <PlaceLibrary
                 refreshToken={libraryVersion}
                 onNavigateToPost={navigateToPost}
+              />
+            }
+          />
+          <Route
+            path="/history"
+            element={
+              <TravelHistory
+                refreshToken={libraryVersion}
+                onChanged={handleMaintenanceComplete}
+                onNavigateToPlace={navigateToPlace}
               />
             }
           />

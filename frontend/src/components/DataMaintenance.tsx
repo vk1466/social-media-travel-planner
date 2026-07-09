@@ -33,7 +33,7 @@ export function DataMaintenance({ disabled = false, onComplete }: DataMaintenanc
 
   const handleCleanup = async () => {
     const confirmed = window.confirm(
-      "Delete all saved posts and places? This cannot be undone.",
+      "Delete all saved posts, places, and travel history? This cannot be undone.",
     );
     if (!confirmed) {
       return;
@@ -46,7 +46,10 @@ export function DataMaintenance({ disabled = false, onComplete }: DataMaintenanc
       const result = await cleanupData();
       const posts = result.posts_deleted ?? 0;
       const places = result.places_deleted ?? 0;
-      setMessage(`Deleted ${posts} post${posts === 1 ? "" : "s"} and ${places} place${places === 1 ? "" : "s"}.`);
+      const visits = result.visits_deleted ?? 0;
+      setMessage(
+        `Deleted ${posts} post${posts === 1 ? "" : "s"}, ${places} place${places === 1 ? "" : "s"}, and ${visits} trip${visits === 1 ? "" : "s"}.`,
+      );
       onComplete();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to clean up data");
@@ -72,7 +75,7 @@ export function DataMaintenance({ disabled = false, onComplete }: DataMaintenanc
         <>
           <p className="data-maintenance-copy">
             Reprocess rebuilds places from saved posts without re-fetching links. Clean up wipes all
-            local posts and places.
+            local posts, places, and travel history.
           </p>
           <div className="data-maintenance-actions">
             <button

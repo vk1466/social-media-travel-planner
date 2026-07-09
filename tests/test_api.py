@@ -1,6 +1,6 @@
 from fastapi.testclient import TestClient
 
-from travelplanner import places, store
+from travelplanner import places, store, visits
 from travelplanner.models import PlaceLocation, PlaceMention, Platform, SavedPost
 from travelplanner.pipeline import IngestResult
 from travelplanner.store import save_post
@@ -147,6 +147,95 @@ def test_list_tags() -> None:
   assert "waterfall" in response.json()
 
 
+def test_cleanup_data_endpoint(monkeypatch) -> None:
+  monkeypatch.setattr("server.app.cleanup_all_data", lambda: (2, 5, 3))
+
+  client = TestClient(app)
+  response = client.post("/api/data/cleanup")
+  assert response.status_code == 200
+  assert response.json() == {"posts_deleted": 2, "places_deleted": 5, "visits_deleted": 3}
+
+
+def test_create_and_list_visits(monkeypatch, tmp_path) -> None:
+  places_dir = tmp_path / "places"
+  visits_dir = tmp_path / "visits"
+
+  location = PlaceLocation(
+    display_name="Multnomah Falls",
+    continent="North America",
+    country="United States",
+    country_code="US",
+    state_province="Oregon",
+    city="Portland",
+    latitude=45.5762,
+    longitude=-122.1158,
+  )
+  mention = PlaceMention(place_name="Multnomah Falls", tags=("waterfall",))
+  place_id = places.upsert_place(mention, location, "instagram:reelA", data_dir=places_dir)
+
+  def fake_create_visit(**kwargs):
+    return visits.create_visit(
+      **kwargs,
+      visits_data_dir=visits_dir,
+      places_data_dir=places_dir,
+    )
+
+  monkeypatch.setattr("server.app.create_visit", fake_create_visit)
+  monkeypatch.setattr(
+    "server.app.list_visits",
+    lambda: visits.list_visits(data_dir=visits_dir),
+  )
+  monkeypatch.setattr(
+    "server.app.load_place",
+    lambda place_id: places.load_place(place_id, data_dir=places_dir),
+  )
+  monkeypatch.setattr(
+    "server.app.load_visit",
+    lambda visit_id: visits.load_visit(visit_id, data_dir=visits_dir),
+  )
+  monkeypatch.setattr(
+    "server.app.delete_visit",
+    lambda visit_id: visits.delete_visit(visit_id, data_dir=visits_dir),
+  )
+  monkeypatch.setattr(
+    "server.app.visited_place_ids",
+    lambda: visits.visited_place_ids(data_dir=visits_dir),
+  )
+
+  client = TestClient(app)
+
+  created = client.post(
+    "/api/visits",
+    json={
+      "place_id": place_id,
+      "visited_from": "2024-06-12",
+      "visited_to": "2024-06-14",
+      "notes": "Day hike",
+    },
+  )
+  assert created.status_code == 201
+  body = created.json()
+  assert body["visit"]["place_id"] == place_id
+  assert body["visit"]["visited_from"] == "2024-06-12"
+  assert body["place"]["display_name"] == "Multnomah Falls"
+  visit_id = body["visit"]["visit_id"]
+
+  listed = client.get("/api/visits")
+  assert listed.status_code == 200
+  assert len(listed.json()) == 1
+
+  ids = client.get("/api/visits/place-ids")
+  assert ids.status_code == 200
+  assert ids.json() == [place_id]
+
+  missing = client.post("/api/visits", json={"visited_from": "2024-01-01"})
+  assert missing.status_code == 400
+
+  deleted = client.delete(f"/api/visits/{visit_id}")
+  assert deleted.status_code == 204
+  assert client.get("/api/visits").json() == []
+
+
 def test_reprocess_places_endpoint(monkeypatch) -> None:
   called = {"reprocess": False}
 
@@ -158,14 +247,10 @@ def test_reprocess_places_endpoint(monkeypatch) -> None:
   client = TestClient(app)
   response = client.post("/api/places/reprocess")
   assert response.status_code == 200
-  assert response.json() == {"posts_deleted": None, "places_deleted": None}
+  assert response.json() == {
+    "posts_deleted": None,
+    "places_deleted": None,
+    "visits_deleted": None,
+  }
   assert called["reprocess"] is True
 
-
-def test_cleanup_data_endpoint(monkeypatch) -> None:
-  monkeypatch.setattr("server.app.cleanup_all_data", lambda: (2, 5))
-
-  client = TestClient(app)
-  response = client.post("/api/data/cleanup")
-  assert response.status_code == 200
-  assert response.json() == {"posts_deleted": 2, "places_deleted": 5}

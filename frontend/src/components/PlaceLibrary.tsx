@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, lazy, Suspense } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
-import { fetchPlaces, fetchTags, type CanonicalPlace } from "../api";
+import { fetchPlaces, fetchTags, fetchVisitedPlaceIds, type CanonicalPlace } from "../api";
 import { PlaceCard } from "./PlaceCard";
 import { PlaceDetail } from "./PlaceDetail";
 
@@ -77,6 +77,7 @@ export function PlaceLibrary({ refreshToken = 0, onNavigateToPost }: PlaceLibrar
 
   const [rootPlaces, setRootPlaces] = useState<CanonicalPlace[]>([]);
   const [allPlaces, setAllPlaces] = useState<CanonicalPlace[]>([]);
+  const [visitedPlaceIds, setVisitedPlaceIds] = useState<Set<string>>(new Set());
   const [tags, setTags] = useState<string[]>([]);
   const [continentFilter, setContinentFilter] = useState("all");
   const [countryFilter, setCountryFilter] = useState("all");
@@ -105,6 +106,12 @@ export function PlaceLibrary({ refreshToken = 0, onNavigateToPost }: PlaceLibrar
     void fetchPlaces()
       .then(setAllPlaces)
       .catch(() => setAllPlaces([]));
+  }, [refreshToken]);
+
+  useEffect(() => {
+    void fetchVisitedPlaceIds()
+      .then((ids) => setVisitedPlaceIds(new Set(ids)))
+      .catch(() => setVisitedPlaceIds(new Set()));
   }, [refreshToken]);
 
   const childrenByParent = useMemo(() => {
@@ -354,6 +361,7 @@ export function PlaceLibrary({ refreshToken = 0, onNavigateToPost }: PlaceLibrar
         <Suspense fallback={<p className="loading-copy">Loading map…</p>}>
           <PlaceMap
             places={places}
+            visitedPlaceIds={visitedPlaceIds}
             selectedPlaceId={selectedPlace?.place_id}
             onSelectPlace={openPlace}
           />

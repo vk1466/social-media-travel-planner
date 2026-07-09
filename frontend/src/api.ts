@@ -176,9 +176,55 @@ export async function fetchTags(): Promise<string[]> {
   return request<string[]>("/api/tags");
 }
 
+export interface Visit {
+  visit_id: string;
+  place_id: string;
+  place_name: string;
+  visited_from: string;
+  visited_to?: string | null;
+  notes?: string | null;
+  created_at?: string | null;
+}
+
+export interface VisitDetail {
+  visit: Visit;
+  place?: CanonicalPlace | null;
+}
+
+export interface VisitCreateInput {
+  visited_from: string;
+  visited_to?: string | null;
+  notes?: string | null;
+  place_id?: string | null;
+  place_query?: string | null;
+  city?: string | null;
+  country?: string | null;
+}
+
+export async function fetchVisits(): Promise<VisitDetail[]> {
+  return request<VisitDetail[]>("/api/visits");
+}
+
+export async function fetchVisitedPlaceIds(): Promise<string[]> {
+  return request<string[]>("/api/visits/place-ids");
+}
+
+export async function createVisit(input: VisitCreateInput): Promise<VisitDetail> {
+  return request<VisitDetail>("/api/visits", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+}
+
+export async function deleteVisit(visitId: string): Promise<void> {
+  await request<void>(`/api/visits/${visitId}`, { method: "DELETE" });
+}
+
 export interface MaintenanceResult {
   posts_deleted?: number | null;
   places_deleted?: number | null;
+  visits_deleted?: number | null;
 }
 
 export async function reprocessPlaces(): Promise<MaintenanceResult> {

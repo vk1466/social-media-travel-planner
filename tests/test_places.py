@@ -574,12 +574,14 @@ def test_delete_all_posts_and_places(tmp_path) -> None:
   )
   upsert_place(PlaceMention(place_name="Multnomah Falls"), location, "instagram:a", data_dir=places_dir)
 
-  posts_deleted, places_deleted = cleanup_all_data(
+  posts_deleted, places_deleted, visits_deleted = cleanup_all_data(
     posts_data_dir=posts_dir,
     places_data_dir=places_dir,
+    visits_data_dir=tmp_path / "visits",
   )
 
   assert posts_deleted == 2
   assert places_deleted == 1
+  assert visits_deleted == 0
   assert delete_all_posts(data_dir=posts_dir) == 0
   assert delete_all_places(data_dir=places_dir) == 0

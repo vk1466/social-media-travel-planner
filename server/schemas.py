@@ -115,6 +115,32 @@ class ErrorResponse(BaseModel):
   detail: str
 
 
+class VisitSchema(BaseModel):
+  visit_id: str
+  place_id: str
+  place_name: str
+  visited_from: str
+  visited_to: str | None = None
+  notes: str | None = None
+  created_at: str | None = None
+
+
+class VisitCreateRequest(BaseModel):
+  visited_from: str
+  visited_to: str | None = None
+  notes: str | None = None
+  place_id: str | None = None
+  place_query: str | None = None
+  city: str | None = None
+  country: str | None = None
+
+
+class VisitDetailSchema(BaseModel):
+  visit: VisitSchema
+  place: CanonicalPlaceSchema | None = None
+
+
 class MaintenanceResultSchema(BaseModel):
   posts_deleted: int | None = None
   places_deleted: int | None = None
+  visits_deleted: int | None = None

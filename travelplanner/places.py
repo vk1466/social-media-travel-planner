@@ -560,11 +560,17 @@ def cleanup_all_data(
   *,
   posts_data_dir: Path = DEFAULT_DATA_DIR,
   places_data_dir: Path = DEFAULT_PLACES_DIR,
-) -> tuple[int, int]:
-  """Delete all saved posts and canonical places."""
+  visits_data_dir: Path | None = None,
+) -> tuple[int, int, int]:
+  """Delete all saved posts, canonical places, and visits."""
+  from travelplanner.visits import DEFAULT_VISITS_DIR, delete_all_visits
+
   posts_deleted = delete_all_posts(data_dir=posts_data_dir)
   places_deleted = delete_all_places(data_dir=places_data_dir)
-  return posts_deleted, places_deleted
+  visits_deleted = delete_all_visits(
+    data_dir=DEFAULT_VISITS_DIR if visits_data_dir is None else visits_data_dir
+  )
+  return posts_deleted, places_deleted, visits_deleted
 
 
 def _matches_ci(value: str | None, query: str) -> bool:
@@ -748,5 +754,12 @@ def reprocess_all_places(
     from travelplanner.hierarchy import link_places
 
     link_places(posts_data_dir=posts_data_dir, places_data_dir=places_data_dir)
+  except Exception:
+    pass
+
+  try:
+    from travelplanner.visits import DEFAULT_VISITS_DIR, relink_visits
+
+    relink_visits(visits_data_dir=DEFAULT_VISITS_DIR, places_data_dir=places_data_dir)
   except Exception:
     pass
