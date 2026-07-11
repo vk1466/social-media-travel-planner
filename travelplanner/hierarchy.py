@@ -7,7 +7,7 @@ from pathlib import Path
 
 from travelplanner import settings
 from travelplanner.clients.openai import get_client
-from travelplanner.models import CanonicalPlace, SavedPost
+from travelplanner.models import Place, SavedPost
 from travelplanner.places import (
   DEFAULT_PLACES_DIR,
   load_all_places,
@@ -69,7 +69,7 @@ def _is_broader_name_match(name_a: str, name_b: str) -> bool:
   return shorter.issubset(longer) and shorter != longer
 
 
-def _same_region(left: CanonicalPlace, right: CanonicalPlace) -> bool:
+def _same_region(left: Place, right: Place) -> bool:
   left_code = (left.location.country_code or "").upper()
   right_code = (right.location.country_code or "").upper()
   if left_code and right_code and left_code != right_code:
@@ -81,7 +81,7 @@ def _same_region(left: CanonicalPlace, right: CanonicalPlace) -> bool:
   return True
 
 
-def _within_cluster_distance(left: CanonicalPlace, right: CanonicalPlace) -> bool:
+def _within_cluster_distance(left: Place, right: Place) -> bool:
   left_location = left.location
   right_location = right.location
   if (
@@ -100,11 +100,11 @@ def _within_cluster_distance(left: CanonicalPlace, right: CanonicalPlace) -> boo
   return distance <= CLUSTER_PROXIMITY_METERS
 
 
-def _place_names(place: CanonicalPlace) -> tuple[str, ...]:
+def _place_names(place: Place) -> tuple[str, ...]:
   return (place.display_name, *place.aliases)
 
 
-def _matches_place_name(place: CanonicalPlace, query_name: str) -> bool:
+def _matches_place_name(place: Place, query_name: str) -> bool:
   query_slug = slugify(query_name)
   if not query_slug:
     return False
@@ -116,9 +116,9 @@ def _matches_place_name(place: CanonicalPlace, query_name: str) -> bool:
 
 def _find_place_id_by_name(
   query_name: str,
-  places_by_id: dict[str, CanonicalPlace],
+  places_by_id: dict[str, Place],
   *,
-  region_place: CanonicalPlace | None = None,
+  region_place: Place | None = None,
 ) -> str | None:
   matches: list[str] = []
   for place_id, place in places_by_id.items():
@@ -134,7 +134,7 @@ def _find_place_id_by_name(
 def _resolve_post_place_id(
   post: SavedPost,
   place_name: str,
-  places_by_id: dict[str, CanonicalPlace],
+  places_by_id: dict[str, Place],
 ) -> str | None:
   for place_id in post.place_ids:
     place = places_by_id.get(place_id)
@@ -143,7 +143,7 @@ def _resolve_post_place_id(
   return _find_place_id_by_name(place_name, places_by_id)
 
 
-def _deterministic_elect_root(members: list[CanonicalPlace]) -> CanonicalPlace:
+def _deterministic_elect_root(members: list[Place]) -> Place:
   return min(
     members,
     key=lambda place: (
@@ -156,7 +156,7 @@ def _deterministic_elect_root(members: list[CanonicalPlace]) -> CanonicalPlace:
 
 def _parent_hints_from_posts(
   posts: list[SavedPost],
-  places_by_id: dict[str, CanonicalPlace],
+  places_by_id: dict[str, Place],
 ) -> dict[str, str]:
   """Directed child -> parent edges from extraction hints."""
   hints: dict[str, str] = {}
@@ -179,9 +179,9 @@ def _parent_hints_from_posts(
 
 
 def _elect_cluster_root(
-  members: list[CanonicalPlace],
+  members: list[Place],
   parent_hints: dict[str, str],
-) -> CanonicalPlace:
+) -> Place:
   member_ids = frozenset(member.place_id for member in members)
   hinted_parent_ids = {
     parent_hints[member.place_id]
@@ -256,7 +256,7 @@ def choose_group_name(member_names: tuple[str, ...]) -> str | None:
 
 
 def _cluster_places(
-  places_by_id: dict[str, CanonicalPlace],
+  places_by_id: dict[str, Place],
   posts: list[SavedPost],
 ) -> _UnionFind:
   place_ids = tuple(places_by_id.keys())
@@ -304,16 +304,16 @@ def _cluster_places(
 
 
 def _apply_cluster_roots(
-  places_by_id: dict[str, CanonicalPlace],
+  places_by_id: dict[str, Place],
   clusters: _UnionFind,
   parent_hints: dict[str, str],
-) -> dict[str, CanonicalPlace]:
-  groups: dict[str, list[CanonicalPlace]] = {}
+) -> dict[str, Place]:
+  groups: dict[str, list[Place]] = {}
   for place_id in places_by_id:
     root_id = clusters.find(place_id)
     groups.setdefault(root_id, []).append(places_by_id[place_id])
 
-  updated: dict[str, CanonicalPlace] = dict(places_by_id)
+  updated: dict[str, Place] = dict(places_by_id)
 
   for members in groups.values():
     if len(members) == 1:

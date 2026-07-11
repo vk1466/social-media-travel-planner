@@ -7,7 +7,8 @@ from dataclasses import asdict, replace
 from datetime import date, datetime, timezone
 from pathlib import Path
 
-from travelplanner.models import CanonicalPlace, PlaceMention, Visit
+from travelplanner.models import Place, Visit
+from travelplanner.place_hints import PlaceMention
 from travelplanner.places import (
   DEFAULT_PLACES_DIR,
   load_all_places,
@@ -120,12 +121,15 @@ def _validate_dates(visited_from: str, visited_to: str | None) -> None:
 def ensure_place_for_query(
   place_query: str,
   *,
-  source_id: str,
   city: str | None = None,
   country: str | None = None,
   places_data_dir: Path = DEFAULT_PLACES_DIR,
-) -> CanonicalPlace:
-  """Geocode a free-text destination and upsert into the place library."""
+) -> Place:
+  """Geocode a free-text destination and upsert into the place library.
+
+  Visits reference places only via Visit.place_id — no visit pseudo-id is
+  written into Place.source_post_ids.
+  """
   query = place_query.strip()
   if not query:
     raise ValueError("place_query is required")
@@ -139,7 +143,7 @@ def ensure_place_for_query(
   if location is None:
     raise ValueError(f"Could not find a place matching “{query}”")
 
-  place_id = upsert_place(mention, location, source_id, data_dir=places_data_dir)
+  place_id = upsert_place(mention, location, source_post_id=None, data_dir=places_data_dir)
   place = load_place(place_id, data_dir=places_data_dir)
   if place is None:
     raise RuntimeError("Place was upserted but could not be loaded")
@@ -152,9 +156,8 @@ def resolve_place_for_visit(
   place_query: str | None = None,
   city: str | None = None,
   country: str | None = None,
-  source_id: str,
   places_data_dir: Path = DEFAULT_PLACES_DIR,
-) -> CanonicalPlace:
+) -> Place:
   if place_id:
     place = load_place(place_id, data_dir=places_data_dir)
     if place is None:
@@ -170,7 +173,6 @@ def resolve_place_for_visit(
         return place
     return ensure_place_for_query(
       place_query,
-      source_id=source_id,
       city=city,
       country=country,
       places_data_dir=places_data_dir,
@@ -194,13 +196,11 @@ def create_visit(
   _validate_dates(visited_from, visited_to)
 
   visit_id = uuid.uuid4().hex
-  source_id = f"visit:{visit_id}"
   place = resolve_place_for_visit(
     place_id=place_id,
     place_query=place_query,
     city=city,
     country=country,
-    source_id=source_id,
     places_data_dir=places_data_dir,
   )
 
@@ -234,7 +234,6 @@ def relink_visits(
     try:
       place = resolve_place_for_visit(
         place_query=visit.place_name,
-        source_id=f"visit:{visit.visit_id}",
         places_data_dir=places_data_dir,
       )
     except ValueError:

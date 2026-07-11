@@ -5,7 +5,7 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 
-class PlaceSchema(BaseModel):
+class PlatformPlaceSchema(BaseModel):
   place_name: str
   city: str | None = None
   country: str | None = None
@@ -36,7 +36,7 @@ class SavedPostSchema(BaseModel):
   like_count: int | None = None
   comment_count: int | None = None
   top_comments: list[str] = Field(default_factory=list)
-  places: list[PlaceSchema] = Field(default_factory=list)
+  places: list[PlatformPlaceSchema] = Field(default_factory=list)
   extracted_places: list[ExtractedPlaceSchema] = Field(default_factory=list)
   place_ids: list[str] = Field(default_factory=list)
   thumbnail_url: str | None = None
@@ -58,7 +58,7 @@ class PlaceLocationSchema(BaseModel):
   osm_type: str | None = None
 
 
-class CanonicalPlaceSchema(BaseModel):
+class PlaceSchema(BaseModel):
   place_id: str
   display_name: str
   location: PlaceLocationSchema
@@ -71,10 +71,10 @@ class CanonicalPlaceSchema(BaseModel):
 
 
 class PlaceDetailSchema(BaseModel):
-  place: CanonicalPlaceSchema
+  place: PlaceSchema
   source_posts: list[SavedPostSchema] = Field(default_factory=list)
-  parent: CanonicalPlaceSchema | None = None
-  children: list[CanonicalPlaceSchema] = Field(default_factory=list)
+  parent: PlaceSchema | None = None
+  children: list[PlaceSchema] = Field(default_factory=list)
 
 
 class IngestRequest(BaseModel):
@@ -139,7 +139,7 @@ class VisitCreateRequest(BaseModel):
 
 class VisitDetailSchema(BaseModel):
   visit: VisitSchema
-  place: CanonicalPlaceSchema | None = None
+  place: PlaceSchema | None = None
 
 
 class MaintenanceResultSchema(BaseModel):

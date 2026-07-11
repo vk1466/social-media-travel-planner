@@ -1,4 +1,5 @@
-from travelplanner.models import PlaceLocation, PlaceMention
+from travelplanner.models import PlaceLocation
+from travelplanner.place_hints import PlaceMention
 from travelplanner.places import load_place, upsert_place
 from travelplanner.visits import (
   create_visit,
@@ -85,7 +86,7 @@ def test_create_visit_geocodes_new_destination(monkeypatch, tmp_path) -> None:
   place = load_place(visit.place_id, data_dir=places_dir)
   assert place is not None
   assert place.display_name == "Tokyo"
-  assert "visit:" in place.source_post_ids[0]
+  assert place.source_post_ids == ()
   assert list_visits(data_dir=visits_dir)[0].visit_id == visit.visit_id
 
 
@@ -187,7 +188,7 @@ def test_relink_visits_after_place_wipe(monkeypatch, tmp_path) -> None:
     restored_id = upsert_place(
       PlaceMention(place_name="Multnomah Falls"),
       _sample_location(),
-      kwargs["source_id"],
+      source_post_id=None,
       data_dir=places_dir,
     )
     return load_place(restored_id, data_dir=places_dir)
@@ -202,7 +203,7 @@ def test_relink_visits_after_place_wipe(monkeypatch, tmp_path) -> None:
 
 def test_resolve_place_requires_id_or_query(tmp_path) -> None:
   try:
-    resolve_place_for_visit(source_id="visit:x", places_data_dir=tmp_path)
+    resolve_place_for_visit(places_data_dir=tmp_path)
     assert False, "expected ValueError"
   except ValueError as exc:
     assert "place_id or place_query" in str(exc)

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 
-import { fetchPlaces, fetchPosts, fetchVisits, startIngest, type CanonicalPlace } from "./api";
+import { fetchPlaces, fetchPosts, fetchVisits, startIngest, postRouteParts, type Place } from "./api";
 import { DataMaintenance } from "./components/DataMaintenance";
 import { IngestProgress } from "./components/IngestProgress";
 import { LinkSubmitForm } from "./components/LinkSubmitForm";
@@ -27,7 +27,7 @@ function AppShell() {
   const navigate = useNavigate();
   const location = useLocation();
   const [posts, setPosts] = useState<Awaited<ReturnType<typeof fetchPosts>>>([]);
-  const [places, setPlaces] = useState<CanonicalPlace[]>([]);
+  const [places, setPlaces] = useState<Place[]>([]);
   const [visitCount, setVisitCount] = useState(0);
   const [jobId, setJobId] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -98,11 +98,13 @@ function AppShell() {
   };
 
   const navigateToPost = (platform: string, postId: string) => {
-    navigate(`/posts/${platform}/${postId}`);
+    const { platform: routePlatform, nativeId } = postRouteParts(platform, postId);
+    navigate(`/posts/${routePlatform}/${nativeId}`);
   };
 
   const openPostFromProgress = (platform: string, postId: string) => {
-    navigate(`/posts/${platform}/${postId}`);
+    const { platform: routePlatform, nativeId } = postRouteParts(platform, postId);
+    navigate(`/posts/${routePlatform}/${nativeId}`);
   };
 
   return (

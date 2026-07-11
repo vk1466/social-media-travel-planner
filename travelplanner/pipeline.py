@@ -5,7 +5,7 @@ from dataclasses import dataclass, replace
 from typing import Literal
 
 from travelplanner.links import detect_platform, extract_post_id
-from travelplanner.models import Platform, SavedPost
+from travelplanner.models import Platform, SavedPost, make_post_id
 from travelplanner.places import process_post_places
 from travelplanner.hierarchy import link_places
 from travelplanner.sources import PLATFORM_FETCHERS
@@ -38,7 +38,7 @@ def ingest_link(post_url: str, *, refresh: bool = False) -> IngestResult:
     return IngestResult(post_url=post_url, status="unsupported")
 
   try:
-    post_id = extract_post_id(platform, post_url)
+    native_post_id = extract_post_id(platform, post_url)
   except ValueError as exc:
     return IngestResult(
       post_url=post_url,
@@ -46,11 +46,13 @@ def ingest_link(post_url: str, *, refresh: bool = False) -> IngestResult:
       error_message=str(exc),
     )
 
-  if not refresh and has_post(platform, post_id):
+  global_post_id = make_post_id(platform, native_post_id)
+
+  if not refresh and has_post(platform, native_post_id):
     return IngestResult(
       post_url=post_url,
       status="skipped",
-      post_id=post_id,
+      post_id=global_post_id,
     )
 
   try:
@@ -59,7 +61,7 @@ def ingest_link(post_url: str, *, refresh: bool = False) -> IngestResult:
     return IngestResult(
       post_url=post_url,
       status="error",
-      post_id=post_id,
+      post_id=global_post_id,
       error_message=str(exc),
     )
 

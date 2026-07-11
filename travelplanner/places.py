@@ -9,15 +9,8 @@ from pathlib import Path
 from typing import Any
 
 from travelplanner.clients import geocoder
-from travelplanner.models import (
-  CanonicalPlace,
-  ExtractedPlace,
-  Place,
-  PlaceLocation,
-  PlaceMention,
-  Platform,
-  SavedPost,
-)
+from travelplanner.models import Place, PlaceLocation, Platform, SavedPost
+from travelplanner.place_hints import ExtractedPlace, PlaceMention, PlatformPlace
 from travelplanner.store import DEFAULT_DATA_DIR, delete_all_posts, load_all_posts, save_post
 
 DEFAULT_PLACES_DIR = Path("data/places")
@@ -286,7 +279,7 @@ COUNTRY_CODE_TO_CONTINENT: dict[str, str] = {
 # --- Step 1: normalize ------------------------------------------------------
 
 
-def _mention_from_place(place: Place) -> PlaceMention:
+def _mention_from_place(place: PlatformPlace) -> PlaceMention:
   return PlaceMention(
     place_name=place.place_name,
     city=place.city,
@@ -485,11 +478,11 @@ def _place_path(place_id: str, data_dir: Path) -> Path:
   return data_dir / f"{place_id}.json"
 
 
-def place_to_dict(place: CanonicalPlace) -> dict:
+def place_to_dict(place: Place) -> dict:
   return asdict(place)
 
 
-def _place_from_dict(data: dict) -> CanonicalPlace:
+def _place_from_dict(data: dict) -> Place:
   location_data = data.get("location", {})
   location = PlaceLocation(
     display_name=location_data["display_name"],
@@ -504,7 +497,7 @@ def _place_from_dict(data: dict) -> CanonicalPlace:
     osm_class=location_data.get("osm_class"),
     osm_type=location_data.get("osm_type"),
   )
-  return CanonicalPlace(
+  return Place(
     place_id=data["place_id"],
     display_name=data["display_name"],
     location=location,
@@ -517,7 +510,7 @@ def _place_from_dict(data: dict) -> CanonicalPlace:
   )
 
 
-def save_place(place: CanonicalPlace, data_dir: Path = DEFAULT_PLACES_DIR) -> Path:
+def save_place(place: Place, data_dir: Path = DEFAULT_PLACES_DIR) -> Path:
   path = _place_path(place.place_id, data_dir)
   path.parent.mkdir(parents=True, exist_ok=True)
   with path.open("w", encoding="utf-8") as handle:
@@ -526,7 +519,7 @@ def save_place(place: CanonicalPlace, data_dir: Path = DEFAULT_PLACES_DIR) -> Pa
   return path
 
 
-def load_place(place_id: str, data_dir: Path = DEFAULT_PLACES_DIR) -> CanonicalPlace | None:
+def load_place(place_id: str, data_dir: Path = DEFAULT_PLACES_DIR) -> Place | None:
   path = _place_path(place_id, data_dir)
   if not path.exists():
     return None
@@ -534,7 +527,7 @@ def load_place(place_id: str, data_dir: Path = DEFAULT_PLACES_DIR) -> CanonicalP
     return _place_from_dict(json.load(handle))
 
 
-def load_all_places(data_dir: Path = DEFAULT_PLACES_DIR) -> list[CanonicalPlace]:
+def load_all_places(data_dir: Path = DEFAULT_PLACES_DIR) -> list[Place]:
   if not data_dir.exists():
     return []
   places = []
@@ -587,7 +580,7 @@ def list_places(
   roots_only: bool = False,
   parent_place_id: str | None = None,
   data_dir: Path = DEFAULT_PLACES_DIR,
-) -> list[CanonicalPlace]:
+) -> list[Place]:
   places = load_all_places(data_dir=data_dir)
   if roots_only:
     places = [place for place in places if place.parent_place_id is None]
@@ -619,7 +612,7 @@ def _haversine_meters(lat1: float, lon1: float, lat2: float, lon2: float) -> flo
   return 2 * earth_radius_meters * math.asin(math.sqrt(a))
 
 
-def _find_near_duplicate(location: PlaceLocation, data_dir: Path) -> CanonicalPlace | None:
+def _find_near_duplicate(location: PlaceLocation, data_dir: Path) -> Place | None:
   if location.latitude is None or location.longitude is None:
     return None
   for place in load_all_places(data_dir=data_dir):
@@ -634,14 +627,18 @@ def _find_near_duplicate(location: PlaceLocation, data_dir: Path) -> CanonicalPl
   return None
 
 
-def _find_existing_place(key: str, location: PlaceLocation, data_dir: Path) -> CanonicalPlace | None:
+def _find_existing_place(key: str, location: PlaceLocation, data_dir: Path) -> Place | None:
   existing = load_place(key, data_dir=data_dir)
   if existing is not None:
     return existing
   return _find_near_duplicate(location, data_dir)
 
 
-def _merge_place(existing: CanonicalPlace, mention: PlaceMention, source_post_id: str) -> CanonicalPlace:
+def _merge_place(
+  existing: Place,
+  mention: PlaceMention,
+  source_post_id: str | None,
+) -> Place:
   aliases = list(existing.aliases)
   if mention.place_name != existing.display_name and mention.place_name not in aliases:
     aliases.append(mention.place_name)
@@ -658,7 +655,7 @@ def _merge_place(existing: CanonicalPlace, mention: PlaceMention, source_post_id
   tags = tuple(sorted(set(existing.tags) | set(mention.tags)))
 
   source_post_ids = existing.source_post_ids
-  if source_post_id not in source_post_ids:
+  if source_post_id and source_post_id not in source_post_ids:
     source_post_ids = (*source_post_ids, source_post_id)
 
   return replace(
@@ -671,9 +668,14 @@ def _merge_place(existing: CanonicalPlace, mention: PlaceMention, source_post_id
   )
 
 
-def _new_place(place_id: str, mention: PlaceMention, location: PlaceLocation, source_post_id: str) -> CanonicalPlace:
+def _new_place(
+  place_id: str,
+  mention: PlaceMention,
+  location: PlaceLocation,
+  source_post_id: str | None,
+) -> Place:
   aliases = () if mention.place_name == location.display_name else (mention.place_name,)
-  return CanonicalPlace(
+  return Place(
     place_id=place_id,
     display_name=location.display_name,
     location=location,
@@ -681,14 +683,14 @@ def _new_place(place_id: str, mention: PlaceMention, location: PlaceLocation, so
     tags=tuple(sorted(set(mention.tags))),
     details=(mention.details,) if mention.details else (),
     tips=tuple(dict.fromkeys(mention.tips)),
-    source_post_ids=(source_post_id,),
+    source_post_ids=(source_post_id,) if source_post_id else (),
   )
 
 
 def upsert_place(
   mention: PlaceMention,
   location: PlaceLocation,
-  source_post_id: str,
+  source_post_id: str | None = None,
   data_dir: Path = DEFAULT_PLACES_DIR,
 ) -> str:
   key = place_key(location)
@@ -702,6 +704,23 @@ def upsert_place(
   return place.place_id
 
 
+def unlink_post_from_places(post_id: str, data_dir: Path = DEFAULT_PLACES_DIR) -> int:
+  """Remove a post FK from every place's source_post_ids. Returns places updated."""
+  updated = 0
+  for place in load_all_places(data_dir=data_dir):
+    if post_id not in place.source_post_ids:
+      continue
+    save_place(
+      replace(
+        place,
+        source_post_ids=tuple(pid for pid in place.source_post_ids if pid != post_id),
+      ),
+      data_dir,
+    )
+    updated += 1
+  return updated
+
+
 # --- Orchestration -----------------------------------------------------------
 
 
@@ -712,7 +731,7 @@ def process_post_places(
 ) -> tuple[str, ...]:
   """Normalize -> locate -> resolve/upsert every place mention on a post.
   Never raises: a mention that fails to geocode is skipped, not fatal."""
-  source_post_id = f"{post.platform.value}:{post.post_id}"
+  source_post_id = post.post_id
   place_ids: list[str] = []
 
   for mention in mentions_from_post(post):
@@ -737,6 +756,7 @@ def reprocess_all_places(
   *,
   posts_data_dir: Path = DEFAULT_DATA_DIR,
   places_data_dir: Path = DEFAULT_PLACES_DIR,
+  visits_data_dir: Path | None = None,
 ) -> None:
   """Batch backfill: re-run place processing on saved posts without
   re-fetching links. A full run (no platform filter) clears the place
@@ -760,6 +780,9 @@ def reprocess_all_places(
   try:
     from travelplanner.visits import DEFAULT_VISITS_DIR, relink_visits
 
-    relink_visits(visits_data_dir=DEFAULT_VISITS_DIR, places_data_dir=places_data_dir)
+    relink_visits(
+      visits_data_dir=DEFAULT_VISITS_DIR if visits_data_dir is None else visits_data_dir,
+      places_data_dir=places_data_dir,
+    )
   except Exception:
     pass

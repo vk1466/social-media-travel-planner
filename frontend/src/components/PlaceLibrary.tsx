@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, lazy, Suspense } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
-import { fetchPlaces, fetchTags, fetchVisitedPlaceIds, type CanonicalPlace } from "../api";
+import { fetchPlaces, fetchTags, fetchVisitedPlaceIds, type Place } from "../api";
 import { PlaceCard } from "./PlaceCard";
 import { PlaceDetail } from "./PlaceDetail";
 
@@ -21,8 +21,8 @@ function distinctSorted(values: (string | null | undefined)[]): string[] {
 }
 
 function countBy(
-  places: CanonicalPlace[],
-  keyFn: (place: CanonicalPlace) => string | null | undefined,
+  places: Place[],
+  keyFn: (place: Place) => string | null | undefined,
 ): DestinationTile[] {
   const counts = new Map<string, number>();
   for (const place of places) {
@@ -43,7 +43,7 @@ export function PlaceLibrary({ refreshToken = 0, onNavigateToPost }: PlaceLibrar
   const { placeId: routePlaceId } = useParams();
   const navigate = useNavigate();
 
-  const [allPlaces, setAllPlaces] = useState<CanonicalPlace[]>([]);
+  const [allPlaces, setAllPlaces] = useState<Place[]>([]);
   const [visitedPlaceIds, setVisitedPlaceIds] = useState<Set<string>>(new Set());
   const [tags, setTags] = useState<string[]>([]);
   const [continentScope, setContinentScope] = useState<string | null>(null);
@@ -55,7 +55,7 @@ export function PlaceLibrary({ refreshToken = 0, onNavigateToPost }: PlaceLibrar
   const [mobilePane, setMobilePane] = useState<MobilePane>("browse");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedPlace, setSelectedPlace] = useState<CanonicalPlace | null>(null);
+  const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
 
   const hasSearch = searchQuery.trim().length > 0;
   const hasTagFilter = tagFilter !== "all";
@@ -103,7 +103,7 @@ export function PlaceLibrary({ refreshToken = 0, onNavigateToPost }: PlaceLibrar
   );
 
   const childrenByParent = useMemo(() => {
-    const map = new Map<string, CanonicalPlace[]>();
+    const map = new Map<string, Place[]>();
     for (const place of allPlaces) {
       if (!place.parent_place_id) {
         continue;
@@ -217,7 +217,7 @@ export function PlaceLibrary({ refreshToken = 0, onNavigateToPost }: PlaceLibrar
     }
   }, [routePlaceId, rootCatalog, allPlaces]);
 
-  const openPlace = (place: CanonicalPlace) => {
+  const openPlace = (place: Place) => {
     setSelectedPlace(place);
     navigate(`/places/${place.place_id}`);
   };

@@ -7,7 +7,7 @@ from travelplanner.extract import (
   fetch_places_from_reel,
   format_reel_bundle,
 )
-from travelplanner.models import ExtractedPlace, Place
+from travelplanner.place_hints import ExtractedPlace, PlatformPlace
 
 
 def test_reel_extract_prompt_includes_geocoding_rules() -> None:
@@ -121,7 +121,7 @@ def test_format_reel_bundle_includes_all_sources() -> None:
     caption="Day 1: Alfama",
     hashtags=("lisbon", "portugal"),
     top_comments=("The pastel de nata spot is Manteigaria!",),
-    location_tag=Place(
+    location_tag=PlatformPlace(
       place_name="Alfama",
       city="Lisbon",
       country="Portugal",

@@ -4,14 +4,8 @@ import json
 
 from travelplanner.extract import fetch_places_from_text
 from travelplanner.hierarchy import choose_group_name, link_places
-from travelplanner.models import (
-  ExtractedPlace,
-  Place,
-  PlaceLocation,
-  PlaceMention,
-  Platform,
-  SavedPost,
-)
+from travelplanner.models import PlaceLocation, Platform, SavedPost, make_post_id
+from travelplanner.place_hints import ExtractedPlace, PlaceMention, PlatformPlace
 from travelplanner.places import (
   is_visitable_place,
   load_all_places,
@@ -27,11 +21,12 @@ def _sample_post(
   places=(),
   extracted_places=(),
   place_ids=(),
-  post_id: str = "post1",
+  post_id: str = "instagram:post1",
 ) -> SavedPost:
+  native_id = post_id.split(":", 1)[-1]
   return SavedPost(
-    post_id=post_id,
-    post_url=f"https://www.instagram.com/p/{post_id}/",
+    post_id=post_id if ":" in post_id else make_post_id(Platform.INSTAGRAM, post_id),
+    post_url=f"https://www.instagram.com/p/{native_id}/",
     platform=Platform.INSTAGRAM,
     media_kind="reel",
     caption="a trip",
@@ -193,10 +188,10 @@ def test_link_places_ig_tag_anchor_clusters_post_places(monkeypatch, tmp_path) -
   )
 
   post = _sample_post(
-    places=(Place(place_name="Lake Tahoe", latitude=39.0968, longitude=-120.0324),),
+    places=(PlatformPlace(place_name="Lake Tahoe", latitude=39.0968, longitude=-120.0324),),
     extracted_places=(ExtractedPlace(place_name="Emerald Bay", parent_place_name="Lake Tahoe"),),
     place_ids=(lake, emerald),
-    post_id="post1",
+    post_id="instagram:post1",
   )
   save_post(post, data_dir=posts_dir)
 
@@ -250,7 +245,7 @@ def test_link_places_parent_hint_wins_over_shorter_child_name(monkeypatch, tmp_p
       ),
     ),
     place_ids=(park, trail),
-    post_id="post1",
+    post_id="instagram:post1",
   )
   save_post(post, data_dir=posts_dir)
 
@@ -282,14 +277,14 @@ def test_link_places_cross_post_name_proximity_cluster(monkeypatch, tmp_path) ->
   )
 
   save_post(
-    _sample_post(extracted_places=(ExtractedPlace(place_name="Crater Lake"),), place_ids=(crater,), post_id="postA"),
+    _sample_post(extracted_places=(ExtractedPlace(place_name="Crater Lake"),), place_ids=(crater,), post_id="instagram:postA"),
     data_dir=posts_dir,
   )
   save_post(
     _sample_post(
       extracted_places=(ExtractedPlace(place_name="Crater Lake Parkway"),),
       place_ids=(parkway,),
-      post_id="postB",
+      post_id="instagram:postB",
     ),
     data_dir=posts_dir,
   )
@@ -323,9 +318,9 @@ def test_link_places_renames_root_when_group_name_has_no_member_match(monkeypatc
 
   save_post(
     _sample_post(
-      places=(Place(place_name="Crater Lake Parkway"),),
+      places=(PlatformPlace(place_name="Crater Lake Parkway"),),
       place_ids=(parkway, rim),
-      post_id="postB",
+      post_id="instagram:postB",
     ),
     data_dir=posts_dir,
   )
@@ -357,8 +352,8 @@ def test_link_places_is_idempotent(monkeypatch, tmp_path) -> None:
     "instagram:postB",
     data_dir=places_dir,
   )
-  save_post(_sample_post(place_ids=(crater,), post_id="postA"), data_dir=posts_dir)
-  save_post(_sample_post(place_ids=(parkway,), post_id="postB"), data_dir=posts_dir)
+  save_post(_sample_post(place_ids=(crater,), post_id="instagram:postA"), data_dir=posts_dir)
+  save_post(_sample_post(place_ids=(parkway,), post_id="instagram:postB"), data_dir=posts_dir)
 
   monkeypatch.setattr("travelplanner.hierarchy.choose_group_name", lambda names: None)
   link_places(posts_data_dir=posts_dir, places_data_dir=places_dir)

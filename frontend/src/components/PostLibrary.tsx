@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
-import { deletePost, type CanonicalPlace, type SavedPost } from "../api";
+import { deletePost, nativePostId, type Place, type SavedPost } from "../api";
 import { PostCard } from "./PostCard";
 import { PostDetail } from "./PostDetail";
 
 interface PostLibraryProps {
   posts: SavedPost[];
-  places: CanonicalPlace[];
+  places: Place[];
   onDeleted: () => void;
   onNavigateToPlace?: (placeId: string) => void;
 }
@@ -35,7 +35,7 @@ export function PostLibrary({ posts, places, onDeleted, onNavigateToPlace }: Pos
       return;
     }
     const match = posts.find(
-      (post) => post.platform === routePlatform && post.post_id === routePostId,
+      (post) => post.platform === routePlatform && nativePostId(post) === routePostId,
     );
     setSelectedPost(match ?? null);
   }, [routePlatform, routePostId, posts]);
@@ -55,7 +55,7 @@ export function PostLibrary({ posts, places, onDeleted, onNavigateToPlace }: Pos
 
   const openPost = (post: SavedPost) => {
     setSelectedPost(post);
-    navigate(`/posts/${post.platform}/${post.post_id}`);
+    navigate(`/posts/${post.platform}/${nativePostId(post)}`);
   };
 
   const closePost = () => {
@@ -90,13 +90,13 @@ export function PostLibrary({ posts, places, onDeleted, onNavigateToPlace }: Pos
         <div className="post-grid">
           {filtered.map((post) => (
             <PostCard
-              key={`${post.platform}-${post.post_id}`}
+              key={post.post_id}
               post={post}
               placeNamesById={placeNamesById}
               onSelect={openPost}
               onNavigateToPlace={onNavigateToPlace}
               onDelete={async () => {
-                await deletePost(post.platform, post.post_id);
+                await deletePost(post.platform, nativePostId(post));
                 if (
                   selectedPost?.platform === post.platform &&
                   selectedPost.post_id === post.post_id
@@ -116,7 +116,7 @@ export function PostLibrary({ posts, places, onDeleted, onNavigateToPlace }: Pos
           onClose={closePost}
           onNavigateToPlace={onNavigateToPlace}
           onDelete={async () => {
-            await deletePost(selectedPost.platform, selectedPost.post_id);
+            await deletePost(selectedPost.platform, nativePostId(selectedPost));
             closePost();
             onDeleted();
           }}

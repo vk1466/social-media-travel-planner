@@ -5,7 +5,7 @@ import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
 import markerIcon from "leaflet/dist/images/marker-icon.png";
 import markerShadow from "leaflet/dist/images/marker-shadow.png";
 
-import type { CanonicalPlace } from "../api";
+import type { Place } from "../api";
 import { mappablePlaces } from "../placeMapUtils";
 
 import "leaflet/dist/leaflet.css";
@@ -33,13 +33,13 @@ const visitedIcon = L.divIcon({
   popupAnchor: [0, -12],
 });
 
-function locationLine(place: CanonicalPlace): string {
+function locationLine(place: Place): string {
   const { city, state_province: stateProvince, country } = place.location;
   return [city, stateProvince, country].filter(Boolean).join(", ");
 }
 
 interface FitBoundsProps {
-  places: CanonicalPlace[];
+  places: Place[];
 }
 
 function FitBounds({ places }: FitBoundsProps) {
@@ -83,10 +83,10 @@ function InvalidateSize() {
 }
 
 interface PlaceMapProps {
-  places: CanonicalPlace[];
+  places: Place[];
   visitedPlaceIds?: ReadonlySet<string> | string[];
   selectedPlaceId?: string | null;
-  onSelectPlace?: (place: CanonicalPlace) => void;
+  onSelectPlace?: (place: Place) => void;
   className?: string;
   height?: string;
   showCaption?: boolean;

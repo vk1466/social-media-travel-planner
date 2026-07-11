@@ -1,7 +1,8 @@
 from fastapi.testclient import TestClient
 
 from travelplanner import places, store, visits
-from travelplanner.models import PlaceLocation, PlaceMention, Platform, SavedPost
+from travelplanner.models import PlaceLocation, Platform, SavedPost
+from travelplanner.place_hints import PlaceMention
 from travelplanner.pipeline import IngestResult
 from travelplanner.store import save_post
 
@@ -19,7 +20,7 @@ def test_ingest_job_completes_and_lists_posts(monkeypatch, tmp_path) -> None:
   def fake_ingest(post_url: str, *, refresh: bool = False) -> IngestResult:
     shortcode = post_url.rstrip("/").split("/")[-1]
     post = SavedPost(
-      post_id=shortcode,
+      post_id=f"instagram:{shortcode}",
       post_url=post_url,
       platform=Platform.INSTAGRAM,
       media_kind="image",
@@ -27,7 +28,7 @@ def test_ingest_job_completes_and_lists_posts(monkeypatch, tmp_path) -> None:
       fetched_at="2026-07-06T21:15:04Z",
     )
     save_post(post, data_dir=tmp_path)
-    return IngestResult(post_url=post_url, status="saved", post_id=shortcode)
+    return IngestResult(post_url=post_url, status="saved", post_id=post.post_id)
 
   monkeypatch.setattr("server.app.ingest_link", fake_ingest)
   monkeypatch.setattr(
@@ -40,7 +41,9 @@ def test_ingest_job_completes_and_lists_posts(monkeypatch, tmp_path) -> None:
   )
   monkeypatch.setattr(
     "server.app.delete_post",
-    lambda platform, post_id: store.delete_post(platform, post_id, data_dir=tmp_path),
+    lambda platform, post_id: store.delete_post(
+      platform, post_id, data_dir=tmp_path, places_data_dir=tmp_path / "places"
+    ),
   )
 
   client = TestClient(app)
@@ -60,7 +63,7 @@ def test_ingest_job_completes_and_lists_posts(monkeypatch, tmp_path) -> None:
   posts = client.get("/api/posts")
   assert posts.status_code == 200
   assert len(posts.json()) == 1
-  assert posts.json()[0]["post_id"] == "api123"
+  assert posts.json()[0]["post_id"] == "instagram:api123"
 
 
 def test_get_job_not_found() -> None:
@@ -71,7 +74,7 @@ def test_get_job_not_found() -> None:
 
 def test_list_and_get_place(monkeypatch, tmp_path) -> None:
   post = SavedPost(
-    post_id="reelA",
+    post_id="instagram:reelA",
     post_url="https://www.instagram.com/reel/reelA/",
     platform=Platform.INSTAGRAM,
     media_kind="reel",
@@ -125,7 +128,7 @@ def test_list_and_get_place(monkeypatch, tmp_path) -> None:
   assert detail.status_code == 200
   body = detail.json()
   assert body["place"]["display_name"] == "Multnomah Falls"
-  assert body["source_posts"][0]["post_id"] == "reelA"
+  assert body["source_posts"][0]["post_id"] == "instagram:reelA"
   assert body["children"] == []
   assert body["parent"] is None
 

@@ -1,4 +1,4 @@
-export interface Place {
+export interface PlatformPlace {
   place_name: string;
   city?: string | null;
   country?: string | null;
@@ -18,6 +18,7 @@ export interface ExtractedPlace {
 }
 
 export interface SavedPost {
+  /** Globally unique primary key: `{platform}:{native_id}`. */
   post_id: string;
   post_url: string;
   platform: string;
@@ -29,12 +30,50 @@ export interface SavedPost {
   like_count?: number | null;
   comment_count?: number | null;
   top_comments: string[];
-  places: Place[];
+  places: PlatformPlace[];
   extracted_places: ExtractedPlace[];
+  /** Foreign keys → Place.place_id */
   place_ids: string[];
   thumbnail_url?: string | null;
   fetched_at?: string | null;
   reel_summary?: string | null;
+}
+
+/** Split a global post_id (`platform:native`) for API routes and navigation. */
+export function parsePostId(postId: string): { platform: string; nativeId: string } {
+  const separator = postId.indexOf(":");
+  if (separator <= 0 || separator === postId.length - 1) {
+    throw new Error(`Invalid post_id (expected platform:native): ${postId}`);
+  }
+  return {
+    platform: postId.slice(0, separator),
+    nativeId: postId.slice(separator + 1),
+  };
+}
+
+/**
+ * Resolve `/posts/{platform}/{nativeId}` segments from one source of truth.
+ * A global post_id owns both platform and native id; otherwise use the
+ * explicit platform with the native postId.
+ */
+export function postRouteParts(
+  platform: string,
+  postId: string,
+): { platform: string; nativeId: string } {
+  if (postId.includes(":")) {
+    return parsePostId(postId);
+  }
+  return { platform, nativeId: postId };
+}
+
+/** Native id segment used in `/api/posts/{platform}/{nativeId}` URLs. */
+export function nativePostId(post: Pick<SavedPost, "post_id" | "platform">): string {
+  try {
+    const parsed = parsePostId(post.post_id);
+    return parsed.nativeId;
+  } catch {
+    return post.post_id;
+  }
 }
 
 export interface PlaceLocation {
@@ -51,7 +90,7 @@ export interface PlaceLocation {
   osm_type?: string | null;
 }
 
-export interface CanonicalPlace {
+export interface Place {
   place_id: string;
   display_name: string;
   location: PlaceLocation;
@@ -64,10 +103,10 @@ export interface CanonicalPlace {
 }
 
 export interface PlaceDetail {
-  place: CanonicalPlace;
+  place: Place;
   source_posts: SavedPost[];
-  parent?: CanonicalPlace | null;
-  children: CanonicalPlace[];
+  parent?: Place | null;
+  children: Place[];
 }
 
 export type LinkStatus =
@@ -158,7 +197,7 @@ export interface PlaceFilters {
   parent_place_id?: string;
 }
 
-export async function fetchPlaces(filters: PlaceFilters = {}): Promise<CanonicalPlace[]> {
+export async function fetchPlaces(filters: PlaceFilters = {}): Promise<Place[]> {
   const params = new URLSearchParams();
   for (const [key, value] of Object.entries(filters)) {
     if (value === undefined || value === null || value === false || value === "") {
@@ -167,7 +206,7 @@ export async function fetchPlaces(filters: PlaceFilters = {}): Promise<Canonical
     params.set(key, String(value));
   }
   const query = params.toString();
-  return request<CanonicalPlace[]>(`/api/places${query ? `?${query}` : ""}`);
+  return request<Place[]>(`/api/places${query ? `?${query}` : ""}`);
 }
 
 export async function fetchPlaceDetail(placeId: string): Promise<PlaceDetail> {
@@ -190,7 +229,7 @@ export interface Visit {
 
 export interface VisitDetail {
   visit: Visit;
-  place?: CanonicalPlace | null;
+  place?: Place | null;
 }
 
 export interface VisitCreateInput {

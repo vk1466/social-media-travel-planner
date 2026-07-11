@@ -1,17 +1,17 @@
-import type { CanonicalPlace } from "../api";
+import type { Place } from "../api";
 
 interface PlaceCardProps {
-  place: CanonicalPlace;
-  children?: CanonicalPlace[];
-  onSelect: (place: CanonicalPlace) => void;
+  place: Place;
+  children?: Place[];
+  onSelect: (place: Place) => void;
 }
 
-function formatLocationLine(place: CanonicalPlace): string {
+function formatLocationLine(place: Place): string {
   const { city, state_province: stateProvince, country } = place.location;
   return [city, stateProvince, country].filter(Boolean).join(", ") || "Location unknown";
 }
 
-function uniquePostCount(place: CanonicalPlace, children: CanonicalPlace[]): number {
+function uniquePostCount(place: Place, children: Place[]): number {
   const ids = new Set(place.source_post_ids);
   for (const child of children) {
     for (const postId of child.source_post_ids) {

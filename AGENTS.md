@@ -8,12 +8,14 @@ Ingest social media travel inspiration and build itineraries.
 travelplanner/   core library — no CLI, no web code
   clients/       reusable API clients (EnsembleData, Supadata, geocoder)
   sources/       platform-specific fetchers (one file per platform)
-  models.py      SavedPost, Place, CanonicalPlace, TAGS — canonical record shapes
+  models.py      SavedPost, Place, Visit, TAGS — domain entities
+  place_hints.py internal pipeline shapes (PlatformPlace, ExtractedPlace, PlaceMention)
   links.py       URL detection and post ID extraction
   pipeline.py    orchestrator: route links → fetchers → place processing → store
   store.py       JSON-per-post persistence under data/posts/
-  extract.py       Supadata extract wrapper (shared: IG now, YT later)
+  extract.py     Supadata extract wrapper (shared: IG now, YT later)
   places.py      shared place pipeline: normalize → locate → resolve/upsert → load/list
+  visits.py      personal visit history against places
 server/          FastAPI backend — thin adapter over travelplanner
 frontend/        React + Vite UI — talks only to the API
 cli.py           batch link ingestion + place reprocessing entry point

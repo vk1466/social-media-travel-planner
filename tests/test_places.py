@@ -1,6 +1,7 @@
 from types import SimpleNamespace
 
-from travelplanner.models import ExtractedPlace, Place, PlaceLocation, PlaceMention, Platform, SavedPost
+from travelplanner.models import PlaceLocation, Platform, SavedPost
+from travelplanner.place_hints import ExtractedPlace, PlaceMention, PlatformPlace
 from travelplanner.places import (
   _geocode_queries,
   cleanup_all_data,
@@ -38,10 +39,11 @@ def _multnomah_falls_raw() -> dict:
   }
 
 
-def _sample_post(*, places=(), extracted_places=(), post_id: str = "post1") -> SavedPost:
+def _sample_post(*, places=(), extracted_places=(), post_id: str = "instagram:post1") -> SavedPost:
+  native_id = post_id.split(":", 1)[-1]
   return SavedPost(
-    post_id=post_id,
-    post_url=f"https://www.instagram.com/p/{post_id}/",
+    post_id=post_id if ":" in post_id else f"instagram:{post_id}",
+    post_url=f"https://www.instagram.com/p/{native_id}/",
     platform=Platform.INSTAGRAM,
     media_kind="reel",
     caption="a trip",
@@ -74,7 +76,7 @@ def test_place_key_builds_from_hierarchy() -> None:
 def test_mentions_from_post_normalizes_both_hint_shapes() -> None:
   post = _sample_post(
     places=(
-      Place(place_name="Alfama", city="Lisbon", country="Portugal", latitude=38.7131, longitude=-9.1279),
+      PlatformPlace(place_name="Alfama", city="Lisbon", country="Portugal", latitude=38.7131, longitude=-9.1279),
     ),
     extracted_places=(
       ExtractedPlace(
@@ -426,7 +428,7 @@ def test_upsert_place_merges_near_duplicate_coordinates_without_shared_key(tmp_p
 
 
 def test_process_post_places_skips_mentions_that_fail_to_locate(monkeypatch, tmp_path) -> None:
-  post = _sample_post(places=(Place(place_name="Nowhereville"),))
+  post = _sample_post(places=(PlatformPlace(place_name="Nowhereville"),))
   monkeypatch.setattr("travelplanner.places.locate_mention", lambda mention: None)
 
   place_ids = process_post_places(post, places_data_dir=tmp_path)
@@ -532,7 +534,7 @@ def test_reprocess_all_places_rebuilds_library_and_updates_posts(monkeypatch, tm
   posts_dir = tmp_path / "posts"
   places_dir = tmp_path / "places"
 
-  post = _sample_post(extracted_places=(ExtractedPlace(place_name="Multnomah Falls"),), post_id="reelA")
+  post = _sample_post(extracted_places=(ExtractedPlace(place_name="Multnomah Falls"),), post_id="instagram:reelA")
   save_post(post, data_dir=posts_dir)
 
   location = PlaceLocation(
@@ -545,7 +547,11 @@ def test_reprocess_all_places_rebuilds_library_and_updates_posts(monkeypatch, tm
   )
   monkeypatch.setattr("travelplanner.places.locate_mention", lambda mention: location)
 
-  reprocess_all_places(posts_data_dir=posts_dir, places_data_dir=places_dir)
+  reprocess_all_places(
+    posts_data_dir=posts_dir,
+    places_data_dir=places_dir,
+    visits_data_dir=tmp_path / "visits",
+  )
 
   places = load_all_places(data_dir=places_dir)
   assert len(places) == 1
@@ -561,8 +567,8 @@ def test_delete_all_posts_and_places(tmp_path) -> None:
   posts_dir = tmp_path / "posts"
   places_dir = tmp_path / "places"
 
-  save_post(_sample_post(post_id="a"), data_dir=posts_dir)
-  save_post(_sample_post(post_id="b"), data_dir=posts_dir)
+  save_post(_sample_post(post_id="instagram:a"), data_dir=posts_dir)
+  save_post(_sample_post(post_id="instagram:b"), data_dir=posts_dir)
 
   location = PlaceLocation(
     display_name="Multnomah Falls",

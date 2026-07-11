@@ -4,7 +4,8 @@ import json
 from dataclasses import dataclass
 from typing import Any
 
-from travelplanner.models import TAGS, ExtractedPlace, Place
+from travelplanner.models import TAGS
+from travelplanner.place_hints import ExtractedPlace, PlatformPlace
 
 PLACE_EXTRACT_SCHEMA: dict[str, Any] = {
   "type": "object",
@@ -128,7 +129,7 @@ class ReelBundle:
   caption: str
   hashtags: tuple[str, ...] = ()
   top_comments: tuple[str, ...] = ()
-  location_tag: Place | None = None
+  location_tag: PlatformPlace | None = None
   transcript: str | None = None
 
 

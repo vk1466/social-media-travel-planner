@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum
 
+from travelplanner.place_hints import ExtractedPlace, PlatformPlace
+
 # Controlled vocabulary for place tags. The LLM extraction picks from this list
 # (multi-select); grow it deliberately to avoid drift (e.g. "hike" vs "trail").
 TAGS: tuple[str, ...] = (
@@ -31,29 +33,35 @@ class Platform(str, Enum):
   REDDIT = "reddit"
 
 
-@dataclass(frozen=True)
-class Place:
-  place_name: str
-  city: str | None = None
-  country: str | None = None
-  latitude: float | None = None
-  longitude: float | None = None
+def make_post_id(platform: Platform, native_post_id: str) -> str:
+  """Build the globally unique post primary key: `{platform}:{native_id}`."""
+  native = native_post_id.strip()
+  if not native:
+    raise ValueError("native_post_id is required")
+  prefix = f"{platform.value}:"
+  if native.startswith(prefix):
+    return native
+  if ":" in native:
+    raise ValueError(f"native_post_id must not include a platform prefix: {native_post_id}")
+  return f"{prefix}{native}"
 
 
-@dataclass(frozen=True)
-class ExtractedPlace:
-  place_name: str
-  city: str | None = None
-  country: str | None = None
-  state_province: str | None = None
-  details: str | None = None
-  tips: tuple[str, ...] = ()
-  tags: tuple[str, ...] = ()
-  parent_place_name: str | None = None
+def parse_post_id(post_id: str) -> tuple[Platform, str]:
+  """Split a global post_id into `(platform, native_id)`."""
+  platform_value, separator, native_id = post_id.partition(":")
+  if not separator or not platform_value or not native_id:
+    raise ValueError(f"Invalid post_id (expected platform:native): {post_id}")
+  return Platform(platform_value), native_id
 
 
 @dataclass(frozen=True)
 class SavedPost:
+  """Ingested social post — the Post domain entity.
+
+  `post_id` is the globally unique primary key (`platform:native_id`), suitable
+  as a DynamoDB partition key. `place_ids` references Place.place_id values.
+  """
+
   post_id: str
   post_url: str
   platform: Platform
@@ -65,7 +73,7 @@ class SavedPost:
   like_count: int | None = None
   comment_count: int | None = None
   top_comments: tuple[str, ...] = ()
-  places: tuple[Place, ...] = ()
+  places: tuple[PlatformPlace, ...] = ()
   extracted_places: tuple[ExtractedPlace, ...] = ()
   place_ids: tuple[str, ...] = ()
   thumbnail_url: str | None = None
@@ -74,27 +82,8 @@ class SavedPost:
 
 
 @dataclass(frozen=True)
-class PlaceMention:
-  """One raw hint (from `Place` or `ExtractedPlace`), normalized to a common
-  shape that the place pipeline can geocode and merge, regardless of which
-  fetcher or extraction step produced it."""
-
-  place_name: str
-  city: str | None = None
-  country: str | None = None
-  state_province: str | None = None
-  latitude: float | None = None
-  longitude: float | None = None
-  details: str | None = None
-  tips: tuple[str, ...] = ()
-  tags: tuple[str, ...] = ()
-
-
-@dataclass(frozen=True)
 class PlaceLocation:
-  """Canonical geography for a place, resolved via the geocoder client.
-  `continent` is derived from `country_code` via a static map — geocoders
-  rarely return it directly."""
+  """Geography nested on a Place (value object, not a standalone entity)."""
 
   display_name: str
   continent: str | None = None
@@ -110,8 +99,12 @@ class PlaceLocation:
 
 
 @dataclass(frozen=True)
-class CanonicalPlace:
-  """One real-world place in the travel library, deduplicated across posts."""
+class Place:
+  """One real-world place in the travel library, deduplicated across posts.
+
+  `source_post_ids` references SavedPost.post_id (global ids).
+  `parent_place_id` references another Place.place_id.
+  """
 
   place_id: str
   display_name: str
@@ -126,7 +119,10 @@ class CanonicalPlace:
 
 @dataclass(frozen=True)
 class Visit:
-  """One personal trip to a place. Places stay geography; visits hold when."""
+  """One personal trip to a place. Places stay geography; visits hold when.
+
+  `place_id` references Place.place_id. `place_name` is a denormalized snapshot.
+  """
 
   visit_id: str
   place_id: str

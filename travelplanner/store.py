@@ -4,13 +4,34 @@ import json
 from dataclasses import asdict
 from pathlib import Path
 
-from travelplanner.models import ExtractedPlace, Place, Platform, SavedPost
+from travelplanner.models import Platform, SavedPost, make_post_id, parse_post_id
+from travelplanner.place_hints import ExtractedPlace, PlatformPlace
 
 DEFAULT_DATA_DIR = Path("data/posts")
 
 
-def _post_path(platform: Platform, post_id: str, data_dir: Path) -> Path:
-  return data_dir / platform.value / f"{post_id}.json"
+def _native_post_id(platform: Platform, post_id: str) -> str | None:
+  """Accept a global or native post_id and return the filesystem native id.
+
+  Returns None when a global id is invalid or its platform does not match
+  the explicit platform argument (so lookup helpers can return False/None).
+  """
+  if ":" not in post_id:
+    return post_id
+  try:
+    parsed_platform, native_id = parse_post_id(post_id)
+  except ValueError:
+    return None
+  if parsed_platform != platform:
+    return None
+  return native_id
+
+
+def _post_path(platform: Platform, post_id: str, data_dir: Path) -> Path | None:
+  native_id = _native_post_id(platform, post_id)
+  if native_id is None:
+    return None
+  return data_dir / platform.value / f"{native_id}.json"
 
 
 def _extracted_place_from_dict(data: dict) -> ExtractedPlace:
@@ -26,8 +47,8 @@ def _extracted_place_from_dict(data: dict) -> ExtractedPlace:
   )
 
 
-def _place_from_dict(data: dict) -> Place:
-  return Place(
+def _place_from_dict(data: dict) -> PlatformPlace:
+  return PlatformPlace(
     place_name=data["place_name"],
     city=data.get("city"),
     country=data.get("country"),
@@ -43,10 +64,17 @@ def post_to_dict(post: SavedPost) -> dict:
 
 
 def _post_from_dict(data: dict) -> SavedPost:
+  platform = Platform(data["platform"])
+  raw_post_id = data["post_id"]
+  post_id = (
+    raw_post_id
+    if ":" in raw_post_id
+    else make_post_id(platform, raw_post_id)
+  )
   return SavedPost(
-    post_id=data["post_id"],
+    post_id=post_id,
     post_url=data["post_url"],
-    platform=Platform(data["platform"]),
+    platform=platform,
     media_kind=data["media_kind"],
     caption=data["caption"],
     hashtags=tuple(data.get("hashtags", [])),
@@ -67,7 +95,8 @@ def _post_from_dict(data: dict) -> SavedPost:
 
 
 def save_post(post: SavedPost, data_dir: Path = DEFAULT_DATA_DIR) -> Path:
-  path = _post_path(post.platform, post.post_id, data_dir)
+  _, native_id = parse_post_id(post.post_id)
+  path = data_dir / post.platform.value / f"{native_id}.json"
   path.parent.mkdir(parents=True, exist_ok=True)
   with path.open("w", encoding="utf-8") as handle:
     json.dump(post_to_dict(post), handle, indent=2, ensure_ascii=False)
@@ -80,7 +109,8 @@ def has_post(
   post_id: str,
   data_dir: Path = DEFAULT_DATA_DIR,
 ) -> bool:
-  return _post_path(platform, post_id, data_dir).exists()
+  path = _post_path(platform, post_id, data_dir)
+  return path is not None and path.exists()
 
 
 def load_post(
@@ -89,7 +119,7 @@ def load_post(
   data_dir: Path = DEFAULT_DATA_DIR,
 ) -> SavedPost | None:
   path = _post_path(platform, post_id, data_dir)
-  if not path.exists():
+  if path is None or not path.exists():
     return None
   with path.open(encoding="utf-8") as handle:
     return _post_from_dict(json.load(handle))
@@ -120,11 +150,29 @@ def delete_post(
   platform: Platform,
   post_id: str,
   data_dir: Path = DEFAULT_DATA_DIR,
+  *,
+  places_data_dir: Path | None = None,
 ) -> bool:
   path = _post_path(platform, post_id, data_dir)
-  if not path.exists():
+  if path is None or not path.exists():
     return False
+
+  global_post_id = post_id if ":" in post_id else make_post_id(platform, post_id)
   path.unlink()
+
+  if places_data_dir is not None:
+    from travelplanner.places import unlink_post_from_places
+
+    unlink_post_from_places(global_post_id, data_dir=places_data_dir)
+  else:
+    # Default place library — keep Post↔Place FK lists in sync on delete.
+    try:
+      from travelplanner.places import DEFAULT_PLACES_DIR, unlink_post_from_places
+
+      unlink_post_from_places(global_post_id, data_dir=DEFAULT_PLACES_DIR)
+    except Exception:
+      pass
+
   return True
 
 

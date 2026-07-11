@@ -9,7 +9,8 @@ from travelplanner.clients.ensembledata import fetch_post_info_and_comments
 from travelplanner.clients.supadata import fetch_transcript
 from travelplanner.extract import ReelBundle
 from travelplanner.links import extract_instagram_shortcode
-from travelplanner.models import Place, Platform, SavedPost
+from travelplanner.models import Platform, SavedPost, make_post_id
+from travelplanner.place_hints import PlatformPlace
 
 HASHTAG_PATTERN = re.compile(r"#(\w+)")
 TOP_COMMENT_LIMIT = 10
@@ -98,7 +99,7 @@ def _extract_top_comments(raw: dict[str, Any]) -> tuple[str, ...]:
   return tuple(deduped)
 
 
-def _extract_places(raw: dict[str, Any]) -> tuple[Place, ...]:
+def _extract_places(raw: dict[str, Any]) -> tuple[PlatformPlace, ...]:
   location = raw.get("location")
   if not location:
     return ()
@@ -113,7 +114,7 @@ def _extract_places(raw: dict[str, Any]) -> tuple[Place, ...]:
   longitude = location.get("lng") or location.get("longitude")
 
   return (
-    Place(
+    PlatformPlace(
       place_name=str(place_name),
       city=str(city) if city else None,
       country=str(country) if country else None,
@@ -157,7 +158,7 @@ def _canonical_media_url(shortcode: str, media_kind: str) -> str:
   return f"https://www.instagram.com/p/{shortcode}/"
 
 
-def _location_tag(places: tuple[Place, ...]) -> Place | None:
+def _location_tag(places: tuple[PlatformPlace, ...]) -> PlatformPlace | None:
   return places[0] if places else None
 
 
@@ -183,7 +184,7 @@ def fetch_instagram_post(post_url: str) -> SavedPost:
   extracted_places = extract.fetch_places_from_reel(bundle)
 
   return SavedPost(
-    post_id=shortcode,
+    post_id=make_post_id(Platform.INSTAGRAM, shortcode),
     post_url=post_url,
     platform=Platform.INSTAGRAM,
     extracted_places=extracted_places.places,

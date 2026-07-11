@@ -3,7 +3,7 @@ from __future__ import annotations
 from fastapi import BackgroundTasks, FastAPI, HTTPException, Query, Response
 from fastapi.middleware.cors import CORSMiddleware
 
-from travelplanner.models import TAGS, CanonicalPlace, Platform, SavedPost, Visit
+from travelplanner.models import TAGS, Place, Platform, SavedPost, Visit, parse_post_id
 from travelplanner.pipeline import ingest_link
 from travelplanner.hierarchy import link_places
 from travelplanner.places import cleanup_all_data, list_places, load_place, place_to_dict, reprocess_all_places
@@ -20,7 +20,7 @@ from travelplanner.visits import (
 from server.jobs import job_store
 from server.media_proxy import fetch_proxied_media
 from server.schemas import (
-  CanonicalPlaceSchema,
+  PlaceSchema,
   ErrorResponse,
   IngestRequest,
   IngestResponse,
@@ -63,8 +63,8 @@ def _post_to_schema(post: SavedPost) -> SavedPostSchema:
   return SavedPostSchema(**post_to_dict(post))
 
 
-def _place_to_schema(place: CanonicalPlace) -> CanonicalPlaceSchema:
-  return CanonicalPlaceSchema(**place_to_dict(place))
+def _place_to_schema(place: Place) -> PlaceSchema:
+  return PlaceSchema(**place_to_dict(place))
 
 
 def _visit_to_schema(visit: Visit) -> VisitSchema:
@@ -223,7 +223,7 @@ def list_tags() -> list[str]:
   return list(TAGS)
 
 
-@app.get("/api/places", response_model=list[CanonicalPlaceSchema])
+@app.get("/api/places", response_model=list[PlaceSchema])
 def list_all_places(
   continent: str | None = Query(default=None),
   country: str | None = Query(default=None),
@@ -232,7 +232,7 @@ def list_all_places(
   tag: str | None = Query(default=None),
   roots_only: bool = Query(default=False),
   parent_place_id: str | None = Query(default=None),
-) -> list[CanonicalPlaceSchema]:
+) -> list[PlaceSchema]:
   places = list_places(
     continent=continent,
     country=country,
@@ -257,12 +257,11 @@ def get_place(place_id: str) -> PlaceDetailSchema:
 
   source_posts: list[SavedPostSchema] = []
   for source_post_id in place.source_post_ids:
-    platform_value, _, post_id = source_post_id.partition(":")
     try:
-      platform = Platform(platform_value)
+      platform, native_post_id = parse_post_id(source_post_id)
     except ValueError:
       continue
-    post = load_post(platform, post_id)
+    post = load_post(platform, native_post_id)
     if post is not None:
       source_posts.append(_post_to_schema(post))
 

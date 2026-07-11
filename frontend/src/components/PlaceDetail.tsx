@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, lazy, Suspense } from "react";
 
-import { fetchPlaceDetail, type CanonicalPlace, type PlaceDetail as PlaceDetailData } from "../api";
+import { fetchPlaceDetail, nativePostId, type Place, type PlaceDetail as PlaceDetailData } from "../api";
 import { googleMapsUrl } from "../maps";
 import { DetailModal } from "./DetailModal";
 import { mappablePlaces } from "../placeMapUtils";
@@ -8,13 +8,13 @@ import { mappablePlaces } from "../placeMapUtils";
 const PlaceMap = lazy(() => import("./PlaceMap").then((module) => ({ default: module.PlaceMap })));
 
 interface PlaceDetailProps {
-  place: CanonicalPlace;
+  place: Place;
   onClose: () => void;
-  onNavigateToPlace?: (place: CanonicalPlace) => void;
+  onNavigateToPlace?: (place: Place) => void;
   onNavigateToPost?: (platform: string, postId: string) => void;
 }
 
-function locationBreadcrumb(place: CanonicalPlace): string {
+function locationBreadcrumb(place: Place): string {
   const { city, state_province: stateProvince, country, continent } = place.location;
   return [city, stateProvince, country, continent].filter(Boolean).join(" · ") || "Location unknown";
 }
@@ -164,7 +164,7 @@ export function PlaceDetail({
                   <button
                     type="button"
                     className="inline-link-button source-post-button"
-                    onClick={() => onNavigateToPost(post.platform, post.post_id)}
+                    onClick={() => onNavigateToPost(post.platform, nativePostId(post))}
                   >
                     <span className="badge badge-muted">{post.platform}</span>{" "}
                     {post.caption ? post.caption.slice(0, 80) : post.post_url}

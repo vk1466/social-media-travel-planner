@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 
-import { fetchPlaceDetail, fetchPost, type ExtractedPlace, type Place, type SavedPost } from "../api";
+import { fetchPlaceDetail, fetchPost, nativePostId, type ExtractedPlace, type PlatformPlace, type SavedPost } from "../api";
 import { googleMapsUrl } from "../maps";
 import {
   formatPostDate,
@@ -41,7 +41,7 @@ function locationFromExtracted(place: ExtractedPlace): string | undefined {
   return parts.length > 0 ? parts.join(", ") : undefined;
 }
 
-function locationFromTagged(place: Place): string | undefined {
+function locationFromTagged(place: PlatformPlace): string | undefined {
   const parts = [place.city, place.country].filter(Boolean);
   return parts.length > 0 ? parts.join(", ") : undefined;
 }
@@ -177,7 +177,7 @@ export function PostDetail({
 
     async function loadFreshPost() {
       try {
-        const fresh = await fetchPost(initialPost.platform, initialPost.post_id);
+        const fresh = await fetchPost(initialPost.platform, nativePostId(initialPost));
         if (!cancelled) {
           setPost(fresh);
         }

@@ -1,5 +1,5 @@
 from travelplanner import store
-from travelplanner.models import Platform, SavedPost
+from travelplanner.models import Platform, SavedPost, make_post_id
 from travelplanner.pipeline import ingest_link, ingest_links
 from travelplanner.sources import PLATFORM_FETCHERS
 from travelplanner.store import load_post, save_post
@@ -19,7 +19,7 @@ def _use_tmp_store(monkeypatch, tmp_path) -> None:
 def _fake_instagram_post(post_url: str) -> SavedPost:
   shortcode = post_url.rstrip("/").split("/")[-1]
   return SavedPost(
-    post_id=shortcode,
+    post_id=make_post_id(Platform.INSTAGRAM, shortcode),
     post_url=post_url,
     platform=Platform.INSTAGRAM,
     media_kind="image",
@@ -34,7 +34,7 @@ def test_ingest_link_saved(monkeypatch, tmp_path) -> None:
 
   result = ingest_link("https://www.instagram.com/p/abc123/")
   assert result.status == "saved"
-  assert result.post_id == "abc123"
+  assert result.post_id == "instagram:abc123"
 
 
 def test_ingest_link_skipped_when_already_stored(monkeypatch, tmp_path) -> None:
@@ -49,7 +49,7 @@ def test_ingest_link_skipped_when_already_stored(monkeypatch, tmp_path) -> None:
 
   result = ingest_link("https://www.instagram.com/p/abc123/")
   assert result.status == "skipped"
-  assert result.post_id == "abc123"
+  assert result.post_id == "instagram:abc123"
 
 
 def test_ingest_link_refresh(monkeypatch, tmp_path) -> None:

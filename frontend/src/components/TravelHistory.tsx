@@ -5,7 +5,7 @@ import {
   deleteVisit,
   fetchPlaces,
   fetchVisits,
-  type CanonicalPlace,
+  type Place,
   type VisitDetail,
 } from "../api";
 
@@ -22,7 +22,7 @@ function formatVisitDates(visitedFrom: string, visitedTo?: string | null): strin
   return `${visitedFrom} → ${visitedTo}`;
 }
 
-function locationLine(place: CanonicalPlace | null | undefined): string {
+function locationLine(place: Place | null | undefined): string {
   if (!place) {
     return "";
   }
@@ -36,13 +36,13 @@ export function TravelHistory({
   onNavigateToPlace,
 }: TravelHistoryProps) {
   const [visits, setVisits] = useState<VisitDetail[]>([]);
-  const [places, setPlaces] = useState<CanonicalPlace[]>([]);
+  const [places, setPlaces] = useState<Place[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   const [destinationQuery, setDestinationQuery] = useState("");
-  const [selectedPlace, setSelectedPlace] = useState<CanonicalPlace | null>(null);
+  const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [visitedFrom, setVisitedFrom] = useState("");
   const [visitedTo, setVisitedTo] = useState("");
   const [notes, setNotes] = useState("");
@@ -88,7 +88,7 @@ export function TravelHistory({
     setSuggestionsOpen(false);
   };
 
-  const handleSelectSuggestion = (place: CanonicalPlace) => {
+  const handleSelectSuggestion = (place: Place) => {
     setSelectedPlace(place);
     setDestinationQuery(place.display_name);
     setSuggestionsOpen(false);
