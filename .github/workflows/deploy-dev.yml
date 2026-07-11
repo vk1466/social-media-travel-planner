@@ -1,9 +1,10 @@
-name: deploy-production
+name: deploy-dev
 
 on:
   push:
     branches:
-      - production
+      - main
+      - feat/serverless
 
 permissions:
   id-token: write
@@ -47,7 +48,7 @@ jobs:
         with:
           role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
-      - name: Deploy prod stack
+      - name: Deploy dev stack
         working-directory: infra
         env:
           CORS_ORIGINS: ${{ vars.CORS_ORIGINS }}
@@ -56,8 +57,4 @@ jobs:
           ENSEMBLEDATA_TOKEN: ${{ secrets.ENSEMBLEDATA_TOKEN }}
           SUPADATA_API_KEY: ${{ secrets.SUPADATA_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-        run: cdk deploy TravelPlanner-prod --require-approval never
-
-  # Vercel production deploys from the `production` Git branch via project settings.
-  # Optionally set Vercel Git integration: Production Branch = production,
-  # Root Directory = frontend, env VITE_API_BASE_URL + VITE_CLERK_PUBLISHABLE_KEY.
+        run: cdk deploy TravelPlanner-dev --require-approval never

@@ -19,9 +19,17 @@ jobs:
         run: pip install -e ".[dev]"
       - name: Run tests
         run: pytest
-      - uses: aws-actions/setup-sam@v2
+      - uses: actions/setup-node@v4
         with:
-          use-installer: true
-      - name: Validate SAM template
+          node-version: "20"
+      - name: Install CDK CLI and Python deps
         working-directory: infra
-        run: sam validate
+        run: |
+          npm install -g aws-cdk
+          pip install -r requirements.txt
+      - name: Synth CDK app
+        working-directory: infra
+        env:
+          CDK_DEFAULT_ACCOUNT: "123456789012"
+          CDK_DEFAULT_REGION: us-west-2
+        run: cdk synth --quiet

@@ -9,7 +9,8 @@ TABLE_NAMES = ("Posts", "Places", "UserPosts", "UserPlaces", "Visits", "Jobs")
 
 
 def table_name(logical_name: str) -> str:
-  return f"{settings.dynamodb_table_prefix()}{logical_name}"
+  """Physical name: {LogicalName}-{stage}-{region} (e.g. Posts-dev-us-west-2)."""
+  return f"{logical_name}-{settings.dynamodb_stage()}-{settings.dynamodb_region()}"
 
 
 def _create_simple_table(dynamodb, name: str, partition_key: str) -> None:

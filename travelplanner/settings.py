@@ -36,17 +36,13 @@ def openai_model() -> str:
   return os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 
 
-def dynamodb_endpoint_url() -> str | None:
-  value = os.getenv("DYNAMODB_ENDPOINT_URL", "").strip()
-  return value or None
-
-
 def dynamodb_region() -> str:
   return os.getenv("DYNAMODB_REGION", "us-east-1").strip() or "us-east-1"
 
 
-def dynamodb_table_prefix() -> str:
-  return os.getenv("DYNAMODB_TABLE_PREFIX", "").strip()
+def dynamodb_stage() -> str:
+  """Environment segment in table names: test | dev | prod."""
+  return os.getenv("DYNAMODB_STAGE", "dev").strip() or "dev"
 
 
 def aws_access_key_id() -> str | None:
@@ -87,19 +83,11 @@ def admin_user_ids() -> frozenset[str]:
 
 
 def auth_disabled() -> bool:
-  """Dev/test bypass when Clerk is not configured."""
+  """Test bypass when Clerk is not configured (pytest only)."""
   flag = os.getenv("AUTH_DISABLED", "").strip().lower()
   if flag in {"1", "true", "yes"}:
     return True
   return clerk_issuer() is None
-
-
-def ingest_mode() -> str:
-  """local = in-process background tasks; stepfunctions = AWS Step Functions."""
-  value = os.getenv("INGEST_MODE", "local").strip().lower()
-  if value in {"stepfunctions", "step_functions", "sfn"}:
-    return "stepfunctions"
-  return "local"
 
 
 def state_machine_arn() -> str | None:

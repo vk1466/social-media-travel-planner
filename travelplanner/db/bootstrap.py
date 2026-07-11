@@ -1,4 +1,4 @@
-"""Create DynamoDB tables (local or AWS).
+"""Create DynamoDB tables (recovery / moto). Prefer CDK for AWS stages.
 
 Usage:
   python -m travelplanner.db.bootstrap

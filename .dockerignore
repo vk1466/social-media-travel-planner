@@ -9,9 +9,11 @@ frontend
 data
 .env
 *.md
+!README.md
 docs
 scripts
 tests
 .github
-infra/samconfig.toml
-infra/samconfig.toml.example
+infra/.venv
+infra/cdk.out
+infra/cdk.context.json

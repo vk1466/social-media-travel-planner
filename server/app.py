@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import BackgroundTasks, FastAPI, HTTPException, Query, Response
+from fastapi import FastAPI, HTTPException, Query, Response
 from fastapi.middleware.cors import CORSMiddleware
 
 from travelplanner import settings
@@ -79,7 +79,6 @@ def _visit_to_schema(visit: Visit) -> VisitSchema:
 )
 def start_ingest(
   request: IngestRequest,
-  background_tasks: BackgroundTasks,
   user_id: CurrentUserId,
 ) -> IngestResponse:
   links = _dedupe_links(request.links)
@@ -92,7 +91,6 @@ def start_ingest(
     links,
     user_id=user_id,
     refresh=request.refresh,
-    background_tasks=background_tasks,
   )
   return IngestResponse(job_id=job_id)
 

@@ -9,19 +9,9 @@ from travelplanner import settings
 
 
 def _client_kwargs() -> dict[str, Any]:
-  kwargs: dict[str, Any] = {"region_name": settings.dynamodb_region()}
-  endpoint = settings.dynamodb_endpoint_url()
-  if endpoint:
-    kwargs["endpoint_url"] = endpoint
-    kwargs["aws_access_key_id"] = settings.aws_access_key_id() or "local"
-    kwargs["aws_secret_access_key"] = settings.aws_secret_access_key() or "local"
-  else:
-    access_key = settings.aws_access_key_id()
-    secret_key = settings.aws_secret_access_key()
-    if access_key and secret_key:
-      kwargs["aws_access_key_id"] = access_key
-      kwargs["aws_secret_access_key"] = secret_key
-  return kwargs
+  # Region only — let boto3's default chain pick up keys + session token.
+  # Passing access/secret without AWS_SESSION_TOKEN breaks Lambda (temp creds).
+  return {"region_name": settings.dynamodb_region()}
 
 
 @lru_cache(maxsize=1)

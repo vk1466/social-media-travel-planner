@@ -8,8 +8,30 @@ from travelplanner.pipeline import IngestResult
 from travelplanner.store import save_post
 
 from server.app import app
+from server.workers import finalize_job, ingest_one_link
 
 HEADERS = {"X-User-Id": "user-a"}
+
+
+def _run_ingest_inline(
+  job_id: str,
+  post_urls: list[str],
+  *,
+  user_id: str,
+  refresh: bool,
+) -> str:
+  """Stand in for Step Functions in API tests."""
+  for post_url in post_urls:
+    ingest_one_link(
+      {
+        "job_id": job_id,
+        "post_url": post_url,
+        "user_id": user_id,
+        "refresh": refresh,
+      }
+    )
+  finalize_job({"job_id": job_id})
+  return f"arn:aws:states:us-east-1:123:execution:test:{job_id}"
 
 
 def test_ingest_requires_links(dynamodb) -> None:
@@ -36,6 +58,7 @@ def test_ingest_job_completes_and_lists_posts(monkeypatch, dynamodb) -> None:
 
   monkeypatch.setattr("server.workers.ingest_link", fake_ingest)
   monkeypatch.setattr("server.workers.link_places", lambda: None)
+  monkeypatch.setattr("server.app.start_ingest_job", _run_ingest_inline)
 
   client = TestClient(app)
   start = client.post(
@@ -66,6 +89,7 @@ def test_get_job_scoped_to_owner(monkeypatch, dynamodb) -> None:
     ),
   )
   monkeypatch.setattr("server.workers.link_places", lambda: None)
+  monkeypatch.setattr("server.app.start_ingest_job", _run_ingest_inline)
 
   client = TestClient(app)
   start = client.post(

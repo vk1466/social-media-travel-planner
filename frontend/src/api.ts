@@ -1,6 +1,6 @@
 let authTokenGetter: (() => Promise<string | null>) | null = null;
 
-/** API origin for production (Vercel). Empty in local dev — Vite proxies `/api`. */
+/** API origin (TravelPlanner-dev/prod ApiEndpoint). Required for local Vite and Vercel. */
 export const API_BASE_URL = (
   (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? ""
 ).replace(/\/$/, "");

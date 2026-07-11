@@ -6,5 +6,5 @@ COPY server/ server/
 
 RUN pip install --no-cache-dir .
 
-# Default: API handler. SAM ImageConfig.Command overrides for workers.
+# Default: API handler. DockerImageCode cmd overrides for workers.
 CMD ["server.lambda_handler.handler"]

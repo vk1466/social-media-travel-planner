@@ -1,4 +1,4 @@
-"""AWS Lambda entrypoint for the FastAPI app (API Gateway HTTP API)."""
+"""AWS Lambda entrypoint for the FastAPI app (Lambda Function URL)."""
 
 from __future__ import annotations
 
@@ -8,9 +8,9 @@ from travelplanner import settings
 
 from server.app import app
 
-if settings.ingest_mode() == "stepfunctions" and settings.auth_disabled():
+if settings.auth_disabled():
   raise RuntimeError(
-    "CLERK_ISSUER is required when INGEST_MODE=stepfunctions "
+    "CLERK_ISSUER is required in AWS "
     "(production must not run with auth disabled)."
   )
 

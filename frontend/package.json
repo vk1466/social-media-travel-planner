@@ -9,7 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@clerk/clerk-react": "^5.61.8",
+    "@clerk/react": "^6.12.2",
     "@fontsource-variable/dm-sans": "^5.2.8",
     "@fontsource/instrument-serif": "^5.2.8",
     "leaflet": "^1.9.4",

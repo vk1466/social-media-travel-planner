@@ -1,36 +1,35 @@
 # AWS DynamoDB deployment
 
-Local development uses DynamoDB Local via Docker (`docker compose up -d`).
-Production uses the same boto3 code against real AWS DynamoDB — only env vars change.
+All app environments use real DynamoDB created by CDK
+(`TravelPlanner-dev` / `TravelPlanner-prod`). Table names are
+`{LogicalName}-{stage}-{region}` (e.g. `Posts-dev-us-west-2`).
 
-## Local
+Unit tests use **moto** in-memory DynamoDB (`DYNAMODB_STAGE=test`); they do not
+need Docker or AWS credentials.
 
-```bash
-docker compose up -d
-export DYNAMODB_ENDPOINT_URL=http://localhost:8001
-export AWS_ACCESS_KEY_ID=local
-export AWS_SECRET_ACCESS_KEY=local
-export DYNAMODB_REGION=us-east-1
-python -m travelplanner.db.bootstrap
-```
+## AWS (CDK)
 
-## AWS
+Tables are created by the CDK stacks. See [`serverless-deploy.md`](./serverless-deploy.md).
+Lambdas receive:
 
-1. Unset `DYNAMODB_ENDPOINT_URL` (or leave it empty).
-2. Set `DYNAMODB_REGION` to your region (e.g. `us-west-2`).
-3. Optionally set `DYNAMODB_TABLE_PREFIX` (e.g. `prod_`) to isolate environments.
-4. Provide credentials via an IAM role (preferred on ECS/Lambda) or
-   `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY`.
-5. Create tables once:
+- `DYNAMODB_REGION` (stack region, e.g. `us-west-2`)
+- `DYNAMODB_STAGE` (`dev` or `prod`)
+
+Do not run `python -m travelplanner.db.bootstrap` against AWS unless you are
+recovering a table outside CDK.
+
+### CLI / scripts against a stage
 
 ```bash
-python -m travelplanner.db.bootstrap
+export DYNAMODB_REGION=us-west-2
+export DYNAMODB_STAGE=dev
+# AWS credentials via profile / env
+python3 cli.py links.txt --user-id <clerk-user-id>
 ```
 
 ### IAM policy (least privilege)
 
-Allow on the six tables (`Posts`, `Places`, `UserPosts`, `UserPlaces`, `Visits`,
-`Jobs`, with your prefix):
+Allow on the six tables for that stage/region:
 
 - `dynamodb:GetItem`
 - `dynamodb:PutItem`
@@ -41,16 +40,16 @@ Allow on the six tables (`Posts`, `Places`, `UserPosts`, `UserPlaces`, `Visits`,
 - `dynamodb:BatchGetItem`
 - `dynamodb:BatchWriteItem`
 - `dynamodb:DescribeTable`
-- `dynamodb:CreateTable` (bootstrap only; remove after tables exist)
 
-### Clerk production
+CDK grants these to the API and worker Lambdas automatically.
 
-1. Create a Clerk production instance.
-2. Set frontend `VITE_CLERK_PUBLISHABLE_KEY`.
-3. Set backend `CLERK_ISSUER` (and optional `CLERK_AUDIENCE`).
-4. Unset `AUTH_DISABLED`.
-5. Add your API and frontend origins in Clerk allowed origins.
-6. Optionally set `ADMIN_USER_IDS` to Clerk user ids allowed to run
+### Clerk
+
+1. Create a Clerk instance for the stage.
+2. Set frontend `VITE_CLERK_PUBLISHABLE_KEY` (local `.env.local` and/or Vercel).
+3. Set backend `CLERK_ISSUER` (and optional `CLERK_AUDIENCE`) on the stack.
+4. Add `http://localhost:5173`, the Vercel origin, and the API origin in Clerk allowed origins.
+5. Optionally set `ADMIN_USER_IDS` to Clerk user ids allowed to run
    `/api/places/reprocess` and `/api/data/cleanup`.
 
 ### Hardening notes
@@ -60,6 +59,5 @@ Allow on the six tables (`Posts`, `Places`, `UserPosts`, `UserPlaces`, `Visits`,
 - **Places Scan:** hierarchy / near-duplicate detection still `Scan`s Places.
   Fine at small scale; add GSIs or a background index when the library grows.
 - **Jobs:** stored in DynamoDB (`Jobs` table) with ~7 day TTL. Ingest runs via
-  Step Functions in AWS (`INGEST_MODE=stepfunctions`); see
-  [`serverless-deploy.md`](./serverless-deploy.md).
+  Step Functions; see [`serverless-deploy.md`](./serverless-deploy.md).
 - **Rate limits:** consider per-user ingest limits before public launch.

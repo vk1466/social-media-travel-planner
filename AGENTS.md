@@ -8,7 +8,7 @@ Ingest social media travel inspiration and build itineraries.
 travelplanner/ core library — no CLI, no web code
   clients/ reusable API clients (EnsembleData, Supadata, geocoder)
   sources/ platform-specific fetchers (one file per platform)
-  db/      DynamoDB client, table bootstrap, repos (Posts, Places, User*, Visits)
+  db/      DynamoDB client, table helpers, repos (Posts, Places, User*, Visits)
   models.py SavedPost, Place, Visit, TAGS — domain entities
   place_hints.py internal pipeline shapes (PlatformPlace, ExtractedPlace, PlaceMention)
   links.py URL detection and post ID extraction
@@ -20,15 +20,16 @@ travelplanner/ core library — no CLI, no web code
   visits.py personal visit history against places (per user_id)
 server/ FastAPI backend — thin adapter over travelplanner + Clerk JWT
 frontend/ React + Vite UI — talks only to the API (+ Clerk)
+infra/ Python CDK — TravelPlanner-dev / TravelPlanner-prod (DynamoDB, Lambda Function URL, SFN)
 cli.py batch link ingestion + place reprocessing entry point
 tests/
 ```
 
 Layering: `cli.py` and `server/` both call `pipeline.ingest_links` and library/store
-helpers. The frontend only knows the JSON API. Persistence is DynamoDB (Local in
-Docker for dev; real AWS in prod — see `docs/aws-dynamodb.md`). Production ingest
-uses Step Functions + Lambda (`docs/serverless-deploy.md`); local uses
-`INGEST_MODE=local` background tasks against the same Jobs table.
+helpers. The frontend only knows the JSON API. Persistence is DynamoDB via CDK stacks
+(`docs/aws-dynamodb.md`). Table names are `{LogicalName}-{stage}-{region}`. Ingest uses
+Step Functions + Lambda (`docs/serverless-deploy.md`). Local UI testing points at the
+deployed **TravelPlanner-dev** API.
 
 ## Module rules
 
@@ -51,11 +52,15 @@ Keep it **simple, modular, and extendable**. Do not add layers you don't need ye
 ## Run
 
 ```bash
+# UI against TravelPlanner-dev
+cd frontend
+cp .env.example .env.local   # VITE_API_BASE_URL + VITE_CLERK_PUBLISHABLE_KEY
+npm install && npm run dev
+
+# Unit tests (moto)
 pip install -e ".[dev]"
-docker compose up -d
-python -m travelplanner.db.bootstrap
-uvicorn server.app:app --reload
-cd frontend && npm install && npm run dev
-python3 cli.py links.txt --user-id local-dev-user
 pytest
+
+# Optional CLI against AWS (needs creds + DYNAMODB_STAGE=dev)
+python3 cli.py links.txt --user-id <clerk-user-id>
 ```

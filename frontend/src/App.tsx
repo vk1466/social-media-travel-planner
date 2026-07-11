@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
-import { UserButton, useUser } from "@clerk/clerk-react";
+import { UserButton, useUser } from "@clerk/react";
 
 import { fetchPlaces, fetchPosts, fetchVisits, startIngest, postRouteParts, type Place } from "./api";
 import { DataMaintenance } from "./components/DataMaintenance";
@@ -33,7 +33,7 @@ function ClerkUserChip() {
 
   return (
     <div className="user-chip">
-      <UserButton afterSignOutUrl="/" />
+      <UserButton />
       <span className="user-name">{displayName}</span>
     </div>
   );

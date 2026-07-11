@@ -3,11 +3,11 @@ import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import {
   ClerkProvider,
-  SignedIn,
-  SignedOut,
+  Show,
   SignInButton,
+  SignUpButton,
   useAuth,
-} from "@clerk/clerk-react";
+} from "@clerk/react";
 
 import "@fontsource-variable/dm-sans";
 import "@fontsource/instrument-serif/400.css";
@@ -50,11 +50,18 @@ function SignedOutGate() {
       <main className="app-shell" style={{ maxWidth: 480, margin: "4rem auto", textAlign: "center" }}>
         <h1 className="hero-title">Wanderfile</h1>
         <p className="hero-subtitle">Sign in to save posts, places, and trips to your library.</p>
-        <SignInButton mode="modal">
-          <button type="button" className="primary-button">
-            Sign in
-          </button>
-        </SignInButton>
+        <div style={{ display: "flex", gap: "0.75rem", justifyContent: "center", flexWrap: "wrap" }}>
+          <SignInButton mode="modal">
+            <button type="button" className="primary-button">
+              Sign in
+            </button>
+          </SignInButton>
+          <SignUpButton mode="modal">
+            <button type="button" className="secondary-button">
+              Sign up
+            </button>
+          </SignUpButton>
+        </div>
       </main>
     </div>
   );
@@ -72,15 +79,15 @@ function Root() {
   }
 
   return (
-    <ClerkProvider publishableKey={clerkPublishableKey}>
+    <ClerkProvider publishableKey={clerkPublishableKey} afterSignOutUrl="/">
       <AuthTokenBridge>
         <BrowserRouter>
-          <SignedOut>
+          <Show when="signed-out">
             <SignedOutGate />
-          </SignedOut>
-          <SignedIn>
+          </Show>
+          <Show when="signed-in">
             <App />
-          </SignedIn>
+          </Show>
         </BrowserRouter>
       </AuthTokenBridge>
     </ClerkProvider>

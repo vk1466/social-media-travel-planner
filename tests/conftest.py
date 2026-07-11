@@ -12,8 +12,7 @@ def dynamodb(monkeypatch):
   monkeypatch.setenv("AWS_SECRET_ACCESS_KEY", "testing")
   monkeypatch.setenv("AWS_DEFAULT_REGION", "us-east-1")
   monkeypatch.setenv("DYNAMODB_REGION", "us-east-1")
-  monkeypatch.setenv("DYNAMODB_TABLE_PREFIX", "test_")
-  monkeypatch.delenv("DYNAMODB_ENDPOINT_URL", raising=False)
+  monkeypatch.setenv("DYNAMODB_STAGE", "test")
   monkeypatch.setenv("AUTH_DISABLED", "1")
 
   from moto import mock_aws
