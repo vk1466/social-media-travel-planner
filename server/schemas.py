@@ -39,7 +39,9 @@ class SavedPostSchema(BaseModel):
   places: list[PlaceSchema] = Field(default_factory=list)
   extracted_places: list[ExtractedPlaceSchema] = Field(default_factory=list)
   place_ids: list[str] = Field(default_factory=list)
+  thumbnail_url: str | None = None
   fetched_at: str | None = None
+  reel_summary: str | None = None
 
 
 class PlaceLocationSchema(BaseModel):

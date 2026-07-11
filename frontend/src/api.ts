@@ -32,7 +32,9 @@ export interface SavedPost {
   places: Place[];
   extracted_places: ExtractedPlace[];
   place_ids: string[];
+  thumbnail_url?: string | null;
   fetched_at?: string | null;
+  reel_summary?: string | null;
 }
 
 export interface PlaceLocation {

@@ -1,7 +1,9 @@
 from travelplanner.extract import (
   REEL_EXTRACT_PROMPT,
   ReelBundle,
+  ReelExtraction,
   _parse_extracted_places,
+  _parse_reel_extraction,
   fetch_places_from_reel,
   format_reel_bundle,
 )
@@ -15,6 +17,7 @@ def test_reel_extract_prompt_includes_geocoding_rules() -> None:
   assert "Picture Lake, Mt. Baker, Washington" in REEL_EXTRACT_PROMPT
   assert "Travel destinations only" in REEL_EXTRACT_PROMPT
   assert "real estate offices" in REEL_EXTRACT_PROMPT
+  assert "reel_summary" in REEL_EXTRACT_PROMPT
 
 
 def test_parse_extracted_places() -> None:
@@ -91,6 +94,28 @@ def test_parse_extracted_places_empty() -> None:
   assert _parse_extracted_places({"places": []}) == ()
 
 
+def test_parse_reel_extraction_includes_summary() -> None:
+  data = {
+    "reel_summary": "A coastal Oregon day trip with viewpoints and a creamery stop.",
+    "places": [
+      {
+        "place_name": "Ecola State Park",
+        "city": "Cannon Beach",
+        "state_province": "Oregon",
+        "country": "USA",
+        "details": "Cliffside views over Haystack Rock.",
+        "tips": [],
+        "tags": ["viewpoint"],
+        "parent_place_name": None,
+      }
+    ],
+  }
+  result = _parse_reel_extraction(data)
+  assert result.reel_summary == "A coastal Oregon day trip with viewpoints and a creamery stop."
+  assert len(result.places) == 1
+  assert result.places[0].place_name == "Ecola State Park"
+
+
 def test_format_reel_bundle_includes_all_sources() -> None:
   bundle = ReelBundle(
     caption="Day 1: Alfama",
@@ -116,11 +141,12 @@ def test_format_reel_bundle_includes_all_sources() -> None:
 def test_fetch_places_from_reel_returns_empty_without_api_key(monkeypatch) -> None:
   monkeypatch.setattr("travelplanner.settings.openai_api_key", lambda: None)
   bundle = ReelBundle(caption="Day 1: Emerald Bay\nDay 2: Sand Harbor")
-  assert fetch_places_from_reel(bundle) == ()
+  assert fetch_places_from_reel(bundle) == ReelExtraction()
 
 
 def test_fetch_places_from_reel_parses_structured_response(monkeypatch) -> None:
   payload = {
+    "reel_summary": "Two Lake Tahoe stops: Emerald Bay overlook and Sand Harbor beach.",
     "places": [
       {
         "place_name": "Emerald Bay",
@@ -172,10 +198,11 @@ def test_fetch_places_from_reel_parses_structured_response(monkeypatch) -> None:
     top_comments=("Sand Harbor beach is best before noon",),
     transcript="First stop Emerald Bay, then Sand Harbor.",
   )
-  places = fetch_places_from_reel(bundle)
+  result = fetch_places_from_reel(bundle)
 
-  assert len(places) == 2
-  assert places[0].place_name == "Emerald Bay"
-  assert places[0].parent_place_name == "Lake Tahoe"
-  assert places[0].details == "Scenic overlook on the west shore."
-  assert places[0].tips == ("Go at sunrise",)
+  assert result.reel_summary == "Two Lake Tahoe stops: Emerald Bay overlook and Sand Harbor beach."
+  assert len(result.places) == 2
+  assert result.places[0].place_name == "Emerald Bay"
+  assert result.places[0].parent_place_name == "Lake Tahoe"
+  assert result.places[0].details == "Scenic overlook on the west shore."
+  assert result.places[0].tips == ("Go at sunrise",)

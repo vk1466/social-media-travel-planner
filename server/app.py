@@ -18,6 +18,7 @@ from travelplanner.visits import (
 )
 
 from server.jobs import job_store
+from server.media_proxy import fetch_proxied_media
 from server.schemas import (
   CanonicalPlaceSchema,
   ErrorResponse,
@@ -116,16 +117,18 @@ def list_posts(platform: Platform | None = Query(default=None)) -> list[SavedPos
   return [_post_to_schema(post) for post in posts]
 
 
-@app.get(
-  "/api/posts/{platform}/{post_id}",
-  response_model=SavedPostSchema,
-  responses={404: {"model": ErrorResponse}},
-)
+@app.get("/api/posts/{platform}/{post_id}", response_model=SavedPostSchema, responses={404: {"model": ErrorResponse}})
 def get_post(platform: Platform, post_id: str) -> SavedPostSchema:
   post = load_post(platform, post_id)
   if post is None:
     raise HTTPException(status_code=404, detail="Post not found")
   return _post_to_schema(post)
+
+
+@app.get("/api/media/proxy")
+def proxy_media(url: str = Query(..., min_length=8)) -> Response:
+  """Proxy Instagram CDN images so the browser is not blocked by CORP."""
+  return fetch_proxied_media(url)
 
 
 @app.delete("/api/posts/{platform}/{post_id}", status_code=204, response_class=Response)

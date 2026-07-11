@@ -127,6 +127,14 @@ def _extract_hashtags(caption: str) -> tuple[str, ...]:
   return tuple(match.group(1).lower() for match in HASHTAG_PATTERN.finditer(caption))
 
 
+def _extract_thumbnail_url(raw: dict[str, Any]) -> str | None:
+  for key in ("display_url", "thumbnail_src", "thumbnail_url"):
+    value = raw.get(key)
+    if value:
+      return str(value)
+  return None
+
+
 def _trim_post_info(raw: dict[str, Any]) -> dict[str, Any]:
   caption = _extract_caption(raw)
   return {
@@ -139,6 +147,7 @@ def _trim_post_info(raw: dict[str, Any]) -> dict[str, Any]:
     "top_comments": _extract_top_comments(raw),
     "places": _extract_places(raw),
     "hashtags": _extract_hashtags(caption),
+    "thumbnail_url": _extract_thumbnail_url(raw),
   }
 
 
@@ -177,7 +186,8 @@ def fetch_instagram_post(post_url: str) -> SavedPost:
     post_id=shortcode,
     post_url=post_url,
     platform=Platform.INSTAGRAM,
-    extracted_places=extracted_places,
+    extracted_places=extracted_places.places,
+    reel_summary=extracted_places.reel_summary,
     fetched_at=datetime.now(tz=UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
     **trimmed,
   )

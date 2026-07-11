@@ -60,7 +60,9 @@ def _post_from_dict(data: dict) -> SavedPost:
       _extracted_place_from_dict(place) for place in data.get("extracted_places", [])
     ),
     place_ids=tuple(data.get("place_ids", [])),
+    thumbnail_url=data.get("thumbnail_url"),
     fetched_at=data.get("fetched_at"),
+    reel_summary=data.get("reel_summary"),
   )
 
 

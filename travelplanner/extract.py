@@ -9,6 +9,14 @@ from travelplanner.models import TAGS, ExtractedPlace, Place
 PLACE_EXTRACT_SCHEMA: dict[str, Any] = {
   "type": "object",
   "properties": {
+    "reel_summary": {
+      "type": ["string", "null"],
+      "description": (
+        "2-3 sentence traveler-facing summary of what this reel is about and why "
+        "someone would go. Neutral and concrete — not marketing hype. Null if the "
+        "reel has no usable travel content"
+      ),
+    },
     "places": {
       "type": "array",
       "items": {
@@ -70,9 +78,9 @@ PLACE_EXTRACT_SCHEMA: dict[str, Any] = {
         ],
         "additionalProperties": False,
       },
-    }
+    },
   },
-  "required": ["places"],
+  "required": ["reel_summary", "places"],
   "additionalProperties": False,
 }
 
@@ -82,6 +90,9 @@ REEL_EXTRACT_PROMPT = (
   "Deduplicate places that appear in more than one source into a single entry, "
   "merging their details and tips. Captions often use numbered lists, "
   "'Day 1 / Day 2', bullets, and pin emoji markers like '📍 Place Name'.\n\n"
+  "Also write reel_summary: 2-3 short sentences summarizing the reel for a traveler "
+  "(what/where and why go). Be concrete and neutral — no hype, no hashtags, no "
+  "emojis. Null only if there is no usable travel content.\n\n"
   "Location fields are used for geocoding. Follow these rules exactly:\n"
   "1. place_name — the specific attraction (e.g. 'Picture Lake', 'Tunnel Falls', "
   "'Misery Ridge Trail', 'Crater Lake National Park').\n"
@@ -119,6 +130,12 @@ class ReelBundle:
   top_comments: tuple[str, ...] = ()
   location_tag: Place | None = None
   transcript: str | None = None
+
+
+@dataclass(frozen=True)
+class ReelExtraction:
+  places: tuple[ExtractedPlace, ...] = ()
+  reel_summary: str | None = None
 
 
 def _optional_str(value: Any) -> str | None:
@@ -210,6 +227,15 @@ def _parse_extracted_places(data: dict[str, Any] | None) -> tuple[ExtractedPlace
   return tuple(extracted)
 
 
+def _parse_reel_extraction(data: dict[str, Any] | None) -> ReelExtraction:
+  if not data:
+    return ReelExtraction()
+  return ReelExtraction(
+    places=_dedupe_by_name(_parse_extracted_places(data)),
+    reel_summary=_optional_str(data.get("reel_summary")),
+  )
+
+
 def format_reel_bundle(bundle: ReelBundle) -> str:
   sections: list[str] = []
 
@@ -239,18 +265,18 @@ def format_reel_bundle(bundle: ReelBundle) -> str:
   return "\n\n".join(sections)
 
 
-def fetch_places_from_reel(bundle: ReelBundle) -> tuple[ExtractedPlace, ...]:
-  """Extract places from all reel sources via one OpenAI structured-output call."""
+def fetch_places_from_reel(bundle: ReelBundle) -> ReelExtraction:
+  """Extract reel summary + places from all reel sources via one OpenAI call."""
   content = format_reel_bundle(bundle).strip()
   if not content:
-    return ()
+    return ReelExtraction()
 
   from travelplanner import settings
   from travelplanner.clients.openai import get_client
 
   client = get_client()
   if client is None:
-    return ()
+    return ReelExtraction()
 
   try:
     response = client.chat.completions.create(
@@ -269,20 +295,20 @@ def fetch_places_from_reel(bundle: ReelBundle) -> tuple[ExtractedPlace, ...]:
       },
     )
   except Exception:
-    return ()
+    return ReelExtraction()
 
   message_content = response.choices[0].message.content
   if not message_content:
-    return ()
+    return ReelExtraction()
 
   try:
     data = json.loads(message_content)
   except (json.JSONDecodeError, TypeError):
-    return ()
+    return ReelExtraction()
 
-  return _dedupe_by_name(_parse_extracted_places(data if isinstance(data, dict) else None))
+  return _parse_reel_extraction(data if isinstance(data, dict) else None)
 
 
 def fetch_places_from_text(text: str) -> tuple[ExtractedPlace, ...]:
   """Backward-compatible wrapper for caption-only extraction."""
-  return fetch_places_from_reel(ReelBundle(caption=text))
+  return fetch_places_from_reel(ReelBundle(caption=text)).places

@@ -116,6 +116,7 @@ def test_fetch_places_from_text_returns_empty_without_api_key(monkeypatch) -> No
 
 def test_fetch_places_from_text_parses_structured_response(monkeypatch) -> None:
   payload = {
+    "reel_summary": "A Lake Tahoe loop with overlooks and a gondola ride.",
     "places": [
       {
         "place_name": "Emerald Bay",

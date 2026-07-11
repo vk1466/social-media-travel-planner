@@ -63,6 +63,44 @@ export function formatPostDate(post: SavedPost): string | null {
   return date.toLocaleDateString();
 }
 
+export function getCaptionExcerpt(
+  caption: string,
+  maxLength = 160,
+): { text: string; truncated: boolean } {
+  const trimmed = caption.trim();
+  if (!trimmed) {
+    return { text: "", truncated: false };
+  }
+  if (trimmed.length <= maxLength) {
+    return { text: trimmed, truncated: false };
+  }
+  return { text: `${trimmed.slice(0, maxLength - 1).trimEnd()}…`, truncated: true };
+}
+
 export function faviconUrl(domain: string): string {
   return `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=32`;
+}
+
+/** Route Instagram CDN images through our API to avoid CORP blocking in the browser. */
+export function proxiedMediaUrl(url: string | null | undefined): string | null {
+  const trimmed = url?.trim();
+  if (!trimmed) {
+    return null;
+  }
+  try {
+    const host = new URL(trimmed).hostname.toLowerCase();
+    const needsProxy =
+      host === "instagram.com" ||
+      host.endsWith(".instagram.com") ||
+      host === "cdninstagram.com" ||
+      host.endsWith(".cdninstagram.com") ||
+      host === "fbcdn.net" ||
+      host.endsWith(".fbcdn.net");
+    if (!needsProxy) {
+      return trimmed;
+    }
+  } catch {
+    return trimmed;
+  }
+  return `/api/media/proxy?url=${encodeURIComponent(trimmed)}`;
 }

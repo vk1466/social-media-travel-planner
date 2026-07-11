@@ -68,7 +68,9 @@ class SavedPost:
   places: tuple[Place, ...] = ()
   extracted_places: tuple[ExtractedPlace, ...] = ()
   place_ids: tuple[str, ...] = ()
+  thumbnail_url: str | None = None
   fetched_at: str | None = None
+  reel_summary: str | None = None
 
 
 @dataclass(frozen=True)

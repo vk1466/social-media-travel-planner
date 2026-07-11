@@ -24,3 +24,4 @@ def test_trim_post_info_from_fixture() -> None:
   assert trimmed["places"][0].country == "Portugal"
   assert trimmed["places"][0].latitude == 38.7131
   assert trimmed["places"][0].longitude == -9.1279
+  assert trimmed["thumbnail_url"] == "https://cdn.example.com/noise.jpg"

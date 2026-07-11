@@ -62,6 +62,26 @@ function FitBounds({ places }: FitBoundsProps) {
   return null;
 }
 
+function InvalidateSize() {
+  const map = useMap();
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => {
+      map.invalidateSize();
+    });
+    const observer = new ResizeObserver(() => {
+      map.invalidateSize();
+    });
+    observer.observe(map.getContainer());
+    return () => {
+      window.cancelAnimationFrame(frame);
+      observer.disconnect();
+    };
+  }, [map]);
+
+  return null;
+}
+
 interface PlaceMapProps {
   places: CanonicalPlace[];
   visitedPlaceIds?: ReadonlySet<string> | string[];
@@ -101,6 +121,7 @@ export function PlaceMap({
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
+        <InvalidateSize />
         <FitBounds places={mapped} />
         {mapped.map((place) => {
           const isVisited = visited.has(place.place_id);

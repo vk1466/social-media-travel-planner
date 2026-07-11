@@ -6,16 +6,18 @@ interface DetailModalProps {
   titleId: string;
   onClose: () => void;
   children: ReactNode;
+  panelClassName?: string;
 }
 
-export function DetailModal({ titleId, onClose, children }: DetailModalProps) {
+export function DetailModal({ titleId, onClose, children, panelClassName }: DetailModalProps) {
   const panelRef = useDetailModal(onClose);
+  const panelClasses = ["detail-panel", panelClassName].filter(Boolean).join(" ");
 
   return (
     <div className="detail-overlay" onClick={onClose} role="presentation">
       <article
         ref={panelRef}
-        className="detail-panel"
+        className={panelClasses}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
