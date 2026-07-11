@@ -1,0 +1,18 @@
+# Example SAM config — copy to samconfig.toml and fill values.
+version = 0.1
+
+[default.deploy.parameters]
+stack_name = "travel-planner"
+resolve_s3 = true
+# Creates/manages ECR repos for PackageType: Image functions on first deploy.
+resolve_image_repos = true
+capabilities = "CAPABILITY_IAM"
+confirm_changeset = false
+fail_on_empty_changeset = false
+
+# Pass secrets via parameters or prefer SSM in a follow-up.
+parameter_overrides = [
+  "TablePrefix=prod_",
+  "CorsOrigins=https://your-app.vercel.app",
+  "ClerkIssuer=https://your-instance.clerk.accounts.dev",
+]

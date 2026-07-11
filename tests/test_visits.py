@@ -1,3 +1,4 @@
+from travelplanner.db import places_repo
 from travelplanner.models import PlaceLocation
 from travelplanner.place_hints import PlaceMention
 from travelplanner.places import load_place, upsert_place
@@ -10,6 +11,8 @@ from travelplanner.visits import (
   resolve_place_for_visit,
   visited_place_ids,
 )
+
+USER = "user-a"
 
 
 def _sample_location(**overrides) -> PlaceLocation:
@@ -28,23 +31,19 @@ def _sample_location(**overrides) -> PlaceLocation:
   return PlaceLocation(**base)
 
 
-def test_create_visit_with_existing_place_id(tmp_path) -> None:
-  places_dir = tmp_path / "places"
-  visits_dir = tmp_path / "visits"
+def test_create_visit_with_existing_place_id(dynamodb) -> None:
   place_id = upsert_place(
     PlaceMention(place_name="Multnomah Falls"),
     _sample_location(),
     "instagram:reel1",
-    data_dir=places_dir,
   )
 
   visit = create_visit(
+    user_id=USER,
     place_id=place_id,
     visited_from="2024-06-12",
     visited_to="2024-06-14",
     notes="Waterfall day",
-    visits_data_dir=visits_dir,
-    places_data_dir=places_dir,
   )
 
   assert visit.place_id == place_id
@@ -52,14 +51,11 @@ def test_create_visit_with_existing_place_id(tmp_path) -> None:
   assert visit.visited_from == "2024-06-12"
   assert visit.visited_to == "2024-06-14"
   assert visit.notes == "Waterfall day"
-  assert load_visit(visit.visit_id, data_dir=visits_dir) == visit
-  assert visited_place_ids(data_dir=visits_dir) == {place_id}
+  assert load_visit(USER, visit.visit_id) == visit
+  assert visited_place_ids(USER) == {place_id}
 
 
-def test_create_visit_geocodes_new_destination(monkeypatch, tmp_path) -> None:
-  places_dir = tmp_path / "places"
-  visits_dir = tmp_path / "visits"
-
+def test_create_visit_geocodes_new_destination(monkeypatch, dynamodb) -> None:
   def fake_locate(mention: PlaceMention) -> PlaceLocation:
     assert mention.place_name == "Tokyo"
     return _sample_location(
@@ -77,22 +73,19 @@ def test_create_visit_geocodes_new_destination(monkeypatch, tmp_path) -> None:
   monkeypatch.setattr("travelplanner.visits.locate_mention", fake_locate)
 
   visit = create_visit(
+    user_id=USER,
     place_query="Tokyo",
     visited_from="2023-04-01",
-    visits_data_dir=visits_dir,
-    places_data_dir=places_dir,
   )
 
-  place = load_place(visit.place_id, data_dir=places_dir)
+  place = load_place(visit.place_id)
   assert place is not None
   assert place.display_name == "Tokyo"
   assert place.source_post_ids == ()
-  assert list_visits(data_dir=visits_dir)[0].visit_id == visit.visit_id
+  assert list_visits(USER)[0].visit_id == visit.visit_id
 
 
-def test_create_visit_prefers_library_name_match(tmp_path) -> None:
-  places_dir = tmp_path / "places"
-  visits_dir = tmp_path / "visits"
+def test_create_visit_prefers_library_name_match(dynamodb) -> None:
   place_id = upsert_place(
     PlaceMention(place_name="Lisbon"),
     _sample_location(
@@ -106,82 +99,67 @@ def test_create_visit_prefers_library_name_match(tmp_path) -> None:
       longitude=-9.1393,
     ),
     "instagram:reel2",
-    data_dir=places_dir,
   )
 
   visit = create_visit(
+    user_id=USER,
     place_query="lisbon",
     visited_from="2022-09-10",
-    visits_data_dir=visits_dir,
-    places_data_dir=places_dir,
   )
 
   assert visit.place_id == place_id
 
 
-def test_create_visit_rejects_bad_dates(tmp_path) -> None:
-  places_dir = tmp_path / "places"
-  visits_dir = tmp_path / "visits"
+def test_create_visit_rejects_bad_dates(dynamodb) -> None:
   place_id = upsert_place(
     PlaceMention(place_name="Multnomah Falls"),
     _sample_location(),
     "instagram:reel1",
-    data_dir=places_dir,
   )
 
   try:
     create_visit(
+      user_id=USER,
       place_id=place_id,
       visited_from="2024-06-20",
       visited_to="2024-06-10",
-      visits_data_dir=visits_dir,
-      places_data_dir=places_dir,
     )
     assert False, "expected ValueError"
   except ValueError as exc:
     assert "visited_to" in str(exc)
 
 
-def test_delete_visit(tmp_path) -> None:
-  places_dir = tmp_path / "places"
-  visits_dir = tmp_path / "visits"
+def test_delete_visit(dynamodb) -> None:
   place_id = upsert_place(
     PlaceMention(place_name="Multnomah Falls"),
     _sample_location(),
     "instagram:reel1",
-    data_dir=places_dir,
   )
   visit = create_visit(
+    user_id=USER,
     place_id=place_id,
     visited_from="2024-01-01",
-    visits_data_dir=visits_dir,
-    places_data_dir=places_dir,
   )
 
-  assert delete_visit(visit.visit_id, data_dir=visits_dir) is True
-  assert load_visit(visit.visit_id, data_dir=visits_dir) is None
-  assert list_visits(data_dir=visits_dir) == []
+  assert delete_visit(USER, visit.visit_id) is True
+  assert load_visit(USER, visit.visit_id) is None
+  assert list_visits(USER) == []
 
 
-def test_relink_visits_after_place_wipe(monkeypatch, tmp_path) -> None:
-  places_dir = tmp_path / "places"
-  visits_dir = tmp_path / "visits"
+def test_relink_visits_after_place_wipe(monkeypatch, dynamodb) -> None:
   place_id = upsert_place(
     PlaceMention(place_name="Multnomah Falls"),
     _sample_location(),
     "instagram:reel1",
-    data_dir=places_dir,
   )
   visit = create_visit(
+    user_id=USER,
     place_id=place_id,
     visited_from="2024-01-01",
-    visits_data_dir=visits_dir,
-    places_data_dir=places_dir,
   )
 
-  for path in places_dir.glob("*.json"):
-    path.unlink()
-  assert load_place(place_id, data_dir=places_dir) is None
+  places_repo.delete_all_places()
+  assert load_place(place_id) is None
 
   def fake_resolve(**kwargs):
     assert kwargs["place_query"] == "Multnomah Falls"
@@ -189,21 +167,20 @@ def test_relink_visits_after_place_wipe(monkeypatch, tmp_path) -> None:
       PlaceMention(place_name="Multnomah Falls"),
       _sample_location(),
       source_post_id=None,
-      data_dir=places_dir,
     )
-    return load_place(restored_id, data_dir=places_dir)
+    return load_place(restored_id)
 
   monkeypatch.setattr("travelplanner.visits.resolve_place_for_visit", fake_resolve)
 
-  relink_visits(visits_data_dir=visits_dir, places_data_dir=places_dir)
-  reloaded = load_visit(visit.visit_id, data_dir=visits_dir)
+  relink_visits(user_id=USER)
+  reloaded = load_visit(USER, visit.visit_id)
   assert reloaded is not None
-  assert load_place(reloaded.place_id, data_dir=places_dir) is not None
+  assert load_place(reloaded.place_id) is not None
 
 
-def test_resolve_place_requires_id_or_query(tmp_path) -> None:
+def test_resolve_place_requires_id_or_query(dynamodb) -> None:
   try:
-    resolve_place_for_visit(places_data_dir=tmp_path)
+    resolve_place_for_visit()
     assert False, "expected ValueError"
   except ValueError as exc:
     assert "place_id or place_query" in str(exc)

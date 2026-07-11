@@ -1,3 +1,32 @@
+let authTokenGetter: (() => Promise<string | null>) | null = null;
+
+/** API origin for production (Vercel). Empty in local dev — Vite proxies `/api`. */
+export const API_BASE_URL = (
+  (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? ""
+).replace(/\/$/, "");
+
+/** Register a function that returns the current Clerk (or dev) bearer token. */
+export function setAuthTokenGetter(getter: (() => Promise<string | null>) | null): void {
+  authTokenGetter = getter;
+}
+
+async function authHeaders(): Promise<Record<string, string>> {
+  if (!authTokenGetter) {
+    return { "X-User-Id": "local-dev-user" };
+  }
+  const token = await authTokenGetter();
+  if (!token) {
+    return { "X-User-Id": "local-dev-user" };
+  }
+  if (token.startsWith("dev:")) {
+    return {
+      Authorization: `Bearer ${token}`,
+      "X-User-Id": token.slice(4) || "local-dev-user",
+    };
+  }
+  return { Authorization: `Bearer ${token}` };
+}
+
 export interface PlatformPlace {
   place_name: string;
   city?: string | null;
@@ -113,6 +142,7 @@ export type LinkStatus =
   | "pending"
   | "fetching"
   | "saved"
+  | "linked"
   | "skipped"
   | "unsupported"
   | "error";
@@ -128,6 +158,7 @@ export interface JobCounts {
   pending: number;
   fetching: number;
   saved: number;
+  linked: number;
   skipped: number;
   unsupported: number;
   error: number;
@@ -142,7 +173,12 @@ export interface Job {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(path, init);
+  const headers = new Headers(init?.headers);
+  const auth = await authHeaders();
+  for (const [key, value] of Object.entries(auth)) {
+    headers.set(key, value);
+  }
+  const response = await fetch(`${API_BASE_URL}${path}`, { ...init, headers });
   if (!response.ok) {
     let detail = response.statusText;
     try {
@@ -225,6 +261,7 @@ export interface Visit {
   visited_to?: string | null;
   notes?: string | null;
   created_at?: string | null;
+  user_id?: string | null;
 }
 
 export interface VisitDetail {

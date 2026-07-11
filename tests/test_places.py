@@ -340,7 +340,7 @@ def test_locate_mention_returns_none_when_geocoder_finds_nothing(monkeypatch) ->
   assert locate_mention(mention) is None
 
 
-def test_upsert_place_creates_new_place(tmp_path) -> None:
+def test_upsert_place_creates_new_place(dynamodb) -> None:
   mention = PlaceMention(place_name="Multnomah Falls", tags=("waterfall", "hike"), tips=("Arrive early",))
   location = PlaceLocation(
     display_name="Multnomah Falls",
@@ -353,10 +353,10 @@ def test_upsert_place_creates_new_place(tmp_path) -> None:
     longitude=-122.1158,
   )
 
-  place_id = upsert_place(mention, location, "instagram:abc123", data_dir=tmp_path)
+  place_id = upsert_place(mention, location, "instagram:abc123")
 
   assert place_id == "us-oregon-portland-multnomah-falls"
-  place = load_place(place_id, data_dir=tmp_path)
+  place = load_place(place_id)
   assert place is not None
   assert place.display_name == "Multnomah Falls"
   assert place.tags == ("hike", "waterfall")
@@ -365,7 +365,7 @@ def test_upsert_place_creates_new_place(tmp_path) -> None:
   assert place.aliases == ()
 
 
-def test_upsert_place_merges_into_existing_place(tmp_path) -> None:
+def test_upsert_place_merges_into_existing_place(dynamodb) -> None:
   location = PlaceLocation(
     display_name="Multnomah Falls",
     continent="North America",
@@ -378,7 +378,7 @@ def test_upsert_place_merges_into_existing_place(tmp_path) -> None:
   )
 
   first = PlaceMention(place_name="Multnomah Falls", tags=("waterfall",), tips=("Arrive early",))
-  upsert_place(first, location, "instagram:abc123", data_dir=tmp_path)
+  upsert_place(first, location, "instagram:abc123")
 
   second = PlaceMention(
     place_name="Mult Falls",
@@ -386,10 +386,10 @@ def test_upsert_place_merges_into_existing_place(tmp_path) -> None:
     tips=("Bring water", "Arrive early"),
     details="Tallest waterfall in Oregon",
   )
-  place_id = upsert_place(second, location, "youtube:xyz789", data_dir=tmp_path)
+  place_id = upsert_place(second, location, "youtube:xyz789")
 
   assert place_id == "us-oregon-portland-multnomah-falls"
-  places = load_all_places(data_dir=tmp_path)
+  places = load_all_places()
   assert len(places) == 1
 
   merged = places[0]
@@ -400,7 +400,7 @@ def test_upsert_place_merges_into_existing_place(tmp_path) -> None:
   assert merged.source_post_ids == ("instagram:abc123", "youtube:xyz789")
 
 
-def test_upsert_place_merges_near_duplicate_coordinates_without_shared_key(tmp_path) -> None:
+def test_upsert_place_merges_near_duplicate_coordinates_without_shared_key(dynamodb) -> None:
   first_location = PlaceLocation(
     display_name="Multnomah Falls",
     country_code="US",
@@ -409,7 +409,7 @@ def test_upsert_place_merges_near_duplicate_coordinates_without_shared_key(tmp_p
     latitude=45.57620,
     longitude=-122.11580,
   )
-  upsert_place(PlaceMention(place_name="Multnomah Falls"), first_location, "instagram:abc", data_dir=tmp_path)
+  upsert_place(PlaceMention(place_name="Multnomah Falls"), first_location, "instagram:abc")
 
   # Slightly different display name -> different slug key, but coordinates are
   # within the near-duplicate radius, so it should merge into the same place.
@@ -421,23 +421,23 @@ def test_upsert_place_merges_near_duplicate_coordinates_without_shared_key(tmp_p
     latitude=45.57621,
     longitude=-122.11581,
   )
-  place_id = upsert_place(PlaceMention(place_name="Multnomah Fall"), second_location, "youtube:xyz", data_dir=tmp_path)
+  place_id = upsert_place(PlaceMention(place_name="Multnomah Fall"), second_location, "youtube:xyz")
 
   assert place_id == "us-oregon-portland-multnomah-falls"
-  assert len(load_all_places(data_dir=tmp_path)) == 1
+  assert len(load_all_places()) == 1
 
 
-def test_process_post_places_skips_mentions_that_fail_to_locate(monkeypatch, tmp_path) -> None:
+def test_process_post_places_skips_mentions_that_fail_to_locate(monkeypatch, dynamodb) -> None:
   post = _sample_post(places=(PlatformPlace(place_name="Nowhereville"),))
   monkeypatch.setattr("travelplanner.places.locate_mention", lambda mention: None)
 
-  place_ids = process_post_places(post, places_data_dir=tmp_path)
+  place_ids = process_post_places(post)
 
   assert place_ids == ()
-  assert load_all_places(data_dir=tmp_path) == []
+  assert load_all_places() == []
 
 
-def test_process_post_places_returns_ids_for_located_mentions(monkeypatch, tmp_path) -> None:
+def test_process_post_places_returns_ids_for_located_mentions(monkeypatch, dynamodb) -> None:
   post = _sample_post(
     extracted_places=(ExtractedPlace(place_name="Multnomah Falls", tags=("waterfall",)),),
   )
@@ -451,15 +451,15 @@ def test_process_post_places_returns_ids_for_located_mentions(monkeypatch, tmp_p
   )
   monkeypatch.setattr("travelplanner.places.locate_mention", lambda mention: location)
 
-  place_ids = process_post_places(post, places_data_dir=tmp_path)
+  place_ids = process_post_places(post)
 
   assert place_ids == ("us-oregon-portland-multnomah-falls",)
-  places = load_all_places(data_dir=tmp_path)
+  places = load_all_places()
   assert len(places) == 1
   assert places[0].source_post_ids == ("instagram:post1",)
 
 
-def test_process_post_places_materializes_parent_from_parent_place_name(monkeypatch, tmp_path) -> None:
+def test_process_post_places_materializes_parent_from_parent_place_name(monkeypatch, dynamodb) -> None:
   post = _sample_post(
     extracted_places=(
       ExtractedPlace(
@@ -493,15 +493,15 @@ def test_process_post_places_materializes_parent_from_parent_place_name(monkeypa
 
   monkeypatch.setattr("travelplanner.places.locate_mention", fake_locate)
 
-  place_ids = process_post_places(post, places_data_dir=tmp_path)
+  place_ids = process_post_places(post)
 
   assert len(place_ids) == 2
-  places = {place.display_name: place for place in load_all_places(data_dir=tmp_path)}
+  places = {place.display_name: place for place in load_all_places()}
   assert "Misery Ridge Trail" in places
   assert "Smith Rock State Park" in places
 
 
-def test_list_places_filters_by_tag_and_country(tmp_path) -> None:
+def test_list_places_filters_by_tag_and_country(dynamodb) -> None:
   oregon = PlaceLocation(
     display_name="Multnomah Falls",
     country="United States",
@@ -519,23 +519,21 @@ def test_list_places_filters_by_tag_and_country(tmp_path) -> None:
     latitude=38.7131,
     longitude=-9.1279,
   )
-  upsert_place(PlaceMention(place_name="Multnomah Falls", tags=("waterfall", "hike")), oregon, "a:1", data_dir=tmp_path)
-  upsert_place(PlaceMention(place_name="Alfama", tags=("neighborhood",)), lisbon, "a:2", data_dir=tmp_path)
+  upsert_place(PlaceMention(place_name="Multnomah Falls", tags=("waterfall", "hike")), oregon, "a:1")
+  upsert_place(PlaceMention(place_name="Alfama", tags=("neighborhood",)), lisbon, "a:2")
 
-  assert [p.display_name for p in list_places(data_dir=tmp_path)] == ["Alfama", "Multnomah Falls"]
-  assert [p.display_name for p in list_places(tag="hike", data_dir=tmp_path)] == ["Multnomah Falls"]
-  assert [p.display_name for p in list_places(country="Portugal", data_dir=tmp_path)] == ["Alfama"]
-  assert [p.display_name for p in list_places(country="pt", data_dir=tmp_path)] == ["Alfama"]
-  assert [p.display_name for p in list_places(state_province="Oregon", data_dir=tmp_path)] == ["Multnomah Falls"]
-  assert list_places(state_province="Texas", data_dir=tmp_path) == []
+  assert [p.display_name for p in list_places()] == ["Alfama", "Multnomah Falls"]
+  assert [p.display_name for p in list_places(tag="hike")] == ["Multnomah Falls"]
+  assert [p.display_name for p in list_places(country="Portugal")] == ["Alfama"]
+  assert [p.display_name for p in list_places(country="pt")] == ["Alfama"]
+  assert [p.display_name for p in list_places(state_province="Oregon")] == ["Multnomah Falls"]
+  assert list_places(state_province="Texas") == []
 
 
-def test_reprocess_all_places_rebuilds_library_and_updates_posts(monkeypatch, tmp_path) -> None:
-  posts_dir = tmp_path / "posts"
-  places_dir = tmp_path / "places"
+def test_reprocess_all_places_rebuilds_library_and_updates_posts(monkeypatch, dynamodb) -> None:
 
   post = _sample_post(extracted_places=(ExtractedPlace(place_name="Multnomah Falls"),), post_id="instagram:reelA")
-  save_post(post, data_dir=posts_dir)
+  save_post(post)
 
   location = PlaceLocation(
     display_name="Multnomah Falls",
@@ -547,28 +545,22 @@ def test_reprocess_all_places_rebuilds_library_and_updates_posts(monkeypatch, tm
   )
   monkeypatch.setattr("travelplanner.places.locate_mention", lambda mention: location)
 
-  reprocess_all_places(
-    posts_data_dir=posts_dir,
-    places_data_dir=places_dir,
-    visits_data_dir=tmp_path / "visits",
-  )
+  reprocess_all_places()
 
-  places = load_all_places(data_dir=places_dir)
+  places = load_all_places()
   assert len(places) == 1
 
   from travelplanner.store import load_post
 
-  reloaded = load_post(Platform.INSTAGRAM, "reelA", data_dir=posts_dir)
+  reloaded = load_post(Platform.INSTAGRAM, "reelA")
   assert reloaded is not None
   assert reloaded.place_ids == ("us-oregon-portland-multnomah-falls",)
 
 
-def test_delete_all_posts_and_places(tmp_path) -> None:
-  posts_dir = tmp_path / "posts"
-  places_dir = tmp_path / "places"
+def test_delete_all_posts_and_places(dynamodb) -> None:
 
-  save_post(_sample_post(post_id="instagram:a"), data_dir=posts_dir)
-  save_post(_sample_post(post_id="instagram:b"), data_dir=posts_dir)
+  save_post(_sample_post(post_id="instagram:a"))
+  save_post(_sample_post(post_id="instagram:b"))
 
   location = PlaceLocation(
     display_name="Multnomah Falls",
@@ -578,16 +570,12 @@ def test_delete_all_posts_and_places(tmp_path) -> None:
     latitude=45.5762,
     longitude=-122.1158,
   )
-  upsert_place(PlaceMention(place_name="Multnomah Falls"), location, "instagram:a", data_dir=places_dir)
+  upsert_place(PlaceMention(place_name="Multnomah Falls"), location, "instagram:a")
 
-  posts_deleted, places_deleted, visits_deleted = cleanup_all_data(
-    posts_data_dir=posts_dir,
-    places_data_dir=places_dir,
-    visits_data_dir=tmp_path / "visits",
-  )
+  posts_deleted, places_deleted, visits_deleted = cleanup_all_data()
 
   assert posts_deleted == 2
   assert places_deleted == 1
   assert visits_deleted == 0
-  assert delete_all_posts(data_dir=posts_dir) == 0
-  assert delete_all_places(data_dir=places_dir) == 0
+  assert delete_all_posts() == 0
+  assert delete_all_places() == 0

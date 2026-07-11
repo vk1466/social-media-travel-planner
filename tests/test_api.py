@@ -1,6 +1,7 @@
 from fastapi.testclient import TestClient
 
-from travelplanner import places, store, visits
+from travelplanner import places
+from travelplanner.db import user_places_repo, user_posts_repo
 from travelplanner.models import PlaceLocation, Platform, SavedPost
 from travelplanner.place_hints import PlaceMention
 from travelplanner.pipeline import IngestResult
@@ -8,16 +9,18 @@ from travelplanner.store import save_post
 
 from server.app import app
 
+HEADERS = {"X-User-Id": "user-a"}
 
-def test_ingest_requires_links() -> None:
+
+def test_ingest_requires_links(dynamodb) -> None:
   client = TestClient(app)
-  response = client.post("/api/ingest", json={"links": []})
+  response = client.post("/api/ingest", json={"links": []}, headers=HEADERS)
   assert response.status_code == 400
   assert response.json()["detail"] == "At least one link is required"
 
 
-def test_ingest_job_completes_and_lists_posts(monkeypatch, tmp_path) -> None:
-  def fake_ingest(post_url: str, *, refresh: bool = False) -> IngestResult:
+def test_ingest_job_completes_and_lists_posts(monkeypatch, dynamodb) -> None:
+  def fake_ingest(post_url: str, *, user_id: str, refresh: bool = False) -> IngestResult:
     shortcode = post_url.rstrip("/").split("/")[-1]
     post = SavedPost(
       post_id=f"instagram:{shortcode}",
@@ -27,52 +30,65 @@ def test_ingest_job_completes_and_lists_posts(monkeypatch, tmp_path) -> None:
       caption="saved via api",
       fetched_at="2026-07-06T21:15:04Z",
     )
-    save_post(post, data_dir=tmp_path)
+    save_post(post)
+    user_posts_repo.link_user_post(user_id, post.post_id)
     return IngestResult(post_url=post_url, status="saved", post_id=post.post_id)
 
-  monkeypatch.setattr("server.app.ingest_link", fake_ingest)
-  monkeypatch.setattr(
-    "server.app.load_all_posts",
-    lambda platform=None: store.load_all_posts(platform=platform, data_dir=tmp_path),
-  )
-  monkeypatch.setattr(
-    "server.app.load_post",
-    lambda platform, post_id: store.load_post(platform, post_id, data_dir=tmp_path),
-  )
-  monkeypatch.setattr(
-    "server.app.delete_post",
-    lambda platform, post_id: store.delete_post(
-      platform, post_id, data_dir=tmp_path, places_data_dir=tmp_path / "places"
-    ),
-  )
+  monkeypatch.setattr("server.workers.ingest_link", fake_ingest)
+  monkeypatch.setattr("server.workers.link_places", lambda: None)
 
   client = TestClient(app)
   start = client.post(
     "/api/ingest",
     json={"links": ["https://www.instagram.com/p/api123/"]},
+    headers=HEADERS,
   )
   assert start.status_code == 202
   job_id = start.json()["job_id"]
 
-  job = client.get(f"/api/jobs/{job_id}")
+  job = client.get(f"/api/jobs/{job_id}", headers=HEADERS)
   assert job.status_code == 200
   body = job.json()
   assert body["status"] == "done"
   assert body["links"][0]["status"] == "saved"
 
-  posts = client.get("/api/posts")
+  posts = client.get("/api/posts", headers=HEADERS)
   assert posts.status_code == 200
   assert len(posts.json()) == 1
   assert posts.json()[0]["post_id"] == "instagram:api123"
 
 
-def test_get_job_not_found() -> None:
+def test_get_job_scoped_to_owner(monkeypatch, dynamodb) -> None:
+  monkeypatch.setattr(
+    "server.workers.ingest_link",
+    lambda post_url, *, user_id, refresh=False: IngestResult(
+      post_url=post_url, status="skipped"
+    ),
+  )
+  monkeypatch.setattr("server.workers.link_places", lambda: None)
+
   client = TestClient(app)
-  response = client.get("/api/jobs/does-not-exist")
+  start = client.post(
+    "/api/ingest",
+    json={"links": ["https://www.instagram.com/p/owned/"]},
+    headers=HEADERS,
+  )
+  job_id = start.json()["job_id"]
+
+  assert client.get(f"/api/jobs/{job_id}", headers=HEADERS).status_code == 200
+  assert (
+    client.get(f"/api/jobs/{job_id}", headers={"X-User-Id": "user-b"}).status_code
+    == 404
+  )
+
+
+def test_get_job_not_found(dynamodb) -> None:
+  client = TestClient(app)
+  response = client.get("/api/jobs/does-not-exist", headers=HEADERS)
   assert response.status_code == 404
 
 
-def test_list_and_get_place(monkeypatch, tmp_path) -> None:
+def test_list_and_get_place(dynamodb) -> None:
   post = SavedPost(
     post_id="instagram:reelA",
     post_url="https://www.instagram.com/reel/reelA/",
@@ -81,7 +97,8 @@ def test_list_and_get_place(monkeypatch, tmp_path) -> None:
     caption="waterfall day",
     fetched_at="2026-07-06T21:15:04Z",
   )
-  save_post(post, data_dir=tmp_path / "posts")
+  save_post(post)
+  user_posts_repo.link_user_post("user-a", post.post_id)
 
   location = PlaceLocation(
     display_name="Multnomah Falls",
@@ -94,37 +111,25 @@ def test_list_and_get_place(monkeypatch, tmp_path) -> None:
     longitude=-122.1158,
   )
   mention = PlaceMention(place_name="Multnomah Falls", tags=("waterfall",))
-  place_id = places.upsert_place(mention, location, "instagram:reelA", data_dir=tmp_path / "places")
-
-  monkeypatch.setattr(
-    "server.app.list_places",
-    lambda **kwargs: places.list_places(data_dir=tmp_path / "places", **kwargs),
-  )
-  monkeypatch.setattr(
-    "server.app.load_place",
-    lambda place_id: places.load_place(place_id, data_dir=tmp_path / "places"),
-  )
-  monkeypatch.setattr(
-    "server.app.load_post",
-    lambda platform, post_id: store.load_post(platform, post_id, data_dir=tmp_path / "posts"),
-  )
+  place_id = places.upsert_place(mention, location, "instagram:reelA")
+  user_places_repo.link_user_place("user-a", place_id, source="from_post")
 
   client = TestClient(app)
 
-  listed = client.get("/api/places")
+  listed = client.get("/api/places", headers=HEADERS)
   assert listed.status_code == 200
   assert [place["place_id"] for place in listed.json()] == [place_id]
 
-  filtered = client.get("/api/places", params={"tag": "waterfall"})
+  filtered = client.get("/api/places", params={"tag": "waterfall"}, headers=HEADERS)
   assert len(filtered.json()) == 1
-  empty = client.get("/api/places", params={"tag": "beach"})
+  empty = client.get("/api/places", params={"tag": "beach"}, headers=HEADERS)
   assert empty.json() == []
 
-  roots = client.get("/api/places", params={"roots_only": True})
+  roots = client.get("/api/places", params={"roots_only": True}, headers=HEADERS)
   assert roots.status_code == 200
   assert len(roots.json()) == 1
 
-  detail = client.get(f"/api/places/{place_id}")
+  detail = client.get(f"/api/places/{place_id}", headers=HEADERS)
   assert detail.status_code == 200
   body = detail.json()
   assert body["place"]["display_name"] == "Multnomah Falls"
@@ -133,36 +138,29 @@ def test_list_and_get_place(monkeypatch, tmp_path) -> None:
   assert body["parent"] is None
 
 
-def test_get_place_not_found(monkeypatch, tmp_path) -> None:
-  monkeypatch.setattr(
-    "server.app.load_place",
-    lambda place_id: places.load_place(place_id, data_dir=tmp_path),
-  )
+def test_get_place_not_found(dynamodb) -> None:
   client = TestClient(app)
-  response = client.get("/api/places/does-not-exist")
+  response = client.get("/api/places/does-not-exist", headers=HEADERS)
   assert response.status_code == 404
 
 
-def test_list_tags() -> None:
+def test_list_tags(dynamodb) -> None:
   client = TestClient(app)
-  response = client.get("/api/tags")
+  response = client.get("/api/tags", headers=HEADERS)
   assert response.status_code == 200
   assert "waterfall" in response.json()
 
 
-def test_cleanup_data_endpoint(monkeypatch) -> None:
+def test_cleanup_data_endpoint(monkeypatch, dynamodb) -> None:
   monkeypatch.setattr("server.app.cleanup_all_data", lambda: (2, 5, 3))
 
   client = TestClient(app)
-  response = client.post("/api/data/cleanup")
+  response = client.post("/api/data/cleanup", headers=HEADERS)
   assert response.status_code == 200
   assert response.json() == {"posts_deleted": 2, "places_deleted": 5, "visits_deleted": 3}
 
 
-def test_create_and_list_visits(monkeypatch, tmp_path) -> None:
-  places_dir = tmp_path / "places"
-  visits_dir = tmp_path / "visits"
-
+def test_create_and_list_visits(dynamodb) -> None:
   location = PlaceLocation(
     display_name="Multnomah Falls",
     continent="North America",
@@ -174,36 +172,7 @@ def test_create_and_list_visits(monkeypatch, tmp_path) -> None:
     longitude=-122.1158,
   )
   mention = PlaceMention(place_name="Multnomah Falls", tags=("waterfall",))
-  place_id = places.upsert_place(mention, location, "instagram:reelA", data_dir=places_dir)
-
-  def fake_create_visit(**kwargs):
-    return visits.create_visit(
-      **kwargs,
-      visits_data_dir=visits_dir,
-      places_data_dir=places_dir,
-    )
-
-  monkeypatch.setattr("server.app.create_visit", fake_create_visit)
-  monkeypatch.setattr(
-    "server.app.list_visits",
-    lambda: visits.list_visits(data_dir=visits_dir),
-  )
-  monkeypatch.setattr(
-    "server.app.load_place",
-    lambda place_id: places.load_place(place_id, data_dir=places_dir),
-  )
-  monkeypatch.setattr(
-    "server.app.load_visit",
-    lambda visit_id: visits.load_visit(visit_id, data_dir=visits_dir),
-  )
-  monkeypatch.setattr(
-    "server.app.delete_visit",
-    lambda visit_id: visits.delete_visit(visit_id, data_dir=visits_dir),
-  )
-  monkeypatch.setattr(
-    "server.app.visited_place_ids",
-    lambda: visits.visited_place_ids(data_dir=visits_dir),
-  )
+  place_id = places.upsert_place(mention, location, "instagram:reelA")
 
   client = TestClient(app)
 
@@ -215,6 +184,7 @@ def test_create_and_list_visits(monkeypatch, tmp_path) -> None:
       "visited_to": "2024-06-14",
       "notes": "Day hike",
     },
+    headers=HEADERS,
   )
   assert created.status_code == 201
   body = created.json()
@@ -223,23 +193,23 @@ def test_create_and_list_visits(monkeypatch, tmp_path) -> None:
   assert body["place"]["display_name"] == "Multnomah Falls"
   visit_id = body["visit"]["visit_id"]
 
-  listed = client.get("/api/visits")
+  listed = client.get("/api/visits", headers=HEADERS)
   assert listed.status_code == 200
   assert len(listed.json()) == 1
 
-  ids = client.get("/api/visits/place-ids")
+  ids = client.get("/api/visits/place-ids", headers=HEADERS)
   assert ids.status_code == 200
   assert ids.json() == [place_id]
 
-  missing = client.post("/api/visits", json={"visited_from": "2024-01-01"})
+  missing = client.post("/api/visits", json={"visited_from": "2024-01-01"}, headers=HEADERS)
   assert missing.status_code == 400
 
-  deleted = client.delete(f"/api/visits/{visit_id}")
+  deleted = client.delete(f"/api/visits/{visit_id}", headers=HEADERS)
   assert deleted.status_code == 204
-  assert client.get("/api/visits").json() == []
+  assert client.get("/api/visits", headers=HEADERS).json() == []
 
 
-def test_reprocess_places_endpoint(monkeypatch) -> None:
+def test_reprocess_places_endpoint(monkeypatch, dynamodb) -> None:
   called = {"reprocess": False}
 
   def fake_reprocess() -> None:
@@ -248,7 +218,7 @@ def test_reprocess_places_endpoint(monkeypatch) -> None:
   monkeypatch.setattr("server.app.reprocess_all_places", fake_reprocess)
 
   client = TestClient(app)
-  response = client.post("/api/places/reprocess")
+  response = client.post("/api/places/reprocess", headers=HEADERS)
   assert response.status_code == 200
   assert response.json() == {
     "posts_deleted": None,
@@ -257,3 +227,19 @@ def test_reprocess_places_endpoint(monkeypatch) -> None:
   }
   assert called["reprocess"] is True
 
+
+def test_users_see_only_their_posts(dynamodb) -> None:
+  post = SavedPost(
+    post_id="instagram:shared",
+    post_url="https://www.instagram.com/p/shared/",
+    platform=Platform.INSTAGRAM,
+    media_kind="image",
+    caption="shared",
+    fetched_at="2026-07-06T21:15:04Z",
+  )
+  save_post(post)
+  user_posts_repo.link_user_post("user-a", post.post_id)
+
+  client = TestClient(app)
+  assert len(client.get("/api/posts", headers={"X-User-Id": "user-a"}).json()) == 1
+  assert client.get("/api/posts", headers={"X-User-Id": "user-b"}).json() == []

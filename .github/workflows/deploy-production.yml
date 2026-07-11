@@ -1,0 +1,75 @@
+name: deploy-production
+
+on:
+  push:
+    branches:
+      - production
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: us-west-2
+  SAM_CLI_TELEMETRY: "0"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install package
+        run: pip install -e ".[dev]"
+      - name: Run tests
+        run: pytest
+
+  deploy-api:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: aws-actions/setup-sam@v2
+        with:
+          use-installer: true
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+      - name: Build
+        working-directory: infra
+        run: sam build
+      - name: Deploy
+        working-directory: infra
+        env:
+          TABLE_PREFIX: ${{ vars.DYNAMODB_TABLE_PREFIX }}
+          CORS_ORIGINS: ${{ vars.CORS_ORIGINS }}
+          CLERK_ISSUER: ${{ vars.CLERK_ISSUER }}
+          ADMIN_USER_IDS: ${{ vars.ADMIN_USER_IDS }}
+        run: |
+          PREFIX="${TABLE_PREFIX:-prod_}"
+          sam deploy \
+            --no-confirm-changeset \
+            --no-fail-on-empty-changeset \
+            --stack-name travel-planner \
+            --resolve-s3 \
+            --resolve-image-repos \
+            --capabilities CAPABILITY_IAM \
+            --parameter-overrides \
+              "TablePrefix=${PREFIX}" \
+              "CorsOrigins=${CORS_ORIGINS}" \
+              "ClerkIssuer=${CLERK_ISSUER}" \
+              "AdminUserIds=${ADMIN_USER_IDS}" \
+              "EnsembleDataToken=${{ secrets.ENSEMBLEDATA_TOKEN }}" \
+              "SupadataApiKey=${{ secrets.SUPADATA_API_KEY }}" \
+              "OpenAIApiKey=${{ secrets.OPENAI_API_KEY }}"
+
+  # Vercel production deploys from the `production` Git branch via project settings.
+  # Optionally set Vercel Git integration: Production Branch = production,
+  # Root Directory = frontend, env VITE_API_BASE_URL + VITE_CLERK_PUBLISHABLE_KEY.

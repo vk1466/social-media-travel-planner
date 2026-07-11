@@ -1,0 +1,221 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: Travel Planner API + Step Functions ingest workers
+
+Parameters:
+  TablePrefix:
+    Type: String
+    Default: prod_
+    Description: DynamoDB table name prefix (must match bootstrap)
+  CorsOrigins:
+    Type: String
+    Default: http://localhost:5173
+    Description: Comma-separated browser origins allowed by CORS
+  ClerkIssuer:
+    Type: String
+    Default: ""
+    Description: Clerk JWT issuer URL (empty disables Clerk; set AUTH_DISABLED carefully)
+  AdminUserIds:
+    Type: String
+    Default: ""
+  OpenAIModel:
+    Type: String
+    Default: gpt-4o-mini
+  EnsembleDataToken:
+    Type: String
+    NoEcho: true
+    Default: ""
+  SupadataApiKey:
+    Type: String
+    NoEcho: true
+    Default: ""
+  OpenAIApiKey:
+    Type: String
+    NoEcho: true
+    Default: ""
+
+Globals:
+  Function:
+    Timeout: 30
+    MemorySize: 512
+    Architectures:
+      - x86_64
+
+Resources:
+  TravelApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      PackageType: Image
+      ImageConfig:
+        Command:
+          - server.lambda_handler.handler
+      MemorySize: 1024
+      Timeout: 30
+      Environment:
+        Variables:
+          DYNAMODB_REGION: !Ref AWS::Region
+          DYNAMODB_TABLE_PREFIX: !Ref TablePrefix
+          INGEST_MODE: stepfunctions
+          STATE_MACHINE_ARN: !Ref IngestStateMachine
+          CORS_ORIGINS: !Ref CorsOrigins
+          CLERK_ISSUER: !Ref ClerkIssuer
+          ADMIN_USER_IDS: !Ref AdminUserIds
+          OPENAI_MODEL: !Ref OpenAIModel
+          ENSEMBLEDATA_TOKEN: !Ref EnsembleDataToken
+          SUPADATA_API_KEY: !Ref SupadataApiKey
+          OPENAI_API_KEY: !Ref OpenAIApiKey
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:GetItem
+                - dynamodb:PutItem
+                - dynamodb:UpdateItem
+                - dynamodb:DeleteItem
+                - dynamodb:Query
+                - dynamodb:Scan
+                - dynamodb:BatchGetItem
+                - dynamodb:BatchWriteItem
+                - dynamodb:DescribeTable
+              Resource:
+                - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${TablePrefix}*"
+        - Statement:
+            - Effect: Allow
+              Action:
+                - states:StartExecution
+              Resource: !Ref IngestStateMachine
+      Events:
+        HttpApi:
+          Type: HttpApi
+          Properties:
+            Path: /{proxy+}
+            Method: ANY
+        HttpApiRoot:
+          Type: HttpApi
+          Properties:
+            Path: /
+            Method: ANY
+    Metadata:
+      DockerTag: api-latest
+      DockerContext: ..
+      Dockerfile: infra/Dockerfile
+
+  IngestWorkerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      PackageType: Image
+      ImageConfig:
+        Command:
+          - server.workers.ingest_one_link
+      MemorySize: 1024
+      Timeout: 900
+      Environment:
+        Variables:
+          DYNAMODB_REGION: !Ref AWS::Region
+          DYNAMODB_TABLE_PREFIX: !Ref TablePrefix
+          OPENAI_MODEL: !Ref OpenAIModel
+          ENSEMBLEDATA_TOKEN: !Ref EnsembleDataToken
+          SUPADATA_API_KEY: !Ref SupadataApiKey
+          OPENAI_API_KEY: !Ref OpenAIApiKey
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:GetItem
+                - dynamodb:PutItem
+                - dynamodb:UpdateItem
+                - dynamodb:DeleteItem
+                - dynamodb:Query
+                - dynamodb:Scan
+                - dynamodb:BatchGetItem
+                - dynamodb:BatchWriteItem
+                - dynamodb:DescribeTable
+              Resource:
+                - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${TablePrefix}*"
+    Metadata:
+      DockerTag: worker-latest
+      DockerContext: ..
+      Dockerfile: infra/Dockerfile
+
+  FinalizeWorkerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      PackageType: Image
+      ImageConfig:
+        Command:
+          - server.workers.finalize_job
+      MemorySize: 1024
+      Timeout: 300
+      Environment:
+        Variables:
+          DYNAMODB_REGION: !Ref AWS::Region
+          DYNAMODB_TABLE_PREFIX: !Ref TablePrefix
+          OPENAI_MODEL: !Ref OpenAIModel
+          OPENAI_API_KEY: !Ref OpenAIApiKey
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:GetItem
+                - dynamodb:PutItem
+                - dynamodb:UpdateItem
+                - dynamodb:DeleteItem
+                - dynamodb:Query
+                - dynamodb:Scan
+                - dynamodb:BatchGetItem
+                - dynamodb:BatchWriteItem
+                - dynamodb:DescribeTable
+              Resource:
+                - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${TablePrefix}*"
+    Metadata:
+      DockerTag: finalize-latest
+      DockerContext: ..
+      Dockerfile: infra/Dockerfile
+
+  IngestStateMachine:
+    Type: AWS::Serverless::StateMachine
+    Properties:
+      Name: !Sub "${AWS::StackName}-ingest"
+      Definition:
+        Comment: Ingest social links then finalize place hierarchy
+        StartAt: IngestLinks
+        States:
+          IngestLinks:
+            Type: Map
+            ItemsPath: $.links
+            MaxConcurrency: 2
+            ItemSelector:
+              job_id.$: $.job_id
+              user_id.$: $.user_id
+              refresh.$: $.refresh
+              post_url.$: $$.Map.Item.Value.post_url
+            Iterator:
+              StartAt: IngestOne
+              States:
+                IngestOne:
+                  Type: Task
+                  Resource: !GetAtt IngestWorkerFunction.Arn
+                  End: true
+            ResultPath: $.ingest_results
+            Next: Finalize
+          Finalize:
+            Type: Task
+            Resource: !GetAtt FinalizeWorkerFunction.Arn
+            Parameters:
+              job_id.$: $.job_id
+            End: true
+      Policies:
+        - LambdaInvokePolicy:
+            FunctionName: !Ref IngestWorkerFunction
+        - LambdaInvokePolicy:
+            FunctionName: !Ref FinalizeWorkerFunction
+
+Outputs:
+  ApiEndpoint:
+    Description: HTTP API base URL (set as VITE_API_BASE_URL on Vercel)
+    Value: !Sub "https://${ServerlessHttpApi}.execute-api.${AWS::Region}.amazonaws.com"
+  StateMachineArn:
+    Description: Ingest Step Functions ARN
+    Value: !Ref IngestStateMachine
+  TravelApiFunctionArn:
+    Value: !GetAtt TravelApiFunction.Arn

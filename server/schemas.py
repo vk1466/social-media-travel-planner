@@ -86,7 +86,15 @@ class IngestResponse(BaseModel):
   job_id: str
 
 
-LinkStatus = Literal["pending", "fetching", "saved", "skipped", "unsupported", "error"]
+LinkStatus = Literal[
+  "pending",
+  "fetching",
+  "saved",
+  "linked",
+  "skipped",
+  "unsupported",
+  "error",
+]
 
 
 class JobLinkSchema(BaseModel):
@@ -100,6 +108,7 @@ class JobCountsSchema(BaseModel):
   pending: int = 0
   fetching: int = 0
   saved: int = 0
+  linked: int = 0
   skipped: int = 0
   unsupported: int = 0
   error: int = 0
@@ -125,6 +134,7 @@ class VisitSchema(BaseModel):
   visited_to: str | None = None
   notes: str | None = None
   created_at: str | None = None
+  user_id: str | None = None
 
 
 class VisitCreateRequest(BaseModel):

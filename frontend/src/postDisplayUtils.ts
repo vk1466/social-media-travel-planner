@@ -1,4 +1,5 @@
 import type { SavedPost } from "./api";
+import { API_BASE_URL } from "./api";
 
 export function getPostDomain(postUrl: string): string {
   try {
@@ -102,5 +103,5 @@ export function proxiedMediaUrl(url: string | null | undefined): string | null {
   } catch {
     return trimmed;
   }
-  return `/api/media/proxy?url=${encodeURIComponent(trimmed)}`;
+  return `${API_BASE_URL}/api/media/proxy?url=${encodeURIComponent(trimmed)}`;
 }

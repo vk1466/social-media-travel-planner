@@ -1,19 +1,10 @@
-from travelplanner import store
+from travelplanner.db import user_posts_repo
 from travelplanner.models import Platform, SavedPost, make_post_id
 from travelplanner.pipeline import ingest_link, ingest_links
 from travelplanner.sources import PLATFORM_FETCHERS
 from travelplanner.store import load_post, save_post
 
-
-def _use_tmp_store(monkeypatch, tmp_path) -> None:
-  monkeypatch.setattr(
-    "travelplanner.pipeline.save_post",
-    lambda post: store.save_post(post, data_dir=tmp_path),
-  )
-  monkeypatch.setattr(
-    "travelplanner.pipeline.has_post",
-    lambda platform, post_id: store.has_post(platform, post_id, data_dir=tmp_path),
-  )
+USER = "user-a"
 
 
 def _fake_instagram_post(post_url: str) -> SavedPost:
@@ -28,107 +19,118 @@ def _fake_instagram_post(post_url: str) -> SavedPost:
   )
 
 
-def test_ingest_link_saved(monkeypatch, tmp_path) -> None:
+def test_ingest_link_saved(monkeypatch, dynamodb) -> None:
   monkeypatch.setitem(PLATFORM_FETCHERS, Platform.INSTAGRAM, _fake_instagram_post)
-  _use_tmp_store(monkeypatch, tmp_path)
 
-  result = ingest_link("https://www.instagram.com/p/abc123/")
+  result = ingest_link("https://www.instagram.com/p/abc123/", user_id=USER)
   assert result.status == "saved"
   assert result.post_id == "instagram:abc123"
+  assert user_posts_repo.user_has_post(USER, "instagram:abc123")
 
 
-def test_ingest_link_skipped_when_already_stored(monkeypatch, tmp_path) -> None:
+def test_ingest_link_linked_when_already_stored_for_other_user(monkeypatch, dynamodb) -> None:
   existing = _fake_instagram_post("https://www.instagram.com/p/abc123/")
-  save_post(existing, data_dir=tmp_path)
+  save_post(existing)
+  user_posts_repo.link_user_post("user-b", existing.post_id)
 
   def fail_fetch(_: str) -> SavedPost:
     raise AssertionError("fetch should not run when post is already stored")
 
   monkeypatch.setitem(PLATFORM_FETCHERS, Platform.INSTAGRAM, fail_fetch)
-  _use_tmp_store(monkeypatch, tmp_path)
 
-  result = ingest_link("https://www.instagram.com/p/abc123/")
-  assert result.status == "skipped"
+  result = ingest_link("https://www.instagram.com/p/abc123/", user_id=USER)
+  assert result.status == "linked"
   assert result.post_id == "instagram:abc123"
+  assert user_posts_repo.user_has_post(USER, "instagram:abc123")
 
 
-def test_ingest_link_refresh(monkeypatch, tmp_path) -> None:
+def test_ingest_link_skipped_when_already_in_library(monkeypatch, dynamodb) -> None:
   existing = _fake_instagram_post("https://www.instagram.com/p/abc123/")
-  save_post(existing, data_dir=tmp_path)
+  save_post(existing)
+  user_posts_repo.link_user_post(USER, existing.post_id)
+
+  def fail_fetch(_: str) -> SavedPost:
+    raise AssertionError("fetch should not run when post is already stored")
+
+  monkeypatch.setitem(PLATFORM_FETCHERS, Platform.INSTAGRAM, fail_fetch)
+
+  result = ingest_link("https://www.instagram.com/p/abc123/", user_id=USER)
+  assert result.status == "skipped"
+
+
+def test_ingest_link_refresh(monkeypatch, dynamodb) -> None:
+  existing = _fake_instagram_post("https://www.instagram.com/p/abc123/")
+  save_post(existing)
 
   monkeypatch.setitem(PLATFORM_FETCHERS, Platform.INSTAGRAM, _fake_instagram_post)
-  _use_tmp_store(monkeypatch, tmp_path)
 
-  result = ingest_link("https://www.instagram.com/p/abc123/", refresh=True)
+  result = ingest_link("https://www.instagram.com/p/abc123/", user_id=USER, refresh=True)
   assert result.status == "saved"
 
 
 def test_ingest_link_unsupported() -> None:
-  result = ingest_link("https://example.com/unknown")
+  result = ingest_link("https://example.com/unknown", user_id=USER)
   assert result.status == "unsupported"
 
 
 def test_ingest_link_unrouted_platform() -> None:
-  result = ingest_link("https://www.youtube.com/watch?v=dQw4w9WgXcQ")
+  result = ingest_link("https://www.youtube.com/watch?v=dQw4w9WgXcQ", user_id=USER)
   assert result.status == "unsupported"
 
 
-def test_ingest_link_error_isolation(monkeypatch, tmp_path) -> None:
+def test_ingest_link_error_isolation(monkeypatch, dynamodb) -> None:
   def fetch_or_fail(post_url: str) -> SavedPost:
     if "bad123" in post_url:
       raise RuntimeError("API down")
     return _fake_instagram_post(post_url)
 
   monkeypatch.setitem(PLATFORM_FETCHERS, Platform.INSTAGRAM, fetch_or_fail)
-  _use_tmp_store(monkeypatch, tmp_path)
 
   results = ingest_links(
     [
       "https://www.instagram.com/p/good123/",
       "https://www.instagram.com/p/bad123/",
-    ]
+    ],
+    user_id=USER,
   )
   assert len(results) == 2
   assert results[0].status == "saved"
   assert results[1].status == "error"
 
 
-def test_ingest_link_attaches_place_ids_from_place_processing(monkeypatch, tmp_path) -> None:
+def test_ingest_link_attaches_place_ids_from_place_processing(monkeypatch, dynamodb) -> None:
   monkeypatch.setitem(PLATFORM_FETCHERS, Platform.INSTAGRAM, _fake_instagram_post)
-  _use_tmp_store(monkeypatch, tmp_path)
   monkeypatch.setattr(
     "travelplanner.pipeline.process_post_places",
     lambda post: ("us-or-portland-multnomah-falls",),
   )
 
-  result = ingest_link("https://www.instagram.com/p/withplace/")
+  result = ingest_link("https://www.instagram.com/p/withplace/", user_id=USER)
   assert result.status == "saved"
 
-  saved = load_post(Platform.INSTAGRAM, "withplace", data_dir=tmp_path)
+  saved = load_post(Platform.INSTAGRAM, "withplace")
   assert saved is not None
   assert saved.place_ids == ("us-or-portland-multnomah-falls",)
 
 
-def test_ingest_link_saves_post_even_when_place_processing_fails(monkeypatch, tmp_path) -> None:
+def test_ingest_link_saves_post_even_when_place_processing_fails(monkeypatch, dynamodb) -> None:
   monkeypatch.setitem(PLATFORM_FETCHERS, Platform.INSTAGRAM, _fake_instagram_post)
-  _use_tmp_store(monkeypatch, tmp_path)
 
   def fail_places(post: SavedPost):
     raise RuntimeError("geocoder unavailable")
 
   monkeypatch.setattr("travelplanner.pipeline.process_post_places", fail_places)
 
-  result = ingest_link("https://www.instagram.com/p/noplace/")
+  result = ingest_link("https://www.instagram.com/p/noplace/", user_id=USER)
   assert result.status == "saved"
 
-  saved = load_post(Platform.INSTAGRAM, "noplace", data_dir=tmp_path)
+  saved = load_post(Platform.INSTAGRAM, "noplace")
   assert saved is not None
   assert saved.place_ids == ()
 
 
-def test_ingest_links_on_result_callback(monkeypatch, tmp_path) -> None:
+def test_ingest_links_on_result_callback(monkeypatch, dynamodb) -> None:
   monkeypatch.setitem(PLATFORM_FETCHERS, Platform.INSTAGRAM, _fake_instagram_post)
-  _use_tmp_store(monkeypatch, tmp_path)
 
   seen: list[str] = []
 
@@ -137,6 +139,7 @@ def test_ingest_links_on_result_callback(monkeypatch, tmp_path) -> None:
       "https://www.instagram.com/p/one/",
       "https://www.instagram.com/p/two/",
     ],
+    user_id=USER,
     on_result=lambda result: seen.append(result.post_url),
   )
 

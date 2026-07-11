@@ -1,0 +1,17 @@
+.git
+.venv
+venv
+__pycache__
+*.pyc
+.pytest_cache
+.mypy_cache
+frontend
+data
+.env
+*.md
+docs
+scripts
+tests
+.github
+infra/samconfig.toml
+infra/samconfig.toml.example

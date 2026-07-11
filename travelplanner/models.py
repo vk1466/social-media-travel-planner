@@ -122,6 +122,7 @@ class Visit:
   """One personal trip to a place. Places stay geography; visits hold when.
 
   `place_id` references Place.place_id. `place_name` is a denormalized snapshot.
+  `user_id` scopes the visit to a Clerk (or local) user.
   """
 
   visit_id: str
@@ -131,3 +132,4 @@ class Visit:
   visited_to: str | None = None
   notes: str | None = None
   created_at: str | None = None
+  user_id: str = ""

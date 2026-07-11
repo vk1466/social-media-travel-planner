@@ -74,8 +74,9 @@ export function DataMaintenance({ disabled = false, onComplete }: DataMaintenanc
       {open && (
         <>
           <p className="data-maintenance-copy">
-            Reprocess rebuilds places from saved posts without re-fetching links. Clean up wipes all
-            local posts, places, and travel history.
+            Reprocess rebuilds the shared place library from all saved posts (global). Clean up
+            deletes all shared posts, places, memberships, and visits — admin only when
+            ADMIN_USER_IDS is set.
           </p>
           <div className="data-maintenance-actions">
             <button

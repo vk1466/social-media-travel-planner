@@ -8,9 +8,12 @@ from pathlib import Path
 from travelplanner.pipeline import IngestResult, ingest_links
 from travelplanner.places import reprocess_all_places
 
+
 def _print_result(result: IngestResult) -> None:
   if result.status == "saved":
     print(f"saved     {result.post_url} ({result.post_id})")
+  elif result.status == "linked":
+    print(f"linked    {result.post_url} ({result.post_id})")
   elif result.status == "skipped":
     print(f"skipped   {result.post_url} ({result.post_id})")
   elif result.status == "unsupported":
@@ -31,12 +34,18 @@ def _read_links(path: Path) -> list[str]:
 
 
 def main() -> None:
-  parser = argparse.ArgumentParser(description="Ingest social media links into local storage.")
+  parser = argparse.ArgumentParser(description="Ingest social media links into DynamoDB.")
   parser.add_argument(
     "links_file",
     type=Path,
     nargs="?",
     help="Text file with one URL per line",
+  )
+  parser.add_argument(
+    "--user-id",
+    required=False,
+    default="local-dev-user",
+    help="User id to attach ingested posts to (default: local-dev-user)",
   )
   parser.add_argument(
     "--refresh",
@@ -59,12 +68,18 @@ def main() -> None:
     parser.error("links_file is required unless --reprocess-places is set")
 
   post_urls = _read_links(args.links_file)
-  results = ingest_links(post_urls, refresh=args.refresh, on_result=_print_result)
+  results = ingest_links(
+    post_urls,
+    user_id=args.user_id,
+    refresh=args.refresh,
+    on_result=_print_result,
+  )
 
   counts = Counter(result.status for result in results)
   print(
     "summary: "
     f"saved: {counts.get('saved', 0)}, "
+    f"linked: {counts.get('linked', 0)}, "
     f"skipped: {counts.get('skipped', 0)}, "
     f"unsupported: {counts.get('unsupported', 0)}, "
     f"errors: {counts.get('error', 0)}"

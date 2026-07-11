@@ -1,19 +1,17 @@
 from __future__ import annotations
 
-import json
 import math
 import re
 import unicodedata
-from dataclasses import asdict, replace
-from pathlib import Path
+from dataclasses import replace
 from typing import Any
 
 from travelplanner.clients import geocoder
+from travelplanner.db import places_repo, user_places_repo, user_posts_repo, visits_repo
+from travelplanner.db.places_repo import place_from_dict, place_to_dict
 from travelplanner.models import Place, PlaceLocation, Platform, SavedPost
 from travelplanner.place_hints import ExtractedPlace, PlaceMention, PlatformPlace
-from travelplanner.store import DEFAULT_DATA_DIR, delete_all_posts, load_all_posts, save_post
-
-DEFAULT_PLACES_DIR = Path("data/places")
+from travelplanner.store import delete_all_posts, load_all_posts, save_post
 
 # Near-duplicate coordinates within this radius are treated as the same place
 # even when they don't share an identity key (guards against name/spelling
@@ -474,95 +472,30 @@ def place_key(location: PlaceLocation) -> str:
   return "-".join(part for part in slug_parts if part)
 
 
-def _place_path(place_id: str, data_dir: Path) -> Path:
-  return data_dir / f"{place_id}.json"
+def save_place(place: Place) -> None:
+  places_repo.save_place(place)
 
 
-def place_to_dict(place: Place) -> dict:
-  return asdict(place)
+def load_place(place_id: str) -> Place | None:
+  return places_repo.load_place(place_id)
 
 
-def _place_from_dict(data: dict) -> Place:
-  location_data = data.get("location", {})
-  location = PlaceLocation(
-    display_name=location_data["display_name"],
-    continent=location_data.get("continent"),
-    country=location_data.get("country"),
-    country_code=location_data.get("country_code"),
-    state_province=location_data.get("state_province"),
-    city=location_data.get("city"),
-    latitude=location_data.get("latitude"),
-    longitude=location_data.get("longitude"),
-    provider_place_id=location_data.get("provider_place_id"),
-    osm_class=location_data.get("osm_class"),
-    osm_type=location_data.get("osm_type"),
-  )
-  return Place(
-    place_id=data["place_id"],
-    display_name=data["display_name"],
-    location=location,
-    aliases=tuple(data.get("aliases", [])),
-    tags=tuple(data.get("tags", [])),
-    details=tuple(data.get("details", [])),
-    tips=tuple(data.get("tips", [])),
-    source_post_ids=tuple(data.get("source_post_ids", [])),
-    parent_place_id=data.get("parent_place_id"),
-  )
+def load_all_places() -> list[Place]:
+  return places_repo.load_all_places()
 
 
-def save_place(place: Place, data_dir: Path = DEFAULT_PLACES_DIR) -> Path:
-  path = _place_path(place.place_id, data_dir)
-  path.parent.mkdir(parents=True, exist_ok=True)
-  with path.open("w", encoding="utf-8") as handle:
-    json.dump(place_to_dict(place), handle, indent=2, ensure_ascii=False)
-    handle.write("\n")
-  return path
+def delete_all_places() -> int:
+  """Remove every canonical place. Returns the number deleted."""
+  return places_repo.delete_all_places()
 
 
-def load_place(place_id: str, data_dir: Path = DEFAULT_PLACES_DIR) -> Place | None:
-  path = _place_path(place_id, data_dir)
-  if not path.exists():
-    return None
-  with path.open(encoding="utf-8") as handle:
-    return _place_from_dict(json.load(handle))
-
-
-def load_all_places(data_dir: Path = DEFAULT_PLACES_DIR) -> list[Place]:
-  if not data_dir.exists():
-    return []
-  places = []
-  for path in sorted(data_dir.glob("*.json")):
-    with path.open(encoding="utf-8") as handle:
-      places.append(_place_from_dict(json.load(handle)))
-  return places
-
-
-def delete_all_places(data_dir: Path = DEFAULT_PLACES_DIR) -> int:
-  """Remove every canonical place JSON file. Returns the number deleted."""
-  if not data_dir.exists():
-    return 0
-
-  deleted = 0
-  for path in data_dir.glob("*.json"):
-    path.unlink()
-    deleted += 1
-  return deleted
-
-
-def cleanup_all_data(
-  *,
-  posts_data_dir: Path = DEFAULT_DATA_DIR,
-  places_data_dir: Path = DEFAULT_PLACES_DIR,
-  visits_data_dir: Path | None = None,
-) -> tuple[int, int, int]:
-  """Delete all saved posts, canonical places, and visits."""
-  from travelplanner.visits import DEFAULT_VISITS_DIR, delete_all_visits
-
-  posts_deleted = delete_all_posts(data_dir=posts_data_dir)
-  places_deleted = delete_all_places(data_dir=places_data_dir)
-  visits_deleted = delete_all_visits(
-    data_dir=DEFAULT_VISITS_DIR if visits_data_dir is None else visits_data_dir
-  )
+def cleanup_all_data() -> tuple[int, int, int]:
+  """Delete all shared posts/places, user memberships, and visits."""
+  posts_deleted = delete_all_posts()
+  places_deleted = delete_all_places()
+  visits_deleted = visits_repo.delete_all_visits()
+  user_posts_repo.delete_all_user_posts()
+  user_places_repo.delete_all_user_places()
   return posts_deleted, places_deleted, visits_deleted
 
 
@@ -579,9 +512,12 @@ def list_places(
   tag: str | None = None,
   roots_only: bool = False,
   parent_place_id: str | None = None,
-  data_dir: Path = DEFAULT_PLACES_DIR,
+  place_ids: list[str] | None = None,
 ) -> list[Place]:
-  places = load_all_places(data_dir=data_dir)
+  if place_ids is not None:
+    places = places_repo.batch_get_places(place_ids)
+  else:
+    places = load_all_places()
   if roots_only:
     places = [place for place in places if place.parent_place_id is None]
   if parent_place_id is not None:
@@ -612,10 +548,10 @@ def _haversine_meters(lat1: float, lon1: float, lat2: float, lon2: float) -> flo
   return 2 * earth_radius_meters * math.asin(math.sqrt(a))
 
 
-def _find_near_duplicate(location: PlaceLocation, data_dir: Path) -> Place | None:
+def _find_near_duplicate(location: PlaceLocation) -> Place | None:
   if location.latitude is None or location.longitude is None:
     return None
-  for place in load_all_places(data_dir=data_dir):
+  for place in load_all_places():
     place_location = place.location
     if place_location.latitude is None or place_location.longitude is None:
       continue
@@ -627,11 +563,11 @@ def _find_near_duplicate(location: PlaceLocation, data_dir: Path) -> Place | Non
   return None
 
 
-def _find_existing_place(key: str, location: PlaceLocation, data_dir: Path) -> Place | None:
-  existing = load_place(key, data_dir=data_dir)
+def _find_existing_place(key: str, location: PlaceLocation) -> Place | None:
+  existing = load_place(key)
   if existing is not None:
     return existing
-  return _find_near_duplicate(location, data_dir)
+  return _find_near_duplicate(location)
 
 
 def _merge_place(
@@ -691,23 +627,22 @@ def upsert_place(
   mention: PlaceMention,
   location: PlaceLocation,
   source_post_id: str | None = None,
-  data_dir: Path = DEFAULT_PLACES_DIR,
 ) -> str:
   key = place_key(location)
-  existing = _find_existing_place(key, location, data_dir)
+  existing = _find_existing_place(key, location)
   place = (
     _merge_place(existing, mention, source_post_id)
     if existing is not None
     else _new_place(key, mention, location, source_post_id)
   )
-  save_place(place, data_dir)
+  save_place(place)
   return place.place_id
 
 
-def unlink_post_from_places(post_id: str, data_dir: Path = DEFAULT_PLACES_DIR) -> int:
+def unlink_post_from_places(post_id: str) -> int:
   """Remove a post FK from every place's source_post_ids. Returns places updated."""
   updated = 0
-  for place in load_all_places(data_dir=data_dir):
+  for place in load_all_places():
     if post_id not in place.source_post_ids:
       continue
     save_place(
@@ -715,7 +650,6 @@ def unlink_post_from_places(post_id: str, data_dir: Path = DEFAULT_PLACES_DIR) -
         place,
         source_post_ids=tuple(pid for pid in place.source_post_ids if pid != post_id),
       ),
-      data_dir,
     )
     updated += 1
   return updated
@@ -724,11 +658,7 @@ def unlink_post_from_places(post_id: str, data_dir: Path = DEFAULT_PLACES_DIR) -
 # --- Orchestration -----------------------------------------------------------
 
 
-def process_post_places(
-  post: SavedPost,
-  *,
-  places_data_dir: Path = DEFAULT_PLACES_DIR,
-) -> tuple[str, ...]:
+def process_post_places(post: SavedPost) -> tuple[str, ...]:
   """Normalize -> locate -> resolve/upsert every place mention on a post.
   Never raises: a mention that fails to geocode is skipped, not fatal."""
   source_post_id = post.post_id
@@ -744,45 +674,28 @@ def process_post_places(
     if not is_visitable_place(location):
       continue
 
-    place_id = upsert_place(mention, location, source_post_id, data_dir=places_data_dir)
+    place_id = upsert_place(mention, location, source_post_id)
     if place_id not in place_ids:
       place_ids.append(place_id)
 
   return tuple(place_ids)
 
 
-def reprocess_all_places(
-  platform: Platform | None = None,
-  *,
-  posts_data_dir: Path = DEFAULT_DATA_DIR,
-  places_data_dir: Path = DEFAULT_PLACES_DIR,
-  visits_data_dir: Path | None = None,
-) -> None:
+def reprocess_all_places(platform: Platform | None = None) -> None:
   """Batch backfill: re-run place processing on saved posts without
   re-fetching links. A full run (no platform filter) clears the place
   library first and rebuilds it, so post <-> place drift self-heals."""
-  if platform is None and places_data_dir.exists():
-    for path in places_data_dir.glob("*.json"):
-      path.unlink()
+  if platform is None:
+    delete_all_places()
 
-  for post in load_all_posts(platform=platform, data_dir=posts_data_dir):
-    place_ids = process_post_places(post, places_data_dir=places_data_dir)
+  for post in load_all_posts(platform=platform):
+    place_ids = process_post_places(post)
     if place_ids != post.place_ids:
-      save_post(replace(post, place_ids=place_ids), data_dir=posts_data_dir)
+      save_post(replace(post, place_ids=place_ids))
 
   try:
     from travelplanner.hierarchy import link_places
 
-    link_places(posts_data_dir=posts_data_dir, places_data_dir=places_data_dir)
-  except Exception:
-    pass
-
-  try:
-    from travelplanner.visits import DEFAULT_VISITS_DIR, relink_visits
-
-    relink_visits(
-      visits_data_dir=DEFAULT_VISITS_DIR if visits_data_dir is None else visits_data_dir,
-      places_data_dir=places_data_dir,
-    )
+    link_places()
   except Exception:
     pass

@@ -86,7 +86,7 @@ def test_is_visitable_place_rejects_administrative_regions() -> None:
   assert is_visitable_place(falls) is True
 
 
-def test_process_post_places_skips_non_visitable_admin_regions(monkeypatch, tmp_path) -> None:
+def test_process_post_places_skips_non_visitable_admin_regions(monkeypatch, dynamodb) -> None:
   post = _sample_post(extracted_places=(ExtractedPlace(place_name="Oregon", state_province="Oregon"),))
   admin_location = PlaceLocation(
     display_name="Oregon",
@@ -98,10 +98,10 @@ def test_process_post_places_skips_non_visitable_admin_regions(monkeypatch, tmp_
   )
   monkeypatch.setattr("travelplanner.places.locate_mention", lambda mention: admin_location)
 
-  place_ids = process_post_places(post, places_data_dir=tmp_path)
+  place_ids = process_post_places(post)
 
   assert place_ids == ()
-  assert load_all_places(data_dir=tmp_path) == []
+  assert load_all_places() == []
 
 
 def test_fetch_places_from_text_returns_empty_without_api_key(monkeypatch) -> None:
@@ -158,9 +158,7 @@ def test_choose_group_name_returns_none_without_client(monkeypatch) -> None:
   assert choose_group_name(("Crater Lake Parkway", "Rim Village")) is None
 
 
-def test_link_places_ig_tag_anchor_clusters_post_places(monkeypatch, tmp_path) -> None:
-  posts_dir = tmp_path / "posts"
-  places_dir = tmp_path / "places"
+def test_link_places_ig_tag_anchor_clusters_post_places(monkeypatch, dynamodb) -> None:
 
   lake = upsert_place(
     PlaceMention(place_name="Lake Tahoe"),
@@ -172,7 +170,6 @@ def test_link_places_ig_tag_anchor_clusters_post_places(monkeypatch, tmp_path) -
       longitude=-120.0324,
     ),
     "instagram:post1",
-    data_dir=places_dir,
   )
   emerald = upsert_place(
     PlaceMention(place_name="Emerald Bay"),
@@ -184,7 +181,6 @@ def test_link_places_ig_tag_anchor_clusters_post_places(monkeypatch, tmp_path) -
       longitude=-120.0980,
     ),
     "instagram:post1",
-    data_dir=places_dir,
   )
 
   post = _sample_post(
@@ -193,21 +189,19 @@ def test_link_places_ig_tag_anchor_clusters_post_places(monkeypatch, tmp_path) -
     place_ids=(lake, emerald),
     post_id="instagram:post1",
   )
-  save_post(post, data_dir=posts_dir)
+  save_post(post)
 
   monkeypatch.setattr("travelplanner.hierarchy.choose_group_name", lambda names: "Lake Tahoe")
-  link_places(posts_data_dir=posts_dir, places_data_dir=places_dir)
+  link_places()
 
-  root = load_place(lake, data_dir=places_dir)
-  child = load_place(emerald, data_dir=places_dir)
+  root = load_place(lake)
+  child = load_place(emerald)
   assert root is not None and child is not None
   assert root.parent_place_id is None
   assert child.parent_place_id == lake
 
 
-def test_link_places_parent_hint_wins_over_shorter_child_name(monkeypatch, tmp_path) -> None:
-  posts_dir = tmp_path / "posts"
-  places_dir = tmp_path / "places"
+def test_link_places_parent_hint_wins_over_shorter_child_name(monkeypatch, dynamodb) -> None:
 
   park = upsert_place(
     PlaceMention(place_name="Smith Rock State Park", tags=("park",)),
@@ -219,7 +213,6 @@ def test_link_places_parent_hint_wins_over_shorter_child_name(monkeypatch, tmp_p
       longitude=-121.1408,
     ),
     "instagram:post1",
-    data_dir=places_dir,
   )
   trail = upsert_place(
     PlaceMention(place_name="Misery Ridge Trail", tags=("hike",)),
@@ -231,7 +224,6 @@ def test_link_places_parent_hint_wins_over_shorter_child_name(monkeypatch, tmp_p
       longitude=-121.1410,
     ),
     "instagram:post1",
-    data_dir=places_dir,
   )
 
   post = _sample_post(
@@ -247,38 +239,33 @@ def test_link_places_parent_hint_wins_over_shorter_child_name(monkeypatch, tmp_p
     place_ids=(park, trail),
     post_id="instagram:post1",
   )
-  save_post(post, data_dir=posts_dir)
+  save_post(post)
 
   monkeypatch.setattr("travelplanner.hierarchy.choose_group_name", lambda names: None)
-  link_places(posts_data_dir=posts_dir, places_data_dir=places_dir)
+  link_places()
 
-  root = load_place(park, data_dir=places_dir)
-  child = load_place(trail, data_dir=places_dir)
+  root = load_place(park)
+  child = load_place(trail)
   assert root is not None and child is not None
   assert root.parent_place_id is None
   assert child.parent_place_id == park
 
 
-def test_link_places_cross_post_name_proximity_cluster(monkeypatch, tmp_path) -> None:
-  posts_dir = tmp_path / "posts"
-  places_dir = tmp_path / "places"
+def test_link_places_cross_post_name_proximity_cluster(monkeypatch, dynamodb) -> None:
 
   crater = upsert_place(
     PlaceMention(place_name="Crater Lake"),
     _crater_lake_location(),
     "instagram:postA",
-    data_dir=places_dir,
   )
   parkway = upsert_place(
     PlaceMention(place_name="Crater Lake Parkway"),
     _crater_lake_location(display_name="Crater Lake Parkway", lat=42.9450, lon=-122.1085),
     "instagram:postB",
-    data_dir=places_dir,
   )
 
   save_post(
     _sample_post(extracted_places=(ExtractedPlace(place_name="Crater Lake"),), place_ids=(crater,), post_id="instagram:postA"),
-    data_dir=posts_dir,
   )
   save_post(
     _sample_post(
@@ -286,34 +273,29 @@ def test_link_places_cross_post_name_proximity_cluster(monkeypatch, tmp_path) ->
       place_ids=(parkway,),
       post_id="instagram:postB",
     ),
-    data_dir=posts_dir,
   )
 
   monkeypatch.setattr("travelplanner.hierarchy.choose_group_name", lambda names: "Crater Lake")
-  link_places(posts_data_dir=posts_dir, places_data_dir=places_dir)
+  link_places()
 
-  root = load_place(crater, data_dir=places_dir)
-  child = load_place(parkway, data_dir=places_dir)
+  root = load_place(crater)
+  child = load_place(parkway)
   assert root is not None and child is not None
   assert root.parent_place_id is None
   assert child.parent_place_id == crater
 
 
-def test_link_places_renames_root_when_group_name_has_no_member_match(monkeypatch, tmp_path) -> None:
-  places_dir = tmp_path / "places"
-  posts_dir = tmp_path / "posts"
+def test_link_places_renames_root_when_group_name_has_no_member_match(monkeypatch, dynamodb) -> None:
 
   parkway = upsert_place(
     PlaceMention(place_name="Crater Lake Parkway"),
     _crater_lake_location(display_name="Crater Lake Parkway"),
     "instagram:postB",
-    data_dir=places_dir,
   )
   rim = upsert_place(
     PlaceMention(place_name="Rim Village"),
     _crater_lake_location(display_name="Rim Village", lat=42.9460, lon=-122.1070),
     "instagram:postB",
-    data_dir=places_dir,
   )
 
   save_post(
@@ -322,50 +304,47 @@ def test_link_places_renames_root_when_group_name_has_no_member_match(monkeypatc
       place_ids=(parkway, rim),
       post_id="instagram:postB",
     ),
-    data_dir=posts_dir,
   )
 
   monkeypatch.setattr("travelplanner.hierarchy.choose_group_name", lambda names: "Crater Lake")
-  link_places(posts_data_dir=posts_dir, places_data_dir=places_dir)
+  link_places()
 
-  root = load_place(rim, data_dir=places_dir)
-  child = load_place(parkway, data_dir=places_dir)
+  root = load_place(rim)
+  child = load_place(parkway)
   assert root is not None and child is not None
   assert root.display_name == "Crater Lake"
   assert "Rim Village" in root.aliases
   assert child.parent_place_id == rim
 
 
-def test_link_places_is_idempotent(monkeypatch, tmp_path) -> None:
-  posts_dir = tmp_path / "posts"
-  places_dir = tmp_path / "places"
+def test_link_places_is_idempotent(monkeypatch, dynamodb) -> None:
 
   crater = upsert_place(
     PlaceMention(place_name="Crater Lake"),
     _crater_lake_location(),
     "instagram:postA",
-    data_dir=places_dir,
   )
   parkway = upsert_place(
     PlaceMention(place_name="Crater Lake Parkway"),
     _crater_lake_location(display_name="Crater Lake Parkway", lat=42.9450, lon=-122.1085),
     "instagram:postB",
-    data_dir=places_dir,
   )
-  save_post(_sample_post(place_ids=(crater,), post_id="instagram:postA"), data_dir=posts_dir)
-  save_post(_sample_post(place_ids=(parkway,), post_id="instagram:postB"), data_dir=posts_dir)
+  save_post(_sample_post(place_ids=(crater,), post_id="instagram:postA"))
+  save_post(_sample_post(place_ids=(parkway,), post_id="instagram:postB"))
 
   monkeypatch.setattr("travelplanner.hierarchy.choose_group_name", lambda names: None)
-  link_places(posts_data_dir=posts_dir, places_data_dir=places_dir)
-  first = {place.place_id: place for place in load_all_places(data_dir=places_dir)}
+  link_places()
+  first = {place.place_id: place for place in load_all_places()}
 
-  link_places(posts_data_dir=posts_dir, places_data_dir=places_dir)
-  second = {place.place_id: place for place in load_all_places(data_dir=places_dir)}
+  link_places()
+  second = {place.place_id: place for place in load_all_places()}
 
   assert first == second
 
 
-def test_backward_compat_place_json_without_new_fields(tmp_path) -> None:
+def test_backward_compat_place_without_new_fields(dynamodb) -> None:
+  from travelplanner.db.places_repo import place_from_dict, save_place
+
   legacy = {
     "place_id": "us-or-klamath-crater-lake",
     "display_name": "Crater Lake",
@@ -373,17 +352,21 @@ def test_backward_compat_place_json_without_new_fields(tmp_path) -> None:
       "display_name": "Crater Lake",
       "country_code": "US",
       "state_province": "Oregon",
+      "city": "Klamath Falls",
+      "latitude": 42.9446,
+      "longitude": -122.1090,
     },
     "aliases": [],
     "tags": [],
     "details": [],
     "tips": [],
-    "source_post_ids": ["instagram:abc"],
+    "source_post_ids": [],
   }
-  path = tmp_path / "us-or-klamath-crater-lake.json"
-  path.write_text(json.dumps(legacy), encoding="utf-8")
+  save_place(place_from_dict(legacy))
 
-  place = load_place("us-or-klamath-crater-lake", data_dir=tmp_path)
+  place = load_place("us-or-klamath-crater-lake")
   assert place is not None
   assert place.parent_place_id is None
   assert place.location.osm_class is None
+
+

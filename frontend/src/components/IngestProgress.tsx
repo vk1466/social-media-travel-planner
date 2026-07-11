@@ -14,8 +14,10 @@ function statusLabel(link: JobLink): string {
       return "Fetching post details…";
     case "saved":
       return "Saved";
+    case "linked":
+      return "Added to your library (already processed — no API credits used)";
     case "skipped":
-      return "Already saved — skipped (no API credits used)";
+      return "Already in your library — skipped";
     case "unsupported":
       return "We don't support this site yet";
     case "error":
@@ -70,7 +72,11 @@ export function IngestProgress({ links, running, onOpenPost }: IngestProgressPro
       <ul className="progress-list">
         {links.map((link) => {
           const platform = platformFromUrl(link.post_url);
-          const canOpenPost = link.status === "saved" && link.post_id && platform && onOpenPost;
+          const canOpenPost =
+            (link.status === "saved" || link.status === "linked" || link.status === "skipped") &&
+            link.post_id &&
+            platform &&
+            onOpenPost;
           return (
             <li key={link.post_url} className={`progress-item status-${link.status}`}>
               <span

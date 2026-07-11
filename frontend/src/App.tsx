@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
+import { UserButton, useUser } from "@clerk/clerk-react";
 
 import { fetchPlaces, fetchPosts, fetchVisits, startIngest, postRouteParts, type Place } from "./api";
 import { DataMaintenance } from "./components/DataMaintenance";
@@ -9,6 +10,8 @@ import { PlaceLibrary } from "./components/PlaceLibrary";
 import { PostLibrary } from "./components/PostLibrary";
 import { TravelHistory } from "./components/TravelHistory";
 import { useJob } from "./hooks/useJob";
+
+const clerkEnabled = Boolean(import.meta.env.VITE_CLERK_PUBLISHABLE_KEY);
 
 function BrandMark() {
   return (
@@ -21,6 +24,34 @@ function BrandMark() {
       <circle cx="14" cy="14" r="1.1" fill="#f8f9f8" />
     </svg>
   );
+}
+
+function ClerkUserChip() {
+  const { user } = useUser();
+  const displayName =
+    user?.fullName || user?.primaryEmailAddress?.emailAddress || "Signed in";
+
+  return (
+    <div className="user-chip">
+      <UserButton afterSignOutUrl="/" />
+      <span className="user-name">{displayName}</span>
+    </div>
+  );
+}
+
+function LocalUserChip() {
+  return (
+    <div className="user-chip">
+      <span className="user-avatar" aria-hidden="true">
+        LO
+      </span>
+      <span className="user-name">Local user</span>
+    </div>
+  );
+}
+
+function UserChip() {
+  return clerkEnabled ? <ClerkUserChip /> : <LocalUserChip />;
 }
 
 function AppShell() {
@@ -67,7 +98,7 @@ function AppShell() {
     if (job?.status === "done") {
       void refreshPosts();
       setLibraryVersion((version) => version + 1);
-      if (!switchedAfterIngest.current && job.counts.saved > 0) {
+      if (!switchedAfterIngest.current && (job.counts.saved > 0 || (job.counts.linked ?? 0) > 0)) {
         switchedAfterIngest.current = true;
         navigate("/places");
       }
@@ -75,7 +106,7 @@ function AppShell() {
     if (job?.status === "running") {
       switchedAfterIngest.current = false;
     }
-  }, [job?.status, job?.counts.saved, refreshPosts, navigate]);
+  }, [job?.status, job?.counts.saved, job?.counts.linked, refreshPosts, navigate]);
 
   const handleSubmit = async (links: string[], refresh: boolean) => {
     setSubmitError(null);
@@ -114,12 +145,7 @@ function AppShell() {
           <BrandMark />
           <span className="brand-name">Wanderfile</span>
         </div>
-        <div className="user-chip">
-          <span className="user-avatar" aria-hidden="true">
-            VK
-          </span>
-          <span className="user-name">Vipul Kumar</span>
-        </div>
+        <UserChip />
       </header>
 
       <main className="app-shell">

@@ -3,18 +3,16 @@ from __future__ import annotations
 import json
 import math
 from dataclasses import replace
-from pathlib import Path
 
 from travelplanner import settings
 from travelplanner.clients.openai import get_client
 from travelplanner.models import Place, SavedPost
 from travelplanner.places import (
-  DEFAULT_PLACES_DIR,
   load_all_places,
   save_place,
   slugify,
 )
-from travelplanner.store import DEFAULT_DATA_DIR, load_all_posts
+from travelplanner.store import load_all_posts
 
 CLUSTER_PROXIMITY_METERS = 25_000
 
@@ -356,18 +354,14 @@ def _apply_cluster_roots(
   return updated
 
 
-def link_places(
-  *,
-  posts_data_dir: Path = DEFAULT_DATA_DIR,
-  places_data_dir: Path = DEFAULT_PLACES_DIR,
-) -> None:
+def link_places() -> None:
   """Recompute every parent_place_id over the whole library. Idempotent."""
-  places = load_all_places(data_dir=places_data_dir)
+  places = load_all_places()
   if not places:
     return
 
   places_by_id = {place.place_id: replace(place, parent_place_id=None) for place in places}
-  posts = load_all_posts(data_dir=posts_data_dir)
+  posts = load_all_posts()
 
   clusters = _cluster_places(places_by_id, posts)
   parent_hints = _parent_hints_from_posts(posts, places_by_id)
@@ -382,4 +376,4 @@ def link_places(
       or place.display_name != original.display_name
       or place.aliases != original.aliases
     ):
-      save_place(place, data_dir=places_data_dir)
+      save_place(place)

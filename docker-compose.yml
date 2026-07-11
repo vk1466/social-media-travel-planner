@@ -1,0 +1,11 @@
+services:
+  dynamodb:
+    image: amazon/dynamodb-local:2.5.2
+    container_name: travelplanner-dynamodb
+    ports:
+      # Host 8001 so uvicorn can keep the usual API port 8000.
+      - "8001:8000"
+    # In-memory is reliable for local dev; data resets when the container stops.
+    # For a durable local DB, mount a volume and use -sharedDb -dbPath /home/dynamodblocal/data
+    # with user: root (the image user cannot write arbitrary host mounts).
+    command: "-jar DynamoDBLocal.jar -sharedDb -inMemory"

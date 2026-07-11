@@ -34,3 +34,84 @@ def openai_api_key() -> str | None:
 
 def openai_model() -> str:
   return os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+
+
+def dynamodb_endpoint_url() -> str | None:
+  value = os.getenv("DYNAMODB_ENDPOINT_URL", "").strip()
+  return value or None
+
+
+def dynamodb_region() -> str:
+  return os.getenv("DYNAMODB_REGION", "us-east-1").strip() or "us-east-1"
+
+
+def dynamodb_table_prefix() -> str:
+  return os.getenv("DYNAMODB_TABLE_PREFIX", "").strip()
+
+
+def aws_access_key_id() -> str | None:
+  value = os.getenv("AWS_ACCESS_KEY_ID", "").strip()
+  return value or None
+
+
+def aws_secret_access_key() -> str | None:
+  value = os.getenv("AWS_SECRET_ACCESS_KEY", "").strip()
+  return value or None
+
+
+def clerk_issuer() -> str | None:
+  value = os.getenv("CLERK_ISSUER", "").strip()
+  return value or None
+
+
+def clerk_jwks_url() -> str | None:
+  value = os.getenv("CLERK_JWKS_URL", "").strip()
+  if value:
+    return value
+  issuer = clerk_issuer()
+  if issuer:
+    return f"{issuer.rstrip('/')}/.well-known/jwks.json"
+  return None
+
+
+def clerk_audience() -> str | None:
+  value = os.getenv("CLERK_AUDIENCE", "").strip()
+  return value or None
+
+
+def admin_user_ids() -> frozenset[str]:
+  raw = os.getenv("ADMIN_USER_IDS", "").strip()
+  if not raw:
+    return frozenset()
+  return frozenset(part.strip() for part in raw.split(",") if part.strip())
+
+
+def auth_disabled() -> bool:
+  """Dev/test bypass when Clerk is not configured."""
+  flag = os.getenv("AUTH_DISABLED", "").strip().lower()
+  if flag in {"1", "true", "yes"}:
+    return True
+  return clerk_issuer() is None
+
+
+def ingest_mode() -> str:
+  """local = in-process background tasks; stepfunctions = AWS Step Functions."""
+  value = os.getenv("INGEST_MODE", "local").strip().lower()
+  if value in {"stepfunctions", "step_functions", "sfn"}:
+    return "stepfunctions"
+  return "local"
+
+
+def state_machine_arn() -> str | None:
+  value = os.getenv("STATE_MACHINE_ARN", "").strip()
+  return value or None
+
+
+def cors_origins() -> list[str]:
+  raw = os.getenv("CORS_ORIGINS", "").strip()
+  if raw:
+    return [origin.strip() for origin in raw.split(",") if origin.strip()]
+  return [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+  ]
