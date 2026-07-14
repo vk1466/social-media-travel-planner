@@ -1,16 +1,14 @@
-from types import SimpleNamespace
-
 from travelplanner.models import PlaceLocation, Platform, SavedPost
 from travelplanner.place_hints import ExtractedPlace, PlaceMention, PlatformPlace
 from travelplanner.places import (
-  _geocode_queries,
+  LocateDebugResult,
   cleanup_all_data,
   delete_all_places,
+  geocode_queries,
   is_visitable_place,
   list_places,
   load_all_places,
   load_place,
-  locate_mention,
   mentions_from_post,
   place_key,
   process_post_places,
@@ -19,24 +17,6 @@ from travelplanner.places import (
   upsert_place,
 )
 from travelplanner.store import delete_all_posts, save_post
-
-
-def _fake_location(latitude: float, longitude: float, raw: dict) -> SimpleNamespace:
-  return SimpleNamespace(latitude=latitude, longitude=longitude, raw=raw)
-
-
-def _multnomah_falls_raw() -> dict:
-  return {
-    "place_id": 12345,
-    "name": "Multnomah Falls",
-    "display_name": "Multnomah Falls, Multnomah County, Oregon, United States",
-    "address": {
-      "city": "Portland",
-      "state": "Oregon",
-      "country": "United States",
-      "country_code": "us",
-    },
-  }
 
 
 def _sample_post(*, places=(), extracted_places=(), post_id: str = "instagram:post1") -> SavedPost:
@@ -132,6 +112,7 @@ def test_mentions_from_post_synthesizes_parent_from_parent_place_name() -> None:
       country="USA",
       state_province="Oregon",
       tags=("hike",),
+      parent_place_name="Smith Rock State Park",
     ),
     PlaceMention(
       place_name="Smith Rock State Park",
@@ -196,82 +177,12 @@ def test_geocode_queries_falls_back_to_simpler_queries() -> None:
     state_province="Washington",
     country="USA",
   )
-  assert _geocode_queries(mention) == (
+  assert geocode_queries(mention) == (
     "Picture Lake, Mt. Baker, Washington, USA",
     "Picture Lake, Washington, USA",
     "Picture Lake, USA",
+    "Picture Lake",
   )
-
-
-def test_locate_mention_falls_back_when_first_query_fails(monkeypatch) -> None:
-  calls: list[str] = []
-
-  def fake_geocode(query):
-    calls.append(query)
-    if query == "Picture Lake, Mt. Baker, Washington, USA":
-      return None
-    if query == "Picture Lake, Washington, USA":
-      return _fake_location(48.777, -121.329, _multnomah_falls_raw())
-    return None
-
-  monkeypatch.setattr("travelplanner.places.geocoder.geocode", fake_geocode)
-
-  mention = PlaceMention(
-    place_name="Picture Lake",
-    city="Mt. Baker",
-    state_province="Washington",
-    country="USA",
-  )
-  location = locate_mention(mention)
-
-  assert calls == [
-    "Picture Lake, Mt. Baker, Washington, USA",
-    "Picture Lake, Washington, USA",
-  ]
-  assert location is not None
-  assert location.display_name == "Multnomah Falls"
-
-
-def test_locate_mention_falls_back_when_first_match_is_non_travel(monkeypatch) -> None:
-  remax_raw = {
-    "place_id": 999,
-    "name": "Brookings Oregon Real Estate - Remax Coast and Country",
-    "display_name": "Brookings Oregon Real Estate - Remax Coast and Country, Oregon",
-    "class": "office",
-    "type": "estate_agent",
-    "address": {
-      "city": "Brookings",
-      "state": "Oregon",
-      "country": "United States",
-      "country_code": "us",
-    },
-  }
-  calls: list[str] = []
-
-  def fake_geocode(query):
-    calls.append(query)
-    if query == "Oregon Coast, Oregon Coast, Oregon, USA":
-      return _fake_location(42.05, -124.28, remax_raw)
-    if query == "Oregon Coast, Oregon, USA":
-      return None
-    if query == "Oregon Coast, USA":
-      return None
-    return None
-
-  monkeypatch.setattr("travelplanner.places.geocoder.geocode", fake_geocode)
-
-  mention = PlaceMention(
-    place_name="Oregon Coast",
-    city="Oregon Coast",
-    state_province="Oregon",
-    country="USA",
-  )
-  assert locate_mention(mention) is None
-  assert calls == [
-    "Oregon Coast, Oregon Coast, Oregon, USA",
-    "Oregon Coast, Oregon, USA",
-    "Oregon Coast, USA",
-  ]
 
 
 def test_is_visitable_place_rejects_non_travel_offices() -> None:
@@ -285,59 +196,6 @@ def test_is_visitable_place_rejects_non_travel_offices() -> None:
     osm_type="estate_agent",
   )
   assert is_visitable_place(remax) is False
-
-
-def test_locate_mention_uses_reverse_geocode_when_coordinates_known(monkeypatch) -> None:
-  calls = {}
-
-  def fake_reverse(latitude, longitude):
-    calls["reverse"] = (latitude, longitude)
-    return _fake_location(latitude, longitude, _multnomah_falls_raw())
-
-  def fail_geocode(query):
-    raise AssertionError("forward geocode should not run when coordinates are known")
-
-  monkeypatch.setattr("travelplanner.places.geocoder.reverse_geocode", fake_reverse)
-  monkeypatch.setattr("travelplanner.places.geocoder.geocode", fail_geocode)
-
-  mention = PlaceMention(place_name="Multnomah Falls", latitude=45.5762, longitude=-122.1158)
-  location = locate_mention(mention)
-
-  assert calls["reverse"] == (45.5762, -122.1158)
-  assert location == PlaceLocation(
-    display_name="Multnomah Falls",
-    continent="North America",
-    country="United States",
-    country_code="US",
-    state_province="Oregon",
-    city="Portland",
-    latitude=45.5762,
-    longitude=-122.1158,
-    provider_place_id="12345",
-  )
-
-
-def test_locate_mention_uses_forward_geocode_when_no_coordinates(monkeypatch) -> None:
-  calls = {}
-
-  def fake_geocode(query):
-    calls["query"] = query
-    return _fake_location(45.5762, -122.1158, _multnomah_falls_raw())
-
-  monkeypatch.setattr("travelplanner.places.geocoder.geocode", fake_geocode)
-
-  mention = PlaceMention(place_name="Multnomah Falls", city="Portland", country="USA")
-  location = locate_mention(mention)
-
-  assert calls["query"] == "Multnomah Falls, Portland, USA"
-  assert location is not None
-  assert location.city == "Portland"
-
-
-def test_locate_mention_returns_none_when_geocoder_finds_nothing(monkeypatch) -> None:
-  monkeypatch.setattr("travelplanner.places.geocoder.geocode", lambda query: None)
-  mention = PlaceMention(place_name="Nowhereville")
-  assert locate_mention(mention) is None
 
 
 def test_upsert_place_creates_new_place(dynamodb) -> None:
@@ -429,7 +287,10 @@ def test_upsert_place_merges_near_duplicate_coordinates_without_shared_key(dynam
 
 def test_process_post_places_skips_mentions_that_fail_to_locate(monkeypatch, dynamodb) -> None:
   post = _sample_post(places=(PlatformPlace(place_name="Nowhereville"),))
-  monkeypatch.setattr("travelplanner.places.locate_mention", lambda mention: None)
+  monkeypatch.setattr(
+    "travelplanner.places.pipeline.locate_mention_debug",
+    lambda mention: LocateDebugResult(status="unresolved"),
+  )
 
   place_ids = process_post_places(post)
 
@@ -449,7 +310,10 @@ def test_process_post_places_returns_ids_for_located_mentions(monkeypatch, dynam
     latitude=45.5762,
     longitude=-122.1158,
   )
-  monkeypatch.setattr("travelplanner.places.locate_mention", lambda mention: location)
+  monkeypatch.setattr(
+    "travelplanner.places.pipeline.locate_mention_debug",
+    lambda mention: LocateDebugResult(status="resolved", location=location),
+  )
 
   place_ids = process_post_places(post)
 
@@ -472,26 +336,32 @@ def test_process_post_places_materializes_parent_from_parent_place_name(monkeypa
     ),
   )
 
-  def fake_locate(mention: PlaceMention) -> PlaceLocation | None:
+  def fake_locate(mention: PlaceMention) -> LocateDebugResult:
     if mention.place_name == "Misery Ridge Trail":
-      return PlaceLocation(
-        display_name="Misery Ridge Trail",
-        country_code="US",
-        state_province="Oregon",
-        latitude=44.3670,
-        longitude=-121.1410,
+      return LocateDebugResult(
+        status="resolved",
+        location=PlaceLocation(
+          display_name="Misery Ridge Trail",
+          country_code="US",
+          state_province="Oregon",
+          latitude=44.3670,
+          longitude=-121.1410,
+        ),
       )
     if mention.place_name == "Smith Rock State Park":
-      return PlaceLocation(
-        display_name="Smith Rock State Park",
-        country_code="US",
-        state_province="Oregon",
-        latitude=44.3665,
-        longitude=-121.1408,
+      return LocateDebugResult(
+        status="resolved",
+        location=PlaceLocation(
+          display_name="Smith Rock State Park",
+          country_code="US",
+          state_province="Oregon",
+          latitude=44.3665,
+          longitude=-121.1408,
+        ),
       )
-    return None
+    return LocateDebugResult(status="unresolved")
 
-  monkeypatch.setattr("travelplanner.places.locate_mention", fake_locate)
+  monkeypatch.setattr("travelplanner.places.pipeline.locate_mention_debug", fake_locate)
 
   place_ids = process_post_places(post)
 
@@ -543,7 +413,10 @@ def test_reprocess_all_places_rebuilds_library_and_updates_posts(monkeypatch, dy
     latitude=45.5762,
     longitude=-122.1158,
   )
-  monkeypatch.setattr("travelplanner.places.locate_mention", lambda mention: location)
+  monkeypatch.setattr(
+    "travelplanner.places.pipeline.locate_mention_debug",
+    lambda mention: LocateDebugResult(status="resolved", location=location),
+  )
 
   reprocess_all_places()
 

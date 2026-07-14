@@ -1,8 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
-import { UserButton, useUser } from "@clerk/react";
+import { UserButton, useAuth, useUser } from "@clerk/react";
 
-import { fetchPlaces, fetchPosts, fetchVisits, startIngest, postRouteParts, type Place } from "./api";
+import {
+  fetchAdminMe,
+  fetchPlaces,
+  fetchPosts,
+  fetchVisits,
+  startIngest,
+  postRouteParts,
+  type Place,
+} from "./api";
+import { AdminPage } from "./components/AdminPage";
 import { DataMaintenance } from "./components/DataMaintenance";
 import { IngestProgress } from "./components/IngestProgress";
 import { LinkSubmitForm } from "./components/LinkSubmitForm";
@@ -54,7 +63,7 @@ function UserChip() {
   return clerkEnabled ? <ClerkUserChip /> : <LocalUserChip />;
 }
 
-function AppShell() {
+function AppShell({ authReady }: { authReady: boolean }) {
   const navigate = useNavigate();
   const location = useLocation();
   const [posts, setPosts] = useState<Awaited<ReturnType<typeof fetchPosts>>>([]);
@@ -65,6 +74,7 @@ function AppShell() {
   const [loadingPosts, setLoadingPosts] = useState(true);
   const [libraryVersion, setLibraryVersion] = useState(0);
   const [formResetKey, setFormResetKey] = useState(0);
+  const [isAdmin, setIsAdmin] = useState(false);
   const switchedAfterIngest = useRef(false);
   const { job, error: jobError } = useJob(jobId);
 
@@ -72,7 +82,9 @@ function AppShell() {
     ? "places"
     : location.pathname.startsWith("/history")
       ? "history"
-      : "posts";
+      : location.pathname.startsWith("/admin")
+        ? "admin"
+        : "posts";
 
   const refreshPosts = useCallback(async () => {
     setLoadingPosts(true);
@@ -91,8 +103,33 @@ function AppShell() {
   }, []);
 
   useEffect(() => {
+    if (!authReady) {
+      return;
+    }
     void refreshPosts();
-  }, [refreshPosts]);
+  }, [authReady, refreshPosts]);
+
+  useEffect(() => {
+    if (!authReady) {
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      try {
+        const me = await fetchAdminMe();
+        if (!cancelled) {
+          setIsAdmin(me.is_admin);
+        }
+      } catch {
+        if (!cancelled) {
+          setIsAdmin(false);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [authReady]);
 
   useEffect(() => {
     if (job?.status === "done") {
@@ -258,6 +295,17 @@ function AppShell() {
           >
             Travel history ({visitCount})
           </button>
+          {isAdmin && (
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === "admin"}
+              className={`view-tab ${activeTab === "admin" ? "view-tab-active" : ""}`}
+              onClick={() => navigate("/admin")}
+            >
+              Admin
+            </button>
+          )}
         </nav>
 
         <Routes>
@@ -320,6 +368,16 @@ function AppShell() {
               />
             }
           />
+          <Route
+            path="/admin"
+            element={
+              isAdmin ? (
+                <AdminPage />
+              ) : (
+                <Navigate to="/posts" replace />
+              )
+            }
+          />
         </Routes>
       </main>
     </div>
@@ -327,5 +385,26 @@ function AppShell() {
 }
 
 export default function App() {
-  return <AppShell />;
+  if (clerkEnabled) {
+    return <AppWithClerkAuth />;
+  }
+  return <AppShell authReady />;
+}
+
+function AppWithClerkAuth() {
+  const { isLoaded, isSignedIn } = useAuth();
+  // Wait until Clerk has a session so api.ts can attach a bearer token.
+  // AuthTokenBridge also sets the getter in an effect; give it one tick after load.
+  const [authReady, setAuthReady] = useState(false);
+
+  useEffect(() => {
+    if (!isLoaded || !isSignedIn) {
+      setAuthReady(false);
+      return;
+    }
+    const timer = window.setTimeout(() => setAuthReady(true), 0);
+    return () => window.clearTimeout(timer);
+  }, [isLoaded, isSignedIn]);
+
+  return <AppShell authReady={authReady} />;
 }

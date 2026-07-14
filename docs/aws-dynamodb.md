@@ -29,7 +29,8 @@ python3 cli.py links.txt --user-id <clerk-user-id>
 
 ### IAM policy (least privilege)
 
-Allow on the six tables for that stage/region:
+Allow on the app tables for that stage/region
+(Posts, Places, PlaceCandidates, UserPosts, UserPlaces, Visits, Jobs):
 
 - `dynamodb:GetItem`
 - `dynamodb:PutItem`

@@ -267,3 +267,91 @@ def test_users_see_only_their_posts(dynamodb) -> None:
   client = TestClient(app)
   assert len(client.get("/api/posts", headers={"X-User-Id": "user-a"}).json()) == 1
   assert client.get("/api/posts", headers={"X-User-Id": "user-b"}).json() == []
+
+
+def test_admin_me_reports_admin(dynamodb) -> None:
+  client = TestClient(app)
+  response = client.get("/api/admin/me", headers=HEADERS)
+  assert response.status_code == 200
+  body = response.json()
+  assert body["is_admin"] is True
+  assert "place_pipeline" not in body
+
+
+def test_admin_locate_read_only(monkeypatch, dynamodb) -> None:
+  from types import SimpleNamespace
+
+  location = PlaceLocation(
+    display_name="Misery Ridge Trail",
+    latitude=44.3705,
+    longitude=-121.141,
+  )
+  monkeypatch.setattr(
+    "travelplanner.places.debug.locate_mention_debug",
+    lambda mention: SimpleNamespace(
+      status="resolved",
+      location=location,
+      match_confidence=0.95,
+      category="attraction",
+      provider="nominatim",
+      queries_tried=("q3",),
+      notes=("picked trail",),
+    ),
+  )
+
+  client = TestClient(app)
+  response = client.post(
+    "/api/admin/places/locate",
+    headers=HEADERS,
+    json={
+      "place_name": "Misery Ridge",
+      "parent_place_name": "Smith Rock State Park",
+      "state_province": "Oregon",
+      "country": "USA",
+    },
+  )
+  assert response.status_code == 200
+  body = response.json()
+  assert body["result"]["status"] == "resolved"
+  assert body["result"]["match_confidence"] == 0.95
+  assert places.load_all_places() == []
+
+
+def test_admin_list_place_candidates(dynamodb) -> None:
+  from travelplanner.places.candidates import record_candidate
+
+  record_candidate(
+    source_post_id="instagram:abc",
+    mention=PlaceMention(
+      place_name="Nowhereville",
+      state_province="Oregon",
+      country="USA",
+    ),
+    status="unresolved",
+  )
+  record_candidate(
+    source_post_id="instagram:abc",
+    mention=PlaceMention(place_name="Maybe Falls", country="USA"),
+    status="low_confidence",
+    resolved_place_id="us-maybe-falls",
+  )
+
+  client = TestClient(app)
+  unresolved = client.get("/api/admin/places/candidates", headers=HEADERS)
+  assert unresolved.status_code == 200
+  body = unresolved.json()
+  assert body["count"] == 1
+  assert body["candidates"][0]["place_name"] == "Nowhereville"
+  assert body["candidates"][0]["status"] == "unresolved"
+  assert body["candidates"][0]["hints"]["state_province"] == "Oregon"
+
+  open_list = client.get("/api/admin/places/candidates?status=open", headers=HEADERS)
+  assert open_list.status_code == 200
+  assert open_list.json()["count"] == 2
+
+  filtered = client.get(
+    "/api/admin/places/candidates?source_post_id=instagram:abc&status=low_confidence",
+    headers=HEADERS,
+  )
+  assert filtered.status_code == 200
+  assert filtered.json()["candidates"][0]["resolved_place_id"] == "us-maybe-falls"

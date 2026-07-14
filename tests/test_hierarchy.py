@@ -7,6 +7,7 @@ from travelplanner.hierarchy import choose_group_name, link_places
 from travelplanner.models import PlaceLocation, Platform, SavedPost, make_post_id
 from travelplanner.place_hints import ExtractedPlace, PlaceMention, PlatformPlace
 from travelplanner.places import (
+  LocateDebugResult,
   is_visitable_place,
   load_all_places,
   load_place,
@@ -88,15 +89,10 @@ def test_is_visitable_place_rejects_administrative_regions() -> None:
 
 def test_process_post_places_skips_non_visitable_admin_regions(monkeypatch, dynamodb) -> None:
   post = _sample_post(extracted_places=(ExtractedPlace(place_name="Oregon", state_province="Oregon"),))
-  admin_location = PlaceLocation(
-    display_name="Oregon",
-    country="United States",
-    country_code="US",
-    state_province="Oregon",
-    osm_class="boundary",
-    osm_type="administrative",
+  monkeypatch.setattr(
+    "travelplanner.places.pipeline.locate_mention_debug",
+    lambda mention: LocateDebugResult(status="unresolved", notes=("rejected admin",)),
   )
-  monkeypatch.setattr("travelplanner.places.locate_mention", lambda mention: admin_location)
 
   place_ids = process_post_places(post)
 
@@ -258,9 +254,14 @@ def test_link_places_cross_post_name_proximity_cluster(monkeypatch, dynamodb) ->
     _crater_lake_location(),
     "instagram:postA",
   )
-  parkway = upsert_place(
-    PlaceMention(place_name="Crater Lake Parkway"),
-    _crater_lake_location(display_name="Crater Lake Parkway", lat=42.9450, lon=-122.1085),
+  # Broader-name match for hierarchy, but not alias/near-dup merge in resolve.
+  visitor = upsert_place(
+    PlaceMention(place_name="Crater Lake Visitor Center"),
+    _crater_lake_location(
+      display_name="Crater Lake Visitor Center",
+      lat=42.9600,
+      lon=-122.0900,
+    ),
     "instagram:postB",
   )
 
@@ -269,8 +270,8 @@ def test_link_places_cross_post_name_proximity_cluster(monkeypatch, dynamodb) ->
   )
   save_post(
     _sample_post(
-      extracted_places=(ExtractedPlace(place_name="Crater Lake Parkway"),),
-      place_ids=(parkway,),
+      extracted_places=(ExtractedPlace(place_name="Crater Lake Visitor Center"),),
+      place_ids=(visitor,),
       post_id="instagram:postB",
     ),
   )
@@ -279,7 +280,7 @@ def test_link_places_cross_post_name_proximity_cluster(monkeypatch, dynamodb) ->
   link_places()
 
   root = load_place(crater)
-  child = load_place(parkway)
+  child = load_place(visitor)
   assert root is not None and child is not None
   assert root.parent_place_id is None
   assert child.parent_place_id == crater

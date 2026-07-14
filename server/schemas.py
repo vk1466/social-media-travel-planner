@@ -9,6 +9,7 @@ class PlatformPlaceSchema(BaseModel):
   place_name: str
   city: str | None = None
   country: str | None = None
+  state_province: str | None = None
   latitude: float | None = None
   longitude: float | None = None
 
@@ -156,3 +157,84 @@ class MaintenanceResultSchema(BaseModel):
   posts_deleted: int | None = None
   places_deleted: int | None = None
   visits_deleted: int | None = None
+
+
+class AdminMeSchema(BaseModel):
+  is_admin: bool
+
+
+class LocateDebugRequest(BaseModel):
+  place_name: str = Field(..., min_length=1)
+  city: str | None = None
+  state_province: str | None = None
+  country: str | None = None
+  parent_place_name: str | None = None
+  latitude: float | None = None
+  longitude: float | None = None
+
+
+class LocateDebugLocationSchema(BaseModel):
+  display_name: str
+  continent: str | None = None
+  country: str | None = None
+  country_code: str | None = None
+  state_province: str | None = None
+  city: str | None = None
+  latitude: float | None = None
+  longitude: float | None = None
+  provider_place_id: str | None = None
+  osm_class: str | None = None
+  osm_type: str | None = None
+
+
+class LocateDebugResultSchema(BaseModel):
+  status: str
+  location: LocateDebugLocationSchema | None = None
+  queries_tried: list[str] = Field(default_factory=list)
+  notes: list[str] = Field(default_factory=list)
+  match_confidence: float | None = None
+  category: str | None = None
+  provider: str | None = None
+
+
+class LocateDebugQuerySchema(BaseModel):
+  place_name: str
+  city: str | None = None
+  state_province: str | None = None
+  country: str | None = None
+  parent_place_name: str | None = None
+  latitude: float | None = None
+  longitude: float | None = None
+
+
+class LocateDebugResponse(BaseModel):
+  query: LocateDebugQuerySchema
+  result: LocateDebugResultSchema
+
+
+class PlaceCandidateHintsSchema(BaseModel):
+  place_name: str
+  city: str | None = None
+  country: str | None = None
+  state_province: str | None = None
+  latitude: float | None = None
+  longitude: float | None = None
+  details: str | None = None
+  tips: list[str] = Field(default_factory=list)
+  tags: list[str] = Field(default_factory=list)
+  parent_place_name: str | None = None
+
+
+class PlaceCandidateSchema(BaseModel):
+  candidate_id: str
+  source_post_id: str
+  place_name: str
+  status: str
+  hints: PlaceCandidateHintsSchema
+  last_tried_at: str | None = None
+  resolved_place_id: str | None = None
+
+
+class PlaceCandidateListResponse(BaseModel):
+  candidates: list[PlaceCandidateSchema]
+  count: int

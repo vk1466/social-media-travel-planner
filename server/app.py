@@ -7,7 +7,10 @@ from travelplanner import settings
 from travelplanner.library import list_user_places, list_user_posts, user_owns_post
 from travelplanner.models import TAGS, Place, Platform, SavedPost, Visit, make_post_id, parse_post_id
 from travelplanner.pipeline import unlink_post_from_user
+from travelplanner.place_hints import PlaceMention
 from travelplanner.places import cleanup_all_data, list_places, load_place, place_to_dict, reprocess_all_places
+from travelplanner.db import place_candidates_repo
+from travelplanner.places.debug import debug_locate
 from travelplanner.store import load_post, post_to_dict
 from travelplanner.visits import (
   create_visit,
@@ -23,12 +26,18 @@ from server.ingest_runner import start_ingest_job
 from server import jobs
 from server.media_proxy import fetch_proxied_media
 from server.schemas import (
+  AdminMeSchema,
   PlaceSchema,
   ErrorResponse,
   IngestRequest,
   IngestResponse,
   JobSchema,
+  LocateDebugRequest,
+  LocateDebugResponse,
   MaintenanceResultSchema,
+  PlaceCandidateHintsSchema,
+  PlaceCandidateListResponse,
+  PlaceCandidateSchema,
   PlaceDetailSchema,
   SavedPostSchema,
   VisitCreateRequest,
@@ -156,6 +165,92 @@ def cleanup_data(user_id: AdminUserId) -> MaintenanceResultSchema:
     places_deleted=places_deleted,
     visits_deleted=visits_deleted,
   )
+
+
+@app.get("/api/admin/me", response_model=AdminMeSchema)
+def admin_me(user_id: CurrentUserId) -> AdminMeSchema:
+  return AdminMeSchema(
+    is_admin=settings.is_admin_user(user_id),
+  )
+
+
+@app.post(
+  "/api/admin/places/locate",
+  response_model=LocateDebugResponse,
+  responses={403: {"model": ErrorResponse}},
+)
+def admin_locate(
+  request: LocateDebugRequest,
+  user_id: AdminUserId,
+) -> LocateDebugResponse:
+  """Run locate on one mention (read-only)."""
+  del user_id
+  mention = PlaceMention(
+    place_name=request.place_name.strip(),
+    city=request.city,
+    state_province=request.state_province,
+    country=request.country,
+    parent_place_name=request.parent_place_name,
+    latitude=request.latitude,
+    longitude=request.longitude,
+  )
+  return LocateDebugResponse(**debug_locate(mention))
+
+
+@app.get(
+  "/api/admin/places/candidates",
+  response_model=PlaceCandidateListResponse,
+  responses={403: {"model": ErrorResponse}},
+)
+def admin_list_place_candidates(
+  user_id: AdminUserId,
+  status: str = Query(
+    "unresolved",
+    description="unresolved | low_confidence | open (both)",
+  ),
+  source_post_id: str | None = Query(None),
+) -> PlaceCandidateListResponse:
+  """List PlaceCandidates for review (read-only)."""
+  del user_id
+  status_key = status.strip().lower()
+  if status_key == "open":
+    statuses: tuple[str, ...] = ("unresolved", "low_confidence")
+  elif status_key in {"unresolved", "low_confidence"}:
+    statuses = (status_key,)
+  else:
+    raise HTTPException(
+      status_code=400,
+      detail="status must be unresolved, low_confidence, or open",
+    )
+
+  candidates = place_candidates_repo.load_open_candidates(
+    statuses=statuses,
+    source_post_id=source_post_id.strip() if source_post_id else None,
+  )
+  items = [
+    PlaceCandidateSchema(
+      candidate_id=candidate.candidate_id,
+      source_post_id=candidate.source_post_id,
+      place_name=candidate.place_name,
+      status=candidate.status,
+      hints=PlaceCandidateHintsSchema(
+        place_name=candidate.hints.place_name,
+        city=candidate.hints.city,
+        country=candidate.hints.country,
+        state_province=candidate.hints.state_province,
+        latitude=candidate.hints.latitude,
+        longitude=candidate.hints.longitude,
+        details=candidate.hints.details,
+        tips=list(candidate.hints.tips),
+        tags=list(candidate.hints.tags),
+        parent_place_name=candidate.hints.parent_place_name,
+      ),
+      last_tried_at=candidate.last_tried_at,
+      resolved_place_id=candidate.resolved_place_id,
+    )
+    for candidate in candidates
+  ]
+  return PlaceCandidateListResponse(candidates=items, count=len(items))
 
 
 @app.get("/api/visits", response_model=list[VisitDetailSchema])

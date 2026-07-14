@@ -31,6 +31,7 @@ export interface PlatformPlace {
   place_name: string;
   city?: string | null;
   country?: string | null;
+  state_province?: string | null;
   latitude?: number | null;
   longitude?: number | null;
 }
@@ -311,4 +312,92 @@ export async function reprocessPlaces(): Promise<MaintenanceResult> {
 
 export async function cleanupData(): Promise<MaintenanceResult> {
   return request<MaintenanceResult>("/api/data/cleanup", { method: "POST" });
+}
+
+export interface AdminMe {
+  is_admin: boolean;
+}
+
+export interface LocateDebugInput {
+  place_name: string;
+  city?: string | null;
+  state_province?: string | null;
+  country?: string | null;
+  parent_place_name?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+}
+
+export interface LocateDebugSide {
+  status: string;
+  location: PlaceLocation | null;
+  queries_tried: string[];
+  notes: string[];
+  match_confidence?: number | null;
+  category?: string | null;
+  provider?: string | null;
+}
+
+export interface LocateDebugResult {
+  query: LocateDebugInput;
+  result: LocateDebugSide;
+}
+
+export async function fetchAdminMe(): Promise<AdminMe> {
+  return request<AdminMe>("/api/admin/me");
+}
+
+export async function debugLocate(input: LocateDebugInput): Promise<LocateDebugResult> {
+  return request<LocateDebugResult>("/api/admin/places/locate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+}
+
+export interface PlaceCandidateHints {
+  place_name: string;
+  city?: string | null;
+  country?: string | null;
+  state_province?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  details?: string | null;
+  tips: string[];
+  tags: string[];
+  parent_place_name?: string | null;
+}
+
+export interface PlaceCandidate {
+  candidate_id: string;
+  source_post_id: string;
+  place_name: string;
+  status: string;
+  hints: PlaceCandidateHints;
+  last_tried_at?: string | null;
+  resolved_place_id?: string | null;
+}
+
+export interface PlaceCandidateList {
+  candidates: PlaceCandidate[];
+  count: number;
+}
+
+export type PlaceCandidateStatusFilter = "unresolved" | "low_confidence" | "open";
+
+export async function fetchPlaceCandidates(options?: {
+  status?: PlaceCandidateStatusFilter;
+  source_post_id?: string | null;
+}): Promise<PlaceCandidateList> {
+  const params = new URLSearchParams();
+  if (options?.status) {
+    params.set("status", options.status);
+  }
+  if (options?.source_post_id?.trim()) {
+    params.set("source_post_id", options.source_post_id.trim());
+  }
+  const query = params.toString();
+  return request<PlaceCandidateList>(
+    `/api/admin/places/candidates${query ? `?${query}` : ""}`,
+  );
 }

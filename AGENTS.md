@@ -16,7 +16,7 @@ travelplanner/ core library — no CLI, no web code
   store.py thin facade over Posts repo
   library.py user-scoped post/place listing
   extract.py Supadata extract wrapper (shared: IG now, YT later)
-  places.py shared place pipeline: normalize → locate → resolve/upsert → load/list
+  places.py package — normalize → locate → resolve/upsert → load/list
   visits.py personal visit history against places (per user_id)
 server/ FastAPI backend — thin adapter over travelplanner + Clerk JWT
 frontend/ React + Vite UI — talks only to the API (+ Clerk)

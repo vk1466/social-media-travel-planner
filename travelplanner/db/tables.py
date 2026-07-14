@@ -5,7 +5,9 @@ from botocore.exceptions import ClientError
 from travelplanner import settings
 from travelplanner.db.client import get_dynamodb_resource
 
-TABLE_NAMES = ("Posts", "Places", "UserPosts", "UserPlaces", "Visits", "Jobs")
+TABLE_NAMES = ("Posts", "Places", "PlaceCandidates", "UserPosts", "UserPlaces", "Visits", "Jobs")
+
+SOURCE_POST_INDEX = "source_post_id-index"
 
 
 def table_name(logical_name: str) -> str:
@@ -42,6 +44,28 @@ def _create_composite_table(
   )
 
 
+def _create_place_candidates_table(dynamodb, name: str) -> None:
+  dynamodb.create_table(
+    TableName=name,
+    KeySchema=[{"AttributeName": "candidate_id", "KeyType": "HASH"}],
+    AttributeDefinitions=[
+      {"AttributeName": "candidate_id", "AttributeType": "S"},
+      {"AttributeName": "source_post_id", "AttributeType": "S"},
+    ],
+    GlobalSecondaryIndexes=[
+      {
+        "IndexName": SOURCE_POST_INDEX,
+        "KeySchema": [
+          {"AttributeName": "source_post_id", "KeyType": "HASH"},
+          {"AttributeName": "candidate_id", "KeyType": "RANGE"},
+        ],
+        "Projection": {"ProjectionType": "ALL"},
+      }
+    ],
+    BillingMode="PAY_PER_REQUEST",
+  )
+
+
 def ensure_tables() -> list[str]:
   """Create all app tables if they do not already exist. Returns created names."""
   dynamodb = get_dynamodb_resource()
@@ -67,6 +91,16 @@ def ensure_tables() -> list[str]:
       else:
         _create_composite_table(dynamodb, name, pk, sk)
       created.append(name)
+    except ClientError as exc:
+      error_code = exc.response.get("Error", {}).get("Code", "")
+      if error_code != "ResourceInUseException":
+        raise
+
+  candidates_name = table_name("PlaceCandidates")
+  if candidates_name not in existing:
+    try:
+      _create_place_candidates_table(dynamodb, candidates_name)
+      created.append(candidates_name)
     except ClientError as exc:
       error_code = exc.response.get("Error", {}).get("Code", "")
       if error_code != "ResourceInUseException":

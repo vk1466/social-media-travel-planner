@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum
 
-from travelplanner.place_hints import ExtractedPlace, PlatformPlace
+from travelplanner.place_hints import ExtractedPlace, PlaceMention, PlatformPlace
 
 # Controlled vocabulary for place tags. The LLM extraction picks from this list
 # (multi-select); grow it deliberately to avoid drift (e.g. "hike" vs "trail").
@@ -133,3 +133,21 @@ class Visit:
   notes: str | None = None
   created_at: str | None = None
   user_id: str = ""
+
+
+@dataclass(frozen=True)
+class PlaceCandidate:
+  """Failed or weak place lookup tied to a source post — recoverable without re-fetch.
+
+  Written by v2/v3 pipelines when locate is unresolved or low_confidence.
+  `status`: unresolved | low_confidence | resolved
+  `hints` retains the PlaceMention used for geocoding so retry needs no Instagram fetch.
+  """
+
+  candidate_id: str
+  source_post_id: str
+  place_name: str
+  status: str
+  hints: PlaceMention
+  last_tried_at: str | None = None
+  resolved_place_id: str | None = None

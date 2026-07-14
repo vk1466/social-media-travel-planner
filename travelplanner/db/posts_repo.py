@@ -26,6 +26,7 @@ def _platform_place_from_dict(data: dict) -> PlatformPlace:
     place_name=data["place_name"],
     city=data.get("city"),
     country=data.get("country"),
+    state_province=data.get("state_province"),
     latitude=data.get("latitude"),
     longitude=data.get("longitude"),
   )

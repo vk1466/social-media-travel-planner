@@ -105,7 +105,7 @@ class TravelPlannerStack(Stack):
       ),
       architecture=lambda_.Architecture.X86_64,
       memory_size=1024,
-      timeout=Duration.seconds(30),
+      timeout=Duration.seconds(90),
       environment={
         **shared_env,
         "STATE_MACHINE_ARN": state_machine.state_machine_arn,
@@ -181,9 +181,24 @@ class TravelPlannerStack(Stack):
         removal_policy=removal,
       )
 
+    places_candidates = simple("PlaceCandidates", "candidate_id")
+    places_candidates.add_global_secondary_index(
+      index_name="source_post_id-index",
+      partition_key=dynamodb.Attribute(
+        name="source_post_id",
+        type=dynamodb.AttributeType.STRING,
+      ),
+      sort_key=dynamodb.Attribute(
+        name="candidate_id",
+        type=dynamodb.AttributeType.STRING,
+      ),
+      projection_type=dynamodb.ProjectionType.ALL,
+    )
+
     return {
       "Posts": simple("Posts", "post_id"),
       "Places": simple("Places", "place_id"),
+      "PlaceCandidates": places_candidates,
       "UserPosts": composite("UserPosts", "user_id", "post_id"),
       "UserPlaces": composite("UserPlaces", "user_id", "place_id"),
       "Visits": composite("Visits", "user_id", "visit_id"),

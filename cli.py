@@ -6,7 +6,7 @@ from collections import Counter
 from pathlib import Path
 
 from travelplanner.pipeline import IngestResult, ingest_links
-from travelplanner.places import reprocess_all_places
+from travelplanner.places import reprocess_all_places, retry_place_candidates
 
 
 def _print_result(result: IngestResult) -> None:
@@ -57,7 +57,36 @@ def main() -> None:
     action="store_true",
     help="Re-run place enrichment on all saved posts without re-fetching links",
   )
+  parser.add_argument(
+    "--retry-place-candidates",
+    action="store_true",
+    help="Retry unresolved PlaceCandidates without re-fetching Instagram posts",
+  )
+  parser.add_argument(
+    "--include-low-confidence",
+    action="store_true",
+    help="With --retry-place-candidates, also retry low_confidence candidates",
+  )
+  parser.add_argument(
+    "--source-post-id",
+    default=None,
+    help="With --retry-place-candidates, limit retry to one source post",
+  )
   args = parser.parse_args()
+
+  if args.retry_place_candidates:
+    result = retry_place_candidates(
+      source_post_id=args.source_post_id,
+      include_low_confidence=args.include_low_confidence,
+    )
+    print(
+      "done: retried place candidates — "
+      f"attempted={result.attempted}, "
+      f"resolved={result.resolved}, "
+      f"still_open={result.still_open}, "
+      f"place_ids={len(result.place_ids)}"
+    )
+    return
 
   if args.reprocess_places:
     reprocess_all_places()
@@ -65,7 +94,9 @@ def main() -> None:
     return
 
   if args.links_file is None:
-    parser.error("links_file is required unless --reprocess-places is set")
+    parser.error(
+      "links_file is required unless --reprocess-places or --retry-place-candidates is set"
+    )
 
   post_urls = _read_links(args.links_file)
   results = ingest_links(

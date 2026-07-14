@@ -23,6 +23,14 @@ const clerkPublishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string
 function AuthTokenBridge({ children }: { children: React.ReactNode }) {
   const { getToken, isLoaded, isSignedIn } = useAuth();
 
+  // Register during render (not only in an effect) so child mounts that fire
+  // API calls in the same tick already have a bearer token.
+  if (isLoaded && isSignedIn) {
+    setAuthTokenGetter(async () => getToken());
+  } else if (isLoaded) {
+    setAuthTokenGetter(null);
+  }
+
   useEffect(() => {
     if (!isLoaded) {
       return;

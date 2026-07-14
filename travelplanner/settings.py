@@ -82,6 +82,12 @@ def admin_user_ids() -> frozenset[str]:
   return frozenset(part.strip() for part in raw.split(",") if part.strip())
 
 
+def is_admin_user(user_id: str) -> bool:
+  """True when ADMIN_USER_IDS is empty (dev) or user_id is listed."""
+  admins = admin_user_ids()
+  return not admins or user_id in admins
+
+
 def auth_disabled() -> bool:
   """Test bypass when Clerk is not configured (pytest only)."""
   flag = os.getenv("AUTH_DISABLED", "").strip().lower()

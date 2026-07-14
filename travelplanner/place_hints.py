@@ -16,6 +16,7 @@ class PlatformPlace:
   place_name: str
   city: str | None = None
   country: str | None = None
+  state_province: str | None = None
   latitude: float | None = None
   longitude: float | None = None
 
@@ -47,3 +48,4 @@ class PlaceMention:
   details: str | None = None
   tips: tuple[str, ...] = ()
   tags: tuple[str, ...] = ()
+  parent_place_name: str | None = None
