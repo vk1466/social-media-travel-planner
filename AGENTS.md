@@ -20,13 +20,14 @@ travelplanner/ core library — no CLI, no web code
   visits.py personal visit history against places (per user_id)
 server/ FastAPI backend — thin adapter over travelplanner + Clerk JWT
 frontend/ React + Vite UI — talks only to the API (+ Clerk)
+mobile/ Expo (React Native) app — same API + Clerk; share-to-app for Instagram reels
 infra/ Python CDK — TravelPlanner-dev / TravelPlanner-prod (DynamoDB, Lambda Function URL, SFN)
 cli.py batch link ingestion + place reprocessing entry point
 tests/
 ```
 
 Layering: `cli.py` and `server/` both call `pipeline.ingest_links` and library/store
-helpers. The frontend only knows the JSON API. Persistence is DynamoDB via CDK stacks
+helpers. The frontend and mobile apps only know the JSON API. Persistence is DynamoDB via CDK stacks
 (`docs/aws-dynamodb.md`). Table names are `{LogicalName}-{stage}-{region}`. Ingest uses
 Step Functions + Lambda (`docs/serverless-deploy.md`). Local UI testing points at the
 deployed **TravelPlanner-dev** API.
@@ -52,10 +53,16 @@ Keep it **simple, modular, and extendable**. Do not add layers you don't need ye
 ## Run
 
 ```bash
-# UI against TravelPlanner-dev
+# Web UI against TravelPlanner-dev
 cd frontend
 cp .env.example .env.local   # VITE_API_BASE_URL + VITE_CLERK_PUBLISHABLE_KEY
 npm install && npm run dev
+
+# Mobile (Expo) against TravelPlanner-dev
+cd mobile
+cp .env.example .env         # EXPO_PUBLIC_API_BASE_URL + EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY
+npm install && npx expo start
+# Share-to-app requires a custom dev client — see mobile/README.md
 
 # Unit tests (moto)
 pip install -e ".[dev]"

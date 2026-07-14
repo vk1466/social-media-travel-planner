@@ -1,0 +1,51 @@
+{
+  "name": "mobile",
+  "main": "expo-router/entry",
+  "version": "1.0.0",
+  "dependencies": {
+    "@clerk/clerk-expo": "^2.19.31",
+    "@react-native-async-storage/async-storage": "2.2.0",
+    "@react-native-community/datetimepicker": "9.1.0",
+    "expo": "~57.0.4",
+    "expo-auth-session": "~57.0.2",
+    "expo-checkbox": "~57.0.0",
+    "expo-constants": "~57.0.3",
+    "expo-crypto": "~57.0.0",
+    "expo-dev-client": "~57.0.5",
+    "expo-font": "~57.0.0",
+    "expo-linking": "~57.0.2",
+    "expo-router": "~57.0.4",
+    "expo-secure-store": "~57.0.0",
+    "expo-share-intent": "^8.0.1",
+    "expo-splash-screen": "~57.0.2",
+    "expo-status-bar": "~57.0.0",
+    "expo-symbols": "~57.0.0",
+    "expo-web-browser": "~57.0.0",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "react-native": "0.86.0",
+    "react-native-maps": "1.27.2",
+    "react-native-reanimated": "4.5.0",
+    "react-native-safe-area-context": "~5.7.0",
+    "react-native-screens": "4.25.2",
+    "react-native-web": "~0.21.0",
+    "react-native-worklets": "0.10.0"
+  },
+  "devDependencies": {
+    "@types/react": "~19.2.2",
+    "eas-cli": "^20.5.1",
+    "typescript": "~6.0.3"
+  },
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "typecheck": "tsc --noEmit",
+    "prebuild": "expo prebuild",
+    "run:ios": "expo run:ios",
+    "run:android": "expo run:android",
+    "build:android": "eas build --profile development --platform android",
+    "build:ios": "eas build --profile development --platform ios"
+  },
+  "private": true
+}
