@@ -55,3 +55,39 @@ def test_list_recent_post_urls_truncates(monkeypatch) -> None:
     "https://www.instagram.com/reel/aaa/",
     "https://www.instagram.com/p/bbb/",
   ]
+
+
+def test_list_recent_post_urls_unwraps_graphql_nodes(monkeypatch) -> None:
+  monkeypatch.setattr(
+    "travelplanner.sources.instagram_profile.fetch_user_info",
+    lambda *, username: {"pk": 123, "username": username},
+  )
+  monkeypatch.setattr(
+    "travelplanner.sources.instagram_profile.fetch_user_posts",
+    lambda *, user_id, depth, chunk_size: {
+      "count": 2,
+      "posts": [
+        {
+          "node": {
+            "__typename": "GraphVideo",
+            "shortcode": "reelCode1",
+            "product_type": "clips",
+            "is_video": True,
+          }
+        },
+        {
+          "node": {
+            "__typename": "GraphImage",
+            "shortcode": "photoCode2",
+            "is_video": False,
+          }
+        },
+      ],
+    },
+  )
+
+  urls = list_recent_post_urls("someone", limit=5)
+  assert urls == [
+    "https://www.instagram.com/reel/reelCode1/",
+    "https://www.instagram.com/p/photoCode2/",
+  ]

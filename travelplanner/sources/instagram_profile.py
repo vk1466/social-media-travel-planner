@@ -85,20 +85,36 @@ def _extract_user_id(payload: dict[str, Any]) -> int:
   raise ValueError("Could not resolve Instagram user id for that username")
 
 
+def _unwrap_post_item(item: dict[str, Any]) -> dict[str, Any]:
+  """EnsembleData user_posts often returns GraphQL edges: `{node: {...}}`."""
+  nested = item.get("node")
+  if isinstance(nested, dict):
+    return nested
+  return item
+
+
 def _post_nodes(payload: dict[str, Any]) -> list[dict[str, Any]]:
+  raw: list[Any] = []
   if isinstance(payload.get("posts"), list):
-    return [item for item in payload["posts"] if isinstance(item, dict)]
-  if isinstance(payload.get("items"), list):
-    return [item for item in payload["items"] if isinstance(item, dict)]
-  data = payload.get("data")
-  if isinstance(data, dict):
-    if isinstance(data.get("posts"), list):
-      return [item for item in data["posts"] if isinstance(item, dict)]
-    if isinstance(data.get("items"), list):
-      return [item for item in data["items"] if isinstance(item, dict)]
-  if isinstance(data, list):
-    return [item for item in data if isinstance(item, dict)]
-  return []
+    raw = payload["posts"]
+  elif isinstance(payload.get("items"), list):
+    raw = payload["items"]
+  else:
+    data = payload.get("data")
+    if isinstance(data, dict):
+      if isinstance(data.get("posts"), list):
+        raw = data["posts"]
+      elif isinstance(data.get("items"), list):
+        raw = data["items"]
+    elif isinstance(data, list):
+      raw = data
+
+  nodes: list[dict[str, Any]] = []
+  for item in raw:
+    if not isinstance(item, dict):
+      continue
+    nodes.append(_unwrap_post_item(item))
+  return nodes
 
 
 def _shortcode_from_node(node: dict[str, Any]) -> str | None:
@@ -119,6 +135,12 @@ def _media_kind_from_node(node: dict[str, Any]) -> str:
   product_type = str(node.get("product_type") or "").lower()
   if product_type == "clips":
     return "reel"
+  typename = str(node.get("__typename") or "")
+  if typename == "GraphVideo" or node.get("is_video") is True:
+    # Reels and feed videos both use /reel/ when product_type is clips; else /p/
+    if product_type == "clips":
+      return "reel"
+    return "video"
   # Instagram media_type: 1 image, 2 video, 8 carousel
   if node.get("media_type") == 2:
     return "video"

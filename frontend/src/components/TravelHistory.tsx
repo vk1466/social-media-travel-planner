@@ -215,6 +215,8 @@ export function TravelHistory({
         </form>
       </section>
 
+      {error && <p className="banner-error">{error}</p>}
+
       <section className="panel visit-form-panel">
         <div className="ingest-panel-header">
           <span className="ingest-panel-icon" aria-hidden="true">
@@ -330,8 +332,6 @@ export function TravelHistory({
           </div>
         </form>
       </section>
-
-      {error && <p className="banner-error">{error}</p>}
 
       {loading ? (
         <p className="loading-copy">Loading travel history…</p>
