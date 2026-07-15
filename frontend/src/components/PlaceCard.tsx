@@ -3,6 +3,7 @@ import type { Place } from "../api";
 interface PlaceCardProps {
   place: Place;
   children?: Place[];
+  been?: boolean;
   onSelect: (place: Place) => void;
 }
 
@@ -39,7 +40,7 @@ function ChildMeta({ place }: { place: Place }) {
   );
 }
 
-export function PlaceCard({ place, children = [], onSelect }: PlaceCardProps) {
+export function PlaceCard({ place, children = [], been = false, onSelect }: PlaceCardProps) {
   const childCount = children.length;
   const postCount = uniquePostCount(place, children);
   const placeCount = 1 + childCount;
@@ -60,7 +61,10 @@ export function PlaceCard({ place, children = [], onSelect }: PlaceCardProps) {
         tabIndex={0}
         aria-label={`View details for ${place.display_name}`}
       >
-        <h3 className="place-name">{place.display_name}</h3>
+        <div className="place-card-title-row">
+          <h3 className="place-name">{place.display_name}</h3>
+          {been && <span className="been-badge">Been</span>}
+        </div>
         <p className="place-location-line">{formatLocationLine(place)}</p>
 
         <div className="tag-list">

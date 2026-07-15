@@ -134,7 +134,7 @@ class VisitSchema(BaseModel):
   visit_id: str
   place_id: str
   place_name: str
-  visited_from: str
+  visited_from: str | None = None
   visited_to: str | None = None
   notes: str | None = None
   created_at: str | None = None
@@ -142,7 +142,7 @@ class VisitSchema(BaseModel):
 
 
 class VisitCreateRequest(BaseModel):
-  visited_from: str
+  visited_from: str | None = None
   visited_to: str | None = None
   notes: str | None = None
   place_id: str | None = None
@@ -154,6 +154,12 @@ class VisitCreateRequest(BaseModel):
 class VisitDetailSchema(BaseModel):
   visit: VisitSchema
   place: PlaceSchema | None = None
+
+
+class BeenStatusSchema(BaseModel):
+  place_id: str
+  been: bool
+  visit: VisitSchema | None = None
 
 
 class MaintenanceResultSchema(BaseModel):

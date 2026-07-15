@@ -10,9 +10,17 @@ import {
   View,
 } from "react-native";
 
-import { fetchPlaceDetail, nativePostId, type PlaceDetail } from "@/src/api";
+import {
+  fetchPlaceDetail,
+  fetchVisitedPlaceIds,
+  markPlaceBeen,
+  nativePostId,
+  unmarkPlaceBeen,
+  type PlaceDetail,
+} from "@/src/api";
 import { PlaceMap } from "@/src/components/PlaceMap";
-import { ErrorBanner, TagChip } from "@/src/components/ui";
+import { Button, ErrorBanner, TagChip } from "@/src/components/ui";
+import { useLibrary } from "@/src/context/LibraryContext";
 import { googleMapsUrl } from "@/src/maps";
 import { getPostTitle } from "@/src/postDisplayUtils";
 import { colors, spacing } from "@/src/theme";
@@ -20,9 +28,13 @@ import { colors, spacing } from "@/src/theme";
 export default function PlaceDetailScreen() {
   const { placeId } = useLocalSearchParams<{ placeId: string }>();
   const router = useRouter();
+  const { bumpRefresh } = useLibrary();
   const [detail, setDetail] = useState<PlaceDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isBeen, setIsBeen] = useState(false);
+  const [beenSaving, setBeenSaving] = useState(false);
+  const [beenError, setBeenError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -30,9 +42,13 @@ export default function PlaceDetailScreen() {
       if (!placeId) return;
       setLoading(true);
       try {
-        const next = await fetchPlaceDetail(placeId);
+        const [next, visitedIds] = await Promise.all([
+          fetchPlaceDetail(placeId),
+          fetchVisitedPlaceIds(),
+        ]);
         if (!cancelled) {
           setDetail(next);
+          setIsBeen(visitedIds.includes(placeId));
         }
       } catch (err) {
         if (!cancelled) {
@@ -49,6 +65,26 @@ export default function PlaceDetailScreen() {
       cancelled = true;
     };
   }, [placeId]);
+
+  const handleToggleBeen = async () => {
+    if (!placeId) return;
+    setBeenError(null);
+    setBeenSaving(true);
+    const next = !isBeen;
+    try {
+      if (next) {
+        await markPlaceBeen(placeId);
+      } else {
+        await unmarkPlaceBeen(placeId);
+      }
+      setIsBeen(next);
+      bumpRefresh();
+    } catch (err) {
+      setBeenError(err instanceof Error ? err.message : "Failed to update Been status");
+    } finally {
+      setBeenSaving(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -84,6 +120,16 @@ export default function PlaceDetailScreen() {
       {place.aliases.length > 0 ? (
         <Text style={styles.meta}>also known as {place.aliases.join(", ")}</Text>
       ) : null}
+
+      <Button
+        label={isBeen ? "Been" : "Mark as Been"}
+        variant={isBeen ? "secondary" : "primary"}
+        loading={beenSaving}
+        onPress={() => void handleToggleBeen()}
+        style={styles.beenButton}
+      />
+      {isBeen ? <Text style={styles.beenHint}>In your travel history</Text> : null}
+      {beenError ? <ErrorBanner message={beenError} /> : null}
 
       <PlaceMap places={[place, ...children]} height={220} />
 
@@ -167,7 +213,9 @@ const styles = StyleSheet.create({
   pad: { padding: spacing.md },
   parent: { color: colors.brand, fontWeight: "600", marginBottom: 6 },
   title: { fontSize: 24, fontWeight: "700", color: colors.ink },
-  meta: { marginTop: 4, color: colors.muted, marginBottom: spacing.md },
+  meta: { marginTop: 4, color: colors.muted, marginBottom: spacing.sm },
+  beenButton: { marginBottom: spacing.sm, alignSelf: "flex-start" },
+  beenHint: { color: colors.muted, marginBottom: spacing.md, fontSize: 13 },
   mapLink: { marginBottom: spacing.md },
   link: { color: colors.brand, fontWeight: "700" },
   section: { marginBottom: spacing.lg },

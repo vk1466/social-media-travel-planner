@@ -18,7 +18,7 @@ def visit_from_dict(data: dict) -> Visit:
     visit_id=data["visit_id"],
     place_id=data["place_id"],
     place_name=data["place_name"],
-    visited_from=data["visited_from"],
+    visited_from=data.get("visited_from"),
     visited_to=data.get("visited_to"),
     notes=data.get("notes"),
     created_at=data.get("created_at"),

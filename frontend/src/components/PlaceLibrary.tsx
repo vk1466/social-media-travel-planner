@@ -37,9 +37,14 @@ function countBy(
 interface PlaceLibraryProps {
   refreshToken?: number;
   onNavigateToPost?: (platform: string, postId: string) => void;
+  onChanged?: () => void;
 }
 
-export function PlaceLibrary({ refreshToken = 0, onNavigateToPost }: PlaceLibraryProps) {
+export function PlaceLibrary({
+  refreshToken = 0,
+  onNavigateToPost,
+  onChanged,
+}: PlaceLibraryProps) {
   const { placeId: routePlaceId } = useParams();
   const navigate = useNavigate();
 
@@ -422,6 +427,7 @@ export function PlaceLibrary({ refreshToken = 0, onNavigateToPost }: PlaceLibrar
                         key={place.place_id}
                         place={place}
                         children={childrenByParent.get(place.place_id) ?? []}
+                        been={visitedPlaceIds.has(place.place_id)}
                         onSelect={openPlace}
                       />
                     ))}
@@ -493,9 +499,22 @@ export function PlaceLibrary({ refreshToken = 0, onNavigateToPost }: PlaceLibrar
       {selectedPlace && (
         <PlaceDetail
           place={selectedPlace}
+          been={visitedPlaceIds.has(selectedPlace.place_id)}
           onClose={closePlace}
           onNavigateToPlace={openPlace}
           onNavigateToPost={onNavigateToPost}
+          onBeenChange={(placeId, nextBeen) => {
+            setVisitedPlaceIds((prev) => {
+              const next = new Set(prev);
+              if (nextBeen) {
+                next.add(placeId);
+              } else {
+                next.delete(placeId);
+              }
+              return next;
+            });
+            onChanged?.();
+          }}
         />
       )}
     </section>

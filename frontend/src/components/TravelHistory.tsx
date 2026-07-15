@@ -15,7 +15,10 @@ interface TravelHistoryProps {
   onNavigateToPlace?: (placeId: string) => void;
 }
 
-function formatVisitDates(visitedFrom: string, visitedTo?: string | null): string {
+function formatVisitDates(visitedFrom?: string | null, visitedTo?: string | null): string {
+  if (!visitedFrom) {
+    return "Been · date unknown";
+  }
   if (!visitedTo || visitedTo === visitedFrom) {
     return visitedFrom;
   }
@@ -103,15 +106,15 @@ export function TravelHistory({
       setError("Enter a destination");
       return;
     }
-    if (!visitedFrom) {
-      setError("Enter when you traveled");
+    if (visitedTo && !visitedFrom) {
+      setError("Enter a start date if you set an end date");
       return;
     }
 
     setSaving(true);
     try {
       await createVisit({
-        visited_from: visitedFrom,
+        visited_from: visitedFrom || null,
         visited_to: visitedTo || null,
         notes: notes.trim() || null,
         place_id: selectedPlace?.place_id ?? null,
@@ -158,9 +161,9 @@ export function TravelHistory({
             </svg>
           </span>
           <div>
-            <h2 className="ingest-panel-title">Add a trip</h2>
+            <h2 className="ingest-panel-title">Add somewhere you’ve been</h2>
             <p className="ingest-panel-subtitle">
-              Search your places or type a new destination. We’ll create the place if needed.
+              Pick a place from your library or type a new destination. Dates are optional.
             </p>
           </div>
         </div>
@@ -218,13 +221,12 @@ export function TravelHistory({
             </label>
 
             <label className="visit-field">
-              <span className="field-label">From</span>
+              <span className="field-label">From (optional)</span>
               <input
                 type="date"
                 className="platform-filter"
                 value={visitedFrom}
                 onChange={(event) => setVisitedFrom(event.target.value)}
-                required
                 disabled={saving}
               />
             </label>
@@ -255,7 +257,7 @@ export function TravelHistory({
 
           <div className="form-actions">
             <button type="submit" className="primary-button" disabled={saving}>
-              {saving ? "Saving…" : "Save trip"}
+              {saving ? "Saving…" : "Mark as Been"}
             </button>
           </div>
         </form>
@@ -266,7 +268,7 @@ export function TravelHistory({
       {loading ? (
         <p className="loading-copy">Loading travel history…</p>
       ) : visits.length === 0 ? (
-        <p className="empty-copy">No trips yet. Add somewhere you’ve been.</p>
+        <p className="empty-copy">No visits yet. Mark places as Been from here or from a place page.</p>
       ) : (
         <ul className="visit-list">
           {visits.map(({ visit, place }) => (

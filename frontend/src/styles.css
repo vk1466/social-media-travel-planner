@@ -744,6 +744,71 @@ a {
   font-size: var(--font-size-2);
 }
 
+.place-card-title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--size-3);
+  margin-bottom: var(--size-1);
+}
+
+.place-card-title-row .place-name {
+  margin: 0;
+}
+
+.been-badge {
+  flex-shrink: 0;
+  padding: var(--size-1) var(--size-3);
+  border-radius: var(--radius-sm);
+  background: #e8f5ef;
+  color: var(--success);
+  border: 1px solid #c8e6d6;
+  font-size: var(--font-size-0);
+  font-weight: var(--font-weight-6);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.place-been-row {
+  display: flex;
+  align-items: center;
+  gap: var(--size-3);
+  margin-top: var(--size-3);
+  flex-wrap: wrap;
+}
+
+.been-button {
+  padding: var(--size-2) var(--size-4);
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-weight: var(--font-weight-6);
+  font-size: var(--font-size-1);
+  cursor: pointer;
+}
+
+.been-button:hover:not(:disabled) {
+  border-color: var(--success);
+  color: var(--success);
+}
+
+.been-button-active {
+  background: #e8f5ef;
+  border-color: #c8e6d6;
+  color: var(--success);
+}
+
+.been-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.place-been-hint {
+  color: var(--text-muted);
+  font-size: var(--font-size-0);
+}
+
 .place-chip {
   margin: 0;
   display: inline-block;

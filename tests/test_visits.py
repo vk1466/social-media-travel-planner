@@ -7,8 +7,10 @@ from travelplanner.visits import (
   delete_visit,
   list_visits,
   load_visit,
+  mark_been,
   relink_visits,
   resolve_place_for_visit,
+  unmark_been,
   visited_place_ids,
 )
 
@@ -108,6 +110,73 @@ def test_create_visit_prefers_library_name_match(dynamodb) -> None:
   )
 
   assert visit.place_id == place_id
+
+
+def test_create_visit_without_dates(dynamodb) -> None:
+  place_id = upsert_place(
+    PlaceMention(place_name="Multnomah Falls"),
+    _sample_location(),
+    "instagram:reel1",
+  )
+
+  visit = create_visit(user_id=USER, place_id=place_id)
+
+  assert visit.visited_from is None
+  assert visit.visited_to is None
+  assert visited_place_ids(USER) == {place_id}
+
+
+def test_create_visit_rejects_to_without_from(dynamodb) -> None:
+  place_id = upsert_place(
+    PlaceMention(place_name="Multnomah Falls"),
+    _sample_location(),
+    "instagram:reel1",
+  )
+
+  try:
+    create_visit(
+      user_id=USER,
+      place_id=place_id,
+      visited_to="2024-06-14",
+    )
+    assert False, "expected ValueError"
+  except ValueError as exc:
+    assert "visited_from" in str(exc)
+
+
+def test_mark_been_is_idempotent(dynamodb) -> None:
+  place_id = upsert_place(
+    PlaceMention(place_name="Multnomah Falls"),
+    _sample_location(),
+    "instagram:reel1",
+  )
+
+  first = mark_been(user_id=USER, place_id=place_id)
+  second = mark_been(user_id=USER, place_id=place_id)
+
+  assert first.visit_id == second.visit_id
+  assert first.visited_from is None
+  assert list_visits(USER) == [first]
+
+
+def test_unmark_been_removes_visits(dynamodb) -> None:
+  place_id = upsert_place(
+    PlaceMention(place_name="Multnomah Falls"),
+    _sample_location(),
+    "instagram:reel1",
+  )
+  create_visit(
+    user_id=USER,
+    place_id=place_id,
+    visited_from="2024-06-12",
+  )
+  create_visit(user_id=USER, place_id=place_id)
+
+  deleted = unmark_been(user_id=USER, place_id=place_id)
+
+  assert deleted == 2
+  assert visited_place_ids(USER) == set()
+  assert list_visits(USER) == []
 
 
 def test_create_visit_rejects_bad_dates(dynamodb) -> None:

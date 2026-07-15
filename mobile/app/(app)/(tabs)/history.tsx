@@ -22,7 +22,10 @@ function toDateInput(date: Date): string {
   return date.toISOString().slice(0, 10);
 }
 
-function formatVisitDates(visitedFrom: string, visitedTo?: string | null): string {
+function formatVisitDates(visitedFrom?: string | null, visitedTo?: string | null): string {
+  if (!visitedFrom) {
+    return "Been · date unknown";
+  }
   if (!visitedTo || visitedTo === visitedFrom) {
     return visitedFrom;
   }
@@ -34,7 +37,7 @@ export default function HistoryScreen() {
   const { places, visits, loading, error, bumpRefresh } = useLibrary();
   const [destination, setDestination] = useState("");
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
-  const [visitedFrom, setVisitedFrom] = useState(toDateInput(new Date()));
+  const [visitedFrom, setVisitedFrom] = useState("");
   const [visitedTo, setVisitedTo] = useState("");
   const [notes, setNotes] = useState("");
   const [showFromPicker, setShowFromPicker] = useState(false);
@@ -60,26 +63,28 @@ export default function HistoryScreen() {
   const handleSave = async () => {
     setFormError(null);
     setFormSuccess(null);
-    if (!visitedFrom) {
-      setFormError("Start date is required");
-      return;
-    }
     if (!selectedPlace && !destination.trim()) {
       setFormError("Pick a place from your library or enter a destination");
+      return;
+    }
+    if (visitedTo && !visitedFrom) {
+      setFormError("Enter a start date if you set an end date");
       return;
     }
     setSaving(true);
     try {
       await createVisit({
-        visited_from: visitedFrom,
+        visited_from: visitedFrom || null,
         visited_to: visitedTo || null,
         notes: notes.trim() || null,
         place_id: selectedPlace?.place_id,
         place_query: selectedPlace ? null : destination.trim(),
       });
-      setFormSuccess("Trip saved");
+      setFormSuccess("Saved to your visits");
       setDestination("");
       setSelectedPlace(null);
+      setVisitedFrom("");
+      setVisitedTo("");
       setNotes("");
       bumpRefresh();
     } catch (err) {
@@ -121,8 +126,10 @@ export default function HistoryScreen() {
       keyExtractor={(item) => item.visit.visit_id}
       ListHeaderComponent={
         <View style={styles.form}>
-          <Text style={styles.title}>Add a trip</Text>
-          <Text style={styles.subtitle}>Log places you have actually visited.</Text>
+          <Text style={styles.title}>Add somewhere you’ve been</Text>
+          <Text style={styles.subtitle}>
+            Pick a library place or type a new destination. Dates are optional.
+          </Text>
           {error ? <ErrorBanner message={error} /> : null}
           {formError ? <ErrorBanner message={formError} /> : null}
           {formSuccess ? <SuccessBanner message={formSuccess} /> : null}
@@ -154,9 +161,9 @@ export default function HistoryScreen() {
             </Pressable>
           ))}
 
-          <Text style={styles.label}>From</Text>
+          <Text style={styles.label}>From (optional)</Text>
           <Pressable style={styles.input} onPress={() => setShowFromPicker(true)}>
-            <Text style={styles.dateText}>{visitedFrom || "Select date"}</Text>
+            <Text style={styles.dateText}>{visitedFrom || "No date"}</Text>
           </Pressable>
           {showFromPicker ? (
             <DateTimePicker
@@ -174,7 +181,7 @@ export default function HistoryScreen() {
 
           <Text style={styles.label}>To (optional)</Text>
           <Pressable style={styles.input} onPress={() => setShowToPicker(true)}>
-            <Text style={styles.dateText}>{visitedTo || "Select date"}</Text>
+            <Text style={styles.dateText}>{visitedTo || "No date"}</Text>
           </Pressable>
           {showToPicker ? (
             <DateTimePicker
@@ -199,11 +206,13 @@ export default function HistoryScreen() {
             placeholder="Optional notes"
             placeholderTextColor={colors.muted}
           />
-          <Button label="Save trip" loading={saving} onPress={() => void handleSave()} />
-          <Text style={[styles.title, { marginTop: spacing.lg }]}>Your trips</Text>
+          <Button label="Mark as Been" loading={saving} onPress={() => void handleSave()} />
+          <Text style={[styles.title, { marginTop: spacing.lg }]}>Your visits</Text>
         </View>
       }
-      ListEmptyComponent={<EmptyState title="No trips yet" body="Add your first visit above." />}
+      ListEmptyComponent={
+        <EmptyState title="No visits yet" body="Mark places as Been from here or a place page." />
+      }
       renderItem={({ item }) => {
         const { visit, place } = item;
         return (

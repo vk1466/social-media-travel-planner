@@ -104,12 +104,13 @@ class Visit:
 
   `place_id` references Place.place_id. `place_name` is a denormalized snapshot.
   `user_id` scopes the visit to a Clerk (or local) user.
+  `visited_from` / `visited_to` are optional — undated visits mean “Been” only.
   """
 
   visit_id: str
   place_id: str
   place_name: str
-  visited_from: str
+  visited_from: str | None = None
   visited_to: str | None = None
   notes: str | None = None
   created_at: str | None = None

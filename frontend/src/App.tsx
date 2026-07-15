@@ -161,6 +161,12 @@ function AppShell({ authReady }: { authReady: boolean }) {
     setLibraryVersion((version) => version + 1);
   };
 
+  const handleVisitsChanged = () => {
+    void fetchVisits()
+      .then((nextVisits) => setVisitCount(nextVisits.length))
+      .catch(() => undefined);
+  };
+
   const navigateToPlace = (placeId: string) => {
     navigate(`/places/${placeId}`);
   };
@@ -346,6 +352,7 @@ function AppShell({ authReady }: { authReady: boolean }) {
               <PlaceLibrary
                 refreshToken={libraryVersion}
                 onNavigateToPost={navigateToPost}
+                onChanged={handleVisitsChanged}
               />
             }
           />
@@ -355,6 +362,7 @@ function AppShell({ authReady }: { authReady: boolean }) {
               <PlaceLibrary
                 refreshToken={libraryVersion}
                 onNavigateToPost={navigateToPost}
+                onChanged={handleVisitsChanged}
               />
             }
           />

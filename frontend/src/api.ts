@@ -261,7 +261,7 @@ export interface Visit {
   visit_id: string;
   place_id: string;
   place_name: string;
-  visited_from: string;
+  visited_from?: string | null;
   visited_to?: string | null;
   notes?: string | null;
   created_at?: string | null;
@@ -274,13 +274,19 @@ export interface VisitDetail {
 }
 
 export interface VisitCreateInput {
-  visited_from: string;
+  visited_from?: string | null;
   visited_to?: string | null;
   notes?: string | null;
   place_id?: string | null;
   place_query?: string | null;
   city?: string | null;
   country?: string | null;
+}
+
+export interface BeenStatus {
+  place_id: string;
+  been: boolean;
+  visit?: Visit | null;
 }
 
 export async function fetchVisits(): Promise<VisitDetail[]> {
@@ -297,6 +303,14 @@ export async function createVisit(input: VisitCreateInput): Promise<VisitDetail>
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
   });
+}
+
+export async function markPlaceBeen(placeId: string): Promise<BeenStatus> {
+  return request<BeenStatus>(`/api/places/${placeId}/been`, { method: "POST" });
+}
+
+export async function unmarkPlaceBeen(placeId: string): Promise<BeenStatus> {
+  return request<BeenStatus>(`/api/places/${placeId}/been`, { method: "DELETE" });
 }
 
 export async function deleteVisit(visitId: string): Promise<void> {

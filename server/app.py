@@ -19,6 +19,8 @@ from travelplanner.visits import (
   delete_visit,
   list_visits,
   load_visit,
+  mark_been,
+  unmark_been,
   visit_to_dict,
   visited_place_ids,
 )
@@ -29,6 +31,7 @@ from server import jobs
 from server.media_proxy import fetch_proxied_media
 from server.schemas import (
   AdminMeSchema,
+  BeenStatusSchema,
   PlaceSchema,
   ErrorResponse,
   IngestRequest,
@@ -318,6 +321,33 @@ def remove_visit(visit_id: str, user_id: CurrentUserId) -> Response:
     raise HTTPException(status_code=404, detail="Visit not found")
   delete_visit(user_id, visit_id)
   return Response(status_code=204)
+
+
+@app.post(
+  "/api/places/{place_id}/been",
+  response_model=BeenStatusSchema,
+  responses={404: {"model": ErrorResponse}},
+)
+def mark_place_been(place_id: str, user_id: CurrentUserId) -> BeenStatusSchema:
+  if load_place(place_id) is None:
+    raise HTTPException(status_code=404, detail="Place not found")
+  try:
+    visit = mark_been(user_id=user_id, place_id=place_id)
+  except ValueError as exc:
+    raise HTTPException(status_code=400, detail=str(exc)) from exc
+  return BeenStatusSchema(place_id=place_id, been=True, visit=_visit_to_schema(visit))
+
+
+@app.delete(
+  "/api/places/{place_id}/been",
+  response_model=BeenStatusSchema,
+  responses={404: {"model": ErrorResponse}},
+)
+def unmark_place_been(place_id: str, user_id: CurrentUserId) -> BeenStatusSchema:
+  if load_place(place_id) is None:
+    raise HTTPException(status_code=404, detail="Place not found")
+  unmark_been(user_id=user_id, place_id=place_id)
+  return BeenStatusSchema(place_id=place_id, been=False, visit=None)
 
 
 @app.get("/api/categories", response_model=list[str])

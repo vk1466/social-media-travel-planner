@@ -42,16 +42,20 @@ def delete_all_visits(user_id: str | None = None) -> int:
 
 
 def list_visits(user_id: str) -> list[Visit]:
-  """Newest trip first (by visited_from, then created_at)."""
+  """Newest trip first (by visited_from, then created_at). Undated last among peers."""
   return sorted(
     load_all_visits(user_id),
-    key=lambda visit: (visit.visited_from, visit.created_at or ""),
+    key=lambda visit: (visit.visited_from or "", visit.created_at or ""),
     reverse=True,
   )
 
 
 def visited_place_ids(user_id: str) -> set[str]:
   return {visit.place_id for visit in load_all_visits(user_id)}
+
+
+def visits_for_place(user_id: str, place_id: str) -> list[Visit]:
+  return [visit for visit in load_all_visits(user_id) if visit.place_id == place_id]
 
 
 def _parse_iso_date(value: str, field_name: str) -> date:
@@ -63,11 +67,24 @@ def _parse_iso_date(value: str, field_name: str) -> date:
     raise ValueError(f"{field_name} is not a valid date") from exc
 
 
-def _validate_dates(visited_from: str, visited_to: str | None) -> None:
-  start = _parse_iso_date(visited_from, "visited_from")
-  if visited_to is None or visited_to == "":
+def _normalize_optional_date(value: str | None) -> str | None:
+  if value is None:
+    return None
+  stripped = value.strip()
+  return stripped or None
+
+
+def _validate_dates(visited_from: str | None, visited_to: str | None) -> None:
+  start_raw = _normalize_optional_date(visited_from)
+  end_raw = _normalize_optional_date(visited_to)
+  if end_raw and not start_raw:
+    raise ValueError("visited_from is required when visited_to is set")
+  if start_raw is None:
     return
-  end = _parse_iso_date(visited_to, "visited_to")
+  start = _parse_iso_date(start_raw, "visited_from")
+  if end_raw is None:
+    return
+  end = _parse_iso_date(end_raw, "visited_to")
   if end < start:
     raise ValueError("visited_to must be on or after visited_from")
 
@@ -130,7 +147,7 @@ def resolve_place_for_visit(
 def create_visit(
   *,
   user_id: str,
-  visited_from: str,
+  visited_from: str | None = None,
   visited_to: str | None = None,
   notes: str | None = None,
   place_id: str | None = None,
@@ -140,7 +157,9 @@ def create_visit(
 ) -> Visit:
   if not user_id:
     raise ValueError("user_id is required")
-  _validate_dates(visited_from, visited_to)
+  start = _normalize_optional_date(visited_from)
+  end = _normalize_optional_date(visited_to)
+  _validate_dates(start, end)
 
   visit_id = uuid.uuid4().hex
   place = resolve_place_for_visit(
@@ -156,14 +175,35 @@ def create_visit(
     visit_id=visit_id,
     place_id=place.place_id,
     place_name=place.display_name,
-    visited_from=visited_from,
-    visited_to=visited_to or None,
+    visited_from=start,
+    visited_to=end,
     notes=(notes.strip() if notes and notes.strip() else None),
     created_at=datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
     user_id=user_id,
   )
   save_visit(visit)
   return visit
+
+
+def mark_been(*, user_id: str, place_id: str) -> Visit:
+  """Idempotent “Been” mark — reuse an existing visit or create an undated one."""
+  existing = visits_for_place(user_id, place_id)
+  if existing:
+    return sorted(
+      existing,
+      key=lambda visit: (visit.visited_from or "", visit.created_at or ""),
+      reverse=True,
+    )[0]
+  return create_visit(user_id=user_id, place_id=place_id)
+
+
+def unmark_been(*, user_id: str, place_id: str) -> int:
+  """Remove all visits for a place (clears Been status). Returns deleted count."""
+  deleted = 0
+  for visit in visits_for_place(user_id, place_id):
+    if delete_visit(user_id, visit.visit_id):
+      deleted += 1
+  return deleted
 
 
 def relink_visits(*, user_id: str) -> int:

@@ -1,6 +1,13 @@
 import { useEffect, useMemo, useState, lazy, Suspense } from "react";
 
-import { fetchPlaceDetail, nativePostId, type Place, type PlaceDetail as PlaceDetailData } from "../api";
+import {
+  fetchPlaceDetail,
+  markPlaceBeen,
+  nativePostId,
+  unmarkPlaceBeen,
+  type Place,
+  type PlaceDetail as PlaceDetailData,
+} from "../api";
 import { googleMapsUrl } from "../maps";
 import { DetailModal } from "./DetailModal";
 import { mappablePlaces } from "../placeMapUtils";
@@ -9,9 +16,11 @@ const PlaceMap = lazy(() => import("./PlaceMap").then((module) => ({ default: mo
 
 interface PlaceDetailProps {
   place: Place;
+  been?: boolean;
   onClose: () => void;
   onNavigateToPlace?: (place: Place) => void;
   onNavigateToPost?: (platform: string, postId: string) => void;
+  onBeenChange?: (placeId: string, been: boolean) => void;
 }
 
 function locationBreadcrumb(place: Place): string {
@@ -21,12 +30,21 @@ function locationBreadcrumb(place: Place): string {
 
 export function PlaceDetail({
   place: initialPlace,
+  been = false,
   onClose,
   onNavigateToPlace,
   onNavigateToPost,
+  onBeenChange,
 }: PlaceDetailProps) {
   const [detail, setDetail] = useState<PlaceDetailData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isBeen, setIsBeen] = useState(been);
+  const [beenSaving, setBeenSaving] = useState(false);
+  const [beenError, setBeenError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setIsBeen(been);
+  }, [been, initialPlace.place_id]);
 
   useEffect(() => {
     let cancelled = false;
@@ -62,6 +80,25 @@ export function PlaceDetail({
   const mapUrl = googleMapsUrl(place.location);
   const mapPlaces = useMemo(() => [place, ...children], [place, children]);
 
+  const handleToggleBeen = async () => {
+    setBeenError(null);
+    setBeenSaving(true);
+    const next = !isBeen;
+    try {
+      if (next) {
+        await markPlaceBeen(place.place_id);
+      } else {
+        await unmarkPlaceBeen(place.place_id);
+      }
+      setIsBeen(next);
+      onBeenChange?.(place.place_id, next);
+    } catch (err) {
+      setBeenError(err instanceof Error ? err.message : "Failed to update Been status");
+    } finally {
+      setBeenSaving(false);
+    }
+  };
+
   return (
     <DetailModal titleId="place-detail-title" onClose={onClose}>
       <header className="detail-header">
@@ -83,6 +120,19 @@ export function PlaceDetail({
           {place.aliases.length > 0 && (
             <p className="detail-muted">also known as {place.aliases.join(", ")}</p>
           )}
+          <div className="place-been-row">
+            <button
+              type="button"
+              className={isBeen ? "been-button been-button-active" : "been-button"}
+              onClick={() => void handleToggleBeen()}
+              disabled={beenSaving}
+              aria-pressed={isBeen}
+            >
+              {beenSaving ? "Saving…" : isBeen ? "Been" : "Mark as Been"}
+            </button>
+            {isBeen && <span className="place-been-hint">In your travel history</span>}
+          </div>
+          {beenError && <p className="banner-error">{beenError}</p>}
         </div>
         <button type="button" className="icon-button icon-button-close" onClick={onClose} aria-label="Close" />
       </header>
