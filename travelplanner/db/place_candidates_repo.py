@@ -20,7 +20,8 @@ def _hints_from_dict(data: dict) -> PlaceMention:
     longitude=data.get("longitude"),
     details=data.get("details"),
     tips=tuple(data.get("tips", [])),
-    tags=tuple(data.get("tags", [])),
+    category=data.get("category"),
+    attributes=tuple(data.get("attributes", [])),
     parent_place_name=data.get("parent_place_name"),
   )
 

@@ -3,9 +3,11 @@ from __future__ import annotations
 from fastapi import FastAPI, HTTPException, Query, Response
 from fastapi.middleware.cors import CORSMiddleware
 
+from travelplanner.logging_config import configure_logging
 from travelplanner import settings
+from travelplanner.categories import CATEGORIES
 from travelplanner.library import list_user_places, list_user_posts, user_owns_post
-from travelplanner.models import TAGS, Place, Platform, SavedPost, Visit, make_post_id, parse_post_id
+from travelplanner.models import Place, Platform, SavedPost, Visit, make_post_id, parse_post_id
 from travelplanner.pipeline import unlink_post_from_user
 from travelplanner.place_hints import PlaceMention
 from travelplanner.places import cleanup_all_data, list_places, load_place, place_to_dict, reprocess_all_places
@@ -44,6 +46,8 @@ from server.schemas import (
   VisitDetailSchema,
   VisitSchema,
 )
+
+configure_logging()
 
 app = FastAPI(title="Travel Post Ingest API", version="0.1.0")
 
@@ -242,7 +246,8 @@ def admin_list_place_candidates(
         longitude=candidate.hints.longitude,
         details=candidate.hints.details,
         tips=list(candidate.hints.tips),
-        tags=list(candidate.hints.tags),
+        category=candidate.hints.category,
+        attributes=list(candidate.hints.attributes),
         parent_place_name=candidate.hints.parent_place_name,
       ),
       last_tried_at=candidate.last_tried_at,
@@ -315,10 +320,10 @@ def remove_visit(visit_id: str, user_id: CurrentUserId) -> Response:
   return Response(status_code=204)
 
 
-@app.get("/api/tags", response_model=list[str])
-def list_tags(user_id: CurrentUserId) -> list[str]:
+@app.get("/api/categories", response_model=list[str])
+def list_categories(user_id: CurrentUserId) -> list[str]:
   del user_id
-  return list(TAGS)
+  return list(CATEGORIES)
 
 
 @app.get("/api/places", response_model=list[PlaceSchema])
@@ -328,7 +333,7 @@ def list_all_places(
   country: str | None = Query(default=None),
   state_province: str | None = Query(default=None),
   city: str | None = Query(default=None),
-  tag: str | None = Query(default=None),
+  category: str | None = Query(default=None),
   roots_only: bool = Query(default=False),
   parent_place_id: str | None = Query(default=None),
 ) -> list[PlaceSchema]:
@@ -338,7 +343,7 @@ def list_all_places(
     country=country,
     state_province=state_province,
     city=city,
-    tag=tag,
+    category=category,
     roots_only=roots_only,
     parent_place_id=parent_place_id,
   )

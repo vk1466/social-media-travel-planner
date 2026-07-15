@@ -43,7 +43,8 @@ export interface ExtractedPlace {
   state_province?: string | null;
   details?: string | null;
   tips: string[];
-  tags: string[];
+  category?: string | null;
+  attributes: string[];
   parent_place_name?: string | null;
 }
 
@@ -125,7 +126,8 @@ export interface Place {
   display_name: string;
   location: PlaceLocation;
   aliases: string[];
-  tags: string[];
+  category?: string | null;
+  attributes: string[];
   details: string[];
   tips: string[];
   source_post_ids: string[];
@@ -229,7 +231,7 @@ export interface PlaceFilters {
   country?: string;
   state_province?: string;
   city?: string;
-  tag?: string;
+  category?: string;
   roots_only?: boolean;
   parent_place_id?: string;
 }
@@ -250,8 +252,8 @@ export async function fetchPlaceDetail(placeId: string): Promise<PlaceDetail> {
   return request<PlaceDetail>(`/api/places/${placeId}`);
 }
 
-export async function fetchTags(): Promise<string[]> {
-  return request<string[]>("/api/tags");
+export async function fetchCategories(): Promise<string[]> {
+  return request<string[]>("/api/categories");
 }
 
 export interface Visit {
@@ -364,7 +366,8 @@ export interface PlaceCandidateHints {
   longitude?: number | null;
   details?: string | null;
   tips: string[];
-  tags: string[];
+  category?: string | null;
+  attributes: string[];
   parent_place_name?: string | null;
 }
 

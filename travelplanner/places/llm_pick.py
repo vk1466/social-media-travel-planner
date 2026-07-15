@@ -3,10 +3,13 @@
 from __future__ import annotations
 
 import json
+import logging
 from typing import Any
 
 from travelplanner.clients.geocoder import GeocodeResult
 from travelplanner.place_hints import PlaceMention
+
+logger = logging.getLogger(__name__)
 
 PICK_SCHEMA: dict[str, Any] = {
   "type": "object",
@@ -89,6 +92,11 @@ def pick_candidate_index(
   if client is None:
     return None, "llm_pick skipped: OPENAI_API_KEY not set"
 
+  logger.info(
+    "llm_pick start place_name=%r candidates=%d",
+    mention.place_name,
+    len(candidates),
+  )
   user_content = (
     "Intended place:\n"
     f"{_mention_context(mention)}\n\n"
@@ -114,6 +122,7 @@ def pick_candidate_index(
       },
     )
   except Exception as exc:
+    logger.warning("llm_pick openai error place_name=%r error=%s", mention.place_name, exc)
     return None, f"llm_pick error: {exc}"
 
   content = response.choices[0].message.content if response.choices else None
@@ -128,7 +137,13 @@ def pick_candidate_index(
   chosen = data.get("chosen_index")
   reason = str(data.get("reason") or "").strip() or "no reason"
   if chosen is None:
-    return None, f"llm_pick rejected all ({reason})"
+    note = f"llm_pick rejected all ({reason})"
+    logger.info("llm_pick place_name=%r %s", mention.place_name, note)
+    return None, note
   if not isinstance(chosen, int) or chosen < 0 or chosen >= len(candidates):
-    return None, f"llm_pick invalid index {chosen!r} ({reason})"
-  return chosen, f"llm_pick chose #{chosen} ({reason})"
+    note = f"llm_pick invalid index {chosen!r} ({reason})"
+    logger.warning("llm_pick place_name=%r %s", mention.place_name, note)
+    return None, note
+  note = f"llm_pick chose #{chosen} ({reason})"
+  logger.info("llm_pick place_name=%r %s", mention.place_name, note)
+  return chosen, note

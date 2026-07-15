@@ -21,15 +21,18 @@ function uniquePostCount(place: Place, children: Place[]): number {
   return ids.size;
 }
 
-function ChildTags({ tags }: { tags: string[] }) {
-  if (tags.length === 0) {
-    return null;
-  }
+function categoryLabel(place: Place): string {
+  return place.category ?? "Uncategorized";
+}
+
+function ChildMeta({ place }: { place: Place }) {
+  const attrs = place.attributes ?? [];
   return (
     <span className="place-child-tags">
-      {tags.map((tag) => (
-        <span key={tag} className="tag-chip tag-chip-small">
-          {tag}
+      <span className="tag-chip tag-chip-small">{categoryLabel(place)}</span>
+      {attrs.map((attr) => (
+        <span key={attr} className="tag-chip tag-chip-small">
+          {attr}
         </span>
       ))}
     </span>
@@ -40,6 +43,7 @@ export function PlaceCard({ place, children = [], onSelect }: PlaceCardProps) {
   const childCount = children.length;
   const postCount = uniquePostCount(place, children);
   const placeCount = 1 + childCount;
+  const attributes = place.attributes ?? [];
 
   return (
     <article className="place-card place-card-root">
@@ -59,15 +63,14 @@ export function PlaceCard({ place, children = [], onSelect }: PlaceCardProps) {
         <h3 className="place-name">{place.display_name}</h3>
         <p className="place-location-line">{formatLocationLine(place)}</p>
 
-        {place.tags.length > 0 && (
-          <div className="tag-list">
-            {place.tags.map((tag) => (
-              <span key={tag} className="tag-chip">
-                {tag}
-              </span>
-            ))}
-          </div>
-        )}
+        <div className="tag-list">
+          <span className="tag-chip">{categoryLabel(place)}</span>
+          {attributes.map((attr) => (
+            <span key={attr} className="tag-chip">
+              {attr}
+            </span>
+          ))}
+        </div>
 
         <p className="post-extract-hint">
           {postCount} source post{postCount === 1 ? "" : "s"} · {placeCount} place
@@ -82,7 +85,7 @@ export function PlaceCard({ place, children = [], onSelect }: PlaceCardProps) {
               <button type="button" className="place-child-link" onClick={() => onSelect(child)}>
                 {child.display_name}
               </button>
-              <ChildTags tags={child.tags} />
+              <ChildMeta place={child} />
             </li>
           ))}
         </ul>

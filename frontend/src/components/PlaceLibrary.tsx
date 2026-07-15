@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, lazy, Suspense } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
-import { fetchPlaces, fetchTags, fetchVisitedPlaceIds, type Place } from "../api";
+import { fetchPlaces, fetchCategories, fetchVisitedPlaceIds, type Place } from "../api";
 import { PlaceCard } from "./PlaceCard";
 import { PlaceDetail } from "./PlaceDetail";
 
@@ -45,12 +45,12 @@ export function PlaceLibrary({ refreshToken = 0, onNavigateToPost }: PlaceLibrar
 
   const [allPlaces, setAllPlaces] = useState<Place[]>([]);
   const [visitedPlaceIds, setVisitedPlaceIds] = useState<Set<string>>(new Set());
-  const [tags, setTags] = useState<string[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
   const [continentScope, setContinentScope] = useState<string | null>(null);
   const [countryScope, setCountryScope] = useState<string | null>(null);
   const [stateFilter, setStateFilter] = useState("all");
   const [cityFilter, setCityFilter] = useState("all");
-  const [tagFilter, setTagFilter] = useState("all");
+  const [categoryFilter, setCategoryFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [mobilePane, setMobilePane] = useState<MobilePane>("browse");
   const [loading, setLoading] = useState(true);
@@ -58,11 +58,11 @@ export function PlaceLibrary({ refreshToken = 0, onNavigateToPost }: PlaceLibrar
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
 
   const hasSearch = searchQuery.trim().length > 0;
-  const hasTagFilter = tagFilter !== "all";
-  const isGallery = Boolean(countryScope) || hasSearch || hasTagFilter;
+  const hasCategoryFilter = categoryFilter !== "all";
+  const isGallery = Boolean(countryScope) || hasSearch || hasCategoryFilter;
 
   useEffect(() => {
-    void fetchTags().then(setTags).catch(() => setTags([]));
+    void fetchCategories().then(setCategories).catch(() => setCategories([]));
   }, []);
 
   useEffect(() => {
@@ -147,12 +147,15 @@ export function PlaceLibrary({ refreshToken = 0, onNavigateToPost }: PlaceLibrar
       if (countryScope && place.location.country !== countryScope) {
         return false;
       }
-      if (tagFilter !== "all" && !place.tags.includes(tagFilter)) {
+      if (categoryFilter === "uncategorized") {
+        return place.category == null;
+      }
+      if (categoryFilter !== "all" && place.category !== categoryFilter) {
         return false;
       }
       return true;
     });
-  }, [rootCatalog, continentScope, countryScope, tagFilter]);
+  }, [rootCatalog, continentScope, countryScope, categoryFilter]);
 
   const searchedPlaces = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
@@ -258,8 +261,10 @@ export function PlaceLibrary({ refreshToken = 0, onNavigateToPost }: PlaceLibrar
 
   const galleryHeading = hasSearch
     ? `Search results${countryScope ? ` in ${countryScope}` : ""}`
-    : hasTagFilter && !countryScope
-      ? `Places tagged “${tagFilter}”`
+    : hasCategoryFilter && !countryScope
+      ? categoryFilter === "uncategorized"
+        ? "Uncategorized places"
+        : `Places · ${categoryFilter}`
       : countryScope
         ? countryScope
         : "Places";
@@ -326,16 +331,17 @@ export function PlaceLibrary({ refreshToken = 0, onNavigateToPost }: PlaceLibrar
             )}
             <select
               className="platform-filter"
-              value={tagFilter}
-              onChange={(event) => setTagFilter(event.target.value)}
-              aria-label="Filter by tag"
+              value={categoryFilter}
+              onChange={(event) => setCategoryFilter(event.target.value)}
+              aria-label="Filter by category"
             >
-              <option value="all">all tags</option>
-              {tags.map((tag) => (
-                <option key={tag} value={tag}>
-                  {tag}
+              <option value="all">all categories</option>
+              {categories.map((category) => (
+                <option key={category} value={category}>
+                  {category}
                 </option>
               ))}
+              <option value="uncategorized">Uncategorized</option>
             </select>
           </div>
 

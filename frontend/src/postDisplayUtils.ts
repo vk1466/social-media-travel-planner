@@ -47,7 +47,13 @@ export function getPlatformLabel(post: SavedPost): string {
 
 export function getPostTags(post: SavedPost): string[] {
   const fromHashtags = post.hashtags.map((tag) => tag.replace(/^#/, "").toLowerCase());
-  const fromPlaces = post.extracted_places.flatMap((place) => place.tags);
+  const fromPlaces = post.extracted_places.flatMap((place) => {
+    const labels = [...(place.attributes ?? [])];
+    if (place.category) {
+      labels.unshift(place.category);
+    }
+    return labels;
+  });
   const combined = [...fromHashtags, ...fromPlaces.map((tag) => tag.toLowerCase())];
   return Array.from(new Set(combined.filter(Boolean))).slice(0, 6);
 }

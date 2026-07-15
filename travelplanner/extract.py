@@ -1,11 +1,20 @@
 from __future__ import annotations
 
 import json
+import logging
 from dataclasses import dataclass
 from typing import Any
 
-from travelplanner.models import TAGS
+from travelplanner.categories import (
+  ALL_ATTRIBUTES,
+  CATEGORIES,
+  attribute_allowlist_prompt_lines,
+  filter_attributes,
+  normalize_category,
+)
 from travelplanner.place_hints import ExtractedPlace, PlatformPlace
+
+logger = logging.getLogger(__name__)
 
 PLACE_EXTRACT_SCHEMA: dict[str, Any] = {
   "type": "object",
@@ -54,10 +63,20 @@ PLACE_EXTRACT_SCHEMA: dict[str, Any] = {
             "items": {"type": "string"},
             "description": "Short, concrete tips or recommendations for this place",
           },
-          "tags": {
+          "category": {
+            "type": "string",
+            "enum": list(CATEGORIES),
+            "description": (
+              "Exactly one browse type for this pin, chosen from the allowed list"
+            ),
+          },
+          "attributes": {
             "type": "array",
-            "items": {"type": "string", "enum": list(TAGS)},
-            "description": "Activity/type tags that apply to this place, chosen from the allowed list",
+            "items": {"type": "string", "enum": list(ALL_ATTRIBUTES)},
+            "description": (
+              "Secondary facets for this place, chosen only from the allowlist for "
+              "its category. Empty array when none apply. Not a second category"
+            ),
           },
           "parent_place_name": {
             "type": ["string", "null"],
@@ -74,7 +93,8 @@ PLACE_EXTRACT_SCHEMA: dict[str, Any] = {
           "country",
           "details",
           "tips",
-          "tags",
+          "category",
+          "attributes",
           "parent_place_name",
         ],
         "additionalProperties": False,
@@ -118,9 +138,28 @@ REEL_EXTRACT_PROMPT = (
   "lakes, waterfalls, landmarks, museums, restaurants, hotels, viewpoints. Skip real "
   "estate offices, generic businesses, services, and commercial listings even if a "
   "name appears in the caption or comments.\n\n"
+  "Category and attributes (exactly one category per place):\n"
+  "1. Category = what the pin is (visit action / venue type) — pick from the enum.\n"
+  "2. Attributes = extra facets only, never a second category. Emit every "
+  "allowlisted attribute that clearly applies; use [] only when none apply.\n"
+  "3. Parents → park or neighborhood; children → the activity pin type "
+  "(hike, viewpoint, waterfall, etc.).\n"
+  "4. If torn between two categories, pick the more specific visit action "
+  "(hike > park for a trail pin; waterfall > landmark for a named falls).\n"
+  "5. Never emit two categories; never invent values outside the enums.\n"
+  "6. If the place name is a waterfall / falls / cascade (e.g. Victoria Falls, "
+  "Multnomah Falls, Tunnel Falls) → category=waterfall — never viewpoint, "
+  "landmark, or park.\n"
+  "7. Trail / scramble / climb as the visit → category=hike; put views in "
+  "attributes as viewpoint when relevant.\n"
+  "8. Monument / statue / temple / citadel as the visit → category=landmark; "
+  "add hike or viewpoint attributes when visitors also hike or look out.\n"
+  "9. For viewpoint / waterfall / beach pins, if visitors walk or hike to reach "
+  "them, include attribute hike.\n\n"
+  "Allowed attributes by category (use only these values):\n"
+  f"{attribute_allowlist_prompt_lines()}\n\n"
   "Use details for one short sentence of context. Use tips for short, concrete "
-  "actionable phrases drawn from anywhere in the reel. Pick tags only from the "
-  "allowed list."
+  "actionable phrases drawn from anywhere in the reel."
 )
 
 
@@ -151,7 +190,9 @@ def _normalize_place_name(name: str) -> str:
 
 
 def _extracted_richness(extracted: ExtractedPlace) -> int:
-  score = len(extracted.tips) + len(extracted.tags)
+  score = len(extracted.tips) + len(extracted.attributes)
+  if extracted.category:
+    score += 1
   if extracted.details:
     score += 1
   if extracted.city:
@@ -203,13 +244,13 @@ def _parse_extracted_places(data: dict[str, Any] | None) -> tuple[ExtractedPlace
         if tip is not None
       )
 
-    tags_raw = item.get("tags", [])
-    tags: tuple[str, ...] = ()
-    if isinstance(tags_raw, list):
-      tags = tuple(
-        tag
-        for tag in (_optional_str(value) for value in tags_raw)
-        if tag is not None and tag in TAGS
+    category = normalize_category(_optional_str(item.get("category")))
+    attrs_raw = item.get("attributes", [])
+    attributes: tuple[str, ...] = ()
+    if isinstance(attrs_raw, list):
+      attributes = filter_attributes(
+        category,
+        tuple(attr for attr in (_optional_str(value) for value in attrs_raw) if attr is not None),
       )
 
     extracted.append(
@@ -220,7 +261,8 @@ def _parse_extracted_places(data: dict[str, Any] | None) -> tuple[ExtractedPlace
         state_province=_optional_str(item.get("state_province")),
         details=_optional_str(item.get("details")),
         tips=tips,
-        tags=tags,
+        category=category,
+        attributes=attributes,
         parent_place_name=_optional_str(item.get("parent_place_name")),
       )
     )
@@ -270,6 +312,7 @@ def fetch_places_from_reel(bundle: ReelBundle) -> ReelExtraction:
   """Extract reel summary + places from all reel sources via one OpenAI call."""
   content = format_reel_bundle(bundle).strip()
   if not content:
+    logger.info("extract skipped: empty reel bundle")
     return ReelExtraction()
 
   from travelplanner import settings
@@ -277,8 +320,16 @@ def fetch_places_from_reel(bundle: ReelBundle) -> ReelExtraction:
 
   client = get_client()
   if client is None:
+    logger.warning("extract skipped: OPENAI_API_KEY not set")
     return ReelExtraction()
 
+  logger.info(
+    "extract start model=%s content_chars=%d has_transcript=%s has_location_tag=%s",
+    settings.openai_model(),
+    len(content),
+    bool((bundle.transcript or "").strip()),
+    bundle.location_tag is not None,
+  )
   try:
     response = client.chat.completions.create(
       model=settings.openai_model(),
@@ -296,18 +347,28 @@ def fetch_places_from_reel(bundle: ReelBundle) -> ReelExtraction:
       },
     )
   except Exception:
+    logger.exception("extract openai call failed")
     return ReelExtraction()
 
   message_content = response.choices[0].message.content
   if not message_content:
+    logger.warning("extract empty openai response")
     return ReelExtraction()
 
   try:
     data = json.loads(message_content)
   except (json.JSONDecodeError, TypeError):
+    logger.exception("extract invalid json from openai")
     return ReelExtraction()
 
-  return _parse_reel_extraction(data if isinstance(data, dict) else None)
+  result = _parse_reel_extraction(data if isinstance(data, dict) else None)
+  logger.info(
+    "extract done places=%d has_summary=%s names=%s",
+    len(result.places),
+    bool(result.reel_summary),
+    [place.place_name for place in result.places],
+  )
+  return result
 
 
 def fetch_places_from_text(text: str) -> tuple[ExtractedPlace, ...]:

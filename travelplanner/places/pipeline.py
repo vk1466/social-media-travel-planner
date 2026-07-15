@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from dataclasses import replace
 
 from travelplanner.models import Platform, SavedPost
@@ -9,6 +10,8 @@ from travelplanner.places.mentions import mentions_from_post
 from travelplanner.places.resolve import upsert_place
 from travelplanner.places.store import delete_all_places, load_all_places, load_place
 from travelplanner.store import load_all_posts, save_post
+
+logger = logging.getLogger(__name__)
 
 
 def process_post_places(post: SavedPost) -> tuple[str, ...]:
@@ -20,11 +23,22 @@ def process_post_places(post: SavedPost) -> tuple[str, ...]:
   source_post_id = post.post_id
   place_ids: list[str] = []
   library = load_all_places()
+  mentions = mentions_from_post(post)
+  logger.info(
+    "places process start post_id=%s mentions=%d",
+    source_post_id,
+    len(mentions),
+  )
 
-  for mention in mentions_from_post(post):
+  for mention in mentions:
     try:
       debug = locate_mention_debug(mention)
     except Exception:
+      logger.exception(
+        "locate failed place_name=%r post_id=%s",
+        mention.place_name,
+        source_post_id,
+      )
       record_candidate(
         source_post_id=source_post_id,
         mention=mention,
@@ -33,6 +47,12 @@ def process_post_places(post: SavedPost) -> tuple[str, ...]:
       continue
 
     if debug.location is None or debug.status == "unresolved":
+      logger.info(
+        "place unresolved place_name=%r post_id=%s notes=%s",
+        mention.place_name,
+        source_post_id,
+        "; ".join(debug.notes[-3:]) if debug.notes else "",
+      )
       record_candidate(
         source_post_id=source_post_id,
         mention=mention,
@@ -52,6 +72,13 @@ def process_post_places(post: SavedPost) -> tuple[str, ...]:
       library.append(saved)
 
     if debug.status == "low_confidence":
+      logger.info(
+        "place low_confidence place_name=%r place_id=%s confidence=%.2f post_id=%s",
+        mention.place_name,
+        place_id,
+        debug.match_confidence or 0.0,
+        source_post_id,
+      )
       record_candidate(
         source_post_id=source_post_id,
         mention=mention,
@@ -59,6 +86,13 @@ def process_post_places(post: SavedPost) -> tuple[str, ...]:
         resolved_place_id=place_id,
       )
     else:
+      logger.info(
+        "place resolved place_name=%r place_id=%s confidence=%.2f post_id=%s",
+        mention.place_name,
+        place_id,
+        debug.match_confidence or 0.0,
+        source_post_id,
+      )
       mark_candidate_resolved(
         source_post_id=source_post_id,
         place_name=mention.place_name,
@@ -68,11 +102,17 @@ def process_post_places(post: SavedPost) -> tuple[str, ...]:
     if place_id not in place_ids:
       place_ids.append(place_id)
 
+  logger.info(
+    "places process done post_id=%s place_ids=%d",
+    source_post_id,
+    len(place_ids),
+  )
   return tuple(place_ids)
 
 
 def reprocess_all_places(platform: Platform | None = None) -> None:
   """Rebuild place library using the locate/resolve path."""
+  logger.info("places reprocess start platform=%s", platform)
   if platform is None:
     delete_all_places()
 
@@ -86,4 +126,5 @@ def reprocess_all_places(platform: Platform | None = None) -> None:
 
     link_places()
   except Exception:
-    pass
+    logger.exception("hierarchy link_places failed after reprocess")
+  logger.info("places reprocess done platform=%s", platform)

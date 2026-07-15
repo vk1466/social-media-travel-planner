@@ -144,8 +144,10 @@ export function PlaceMap({
                   <strong>{place.display_name}</strong>
                   {isVisited && <p className="place-map-popup-visited">Visited</p>}
                   {locationLine(place) && <p>{locationLine(place)}</p>}
-                  {place.tags.length > 0 && (
-                    <p className="place-map-popup-tags">{place.tags.join(" · ")}</p>
+                  {(place.category || (place.attributes ?? []).length > 0) && (
+                    <p className="place-map-popup-tags">
+                      {[place.category ?? "Uncategorized", ...(place.attributes ?? [])].join(" · ")}
+                    </p>
                   )}
                   {onSelectPlace && (
                     <button

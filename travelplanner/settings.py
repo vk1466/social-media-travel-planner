@@ -109,3 +109,11 @@ def cors_origins() -> list[str]:
     "http://localhost:5173",
     "http://127.0.0.1:5173",
   ]
+
+
+def log_level() -> str:
+  """Root log level for CLI / Lambda (DEBUG | INFO | WARNING | ERROR)."""
+  value = os.getenv("LOG_LEVEL", "INFO").strip().upper()
+  if value in {"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"}:
+    return value
+  return "INFO"

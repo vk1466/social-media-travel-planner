@@ -1,11 +1,15 @@
 from __future__ import annotations
 
+import logging
 from dataclasses import replace
 
+from travelplanner.categories import filter_attributes, resolve_category
 from travelplanner.models import Place, PlaceLocation
 from travelplanner.place_hints import PlaceMention
 from travelplanner.places.store import load_all_places, load_place, place_key, save_place
 from travelplanner.places.locate import haversine_meters, name_similarity
+
+logger = logging.getLogger(__name__)
 
 NEAR_DUPLICATE_METERS = 50
 NAME_COMPATIBLE = 0.55
@@ -98,7 +102,15 @@ def _merge_place(
     if tip not in tips:
       tips.append(tip)
 
-  tags = tuple(sorted(set(existing.tags) | set(mention.tags)))
+  winning_category = resolve_category(existing.category, mention.category)
+  attr_pool: list[str] = list(existing.attributes) + list(mention.attributes)
+  if (
+    existing.category
+    and winning_category
+    and existing.category != winning_category
+  ):
+    attr_pool.append(existing.category)
+  attributes = filter_attributes(winning_category, tuple(attr_pool))
 
   source_post_ids = existing.source_post_ids
   if source_post_id and source_post_id not in source_post_ids:
@@ -109,7 +121,8 @@ def _merge_place(
     aliases=tuple(aliases),
     details=tuple(details),
     tips=tuple(tips),
-    tags=tags,
+    category=winning_category,
+    attributes=attributes,
     source_post_ids=source_post_ids,
   )
 
@@ -121,12 +134,14 @@ def _new_place(
   source_post_id: str | None,
 ) -> Place:
   aliases = () if mention.place_name == location.display_name else (mention.place_name,)
+  category = resolve_category(None, mention.category)
   return Place(
     place_id=place_id,
     display_name=location.display_name,
     location=location,
     aliases=aliases,
-    tags=tuple(sorted(set(mention.tags))),
+    category=category,
+    attributes=filter_attributes(category, mention.attributes),
     details=(mention.details,) if mention.details else (),
     tips=tuple(dict.fromkeys(mention.tips)),
     source_post_ids=(source_post_id,) if source_post_id else (),
@@ -142,10 +157,23 @@ def upsert_place(
 ) -> str:
   key = place_key(location)
   existing = find_existing_place(key, location, mention, library=library)
-  place = (
-    _merge_place(existing, mention, source_post_id)
-    if existing is not None
-    else _new_place(key, mention, location, source_post_id)
-  )
+  if existing is not None:
+    place = _merge_place(existing, mention, source_post_id)
+    logger.info(
+      "place merge mention=%r into place_id=%s display=%r post_id=%s",
+      mention.place_name,
+      place.place_id,
+      place.display_name,
+      source_post_id,
+    )
+  else:
+    place = _new_place(key, mention, location, source_post_id)
+    logger.info(
+      "place create place_id=%s display=%r mention=%r post_id=%s",
+      place.place_id,
+      place.display_name,
+      mention.place_name,
+      source_post_id,
+    )
   save_place(place)
   return place.place_id

@@ -93,16 +93,15 @@ export default function PlaceDetailScreen() {
         </Pressable>
       ) : null}
 
-      {place.tags.length > 0 ? (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Tags</Text>
-          <View style={styles.tags}>
-            {place.tags.map((tag) => (
-              <TagChip key={tag} label={tag} />
-            ))}
-          </View>
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Category</Text>
+        <View style={styles.tags}>
+          <TagChip label={place.category ?? "Uncategorized"} />
+          {(place.attributes ?? []).map((attr) => (
+            <TagChip key={attr} label={attr} />
+          ))}
         </View>
-      ) : null}
+      </View>
 
       {place.details.length > 0 ? (
         <View style={styles.section}>

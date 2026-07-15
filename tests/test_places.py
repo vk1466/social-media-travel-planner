@@ -66,7 +66,7 @@ def test_mentions_from_post_normalizes_both_hint_shapes() -> None:
         state_province="Lisbon District",
         details="Historic tower",
         tips=("Go early",),
-        tags=("landmark",),
+        category="landmark",
       ),
     ),
   )
@@ -87,7 +87,7 @@ def test_mentions_from_post_normalizes_both_hint_shapes() -> None:
       state_province="Lisbon District",
       details="Historic tower",
       tips=("Go early",),
-      tags=("landmark",),
+      category="landmark",
     ),
   )
 
@@ -100,7 +100,7 @@ def test_mentions_from_post_synthesizes_parent_from_parent_place_name() -> None:
         state_province="Oregon",
         country="USA",
         parent_place_name="Smith Rock State Park",
-        tags=("hike",),
+        category="hike",
       ),
     ),
   )
@@ -111,13 +111,14 @@ def test_mentions_from_post_synthesizes_parent_from_parent_place_name() -> None:
       place_name="Misery Ridge Trail",
       country="USA",
       state_province="Oregon",
-      tags=("hike",),
+      category="hike",
       parent_place_name="Smith Rock State Park",
     ),
     PlaceMention(
       place_name="Smith Rock State Park",
       country="USA",
       state_province="Oregon",
+      category="park",
     ),
   )
 
@@ -152,14 +153,14 @@ def test_mentions_from_post_skips_synthesis_when_parent_already_mentioned() -> N
         place_name="Smith Rock State Park",
         state_province="Oregon",
         country="USA",
-        tags=("park",),
+        category="park",
       ),
       ExtractedPlace(
         place_name="Misery Ridge Trail",
         state_province="Oregon",
         country="USA",
         parent_place_name="Smith Rock State Park",
-        tags=("hike",),
+        category="hike",
       ),
     ),
   )
@@ -167,7 +168,7 @@ def test_mentions_from_post_skips_synthesis_when_parent_already_mentioned() -> N
   mentions = mentions_from_post(post)
   park_mentions = [mention for mention in mentions if mention.place_name == "Smith Rock State Park"]
   assert len(park_mentions) == 1
-  assert park_mentions[0].tags == ("park",)
+  assert park_mentions[0].category == "park"
 
 
 def test_geocode_queries_falls_back_to_simpler_queries() -> None:
@@ -199,7 +200,12 @@ def test_is_visitable_place_rejects_non_travel_offices() -> None:
 
 
 def test_upsert_place_creates_new_place(dynamodb) -> None:
-  mention = PlaceMention(place_name="Multnomah Falls", tags=("waterfall", "hike"), tips=("Arrive early",))
+  mention = PlaceMention(
+    place_name="Multnomah Falls",
+    category="waterfall",
+    attributes=("hike",),
+    tips=("Arrive early",),
+  )
   location = PlaceLocation(
     display_name="Multnomah Falls",
     continent="North America",
@@ -217,7 +223,8 @@ def test_upsert_place_creates_new_place(dynamodb) -> None:
   place = load_place(place_id)
   assert place is not None
   assert place.display_name == "Multnomah Falls"
-  assert place.tags == ("hike", "waterfall")
+  assert place.category == "waterfall"
+  assert place.attributes == ("hike",)
   assert place.tips == ("Arrive early",)
   assert place.source_post_ids == ("instagram:abc123",)
   assert place.aliases == ()
@@ -235,12 +242,12 @@ def test_upsert_place_merges_into_existing_place(dynamodb) -> None:
     longitude=-122.1158,
   )
 
-  first = PlaceMention(place_name="Multnomah Falls", tags=("waterfall",), tips=("Arrive early",))
+  first = PlaceMention(place_name="Multnomah Falls", category="waterfall", attributes=("hike",), tips=("Arrive early",))
   upsert_place(first, location, "instagram:abc123")
 
   second = PlaceMention(
     place_name="Mult Falls",
-    tags=("hike",),
+    category="hike",
     tips=("Bring water", "Arrive early"),
     details="Tallest waterfall in Oregon",
   )
@@ -251,7 +258,8 @@ def test_upsert_place_merges_into_existing_place(dynamodb) -> None:
   assert len(places) == 1
 
   merged = places[0]
-  assert merged.tags == ("hike", "waterfall")
+  assert merged.category == "waterfall"
+  assert merged.attributes == ("hike",)
   assert merged.tips == ("Arrive early", "Bring water")
   assert merged.aliases == ("Mult Falls",)
   assert merged.details == ("Tallest waterfall in Oregon",)
@@ -300,7 +308,7 @@ def test_process_post_places_skips_mentions_that_fail_to_locate(monkeypatch, dyn
 
 def test_process_post_places_returns_ids_for_located_mentions(monkeypatch, dynamodb) -> None:
   post = _sample_post(
-    extracted_places=(ExtractedPlace(place_name="Multnomah Falls", tags=("waterfall",)),),
+    extracted_places=(ExtractedPlace(place_name="Multnomah Falls", category="waterfall"),),
   )
   location = PlaceLocation(
     display_name="Multnomah Falls",
@@ -331,7 +339,7 @@ def test_process_post_places_materializes_parent_from_parent_place_name(monkeypa
         state_province="Oregon",
         country="USA",
         parent_place_name="Smith Rock State Park",
-        tags=("hike",),
+        category="hike",
       ),
     ),
   )
@@ -389,11 +397,16 @@ def test_list_places_filters_by_tag_and_country(dynamodb) -> None:
     latitude=38.7131,
     longitude=-9.1279,
   )
-  upsert_place(PlaceMention(place_name="Multnomah Falls", tags=("waterfall", "hike")), oregon, "a:1")
-  upsert_place(PlaceMention(place_name="Alfama", tags=("neighborhood",)), lisbon, "a:2")
+  upsert_place(
+    PlaceMention(place_name="Multnomah Falls", category="waterfall", attributes=("hike",)),
+    oregon,
+    "a:1",
+  )
+  upsert_place(PlaceMention(place_name="Alfama", category="neighborhood"), lisbon, "a:2")
 
   assert [p.display_name for p in list_places()] == ["Alfama", "Multnomah Falls"]
-  assert [p.display_name for p in list_places(tag="hike")] == ["Multnomah Falls"]
+  assert [p.display_name for p in list_places(category="waterfall")] == ["Multnomah Falls"]
+  assert [p.display_name for p in list_places(category="uncategorized")] == []
   assert [p.display_name for p in list_places(country="Portugal")] == ["Alfama"]
   assert [p.display_name for p in list_places(country="pt")] == ["Alfama"]
   assert [p.display_name for p in list_places(state_province="Oregon")] == ["Multnomah Falls"]

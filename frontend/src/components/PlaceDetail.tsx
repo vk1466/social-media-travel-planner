@@ -102,13 +102,19 @@ export function PlaceDetail({
                 >
                   {child.display_name}
                 </button>
-                {child.tags.length > 0 && (
+                {child.category && (
                   <span className="place-child-tags">
-                    {child.tags.map((tag) => (
-                      <span key={tag} className="tag-chip tag-chip-small">
-                        {tag}
+                    <span className="tag-chip tag-chip-small">{child.category}</span>
+                    {(child.attributes ?? []).map((attr) => (
+                      <span key={attr} className="tag-chip tag-chip-small">
+                        {attr}
                       </span>
                     ))}
+                  </span>
+                )}
+                {!child.category && (
+                  <span className="place-child-tags">
+                    <span className="tag-chip tag-chip-small">Uncategorized</span>
                   </span>
                 )}
               </li>
@@ -117,18 +123,17 @@ export function PlaceDetail({
         </section>
       )}
 
-      {place.tags.length > 0 && (
-        <section className="detail-section">
-          <h3>Tags</h3>
-          <div className="tag-list">
-            {place.tags.map((tag) => (
-              <span key={tag} className="tag-chip">
-                {tag}
-              </span>
-            ))}
-          </div>
-        </section>
-      )}
+      <section className="detail-section">
+        <h3>Category</h3>
+        <div className="tag-list">
+          <span className="tag-chip">{place.category ?? "Uncategorized"}</span>
+          {(place.attributes ?? []).map((attr) => (
+            <span key={attr} className="tag-chip">
+              {attr}
+            </span>
+          ))}
+        </div>
+      </section>
 
       {place.details.length > 0 && (
         <section className="detail-section">

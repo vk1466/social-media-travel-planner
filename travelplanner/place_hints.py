@@ -31,7 +31,8 @@ class ExtractedPlace:
   state_province: str | None = None
   details: str | None = None
   tips: tuple[str, ...] = ()
-  tags: tuple[str, ...] = ()
+  category: str | None = None
+  attributes: tuple[str, ...] = ()
   parent_place_name: str | None = None
 
 
@@ -47,5 +48,6 @@ class PlaceMention:
   longitude: float | None = None
   details: str | None = None
   tips: tuple[str, ...] = ()
-  tags: tuple[str, ...] = ()
+  category: str | None = None
+  attributes: tuple[str, ...] = ()
   parent_place_name: str | None = None

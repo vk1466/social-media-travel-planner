@@ -30,7 +30,8 @@ interface PlaceSummary {
   placeId?: string;
   locationLine?: string;
   parentPlaceName?: string | null;
-  tags: string[];
+  category?: string | null;
+  attributes: string[];
   details?: string | null;
   tips: string[];
   mapUrl?: string | null;
@@ -67,7 +68,8 @@ function buildPlaceSummaries(post: SavedPost, linkedPlaces: LinkedPlace[]): Plac
           placeId: linked?.placeId,
           locationLine: locationFromExtracted(extracted),
           parentPlaceName: extracted.parent_place_name,
-          tags: extracted.tags,
+          category: extracted.category,
+          attributes: extracted.attributes ?? [],
           details: extracted.details,
           tips: extracted.tips,
         });
@@ -79,7 +81,7 @@ function buildPlaceSummaries(post: SavedPost, linkedPlaces: LinkedPlace[]): Plac
           key: linked.placeId,
           name: linked.displayName,
           placeId: linked.placeId,
-          tags: [],
+          attributes: [],
           tips: [],
         });
       }
@@ -99,7 +101,7 @@ function buildPlaceSummaries(post: SavedPost, linkedPlaces: LinkedPlace[]): Plac
       key: `${place.place_name}-${place.latitude}-${place.longitude}-${index}`,
       name: place.place_name,
       locationLine: locationFromTagged(place),
-      tags: [],
+      attributes: [],
       tips: [],
       mapUrl,
     };

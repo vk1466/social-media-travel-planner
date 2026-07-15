@@ -51,6 +51,7 @@ class TravelPlannerStack(Stack):
       "ENSEMBLEDATA_TOKEN": ensembledata_token,
       "SUPADATA_API_KEY": supadata_api_key,
       "OPENAI_API_KEY": openai_api_key,
+      "LOG_LEVEL": "INFO",
     }
 
     ingest_fn = lambda_.DockerImageFunction(
@@ -85,6 +86,7 @@ class TravelPlannerStack(Stack):
         "DYNAMODB_STAGE": stage,
         "OPENAI_MODEL": openai_model,
         "OPENAI_API_KEY": openai_api_key,
+        "LOG_LEVEL": "INFO",
       },
     )
 

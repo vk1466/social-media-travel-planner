@@ -11,7 +11,7 @@ import {
   View,
 } from "react-native";
 
-import { fetchTags, fetchVisitedPlaceIds, type Place } from "@/src/api";
+import { fetchCategories, fetchVisitedPlaceIds, type Place } from "@/src/api";
 import { PlaceCard } from "@/src/components/PlaceCard";
 import { PlaceMap } from "@/src/components/PlaceMap";
 import { EmptyState, ErrorBanner, TagChip } from "@/src/components/ui";
@@ -25,17 +25,17 @@ export default function PlacesScreen() {
   const { places, loading, error, refresh, refreshToken } = useLibrary();
   const [pane, setPane] = useState<Pane>("browse");
   const [searchQuery, setSearchQuery] = useState("");
-  const [tagFilter, setTagFilter] = useState<string | null>(null);
-  const [tags, setTags] = useState<string[]>([]);
+  const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
+  const [categories, setCategories] = useState<string[]>([]);
   const [visitedPlaceIds, setVisitedPlaceIds] = useState<Set<string>>(new Set());
   const [refreshing, setRefreshing] = useState(false);
   const [continentScope, setContinentScope] = useState<string | null>(null);
   const [countryScope, setCountryScope] = useState<string | null>(null);
 
   useEffect(() => {
-    void fetchTags()
-      .then(setTags)
-      .catch(() => setTags([]));
+    void fetchCategories()
+      .then(setCategories)
+      .catch(() => setCategories([]));
   }, [refreshToken]);
 
   useEffect(() => {
@@ -52,8 +52,10 @@ export default function PlacesScreen() {
     if (countryScope) {
       next = next.filter((place) => place.location.country === countryScope);
     }
-    if (tagFilter) {
-      next = next.filter((place) => place.tags.includes(tagFilter));
+    if (categoryFilter === "uncategorized") {
+      next = next.filter((place) => place.category == null);
+    } else if (categoryFilter) {
+      next = next.filter((place) => place.category === categoryFilter);
     }
     const q = searchQuery.trim().toLowerCase();
     if (q) {
@@ -66,7 +68,7 @@ export default function PlacesScreen() {
       );
     }
     return next;
-  }, [places, continentScope, countryScope, tagFilter, searchQuery]);
+  }, [places, continentScope, countryScope, categoryFilter, searchQuery]);
 
   const continents = useMemo(() => {
     return Array.from(
@@ -224,18 +226,21 @@ export default function PlacesScreen() {
                   </View>
                 </View>
               ) : null}
-              {tags.length > 0 ? (
+              {categories.length > 0 ? (
                 <View style={styles.scopeSection}>
-                  <Text style={styles.scopeTitle}>Tags</Text>
+                  <Text style={styles.scopeTitle}>Categories</Text>
                   <View style={styles.scopeWrap}>
-                    <Pressable onPress={() => setTagFilter(null)}>
-                      <TagChip label={tagFilter ? "Clear tag" : "All tags"} />
+                    <Pressable onPress={() => setCategoryFilter(null)}>
+                      <TagChip label={categoryFilter ? "Clear" : "All"} />
                     </Pressable>
-                    {tags.slice(0, 12).map((tag) => (
-                      <Pressable key={tag} onPress={() => setTagFilter(tag)}>
-                        <TagChip label={tag} />
+                    {categories.slice(0, 12).map((category) => (
+                      <Pressable key={category} onPress={() => setCategoryFilter(category)}>
+                        <TagChip label={category} />
                       </Pressable>
                     ))}
+                    <Pressable onPress={() => setCategoryFilter("uncategorized")}>
+                      <TagChip label="Uncategorized" />
+                    </Pressable>
                   </View>
                 </View>
               ) : null}

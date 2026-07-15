@@ -60,7 +60,7 @@ def test_persists_unresolved_candidate(monkeypatch, dynamodb) -> None:
 
 def test_persists_low_confidence_and_upserts_place(monkeypatch, dynamodb) -> None:
   post = _sample_post(
-    extracted_places=(ExtractedPlace(place_name="Multnomah Falls", tags=("waterfall",)),),
+    extracted_places=(ExtractedPlace(place_name="Multnomah Falls", category="waterfall"),),
   )
   location = _falls_location()
   monkeypatch.setattr(

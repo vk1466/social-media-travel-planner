@@ -27,7 +27,7 @@ def list_user_places(
   country: str | None = None,
   state_province: str | None = None,
   city: str | None = None,
-  tag: str | None = None,
+  category: str | None = None,
   roots_only: bool = False,
   parent_place_id: str | None = None,
 ) -> list[Place]:
@@ -37,7 +37,7 @@ def list_user_places(
     country=country,
     state_province=state_province,
     city=city,
-    tag=tag,
+    category=category,
     roots_only=roots_only,
     parent_place_id=parent_place_id,
     place_ids=place_ids,

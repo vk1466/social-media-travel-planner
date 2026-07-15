@@ -114,7 +114,7 @@ def test_fetch_places_from_text_parses_structured_response(monkeypatch) -> None:
         "state_province": "California",
         "country": "USA",
         "parent_place_name": "Lake Tahoe",
-        "tags": ["viewpoint"],
+        "category": "viewpoint", "attributes": [],
       },
       {"place_name": "Sand Harbor", "parent_place_name": "Lake Tahoe"},
       {"place_name": "Heavenly Gondola", "parent_place_name": "Lake Tahoe"},
@@ -200,7 +200,7 @@ def test_link_places_ig_tag_anchor_clusters_post_places(monkeypatch, dynamodb) -
 def test_link_places_parent_hint_wins_over_shorter_child_name(monkeypatch, dynamodb) -> None:
 
   park = upsert_place(
-    PlaceMention(place_name="Smith Rock State Park", tags=("park",)),
+    PlaceMention(place_name="Smith Rock State Park", category="park"),
     PlaceLocation(
       display_name="Smith Rock State Park",
       country_code="US",
@@ -211,7 +211,7 @@ def test_link_places_parent_hint_wins_over_shorter_child_name(monkeypatch, dynam
     "instagram:post1",
   )
   trail = upsert_place(
-    PlaceMention(place_name="Misery Ridge Trail", tags=("hike",)),
+    PlaceMention(place_name="Misery Ridge Trail", category="hike"),
     PlaceLocation(
       display_name="Misery Ridge Trail",
       country_code="US",
@@ -229,7 +229,7 @@ def test_link_places_parent_hint_wins_over_shorter_child_name(monkeypatch, dynam
         state_province="Oregon",
         country="USA",
         parent_place_name="Smith Rock State Park",
-        tags=("hike",),
+        category="hike",
       ),
     ),
     place_ids=(park, trail),
@@ -358,7 +358,6 @@ def test_backward_compat_place_without_new_fields(dynamodb) -> None:
       "longitude": -122.1090,
     },
     "aliases": [],
-    "tags": [],
     "details": [],
     "tips": [],
     "source_post_ids": [],

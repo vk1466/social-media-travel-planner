@@ -25,7 +25,8 @@ def _mention_from_extracted_place(extracted: ExtractedPlace) -> PlaceMention:
     state_province=extracted.state_province,
     details=extracted.details,
     tips=extracted.tips,
-    tags=extracted.tags,
+    category=extracted.category,
+    attributes=extracted.attributes,
     parent_place_name=extracted.parent_place_name,
   )
 
@@ -37,6 +38,7 @@ def _parent_mention_from_extracted(extracted: ExtractedPlace) -> PlaceMention | 
     place_name=extracted.parent_place_name,
     state_province=extracted.state_province,
     country=extracted.country,
+    category="park",
   )
 
 

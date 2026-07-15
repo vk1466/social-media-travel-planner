@@ -192,7 +192,7 @@ function AppShell({ authReady }: { authReady: boolean }) {
             <h1 className="hero-title">Turn scattered links into a curated travel atlas.</h1>
             <p className="hero-subtitle">
               Paste Instagram reels, blogs, city guides. We read them, extract named places and
-              tags — you get a searchable map of your dreams.
+              categories — you get a searchable map of your dreams.
             </p>
           </div>
           <div className="stats-stack">

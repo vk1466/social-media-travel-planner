@@ -21,7 +21,8 @@ class ExtractedPlaceSchema(BaseModel):
   state_province: str | None = None
   details: str | None = None
   tips: list[str] = Field(default_factory=list)
-  tags: list[str] = Field(default_factory=list)
+  category: str | None = None
+  attributes: list[str] = Field(default_factory=list)
   parent_place_name: str | None = None
 
 
@@ -64,7 +65,8 @@ class PlaceSchema(BaseModel):
   display_name: str
   location: PlaceLocationSchema
   aliases: list[str] = Field(default_factory=list)
-  tags: list[str] = Field(default_factory=list)
+  category: str | None = None
+  attributes: list[str] = Field(default_factory=list)
   details: list[str] = Field(default_factory=list)
   tips: list[str] = Field(default_factory=list)
   source_post_ids: list[str] = Field(default_factory=list)
@@ -221,7 +223,8 @@ class PlaceCandidateHintsSchema(BaseModel):
   longitude: float | None = None
   details: str | None = None
   tips: list[str] = Field(default_factory=list)
-  tags: list[str] = Field(default_factory=list)
+  category: str | None = None
+  attributes: list[str] = Field(default_factory=list)
   parent_place_name: str | None = None
 
 

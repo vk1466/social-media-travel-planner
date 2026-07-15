@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import math
 import re
 from dataclasses import dataclass
@@ -12,6 +13,8 @@ from travelplanner.clients.geocoder import GeocodeResult, Viewbox
 from travelplanner.models import PlaceLocation
 from travelplanner.place_hints import PlaceMention
 from travelplanner.places.constants import COUNTRY_CODE_TO_CONTINENT
+
+logger = logging.getLogger(__name__)
 
 HIGH_CONFIDENCE = 0.72
 LOW_CONFIDENCE = 0.45
@@ -598,13 +601,34 @@ def locate_mention_debug(mention: PlaceMention) -> LocateDebugResult:
     notes=notes,
   )
   if picked is None:
-    return LocateDebugResult(
+    outcome = LocateDebugResult(
       status="unresolved",
       queries_tried=tuple(queries_tried),
       notes=tuple(notes) if notes else ("no visitable geocode result",),
     )
-  result, confidence = picked
-  return _finalize(mention, result, confidence, queries_tried, notes)
+  else:
+    result, confidence = picked
+    outcome = _finalize(mention, result, confidence, queries_tried, notes)
+
+  display = outcome.location.display_name if outcome.location else None
+  logger.info(
+    "locate %s place_name=%r display=%r confidence=%s queries=%d candidates=%d",
+    outcome.status,
+    mention.place_name,
+    display,
+    f"{outcome.match_confidence:.2f}" if outcome.match_confidence is not None else None,
+    len(outcome.queries_tried),
+    len(candidates),
+  )
+  if outcome.notes:
+    logger.debug("locate notes place_name=%r %s", mention.place_name, list(outcome.notes))
+  if outcome.queries_tried:
+    logger.debug(
+      "locate queries place_name=%r %s",
+      mention.place_name,
+      list(outcome.queries_tried),
+    )
+  return outcome
 
 
 def locate_mention(mention: PlaceMention) -> PlaceLocation | None:

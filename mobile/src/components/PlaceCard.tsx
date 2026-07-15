@@ -12,6 +12,7 @@ interface PlaceCardProps {
 
 export function PlaceCard({ place, visited = false, onPress }: PlaceCardProps) {
   const locationLine = [place.location.city, place.location.country].filter(Boolean).join(", ");
+  const chips = [place.category ?? "Uncategorized", ...(place.attributes ?? [])].slice(0, 4);
 
   return (
     <Pressable onPress={onPress} style={({ pressed }) => [styles.card, pressed && styles.pressed]}>
@@ -22,13 +23,11 @@ export function PlaceCard({ place, visited = false, onPress }: PlaceCardProps) {
         {visited ? <Text style={styles.visited}>Visited</Text> : null}
       </View>
       {locationLine ? <Text style={styles.location}>{locationLine}</Text> : null}
-      {place.tags.length > 0 ? (
-        <View style={styles.tags}>
-          {place.tags.slice(0, 4).map((tag) => (
-            <TagChip key={tag} label={tag} />
-          ))}
-        </View>
-      ) : null}
+      <View style={styles.tags}>
+        {chips.map((chip) => (
+          <TagChip key={chip} label={chip} />
+        ))}
+      </View>
     </Pressable>
   );
 }

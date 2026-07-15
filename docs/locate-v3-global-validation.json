@@ -1,0 +1,547 @@
+[
+  {
+    "label": "Misery Ridge @ Smith Rock",
+    "country": "USA",
+    "status": "resolved",
+    "name": "Misery Ridge Trail",
+    "lat": 44.3705004,
+    "lon": -121.1409783,
+    "confidence": 1.0,
+    "category": "attraction",
+    "llm_used": true,
+    "llm_notes": [
+      "llm_pick chose #0 (Misery Ridge Trail is the specific attraction within Smith Rock State Park.)",
+      "llm override \u2192 Misery Ridge Trail (attraction) score=1.00"
+    ],
+    "verdict": "PASS",
+    "reasons": [
+      "dist=0.0km"
+    ],
+    "elapsed_s": 6.3
+  },
+  {
+    "label": "Angel's Landing @ Zion",
+    "country": "USA",
+    "status": "resolved",
+    "name": "Angels Landing",
+    "lat": 37.2693149,
+    "lon": -112.94799,
+    "confidence": 1.0,
+    "category": "natural",
+    "llm_used": true,
+    "llm_notes": [
+      "llm_pick chose #0 (Both candidates refer to the same place, but the first candidate is chosen as it is presented first.)",
+      "llm override \u2192 Angels Landing (natural) score=1.00"
+    ],
+    "verdict": "PASS",
+    "reasons": [
+      "dist=0.0km"
+    ],
+    "elapsed_s": 7.5
+  },
+  {
+    "label": "Old Faithful @ Yellowstone",
+    "country": "USA",
+    "status": "resolved",
+    "name": "Old Faithful",
+    "lat": 44.4604641,
+    "lon": -110.8281464,
+    "confidence": 1.0,
+    "category": "natural",
+    "llm_used": true,
+    "llm_notes": [
+      "llm_pick chose #0 (Candidate 0 matches the intended travel destination Old Faithful located in Yellowstone National Park, Wyoming.)",
+      "llm override \u2192 Old Faithful (natural) score=1.00"
+    ],
+    "verdict": "PASS",
+    "reasons": [
+      "dist=0.0km"
+    ],
+    "elapsed_s": 7.2
+  },
+  {
+    "label": "Smith Rock + coords",
+    "country": "USA",
+    "status": "resolved",
+    "name": "Smith Rock",
+    "lat": 44.3637851,
+    "lon": -121.1466426,
+    "confidence": 1.0,
+    "category": "natural",
+    "llm_used": true,
+    "llm_notes": [
+      "llm_pick chose #0 (Candidate 0 is the best match for Smith Rock, as it is a natural location in Oregon.)",
+      "llm override \u2192 Smith Rock (natural) score=1.00"
+    ],
+    "verdict": "PASS",
+    "reasons": [
+      "dist=0.5km"
+    ],
+    "elapsed_s": 2.8
+  },
+  {
+    "label": "Haystack Rock @ Cannon Beach",
+    "country": "USA",
+    "status": "resolved",
+    "name": "Haystack Rock",
+    "lat": 45.8844228,
+    "lon": -123.9683993,
+    "confidence": 0.9375917756790213,
+    "category": "place",
+    "llm_used": true,
+    "llm_notes": [
+      "llm_pick chose #0 (Both candidates refer to the same location, but I chose the first for the index.)",
+      "llm override \u2192 Haystack Rock (place) score=0.94"
+    ],
+    "verdict": "PASS",
+    "reasons": [
+      "dist=0.0km"
+    ],
+    "elapsed_s": 4.0
+  },
+  {
+    "label": "Multnomah Falls OR",
+    "country": "USA",
+    "status": "resolved",
+    "name": "Multnomah Falls",
+    "lat": 45.5759525,
+    "lon": -122.1151867,
+    "confidence": 1.0,
+    "category": "waterway",
+    "llm_used": true,
+    "llm_notes": [
+      "llm_pick chose #0 (Both candidates are identical, but candidate 0 is selected as it is the first occurrence.)",
+      "llm override \u2192 Multnomah Falls (waterway) score=1.00"
+    ],
+    "verdict": "PASS",
+    "reasons": [
+      "dist=0.0km"
+    ],
+    "elapsed_s": 3.3
+  },
+  {
+    "label": "Lake Louise @ Banff",
+    "country": "Canada",
+    "status": "resolved",
+    "name": "Lake Louise",
+    "lat": 51.4249668,
+    "lon": -116.177535,
+    "confidence": 0.8859447105837155,
+    "category": "place",
+    "llm_used": false,
+    "llm_notes": [],
+    "verdict": "PASS",
+    "reasons": [
+      "dist=0.0km"
+    ],
+    "elapsed_s": 2.0
+  },
+  {
+    "label": "Moraine Lake @ Banff",
+    "country": "Canada",
+    "status": "resolved",
+    "name": "Moraine Lake",
+    "lat": 51.3215664,
+    "lon": -116.1859853,
+    "confidence": 1.0,
+    "category": "water",
+    "llm_used": false,
+    "llm_notes": [],
+    "verdict": "PASS",
+    "reasons": [
+      "dist=0.0km"
+    ],
+    "elapsed_s": 3.0
+  },
+  {
+    "label": "CN Tower Toronto",
+    "country": "Canada",
+    "status": "resolved",
+    "name": "CN Tower",
+    "lat": 43.6425637,
+    "lon": -79.3870872,
+    "confidence": 1.0,
+    "category": "man_made",
+    "llm_used": true,
+    "llm_notes": [
+      "llm_pick chose #0 (The best candidate is the CN Tower located in Toronto, Ontario, Canada.)",
+      "llm override \u2192 CN Tower (man_made) score=1.00"
+    ],
+    "verdict": "PASS",
+    "reasons": [
+      "dist=0.0km"
+    ],
+    "elapsed_s": 4.0
+  },
+  {
+    "label": "Banff Canada",
+    "country": "Canada",
+    "status": "resolved",
+    "name": "Banff",
+    "lat": 51.175076,
+    "lon": -115.5720773,
+    "confidence": 0.8200000000000001,
+    "category": "place",
+    "llm_used": true,
+    "llm_notes": [
+      "llm_pick chose #0 (Both candidates are identical, and they correctly match the intended destination Banff in Canada.)",
+      "llm override \u2192 Banff (place) score=0.82"
+    ],
+    "verdict": "PASS",
+    "reasons": [
+      "dist=0.0km"
+    ],
+    "elapsed_s": 2.4
+  },
+  {
+    "label": "Eiffel Tower France",
+    "country": "France",
+    "status": "resolved",
+    "name": "Eiffel Tower",
+    "lat": 48.8582599,
+    "lon": 2.2945006,
+    "confidence": 1.0,
+    "category": "man_made",
+    "llm_used": true,
+    "llm_notes": [
+      "llm_pick chose #0 (Both candidates are identical, pointing to the Eiffel Tower in France, so I choose the first one.)",
+      "llm override \u2192 Eiffel Tower (man_made) score=1.00"
+    ],
+    "verdict": "PASS",
+    "reasons": [
+      "dist=0.0km"
+    ],
+    "elapsed_s": 2.1
+  },
+  {
+    "label": "Colosseum Rome",
+    "country": "Italy",
+    "status": "resolved",
+    "name": "Colosseum",
+    "lat": 41.8902572,
+    "lon": 12.4923841,
+    "confidence": 0.865,
+    "category": "historic",
+    "llm_used": true,
+    "llm_notes": [
+      "llm_pick chose #0 (It is the specific historic site of the Colosseum in Rome.)",
+      "llm override \u2192 Colosseum (historic) score=0.86"
+    ],
+    "verdict": "PASS",
+    "reasons": [
+      "dist=0.0km"
+    ],
+    "elapsed_s": 3.6
+  },
+  {
+    "label": "Sagrada Familia Barcelona",
+    "country": "Spain",
+    "status": "resolved",
+    "name": "Sagrada Fam\u00edlia",
+    "lat": 41.4035046,
+    "lon": 2.1744283,
+    "confidence": 0.9666666666666666,
+    "category": "attraction",
+    "llm_used": true,
+    "llm_notes": [
+      "llm_pick chose #0 (It is the best match for the intended travel destination as an attraction.)",
+      "llm override \u2192 Sagrada Fam\u00edlia (attraction) score=0.97"
+    ],
+    "verdict": "PASS",
+    "reasons": [
+      "dist=0.0km"
+    ],
+    "elapsed_s": 1.8
+  },
+  {
+    "label": "Matterhorn Switzerland",
+    "country": "Switzerland",
+    "status": "resolved",
+    "name": "Matterhorn",
+    "lat": 45.9764263,
+    "lon": 7.6586024,
+    "confidence": 1.0,
+    "category": "natural",
+    "llm_used": true,
+    "llm_notes": [
+      "llm_pick chose #0 (Both candidates 0 and 1 are identical and refer specifically to the Matterhorn in Switzerland, which is the intended destination.)",
+      "llm override \u2192 Matterhorn (natural) score=1.00"
+    ],
+    "verdict": "PASS",
+    "reasons": [
+      "dist=0.0km"
+    ],
+    "elapsed_s": 2.3
+  },
+  {
+    "label": "Stonehenge UK",
+    "country": "United Kingdom",
+    "status": "resolved",
+    "name": "Stonehenge",
+    "lat": 51.1774994,
+    "lon": -1.8274208,
+    "confidence": 1.0,
+    "category": "natural",
+    "llm_used": false,
+    "llm_notes": [],
+    "verdict": "PASS",
+    "reasons": [
+      "dist=0.2km"
+    ],
+    "elapsed_s": 1.0
+  },
+  {
+    "label": "Acropolis Athens",
+    "country": "Greece",
+    "status": "resolved",
+    "name": "Acropolis",
+    "lat": 37.9716894,
+    "lon": 23.7263197,
+    "confidence": 1.0,
+    "category": "attraction",
+    "llm_used": true,
+    "llm_notes": [
+      "llm_pick chose #0 (The first candidate is a specific attraction named 'Acropolis' in Athens, Greece.)",
+      "llm override \u2192 Acropolis (attraction) score=1.00"
+    ],
+    "verdict": "PASS",
+    "reasons": [
+      "dist=0.0km"
+    ],
+    "elapsed_s": 3.9
+  },
+  {
+    "label": "Mount Fuji Japan",
+    "country": "Japan",
+    "status": "resolved",
+    "name": "Mount Fuji",
+    "lat": 35.3628384,
+    "lon": 138.7307677,
+    "confidence": 1.0,
+    "category": "natural",
+    "llm_used": true,
+    "llm_notes": [
+      "llm_pick chose #0 (Candidate 0 matches the intended travel destination Mount Fuji in Japan.)",
+      "llm override \u2192 Mount Fuji (natural) score=1.00"
+    ],
+    "verdict": "PASS",
+    "reasons": [
+      "dist=0.4km"
+    ],
+    "elapsed_s": 1.9
+  },
+  {
+    "label": "Taj Mahal India",
+    "country": "India",
+    "status": "resolved",
+    "name": "Taj Mahal",
+    "lat": 27.1750075,
+    "lon": 78.0421013,
+    "confidence": 0.865,
+    "category": "historic",
+    "llm_used": true,
+    "llm_notes": [
+      "llm_pick chose #0 (The first candidate is the Taj Mahal as a historic site, which matches the intended travel destination.)",
+      "llm override \u2192 Taj Mahal (historic) score=0.86"
+    ],
+    "verdict": "PASS",
+    "reasons": [
+      "dist=0.0km"
+    ],
+    "elapsed_s": 3.1
+  },
+  {
+    "label": "Angkor Wat Cambodia",
+    "country": "Cambodia",
+    "status": "resolved",
+    "name": "Angkor Wat",
+    "lat": 13.4124381,
+    "lon": 103.8665878,
+    "confidence": 1.0,
+    "category": "attraction",
+    "llm_used": false,
+    "llm_notes": [],
+    "verdict": "PASS",
+    "reasons": [
+      "dist=0.0km"
+    ],
+    "elapsed_s": 1.2
+  },
+  {
+    "label": "Sydney Opera House",
+    "country": "Australia",
+    "status": "resolved",
+    "name": "Sydney Opera House",
+    "lat": -33.857198,
+    "lon": 151.2151234,
+    "confidence": 1.0,
+    "category": "attraction",
+    "llm_used": true,
+    "llm_notes": [
+      "llm_pick chose #0 (Both candidates are identical, but I choose the first one.)",
+      "llm override \u2192 Sydney Opera House (attraction) score=1.00"
+    ],
+    "verdict": "PASS",
+    "reasons": [
+      "dist=0.0km"
+    ],
+    "elapsed_s": 3.9
+  },
+  {
+    "label": "Uluru Australia",
+    "country": "Australia",
+    "status": "resolved",
+    "name": "Ulu\u1e5fu",
+    "lat": -25.3455545,
+    "lon": 131.0369615,
+    "confidence": 0.8999999999999999,
+    "category": "natural",
+    "llm_used": true,
+    "llm_notes": [
+      "llm_pick chose #1 (Both candidates refer to the same landmark, but Ulu\u1e5fu is the correct indigenous spelling.)",
+      "llm override \u2192 Ulu\u1e5fu (natural) score=0.90"
+    ],
+    "verdict": "PASS",
+    "reasons": [
+      "dist=0.1km"
+    ],
+    "elapsed_s": 2.0
+  },
+  {
+    "label": "Machu Picchu Peru",
+    "country": "Peru",
+    "status": "resolved",
+    "name": "Machu Picchu",
+    "lat": -13.164341,
+    "lon": -72.5450094,
+    "confidence": 1.0,
+    "category": "attraction",
+    "llm_used": true,
+    "llm_notes": [
+      "llm_pick chose #0 (Candidate 0 best matches Machu Picchu as it is specifically listed as an attraction in Peru.)",
+      "llm override \u2192 Machu Picchu (attraction) score=1.00"
+    ],
+    "verdict": "PASS",
+    "reasons": [
+      "dist=0.1km"
+    ],
+    "elapsed_s": 2.1
+  },
+  {
+    "label": "Christ the Redeemer Brazil",
+    "country": "Brazil",
+    "status": "resolved",
+    "name": "Christ the Redeemer",
+    "lat": -22.9519173,
+    "lon": -43.2104585,
+    "confidence": 1.0,
+    "category": "attraction",
+    "llm_used": true,
+    "llm_notes": [
+      "llm_pick chose #0 (Both candidates are identical, but index 0 is the first occurrence.)",
+      "llm override \u2192 Christ the Redeemer (attraction) score=1.00"
+    ],
+    "verdict": "PASS",
+    "reasons": [
+      "dist=0.0km"
+    ],
+    "elapsed_s": 3.0
+  },
+  {
+    "label": "Table Mountain Cape Town",
+    "country": "South Africa",
+    "status": "resolved",
+    "name": "Table Mountain",
+    "lat": -33.9590635,
+    "lon": 18.4038716,
+    "confidence": 1.0,
+    "category": "natural",
+    "llm_used": true,
+    "llm_notes": [
+      "llm_pick chose #0 (The first candidate is the best match for 'Table Mountain' directly.)",
+      "llm override \u2192 Table Mountain (natural) score=1.00"
+    ],
+    "verdict": "PASS",
+    "reasons": [
+      "dist=0.7km"
+    ],
+    "elapsed_s": 3.0
+  },
+  {
+    "label": "Pyramids of Giza",
+    "country": "Egypt",
+    "status": "resolved",
+    "name": "Great Pyramid of Giza",
+    "lat": 29.9791647,
+    "lon": 31.1342133,
+    "confidence": 1.0,
+    "category": "attraction",
+    "llm_used": false,
+    "llm_notes": [],
+    "verdict": "PASS",
+    "reasons": [
+      "dist=0.0km"
+    ],
+    "elapsed_s": 1.3
+  },
+  {
+    "label": "Petra Jordan",
+    "country": "Jordan",
+    "status": "resolved",
+    "name": "Petra",
+    "lat": 30.3258363,
+    "lon": 35.4745669,
+    "confidence": 0.8200000000000001,
+    "category": "place",
+    "llm_used": true,
+    "llm_notes": [
+      "llm_pick chose #2 (Candidate 2 best matches Petra, the historical site, as it is categorized as a place in the correct region of Maan, Jordan.)",
+      "llm override \u2192 Petra (place) score=0.82"
+    ],
+    "verdict": "PASS",
+    "reasons": [
+      "dist=2.9km"
+    ],
+    "elapsed_s": 2.9
+  },
+  {
+    "label": "Torres del Paine Chile",
+    "country": "Chile",
+    "status": "resolved",
+    "name": "Torres del Paine",
+    "lat": -51.0827249,
+    "lon": -72.9254451,
+    "confidence": 0.8200000000000001,
+    "category": "place",
+    "llm_used": true,
+    "llm_notes": [
+      "llm_pick chose #0 (Both candidates refer to the exact same location, but index 0 can be chosen as it is the preferred matching candidate.)",
+      "llm override \u2192 Torres del Paine (place) score=0.82"
+    ],
+    "verdict": "PASS",
+    "reasons": [
+      "dist=37.1km"
+    ],
+    "elapsed_s": 1.9
+  },
+  {
+    "label": "Cannon Beach OR",
+    "country": "USA",
+    "status": "resolved",
+    "name": "Cannon Beach",
+    "lat": 45.875268,
+    "lon": -123.9625739,
+    "confidence": 1.0,
+    "category": "natural",
+    "llm_used": true,
+    "llm_notes": [
+      "llm_pick chose #0 (This candidate best matches the intended travel destination of Cannon Beach in Oregon, USA.)",
+      "llm override \u2192 Cannon Beach (natural) score=1.00"
+    ],
+    "verdict": "PASS",
+    "reasons": [
+      "dist=1.7km"
+    ],
+    "elapsed_s": 3.1
+  }
+]

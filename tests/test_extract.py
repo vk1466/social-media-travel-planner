@@ -18,6 +18,12 @@ def test_reel_extract_prompt_includes_geocoding_rules() -> None:
   assert "Travel destinations only" in REEL_EXTRACT_PROMPT
   assert "real estate offices" in REEL_EXTRACT_PROMPT
   assert "reel_summary" in REEL_EXTRACT_PROMPT
+  assert "Category = what the pin is" in REEL_EXTRACT_PROMPT
+  assert "Allowed attributes by category" in REEL_EXTRACT_PROMPT
+  assert "waterfall / falls" in REEL_EXTRACT_PROMPT
+  assert "Victoria Falls" in REEL_EXTRACT_PROMPT
+  assert "hike: viewpoint, waterfall, summit, loop" in REEL_EXTRACT_PROMPT
+  assert "landmark: hike, viewpoint" in REEL_EXTRACT_PROMPT
 
 
 def test_parse_extracted_places() -> None:
@@ -30,7 +36,8 @@ def test_parse_extracted_places() -> None:
         "country": "USA",
         "details": "Start day one here for amazing views.",
         "tips": ["Arrive before sunset", "Bring a jacket"],
-        "tags": ["viewpoint", "hike"],
+        "category": "park",
+        "attributes": [],
         "parent_place_name": "Oregon Coast",
       },
       {
@@ -40,7 +47,8 @@ def test_parse_extracted_places() -> None:
         "country": None,
         "details": "Stop for cheese and ice cream.",
         "tips": [],
-        "tags": [],
+        "category": "landmark",
+        "attributes": [],
         "parent_place_name": None,
       },
     ]
@@ -55,7 +63,8 @@ def test_parse_extracted_places() -> None:
       country="USA",
       details="Start day one here for amazing views.",
       tips=("Arrive before sunset", "Bring a jacket"),
-      tags=("viewpoint", "hike"),
+      category="park",
+      attributes=(),
       parent_place_name="Oregon Coast",
     ),
     ExtractedPlace(
@@ -64,11 +73,13 @@ def test_parse_extracted_places() -> None:
       country=None,
       details="Stop for cheese and ice cream.",
       tips=(),
+      category="landmark",
+      attributes=(),
     ),
   )
 
 
-def test_parse_extracted_places_drops_unknown_tags() -> None:
+def test_parse_extracted_places_filters_attributes_and_unknown_category() -> None:
   data = {
     "places": [
       {
@@ -78,14 +89,30 @@ def test_parse_extracted_places_drops_unknown_tags() -> None:
         "country": None,
         "details": None,
         "tips": [],
-        "tags": ["hike", "not-a-real-tag"],
+        "category": "hike",
+        "attributes": ["viewpoint", "not-a-real-attr", "hike"],
         "parent_place_name": None,
-      }
+      },
+      {
+        "place_name": "Unknown Type Spot",
+        "city": None,
+        "state_province": None,
+        "country": None,
+        "details": "Still a place",
+        "tips": [],
+        "category": "spaceship",
+        "attributes": ["viewpoint"],
+        "parent_place_name": None,
+      },
     ]
   }
 
   places = _parse_extracted_places(data)
-  assert places[0].tags == ("hike",)
+  assert places[0].category == "hike"
+  assert places[0].attributes == ("viewpoint",)
+  assert places[1].category is None
+  assert places[1].attributes == ()
+  assert places[1].place_name == "Unknown Type Spot"
 
 
 def test_parse_extracted_places_empty() -> None:
@@ -105,7 +132,8 @@ def test_parse_reel_extraction_includes_summary() -> None:
         "country": "USA",
         "details": "Cliffside views over Haystack Rock.",
         "tips": [],
-        "tags": ["viewpoint"],
+        "category": "viewpoint",
+        "attributes": [],
         "parent_place_name": None,
       }
     ],
@@ -114,6 +142,7 @@ def test_parse_reel_extraction_includes_summary() -> None:
   assert result.reel_summary == "A coastal Oregon day trip with viewpoints and a creamery stop."
   assert len(result.places) == 1
   assert result.places[0].place_name == "Ecola State Park"
+  assert result.places[0].category == "viewpoint"
 
 
 def test_format_reel_bundle_includes_all_sources() -> None:
@@ -155,7 +184,8 @@ def test_fetch_places_from_reel_parses_structured_response(monkeypatch) -> None:
         "country": "USA",
         "details": "Scenic overlook on the west shore.",
         "tips": ["Go at sunrise"],
-        "tags": ["viewpoint"],
+        "category": "viewpoint",
+        "attributes": [],
         "parent_place_name": "Lake Tahoe",
       },
       {
@@ -165,7 +195,8 @@ def test_fetch_places_from_reel_parses_structured_response(monkeypatch) -> None:
         "country": None,
         "details": None,
         "tips": [],
-        "tags": [],
+        "category": "beach",
+        "attributes": [],
         "parent_place_name": "Lake Tahoe",
       },
     ]
@@ -203,6 +234,7 @@ def test_fetch_places_from_reel_parses_structured_response(monkeypatch) -> None:
   assert result.reel_summary == "Two Lake Tahoe stops: Emerald Bay overlook and Sand Harbor beach."
   assert len(result.places) == 2
   assert result.places[0].place_name == "Emerald Bay"
+  assert result.places[0].category == "viewpoint"
   assert result.places[0].parent_place_name == "Lake Tahoe"
   assert result.places[0].details == "Scenic overlook on the west shore."
   assert result.places[0].tips == ("Go at sunrise",)

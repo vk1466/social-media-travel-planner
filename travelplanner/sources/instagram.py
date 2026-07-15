@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import re
 from datetime import UTC, datetime
 from typing import Any
@@ -11,6 +12,8 @@ from travelplanner.extract import ReelBundle
 from travelplanner.links import extract_instagram_shortcode
 from travelplanner.models import Platform, SavedPost, make_post_id
 from travelplanner.place_hints import PlatformPlace
+
+logger = logging.getLogger(__name__)
 
 HASHTAG_PATTERN = re.compile(r"#(\w+)")
 TOP_COMMENT_LIMIT = 10
@@ -164,6 +167,7 @@ def _location_tag(places: tuple[PlatformPlace, ...]) -> PlatformPlace | None:
 
 def fetch_instagram_post(post_url: str) -> SavedPost:
   shortcode = extract_instagram_shortcode(post_url)
+  logger.info("instagram fetch start shortcode=%s", shortcode)
   raw = fetch_post_info_and_comments(code=shortcode, num_comments=TOP_COMMENT_LIMIT)
   trimmed = _trim_post_info(raw)
 
@@ -172,6 +176,13 @@ def fetch_instagram_post(post_url: str) -> SavedPost:
     fetch_transcript(_canonical_media_url(shortcode, media_kind))
     if media_kind in {"video", "reel"}
     else None
+  )
+  logger.info(
+    "instagram fetched shortcode=%s media_kind=%s has_transcript=%s location_tags=%d",
+    shortcode,
+    media_kind,
+    bool(transcript),
+    len(trimmed["places"]),
   )
 
   bundle = ReelBundle(

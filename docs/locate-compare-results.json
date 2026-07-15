@@ -1,0 +1,1659 @@
+[
+  {
+    "case": 1,
+    "elapsed_s": 2.0,
+    "query": {
+      "place_name": "Misery Ridge",
+      "city": null,
+      "state_province": "Oregon",
+      "country": "USA",
+      "parent_place_name": "Smith Rock State Park",
+      "latitude": null,
+      "longitude": null
+    },
+    "legacy": {
+      "status": "resolved",
+      "location": {
+        "display_name": "Misery Ridge",
+        "continent": "North America",
+        "country": "United States",
+        "country_code": "US",
+        "state_province": "Oregon",
+        "city": "Douglas County",
+        "latitude": 43.7760654,
+        "longitude": -123.494667,
+        "provider_place_id": "323751018",
+        "osm_class": "highway",
+        "osm_type": "track"
+      },
+      "queries_tried": [
+        "Misery Ridge, Oregon, USA"
+      ],
+      "notes": []
+    },
+    "v2": {
+      "status": "resolved",
+      "location": {
+        "display_name": "Misery Ridge",
+        "continent": "North America",
+        "country": "United States",
+        "country_code": "US",
+        "state_province": "Oregon",
+        "city": "Douglas County",
+        "latitude": 43.7760654,
+        "longitude": -123.494667,
+        "provider_place_id": "323751018",
+        "osm_class": null,
+        "osm_type": null
+      },
+      "match_confidence": 1.0,
+      "category": "attraction",
+      "provider": "nominatim",
+      "queries_tried": [
+        "Misery Ridge, Smith Rock State Park, Oregon, USA",
+        "Misery Ridge, Oregon, USA"
+      ],
+      "notes": [
+        "no result for 'Misery Ridge, Smith Rock State Park, Oregon, USA'"
+      ]
+    },
+    "diff": {
+      "same_pin": true,
+      "distance_meters": 0.0,
+      "name_match": true
+    }
+  },
+  {
+    "case": 2,
+    "elapsed_s": 3.0,
+    "query": {
+      "place_name": "Misery Ridge Trail",
+      "city": null,
+      "state_province": "Oregon",
+      "country": "USA",
+      "parent_place_name": "Smith Rock State Park",
+      "latitude": null,
+      "longitude": null
+    },
+    "legacy": {
+      "status": "resolved",
+      "location": {
+        "display_name": "Misery Ridge Trail",
+        "continent": "North America",
+        "country": "United States",
+        "country_code": "US",
+        "state_province": "Oregon",
+        "city": "Deschutes County",
+        "latitude": 44.3705004,
+        "longitude": -121.1409783,
+        "provider_place_id": "327609066",
+        "osm_class": "highway",
+        "osm_type": "path"
+      },
+      "queries_tried": [
+        "Misery Ridge Trail, Oregon, USA"
+      ],
+      "notes": []
+    },
+    "v2": {
+      "status": "resolved",
+      "location": {
+        "display_name": "Misery Ridge Trail",
+        "continent": "North America",
+        "country": "United States",
+        "country_code": "US",
+        "state_province": "Oregon",
+        "city": "Deschutes County",
+        "latitude": 44.3705004,
+        "longitude": -121.1409783,
+        "provider_place_id": "327609066",
+        "osm_class": null,
+        "osm_type": null
+      },
+      "match_confidence": 1.0,
+      "category": "attraction",
+      "provider": "nominatim",
+      "queries_tried": [
+        "Misery Ridge Trail, Smith Rock State Park, Oregon, USA",
+        "Misery Ridge Trail, Oregon, USA"
+      ],
+      "notes": [
+        "no result for 'Misery Ridge Trail, Smith Rock State Park, Oregon, USA'"
+      ]
+    },
+    "diff": {
+      "same_pin": true,
+      "distance_meters": 0.0,
+      "name_match": true
+    }
+  },
+  {
+    "case": 3,
+    "elapsed_s": 3.0,
+    "query": {
+      "place_name": "Angel's Landing",
+      "city": null,
+      "state_province": "Utah",
+      "country": "USA",
+      "parent_place_name": "Zion National Park",
+      "latitude": null,
+      "longitude": null
+    },
+    "legacy": {
+      "status": "resolved",
+      "location": {
+        "display_name": "Angel’s Landing Drive",
+        "continent": "North America",
+        "country": "United States",
+        "country_code": "US",
+        "state_province": "Utah",
+        "city": "Morgan County",
+        "latitude": 41.1456794,
+        "longitude": -111.794849,
+        "provider_place_id": "330021955",
+        "osm_class": "highway",
+        "osm_type": "residential"
+      },
+      "queries_tried": [
+        "Angel's Landing, Utah, USA"
+      ],
+      "notes": []
+    },
+    "v2": {
+      "status": "resolved",
+      "location": {
+        "display_name": "Angel’s Landing Drive",
+        "continent": "North America",
+        "country": "United States",
+        "country_code": "US",
+        "state_province": "Utah",
+        "city": "Morgan County",
+        "latitude": 41.1456794,
+        "longitude": -111.794849,
+        "provider_place_id": "330021955",
+        "osm_class": null,
+        "osm_type": null
+      },
+      "match_confidence": 0.7958333333333334,
+      "category": "highway",
+      "provider": "nominatim",
+      "queries_tried": [
+        "Angel's Landing, Zion National Park, Utah, USA",
+        "Angel's Landing, Utah, USA"
+      ],
+      "notes": [
+        "no result for \"Angel's Landing, Zion National Park, Utah, USA\""
+      ]
+    },
+    "diff": {
+      "same_pin": true,
+      "distance_meters": 0.0,
+      "name_match": true
+    }
+  },
+  {
+    "case": 4,
+    "elapsed_s": 3.0,
+    "query": {
+      "place_name": "The Narrows",
+      "city": null,
+      "state_province": "Utah",
+      "country": "USA",
+      "parent_place_name": "Zion National Park",
+      "latitude": null,
+      "longitude": null
+    },
+    "legacy": {
+      "status": "resolved",
+      "location": {
+        "display_name": "The Narrows",
+        "continent": "North America",
+        "country": "United States",
+        "country_code": "US",
+        "state_province": "Utah",
+        "city": "Washington County",
+        "latitude": 37.3591235,
+        "longitude": -112.9517715,
+        "provider_place_id": "322086452",
+        "osm_class": "natural",
+        "osm_type": "gorge"
+      },
+      "queries_tried": [
+        "The Narrows, Utah, USA"
+      ],
+      "notes": []
+    },
+    "v2": {
+      "status": "resolved",
+      "location": {
+        "display_name": "The Narrows",
+        "continent": "North America",
+        "country": "United States",
+        "country_code": "US",
+        "state_province": "Utah",
+        "city": "Washington County",
+        "latitude": 37.3591235,
+        "longitude": -112.9517715,
+        "provider_place_id": "322086452",
+        "osm_class": null,
+        "osm_type": null
+      },
+      "match_confidence": 1.0,
+      "category": "natural",
+      "provider": "nominatim",
+      "queries_tried": [
+        "The Narrows, Zion National Park, Utah, USA",
+        "The Narrows, Utah, USA"
+      ],
+      "notes": [
+        "no result for 'The Narrows, Zion National Park, Utah, USA'"
+      ]
+    },
+    "diff": {
+      "same_pin": true,
+      "distance_meters": 0.0,
+      "name_match": true
+    }
+  },
+  {
+    "case": 5,
+    "elapsed_s": 3.0,
+    "query": {
+      "place_name": "Half Dome",
+      "city": null,
+      "state_province": "California",
+      "country": "USA",
+      "parent_place_name": "Yosemite National Park",
+      "latitude": null,
+      "longitude": null
+    },
+    "legacy": {
+      "status": "resolved",
+      "location": {
+        "display_name": "Half Dome",
+        "continent": "North America",
+        "country": "United States",
+        "country_code": "US",
+        "state_province": "California",
+        "city": "Mariposa County",
+        "latitude": 37.7460015,
+        "longitude": -119.5332525,
+        "provider_place_id": "322041256",
+        "osm_class": "natural",
+        "osm_type": "peak"
+      },
+      "queries_tried": [
+        "Half Dome, California, USA"
+      ],
+      "notes": []
+    },
+    "v2": {
+      "status": "resolved",
+      "location": {
+        "display_name": "Half Dome",
+        "continent": "North America",
+        "country": "United States",
+        "country_code": "US",
+        "state_province": "California",
+        "city": "Mariposa County",
+        "latitude": 37.7460015,
+        "longitude": -119.5332525,
+        "provider_place_id": "322041256",
+        "osm_class": null,
+        "osm_type": null
+      },
+      "match_confidence": 1.0,
+      "category": "natural",
+      "provider": "nominatim",
+      "queries_tried": [
+        "Half Dome, Yosemite National Park, California, USA",
+        "Half Dome, California, USA"
+      ],
+      "notes": [
+        "no result for 'Half Dome, Yosemite National Park, California, USA'"
+      ]
+    },
+    "diff": {
+      "same_pin": true,
+      "distance_meters": 0.0,
+      "name_match": true
+    }
+  },
+  {
+    "case": 6,
+    "elapsed_s": 2.0,
+    "query": {
+      "place_name": "Multnomah Falls",
+      "city": null,
+      "state_province": "Oregon",
+      "country": "USA",
+      "parent_place_name": null,
+      "latitude": null,
+      "longitude": null
+    },
+    "legacy": {
+      "status": "resolved",
+      "location": {
+        "display_name": "Multnomah Falls",
+        "continent": "North America",
+        "country": "United States",
+        "country_code": "US",
+        "state_province": "Oregon",
+        "city": "Multnomah County",
+        "latitude": 45.5759525,
+        "longitude": -122.1151867,
+        "provider_place_id": "326385650",
+        "osm_class": "waterway",
+        "osm_type": "waterfall"
+      },
+      "queries_tried": [
+        "Multnomah Falls, Oregon, USA"
+      ],
+      "notes": []
+    },
+    "v2": {
+      "status": "resolved",
+      "location": {
+        "display_name": "Multnomah Falls",
+        "continent": "North America",
+        "country": "United States",
+        "country_code": "US",
+        "state_province": "Oregon",
+        "city": "Multnomah County",
+        "latitude": 45.5759525,
+        "longitude": -122.1151867,
+        "provider_place_id": "326385650",
+        "osm_class": null,
+        "osm_type": null
+      },
+      "match_confidence": 0.8875,
+      "category": "waterway",
+      "provider": "nominatim",
+      "queries_tried": [
+        "Multnomah Falls, Oregon, USA"
+      ],
+      "notes": []
+    },
+    "diff": {
+      "same_pin": true,
+      "distance_meters": 0.0,
+      "name_match": true
+    }
+  },
+  {
+    "case": 7,
+    "elapsed_s": 2.0,
+    "query": {
+      "place_name": "Crater Lake",
+      "city": null,
+      "state_province": "Oregon",
+      "country": "USA",
+      "parent_place_name": null,
+      "latitude": null,
+      "longitude": null
+    },
+    "legacy": {
+      "status": "resolved",
+      "location": {
+        "display_name": "Crater Lake",
+        "continent": "North America",
+        "country": "United States",
+        "country_code": "US",
+        "state_province": "Oregon",
+        "city": "Klamath County",
+        "latitude": 42.9415231,
+        "longitude": -122.0987714,
+        "provider_place_id": "323679012",
+        "osm_class": "water",
+        "osm_type": "lake"
+      },
+      "queries_tried": [
+        "Crater Lake, Oregon, USA"
+      ],
+      "notes": []
+    },
+    "v2": {
+      "status": "resolved",
+      "location": {
+        "display_name": "Crater Lake",
+        "continent": "North America",
+        "country": "United States",
+        "country_code": "US",
+        "state_province": "Oregon",
+        "city": "Klamath County",
+        "latitude": 42.9415231,
+        "longitude": -122.0987714,
+        "provider_place_id": "323679012",
+        "osm_class": null,
+        "osm_type": null
+      },
+      "match_confidence": 0.8875,
+      "category": "water",
+      "provider": "nominatim",
+      "queries_tried": [
+        "Crater Lake, Oregon, USA"
+      ],
+      "notes": []
+    },
+    "diff": {
+      "same_pin": true,
+      "distance_meters": 0.0,
+      "name_match": true
+    }
+  },
+  {
+    "case": 8,
+    "elapsed_s": 2.0,
+    "query": {
+      "place_name": "Smith Rock State Park",
+      "city": null,
+      "state_province": "Oregon",
+      "country": "USA",
+      "parent_place_name": null,
+      "latitude": null,
+      "longitude": null
+    },
+    "legacy": {
+      "status": "resolved",
+      "location": {
+        "display_name": "Smith Rock State Park",
+        "continent": "North America",
+        "country": "United States",
+        "country_code": "US",
+        "state_province": "Oregon",
+        "city": "Terrebonne",
+        "latitude": 44.3670405,
+        "longitude": -121.141421,
+        "provider_place_id": "327345641",
+        "osm_class": "leisure",
+        "osm_type": "nature_reserve"
+      },
+      "queries_tried": [
+        "Smith Rock State Park, Oregon, USA"
+      ],
+      "notes": []
+    },
+    "v2": {
+      "status": "resolved",
+      "location": {
+        "display_name": "Smith Rock State Park",
+        "continent": "North America",
+        "country": "United States",
+        "country_code": "US",
+        "state_province": "Oregon",
+        "city": "Terrebonne",
+        "latitude": 44.3670405,
+        "longitude": -121.141421,
+        "provider_place_id": "327345641",
+        "osm_class": null,
+        "osm_type": null
+      },
+      "match_confidence": 1.0,
+      "category": "natural",
+      "provider": "nominatim",
+      "queries_tried": [
+        "Smith Rock State Park, Oregon, USA"
+      ],
+      "notes": []
+    },
+    "diff": {
+      "same_pin": true,
+      "distance_meters": 0.0,
+      "name_match": true
+    }
+  },
+  {
+    "case": 9,
+    "elapsed_s": 2.0,
+    "query": {
+      "place_name": "Portland",
+      "city": null,
+      "state_province": null,
+      "country": "USA",
+      "parent_place_name": null,
+      "latitude": null,
+      "longitude": null
+    },
+    "legacy": {
+      "status": "unresolved",
+      "location": null,
+      "queries_tried": [
+        "Portland, USA"
+      ],
+      "notes": [
+        "non-visitable for 'Portland, USA': Portland"
+      ]
+    },
+    "v2": {
+      "status": "unresolved",
+      "location": null,
+      "match_confidence": null,
+      "category": null,
+      "provider": null,
+      "queries_tried": [
+        "Portland, USA"
+      ],
+      "notes": [
+        "non-visitable for 'Portland, USA': Portland (administrative)"
+      ]
+    },
+    "diff": {
+      "same_pin": false,
+      "distance_meters": null,
+      "name_match": false
+    }
+  },
+  {
+    "case": 10,
+    "elapsed_s": 4.0,
+    "query": {
+      "place_name": "Portland",
+      "city": null,
+      "state_province": "Oregon",
+      "country": "USA",
+      "parent_place_name": null,
+      "latitude": null,
+      "longitude": null
+    },
+    "legacy": {
+      "status": "unresolved",
+      "location": null,
+      "queries_tried": [
+        "Portland, Oregon, USA",
+        "Portland, USA"
+      ],
+      "notes": [
+        "non-visitable for 'Portland, Oregon, USA': Portland",
+        "non-visitable for 'Portland, USA': Portland"
+      ]
+    },
+    "v2": {
+      "status": "unresolved",
+      "location": null,
+      "match_confidence": null,
+      "category": null,
+      "provider": null,
+      "queries_tried": [
+        "Portland, Oregon, USA",
+        "Portland, USA"
+      ],
+      "notes": [
+        "non-visitable for 'Portland, Oregon, USA': Portland (administrative)",
+        "non-visitable for 'Portland, USA': Portland (administrative)"
+      ]
+    },
+    "diff": {
+      "same_pin": false,
+      "distance_meters": null,
+      "name_match": false
+    }
+  },
+  {
+    "case": 11,
+    "elapsed_s": 3.0,
+    "query": {
+      "place_name": "Columbia River Gorge",
+      "city": null,
+      "state_province": "Oregon",
+      "country": "USA",
+      "parent_place_name": null,
+      "latitude": null,
+      "longitude": null
+    },
+    "legacy": {
+      "status": "resolved",
+      "location": {
+        "display_name": "Columbia River Gorge National Scenic Area",
+        "continent": "North America",
+        "country": "United States",
+        "country_code": "US",
+        "state_province": "Washington",
+        "city": "Klickitat County",
+        "latitude": 45.657502,
+        "longitude": -121.0744814,
+        "provider_place_id": "325200185",
+        "osm_class": "boundary",
+        "osm_type": "protected_area"
+      },
+      "queries_tried": [
+        "Columbia River Gorge, Oregon, USA"
+      ],
+      "notes": []
+    },
+    "v2": {
+      "status": "unresolved",
+      "location": null,
+      "match_confidence": null,
+      "category": null,
+      "provider": null,
+      "queries_tried": [
+        "Columbia River Gorge, Oregon, USA",
+        "Columbia River Gorge, USA"
+      ],
+      "notes": [
+        "non-visitable for 'Columbia River Gorge, Oregon, USA': Columbia River Gorge National Scenic Area (administrative)",
+        "non-visitable for 'Columbia River Gorge, USA': Columbia River Gorge National Scenic Area (administrative)"
+      ]
+    },
+    "diff": {
+      "same_pin": false,
+      "distance_meters": null,
+      "name_match": false
+    }
+  },
+  {
+    "case": 12,
+    "elapsed_s": 2.0,
+    "query": {
+      "place_name": "Eiffel Tower",
+      "city": null,
+      "state_province": null,
+      "country": "France",
+      "parent_place_name": null,
+      "latitude": null,
+      "longitude": null
+    },
+    "legacy": {
+      "status": "resolved",
+      "location": {
+        "display_name": "Eiffel Tower",
+        "continent": "Europe",
+        "country": "France",
+        "country_code": "FR",
+        "state_province": "Ile-de-France",
+        "city": "Paris",
+        "latitude": 48.8582599,
+        "longitude": 2.2945006,
+        "provider_place_id": "97838275",
+        "osm_class": "man_made",
+        "osm_type": "tower"
+      },
+      "queries_tried": [
+        "Eiffel Tower, France"
+      ],
+      "notes": []
+    },
+    "v2": {
+      "status": "resolved",
+      "location": {
+        "display_name": "Eiffel Tower",
+        "continent": "Europe",
+        "country": "France",
+        "country_code": "FR",
+        "state_province": "Ile-de-France",
+        "city": "Paris",
+        "latitude": 48.8582599,
+        "longitude": 2.2945006,
+        "provider_place_id": "97838275",
+        "osm_class": null,
+        "osm_type": null
+      },
+      "match_confidence": 0.8875,
+      "category": "man_made",
+      "provider": "nominatim",
+      "queries_tried": [
+        "Eiffel Tower, France"
+      ],
+      "notes": []
+    },
+    "diff": {
+      "same_pin": true,
+      "distance_meters": 0.0,
+      "name_match": true
+    }
+  },
+  {
+    "case": 13,
+    "elapsed_s": 2.0,
+    "query": {
+      "place_name": "Eiffel Tower",
+      "city": null,
+      "state_province": null,
+      "country": "USA",
+      "parent_place_name": null,
+      "latitude": null,
+      "longitude": null
+    },
+    "legacy": {
+      "status": "resolved",
+      "location": {
+        "display_name": "Eiffel Tower",
+        "continent": "North America",
+        "country": "United States",
+        "country_code": "US",
+        "state_province": "Virginia",
+        "city": "Hanover County",
+        "latitude": 37.8399146,
+        "longitude": -77.4452828,
+        "provider_place_id": "345062444",
+        "osm_class": "man_made",
+        "osm_type": "tower"
+      },
+      "queries_tried": [
+        "Eiffel Tower, USA"
+      ],
+      "notes": []
+    },
+    "v2": {
+      "status": "resolved",
+      "location": {
+        "display_name": "Eiffel Tower",
+        "continent": "North America",
+        "country": "United States",
+        "country_code": "US",
+        "state_province": "Virginia",
+        "city": "Hanover County",
+        "latitude": 37.8399146,
+        "longitude": -77.4452828,
+        "provider_place_id": "345062444",
+        "osm_class": null,
+        "osm_type": null
+      },
+      "match_confidence": 0.8875,
+      "category": "man_made",
+      "provider": "nominatim",
+      "queries_tried": [
+        "Eiffel Tower, USA"
+      ],
+      "notes": []
+    },
+    "diff": {
+      "same_pin": true,
+      "distance_meters": 0.0,
+      "name_match": true
+    }
+  },
+  {
+    "case": 14,
+    "elapsed_s": 4.0,
+    "query": {
+      "place_name": "Cannon Beach",
+      "city": null,
+      "state_province": "Oregon",
+      "country": "USA",
+      "parent_place_name": null,
+      "latitude": null,
+      "longitude": null
+    },
+    "legacy": {
+      "status": "unresolved",
+      "location": null,
+      "queries_tried": [
+        "Cannon Beach, Oregon, USA",
+        "Cannon Beach, USA"
+      ],
+      "notes": [
+        "non-visitable for 'Cannon Beach, Oregon, USA': Cannon Beach",
+        "non-visitable for 'Cannon Beach, USA': Cannon Beach"
+      ]
+    },
+    "v2": {
+      "status": "unresolved",
+      "location": null,
+      "match_confidence": null,
+      "category": null,
+      "provider": null,
+      "queries_tried": [
+        "Cannon Beach, Oregon, USA",
+        "Cannon Beach, USA"
+      ],
+      "notes": [
+        "non-visitable for 'Cannon Beach, Oregon, USA': Cannon Beach (administrative)",
+        "non-visitable for 'Cannon Beach, USA': Cannon Beach (administrative)"
+      ]
+    },
+    "diff": {
+      "same_pin": false,
+      "distance_meters": null,
+      "name_match": false
+    }
+  },
+  {
+    "case": 15,
+    "elapsed_s": 2.0,
+    "query": {
+      "place_name": "Haystack Rock",
+      "city": null,
+      "state_province": "Oregon",
+      "country": "USA",
+      "parent_place_name": "Cannon Beach",
+      "latitude": null,
+      "longitude": null
+    },
+    "legacy": {
+      "status": "resolved",
+      "location": {
+        "display_name": "Haystack Rock",
+        "continent": "North America",
+        "country": "United States",
+        "country_code": "US",
+        "state_province": "Oregon",
+        "city": "Clatsop County",
+        "latitude": 45.8844228,
+        "longitude": -123.9683993,
+        "provider_place_id": "327418562",
+        "osm_class": "place",
+        "osm_type": "islet"
+      },
+      "queries_tried": [
+        "Haystack Rock, Oregon, USA"
+      ],
+      "notes": []
+    },
+    "v2": {
+      "status": "resolved",
+      "location": {
+        "display_name": "Haystack Rock Marine Garden",
+        "continent": "North America",
+        "country": "United States",
+        "country_code": "US",
+        "state_province": "Oregon",
+        "city": "Cannon Beach",
+        "latitude": 45.8844479,
+        "longitude": -123.9687381,
+        "provider_place_id": "323931621",
+        "osm_class": null,
+        "osm_type": null
+      },
+      "match_confidence": 0.8075000000000001,
+      "category": "natural",
+      "provider": "nominatim",
+      "queries_tried": [
+        "Haystack Rock, Cannon Beach, Oregon, USA"
+      ],
+      "notes": []
+    },
+    "diff": {
+      "same_pin": true,
+      "distance_meters": 26.372461532937187,
+      "name_match": false
+    }
+  },
+  {
+    "case": 16,
+    "elapsed_s": 1.0,
+    "query": {
+      "place_name": "Smith Rock",
+      "city": null,
+      "state_province": "Oregon",
+      "country": "USA",
+      "parent_place_name": null,
+      "latitude": 44.365,
+      "longitude": -121.138
+    },
+    "legacy": {
+      "status": "resolved",
+      "location": {
+        "display_name": "Northeast Crooked River Drive",
+        "continent": "North America",
+        "country": "United States",
+        "country_code": "US",
+        "state_province": "Oregon",
+        "city": "Deschutes County",
+        "latitude": 44.3649466,
+        "longitude": -121.1380311,
+        "provider_place_id": "326920637",
+        "osm_class": "amenity",
+        "osm_type": "parking"
+      },
+      "queries_tried": [
+        "reverse:44.365,-121.138"
+      ],
+      "notes": []
+    },
+    "v2": {
+      "status": "low_confidence",
+      "location": {
+        "display_name": "Northeast Crooked River Drive",
+        "continent": "North America",
+        "country": "United States",
+        "country_code": "US",
+        "state_province": "Oregon",
+        "city": "Deschutes County",
+        "latitude": 44.3649466,
+        "longitude": -121.1380311,
+        "provider_place_id": "326920637",
+        "osm_class": null,
+        "osm_type": null
+      },
+      "match_confidence": 0.5628205128205128,
+      "category": "amenity",
+      "provider": "nominatim",
+      "queries_tried": [
+        "reverse:44.365,-121.138"
+      ],
+      "notes": [
+        "match_confidence=0.56 below high threshold"
+      ]
+    },
+    "diff": {
+      "same_pin": true,
+      "distance_meters": 0.0,
+      "name_match": true
+    }
+  },
+  {
+    "case": 17,
+    "elapsed_s": 1.0,
+    "query": {
+      "place_name": "Angel's Landing",
+      "city": null,
+      "state_province": null,
+      "country": "USA",
+      "parent_place_name": null,
+      "latitude": null,
+      "longitude": null
+    },
+    "legacy": {
+      "status": "resolved",
+      "location": {
+        "display_name": "Angel’s Landing Drive",
+        "continent": "North America",
+        "country": "United States",
+        "country_code": "US",
+        "state_province": "Utah",
+        "city": "Morgan County",
+        "latitude": 41.1456794,
+        "longitude": -111.794849,
+        "provider_place_id": "330021955",
+        "osm_class": "highway",
+        "osm_type": "residential"
+      },
+      "queries_tried": [
+        "Angel's Landing, USA"
+      ],
+      "notes": []
+    },
+    "v2": {
+      "status": "resolved",
+      "location": {
+        "display_name": "Angel’s Landing Drive",
+        "continent": "North America",
+        "country": "United States",
+        "country_code": "US",
+        "state_province": "Utah",
+        "city": "Morgan County",
+        "latitude": 41.1456794,
+        "longitude": -111.794849,
+        "provider_place_id": "330021955",
+        "osm_class": null,
+        "osm_type": null
+      },
+      "match_confidence": 0.7958333333333334,
+      "category": "highway",
+      "provider": "nominatim",
+      "queries_tried": [
+        "Angel's Landing, USA"
+      ],
+      "notes": []
+    },
+    "diff": {
+      "same_pin": true,
+      "distance_meters": 0.0,
+      "name_match": true
+    }
+  },
+  {
+    "case": 18,
+    "elapsed_s": 3.0,
+    "query": {
+      "place_name": "Angel Landing",
+      "city": null,
+      "state_province": "Utah",
+      "country": "USA",
+      "parent_place_name": "Zion",
+      "latitude": null,
+      "longitude": null
+    },
+    "legacy": {
+      "status": "resolved",
+      "location": {
+        "display_name": "Angel’s Landing Drive",
+        "continent": "North America",
+        "country": "United States",
+        "country_code": "US",
+        "state_province": "Utah",
+        "city": "Morgan County",
+        "latitude": 41.1456794,
+        "longitude": -111.794849,
+        "provider_place_id": "324981590",
+        "osm_class": "highway",
+        "osm_type": "residential"
+      },
+      "queries_tried": [
+        "Angel Landing, Utah, USA"
+      ],
+      "notes": []
+    },
+    "v2": {
+      "status": "resolved",
+      "location": {
+        "display_name": "Angel’s Landing Drive",
+        "continent": "North America",
+        "country": "United States",
+        "country_code": "US",
+        "state_province": "Utah",
+        "city": "Morgan County",
+        "latitude": 41.1456794,
+        "longitude": -111.794849,
+        "provider_place_id": "324981590",
+        "osm_class": null,
+        "osm_type": null
+      },
+      "match_confidence": 0.7580882352941176,
+      "category": "highway",
+      "provider": "nominatim",
+      "queries_tried": [
+        "Angel Landing, Zion, Utah, USA",
+        "Angel Landing, Utah, USA"
+      ],
+      "notes": [
+        "no result for 'Angel Landing, Zion, Utah, USA'"
+      ]
+    },
+    "diff": {
+      "same_pin": true,
+      "distance_meters": 0.0,
+      "name_match": true
+    }
+  },
+  {
+    "case": 19,
+    "elapsed_s": 2.0,
+    "query": {
+      "place_name": "Misery Ridge",
+      "city": null,
+      "state_province": "Oregon",
+      "country": "USA",
+      "parent_place_name": null,
+      "latitude": null,
+      "longitude": null
+    },
+    "legacy": {
+      "status": "resolved",
+      "location": {
+        "display_name": "Misery Ridge",
+        "continent": "North America",
+        "country": "United States",
+        "country_code": "US",
+        "state_province": "Oregon",
+        "city": "Douglas County",
+        "latitude": 43.7760654,
+        "longitude": -123.494667,
+        "provider_place_id": "323751018",
+        "osm_class": "highway",
+        "osm_type": "track"
+      },
+      "queries_tried": [
+        "Misery Ridge, Oregon, USA"
+      ],
+      "notes": []
+    },
+    "v2": {
+      "status": "resolved",
+      "location": {
+        "display_name": "Misery Ridge",
+        "continent": "North America",
+        "country": "United States",
+        "country_code": "US",
+        "state_province": "Oregon",
+        "city": "Douglas County",
+        "latitude": 43.7760654,
+        "longitude": -123.494667,
+        "provider_place_id": "323751018",
+        "osm_class": null,
+        "osm_type": null
+      },
+      "match_confidence": 1.0,
+      "category": "attraction",
+      "provider": "nominatim",
+      "queries_tried": [
+        "Misery Ridge, Oregon, USA"
+      ],
+      "notes": []
+    },
+    "diff": {
+      "same_pin": true,
+      "distance_meters": 0.0,
+      "name_match": true
+    }
+  },
+  {
+    "case": 20,
+    "elapsed_s": 3.0,
+    "query": {
+      "place_name": "Picture Lake",
+      "city": null,
+      "state_province": "Washington",
+      "country": "USA",
+      "parent_place_name": "Mt. Baker",
+      "latitude": null,
+      "longitude": null
+    },
+    "legacy": {
+      "status": "resolved",
+      "location": {
+        "display_name": "Picture Lake",
+        "continent": "North America",
+        "country": "United States",
+        "country_code": "US",
+        "state_province": "Washington",
+        "city": "Whatcom County",
+        "latitude": 48.8654827,
+        "longitude": -121.6772194,
+        "provider_place_id": "374227628",
+        "osm_class": "water",
+        "osm_type": "lake"
+      },
+      "queries_tried": [
+        "Picture Lake, Washington, USA"
+      ],
+      "notes": []
+    },
+    "v2": {
+      "status": "resolved",
+      "location": {
+        "display_name": "Picture Lake",
+        "continent": "North America",
+        "country": "United States",
+        "country_code": "US",
+        "state_province": "Washington",
+        "city": "Whatcom County",
+        "latitude": 48.8654827,
+        "longitude": -121.6772194,
+        "provider_place_id": "374227628",
+        "osm_class": null,
+        "osm_type": null
+      },
+      "match_confidence": 0.8875,
+      "category": "water",
+      "provider": "nominatim",
+      "queries_tried": [
+        "Picture Lake, Mt. Baker, Washington, USA",
+        "Picture Lake, Washington, USA"
+      ],
+      "notes": [
+        "no result for 'Picture Lake, Mt. Baker, Washington, USA'"
+      ]
+    },
+    "diff": {
+      "same_pin": true,
+      "distance_meters": 0.0,
+      "name_match": true
+    }
+  },
+  {
+    "case": 21,
+    "elapsed_s": 2.0,
+    "query": {
+      "place_name": "Horseshoe Bend",
+      "city": null,
+      "state_province": "Arizona",
+      "country": "USA",
+      "parent_place_name": null,
+      "latitude": null,
+      "longitude": null
+    },
+    "legacy": {
+      "status": "resolved",
+      "location": {
+        "display_name": "Horseshoe Bend",
+        "continent": "North America",
+        "country": "United States",
+        "country_code": "US",
+        "state_province": "Arizona",
+        "city": "Page",
+        "latitude": 36.880453,
+        "longitude": -111.5161335,
+        "provider_place_id": "331256817",
+        "osm_class": "waterway",
+        "osm_type": "bend"
+      },
+      "queries_tried": [
+        "Horseshoe Bend, Arizona, USA"
+      ],
+      "notes": []
+    },
+    "v2": {
+      "status": "resolved",
+      "location": {
+        "display_name": "Horseshoe Bend",
+        "continent": "North America",
+        "country": "United States",
+        "country_code": "US",
+        "state_province": "Arizona",
+        "city": "Page",
+        "latitude": 36.880453,
+        "longitude": -111.5161335,
+        "provider_place_id": "331256817",
+        "osm_class": null,
+        "osm_type": null
+      },
+      "match_confidence": 0.8875,
+      "category": "waterway",
+      "provider": "nominatim",
+      "queries_tried": [
+        "Horseshoe Bend, Arizona, USA"
+      ],
+      "notes": []
+    },
+    "diff": {
+      "same_pin": true,
+      "distance_meters": 0.0,
+      "name_match": true
+    }
+  },
+  {
+    "case": 22,
+    "elapsed_s": 3.0,
+    "query": {
+      "place_name": "Delicate Arch",
+      "city": null,
+      "state_province": "Utah",
+      "country": "USA",
+      "parent_place_name": "Arches National Park",
+      "latitude": null,
+      "longitude": null
+    },
+    "legacy": {
+      "status": "resolved",
+      "location": {
+        "display_name": "Delicate Arch",
+        "continent": "North America",
+        "country": "United States",
+        "country_code": "US",
+        "state_province": "Utah",
+        "city": "Grand County",
+        "latitude": 38.7434703,
+        "longitude": -109.4993193,
+        "provider_place_id": "327746240",
+        "osm_class": "natural",
+        "osm_type": "arch"
+      },
+      "queries_tried": [
+        "Delicate Arch, Utah, USA"
+      ],
+      "notes": []
+    },
+    "v2": {
+      "status": "resolved",
+      "location": {
+        "display_name": "Delicate Arch",
+        "continent": "North America",
+        "country": "United States",
+        "country_code": "US",
+        "state_province": "Utah",
+        "city": "Grand County",
+        "latitude": 38.7434703,
+        "longitude": -109.4993193,
+        "provider_place_id": "327746240",
+        "osm_class": null,
+        "osm_type": null
+      },
+      "match_confidence": 1.0,
+      "category": "natural",
+      "provider": "nominatim",
+      "queries_tried": [
+        "Delicate Arch, Arches National Park, Utah, USA",
+        "Delicate Arch, Utah, USA"
+      ],
+      "notes": [
+        "no result for 'Delicate Arch, Arches National Park, Utah, USA'"
+      ]
+    },
+    "diff": {
+      "same_pin": true,
+      "distance_meters": 0.0,
+      "name_match": true
+    }
+  },
+  {
+    "case": 23,
+    "elapsed_s": 2.0,
+    "query": {
+      "place_name": "Old Faithful",
+      "city": null,
+      "state_province": "Wyoming",
+      "country": "USA",
+      "parent_place_name": "Yellowstone National Park",
+      "latitude": null,
+      "longitude": null
+    },
+    "legacy": {
+      "status": "resolved",
+      "location": {
+        "display_name": "Old Faithful",
+        "continent": "North America",
+        "country": "United States",
+        "country_code": "US",
+        "state_province": "Wyoming",
+        "city": "Teton County",
+        "latitude": 44.4604641,
+        "longitude": -110.8281464,
+        "provider_place_id": "329096086",
+        "osm_class": "natural",
+        "osm_type": "geyser"
+      },
+      "queries_tried": [
+        "Old Faithful, Wyoming, USA"
+      ],
+      "notes": []
+    },
+    "v2": {
+      "status": "resolved",
+      "location": {
+        "display_name": "Old Faithful Inn",
+        "continent": "North America",
+        "country": "United States",
+        "country_code": "US",
+        "state_province": "Wyoming",
+        "city": "Teton County",
+        "latitude": 44.4596255,
+        "longitude": -110.831287,
+        "provider_place_id": "330075400",
+        "osm_class": null,
+        "osm_type": null
+      },
+      "match_confidence": 0.9214285714285715,
+      "category": "attraction",
+      "provider": "nominatim",
+      "queries_tried": [
+        "Old Faithful, Yellowstone National Park, Wyoming, USA"
+      ],
+      "notes": []
+    },
+    "diff": {
+      "same_pin": false,
+      "distance_meters": 266.12272711091674,
+      "name_match": false
+    }
+  },
+  {
+    "case": 24,
+    "elapsed_s": 2.0,
+    "query": {
+      "place_name": "Pike Place Market",
+      "city": "Seattle",
+      "state_province": "Washington",
+      "country": "USA",
+      "parent_place_name": null,
+      "latitude": null,
+      "longitude": null
+    },
+    "legacy": {
+      "status": "resolved",
+      "location": {
+        "display_name": "Pike Place Market",
+        "continent": "North America",
+        "country": "United States",
+        "country_code": "US",
+        "state_province": "Washington",
+        "city": "Seattle",
+        "latitude": 47.6093968,
+        "longitude": -122.3414102,
+        "provider_place_id": "417638887",
+        "osm_class": "landuse",
+        "osm_type": "retail"
+      },
+      "queries_tried": [
+        "Pike Place Market, Seattle, Washington, USA"
+      ],
+      "notes": []
+    },
+    "v2": {
+      "status": "resolved",
+      "location": {
+        "display_name": "Pike Place Market",
+        "continent": "North America",
+        "country": "United States",
+        "country_code": "US",
+        "state_province": "Washington",
+        "city": "Seattle",
+        "latitude": 47.6093968,
+        "longitude": -122.3414102,
+        "provider_place_id": "417638887",
+        "osm_class": null,
+        "osm_type": null
+      },
+      "match_confidence": 0.8,
+      "category": "commercial",
+      "provider": "nominatim",
+      "queries_tried": [
+        "Pike Place Market, Seattle, Washington, USA"
+      ],
+      "notes": []
+    },
+    "diff": {
+      "same_pin": true,
+      "distance_meters": 0.0,
+      "name_match": true
+    }
+  },
+  {
+    "case": 25,
+    "elapsed_s": 2.0,
+    "query": {
+      "place_name": "Space Needle",
+      "city": "Seattle",
+      "state_province": "Washington",
+      "country": "USA",
+      "parent_place_name": null,
+      "latitude": null,
+      "longitude": null
+    },
+    "legacy": {
+      "status": "resolved",
+      "location": {
+        "display_name": "Space Needle",
+        "continent": "North America",
+        "country": "United States",
+        "country_code": "US",
+        "state_province": "Washington",
+        "city": "Seattle",
+        "latitude": 47.6205131,
+        "longitude": -122.3493036,
+        "provider_place_id": "324443929",
+        "osm_class": "man_made",
+        "osm_type": "tower"
+      },
+      "queries_tried": [
+        "Space Needle, Seattle, Washington, USA"
+      ],
+      "notes": []
+    },
+    "v2": {
+      "status": "resolved",
+      "location": {
+        "display_name": "Space Needle",
+        "continent": "North America",
+        "country": "United States",
+        "country_code": "US",
+        "state_province": "Washington",
+        "city": "Seattle",
+        "latitude": 47.6205131,
+        "longitude": -122.3493036,
+        "provider_place_id": "324443929",
+        "osm_class": null,
+        "osm_type": null
+      },
+      "match_confidence": 0.8875,
+      "category": "man_made",
+      "provider": "nominatim",
+      "queries_tried": [
+        "Space Needle, Seattle, Washington, USA"
+      ],
+      "notes": []
+    },
+    "diff": {
+      "same_pin": true,
+      "distance_meters": 0.0,
+      "name_match": true
+    }
+  },
+  {
+    "case": 26,
+    "elapsed_s": 2.0,
+    "query": {
+      "place_name": "The Gorge",
+      "city": null,
+      "state_province": "Oregon",
+      "country": "USA",
+      "parent_place_name": null,
+      "latitude": null,
+      "longitude": null
+    },
+    "legacy": {
+      "status": "resolved",
+      "location": {
+        "display_name": "The Gorge",
+        "continent": "North America",
+        "country": "United States",
+        "country_code": "US",
+        "state_province": "Oregon",
+        "city": "Jackson County",
+        "latitude": 42.7081181,
+        "longitude": -122.5829548,
+        "provider_place_id": "323679464",
+        "osm_class": "amenity",
+        "osm_type": "restaurant"
+      },
+      "queries_tried": [
+        "The Gorge, Oregon, USA"
+      ],
+      "notes": []
+    },
+    "v2": {
+      "status": "resolved",
+      "location": {
+        "display_name": "The Gorge",
+        "continent": "North America",
+        "country": "United States",
+        "country_code": "US",
+        "state_province": "Oregon",
+        "city": "Jackson County",
+        "latitude": 42.7081181,
+        "longitude": -122.5829548,
+        "provider_place_id": "323679464",
+        "osm_class": null,
+        "osm_type": null
+      },
+      "match_confidence": 1.0,
+      "category": "food",
+      "provider": "nominatim",
+      "queries_tried": [
+        "The Gorge, Oregon, USA"
+      ],
+      "notes": []
+    },
+    "diff": {
+      "same_pin": true,
+      "distance_meters": 0.0,
+      "name_match": true
+    }
+  },
+  {
+    "case": 27,
+    "elapsed_s": 2.0,
+    "query": {
+      "place_name": "Banff",
+      "city": null,
+      "state_province": null,
+      "country": "Canada",
+      "parent_place_name": null,
+      "latitude": null,
+      "longitude": null
+    },
+    "legacy": {
+      "status": "unresolved",
+      "location": null,
+      "queries_tried": [
+        "Banff, Canada"
+      ],
+      "notes": [
+        "non-visitable for 'Banff, Canada': Banff"
+      ]
+    },
+    "v2": {
+      "status": "unresolved",
+      "location": null,
+      "match_confidence": null,
+      "category": null,
+      "provider": null,
+      "queries_tried": [
+        "Banff, Canada"
+      ],
+      "notes": [
+        "non-visitable for 'Banff, Canada': Banff (administrative)"
+      ]
+    },
+    "diff": {
+      "same_pin": false,
+      "distance_meters": null,
+      "name_match": false
+    }
+  },
+  {
+    "case": 28,
+    "elapsed_s": 3.0,
+    "query": {
+      "place_name": "Lake Louise",
+      "city": null,
+      "state_province": null,
+      "country": "Canada",
+      "parent_place_name": "Banff National Park",
+      "latitude": null,
+      "longitude": null
+    },
+    "legacy": {
+      "status": "resolved",
+      "location": {
+        "display_name": "Lake Louise",
+        "continent": "North America",
+        "country": "Canada",
+        "country_code": "CA",
+        "state_province": "Alberta",
+        "city": "Improvement District No. 9",
+        "latitude": 51.4249668,
+        "longitude": -116.177535,
+        "provider_place_id": "376358788",
+        "osm_class": "place",
+        "osm_type": "hamlet"
+      },
+      "queries_tried": [
+        "Lake Louise, Canada"
+      ],
+      "notes": []
+    },
+    "v2": {
+      "status": "resolved",
+      "location": {
+        "display_name": "Lake Louise",
+        "continent": "North America",
+        "country": "Canada",
+        "country_code": "CA",
+        "state_province": "Alberta",
+        "city": "Improvement District No. 9",
+        "latitude": 51.4249668,
+        "longitude": -116.177535,
+        "provider_place_id": "376358788",
+        "osm_class": null,
+        "osm_type": null
+      },
+      "match_confidence": 0.8875,
+      "category": "place",
+      "provider": "nominatim",
+      "queries_tried": [
+        "Lake Louise, Banff National Park, Canada",
+        "Lake Louise, Canada"
+      ],
+      "notes": [
+        "no result for 'Lake Louise, Banff National Park, Canada'"
+      ]
+    },
+    "diff": {
+      "same_pin": true,
+      "distance_meters": 0.0,
+      "name_match": true
+    }
+  }
+]

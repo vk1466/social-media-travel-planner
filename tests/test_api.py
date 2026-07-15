@@ -134,7 +134,7 @@ def test_list_and_get_place(dynamodb) -> None:
     latitude=45.5762,
     longitude=-122.1158,
   )
-  mention = PlaceMention(place_name="Multnomah Falls", tags=("waterfall",))
+  mention = PlaceMention(place_name="Multnomah Falls", category="waterfall")
   place_id = places.upsert_place(mention, location, "instagram:reelA")
   user_places_repo.link_user_place("user-a", place_id, source="from_post")
 
@@ -144,10 +144,13 @@ def test_list_and_get_place(dynamodb) -> None:
   assert listed.status_code == 200
   assert [place["place_id"] for place in listed.json()] == [place_id]
 
-  filtered = client.get("/api/places", params={"tag": "waterfall"}, headers=HEADERS)
+  filtered = client.get("/api/places", params={"category": "waterfall"}, headers=HEADERS)
   assert len(filtered.json()) == 1
-  empty = client.get("/api/places", params={"tag": "beach"}, headers=HEADERS)
+  assert filtered.json()[0]["category"] == "waterfall"
+  empty = client.get("/api/places", params={"category": "beach"}, headers=HEADERS)
   assert empty.json() == []
+  uncategorized = client.get("/api/places", params={"category": "uncategorized"}, headers=HEADERS)
+  assert uncategorized.json() == []
 
   roots = client.get("/api/places", params={"roots_only": True}, headers=HEADERS)
   assert roots.status_code == 200
@@ -168,11 +171,12 @@ def test_get_place_not_found(dynamodb) -> None:
   assert response.status_code == 404
 
 
-def test_list_tags(dynamodb) -> None:
+def test_list_categories(dynamodb) -> None:
   client = TestClient(app)
-  response = client.get("/api/tags", headers=HEADERS)
+  response = client.get("/api/categories", headers=HEADERS)
   assert response.status_code == 200
   assert "waterfall" in response.json()
+  assert "hike" in response.json()
 
 
 def test_cleanup_data_endpoint(monkeypatch, dynamodb) -> None:
@@ -195,7 +199,7 @@ def test_create_and_list_visits(dynamodb) -> None:
     latitude=45.5762,
     longitude=-122.1158,
   )
-  mention = PlaceMention(place_name="Multnomah Falls", tags=("waterfall",))
+  mention = PlaceMention(place_name="Multnomah Falls", category="waterfall")
   place_id = places.upsert_place(mention, location, "instagram:reelA")
 
   client = TestClient(app)

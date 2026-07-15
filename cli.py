@@ -5,6 +5,7 @@ import argparse
 from collections import Counter
 from pathlib import Path
 
+from travelplanner.logging_config import configure_logging
 from travelplanner.pipeline import IngestResult, ingest_links
 from travelplanner.places import reprocess_all_places, retry_place_candidates
 
@@ -34,6 +35,7 @@ def _read_links(path: Path) -> list[str]:
 
 
 def main() -> None:
+  configure_logging()
   parser = argparse.ArgumentParser(description="Ingest social media links into DynamoDB.")
   parser.add_argument(
     "links_file",

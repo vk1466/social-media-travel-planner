@@ -1,0 +1,953 @@
+{
+  "model": "gpt-4o-mini",
+  "summary": {
+    "total": 40,
+    "pass": 40,
+    "fail": 0,
+    "miss": 0,
+    "attr_fail": 0,
+    "pass_rate": 1.0
+  },
+  "by_region": {
+    "Americas": {
+      "PASS": 12,
+      "FAIL": 0,
+      "MISS": 0
+    },
+    "Oceania": {
+      "PASS": 4,
+      "FAIL": 0,
+      "MISS": 0
+    },
+    "Europe": {
+      "PASS": 10,
+      "FAIL": 0,
+      "MISS": 0
+    },
+    "Asia": {
+      "PASS": 9,
+      "FAIL": 0,
+      "MISS": 0
+    },
+    "Africa": {
+      "PASS": 3,
+      "FAIL": 0,
+      "MISS": 0
+    },
+    "Middle East": {
+      "PASS": 2,
+      "FAIL": 0,
+      "MISS": 0
+    }
+  },
+  "results": [
+    {
+      "label": "Multnomah Falls",
+      "region": "Americas",
+      "tier": "famous",
+      "place_name": "Multnomah Falls",
+      "expect": "waterfall",
+      "accept": [
+        "waterfall"
+      ],
+      "expect_attrs": [],
+      "got_category": "waterfall",
+      "got_attributes": [
+        "hike",
+        "viewpoint"
+      ],
+      "missing_attrs": [],
+      "extracted_names": [
+        "Multnomah Falls"
+      ],
+      "verdict": "PASS",
+      "reasons": [],
+      "elapsed_s": 4.0
+    },
+    {
+      "label": "Angel's Landing",
+      "region": "Americas",
+      "tier": "famous",
+      "place_name": "Angel's Landing",
+      "expect": "hike",
+      "accept": [
+        "hike"
+      ],
+      "expect_attrs": [
+        "viewpoint"
+      ],
+      "got_category": "hike",
+      "got_attributes": [
+        "viewpoint"
+      ],
+      "missing_attrs": [],
+      "extracted_names": [
+        "Angel's Landing"
+      ],
+      "verdict": "PASS",
+      "reasons": [],
+      "elapsed_s": 1.5
+    },
+    {
+      "label": "Grand Canyon South Rim",
+      "region": "Americas",
+      "tier": "famous",
+      "place_name": "Grand Canyon National Park",
+      "expect": "park",
+      "accept": [
+        "landmark",
+        "park",
+        "viewpoint"
+      ],
+      "expect_attrs": [],
+      "got_category": "park",
+      "got_attributes": [],
+      "missing_attrs": [],
+      "extracted_names": [
+        "Grand Canyon National Park"
+      ],
+      "verdict": "PASS",
+      "reasons": [],
+      "elapsed_s": 1.7
+    },
+    {
+      "label": "Machu Picchu",
+      "region": "Americas",
+      "tier": "famous",
+      "place_name": "Machu Picchu",
+      "expect": "landmark",
+      "accept": [
+        "landmark",
+        "park"
+      ],
+      "expect_attrs": [],
+      "got_category": "landmark",
+      "got_attributes": [],
+      "missing_attrs": [],
+      "extracted_names": [
+        "Machu Picchu"
+      ],
+      "verdict": "PASS",
+      "reasons": [],
+      "elapsed_s": 1.6
+    },
+    {
+      "label": "Christ the Redeemer",
+      "region": "Americas",
+      "tier": "famous",
+      "place_name": "Christ the Redeemer",
+      "expect": "landmark",
+      "accept": [
+        "landmark"
+      ],
+      "expect_attrs": [
+        "viewpoint"
+      ],
+      "got_category": "landmark",
+      "got_attributes": [
+        "viewpoint"
+      ],
+      "missing_attrs": [],
+      "extracted_names": [
+        "Christ the Redeemer"
+      ],
+      "verdict": "PASS",
+      "reasons": [],
+      "elapsed_s": 1.4
+    },
+    {
+      "label": "Torres del Paine",
+      "region": "Americas",
+      "tier": "famous",
+      "place_name": "Torres del Paine National Park",
+      "expect": "park",
+      "accept": [
+        "park"
+      ],
+      "expect_attrs": [],
+      "got_category": "park",
+      "got_attributes": [],
+      "missing_attrs": [],
+      "extracted_names": [
+        "Torres del Paine National Park"
+      ],
+      "verdict": "PASS",
+      "reasons": [],
+      "elapsed_s": 1.4
+    },
+    {
+      "label": "Misery Ridge Trail",
+      "region": "Americas",
+      "tier": "hidden",
+      "place_name": "Misery Ridge Trail",
+      "expect": "hike",
+      "accept": [
+        "hike"
+      ],
+      "expect_attrs": [
+        "viewpoint"
+      ],
+      "got_category": "hike",
+      "got_attributes": [
+        "viewpoint"
+      ],
+      "missing_attrs": [],
+      "extracted_names": [
+        "Misery Ridge Trail"
+      ],
+      "verdict": "PASS",
+      "reasons": [],
+      "elapsed_s": 1.4
+    },
+    {
+      "label": "Picture Lake",
+      "region": "Americas",
+      "tier": "hidden",
+      "place_name": "Picture Lake",
+      "expect": "viewpoint",
+      "accept": [
+        "landmark",
+        "park",
+        "viewpoint"
+      ],
+      "expect_attrs": [],
+      "got_category": "viewpoint",
+      "got_attributes": [
+        "hike"
+      ],
+      "missing_attrs": [],
+      "extracted_names": [
+        "Picture Lake"
+      ],
+      "verdict": "PASS",
+      "reasons": [],
+      "elapsed_s": 1.9
+    },
+    {
+      "label": "Tunnel Falls",
+      "region": "Americas",
+      "tier": "hidden",
+      "place_name": "Tunnel Falls",
+      "expect": "waterfall",
+      "accept": [
+        "waterfall"
+      ],
+      "expect_attrs": [
+        "hike"
+      ],
+      "got_category": "waterfall",
+      "got_attributes": [
+        "hike",
+        "viewpoint"
+      ],
+      "missing_attrs": [],
+      "extracted_names": [
+        "Tunnel Falls"
+      ],
+      "verdict": "PASS",
+      "reasons": [],
+      "elapsed_s": 1.9
+    },
+    {
+      "label": "Haystack Rock",
+      "region": "Americas",
+      "tier": "famous",
+      "place_name": "Haystack Rock",
+      "expect": "landmark",
+      "accept": [
+        "beach",
+        "landmark",
+        "viewpoint"
+      ],
+      "expect_attrs": [],
+      "got_category": "landmark",
+      "got_attributes": [],
+      "missing_attrs": [],
+      "extracted_names": [
+        "Haystack Rock"
+      ],
+      "verdict": "PASS",
+      "reasons": [],
+      "elapsed_s": 1.5
+    },
+    {
+      "label": "Bondi Beach",
+      "region": "Oceania",
+      "tier": "famous",
+      "place_name": "Bondi Beach",
+      "expect": "beach",
+      "accept": [
+        "beach"
+      ],
+      "expect_attrs": [
+        "hike"
+      ],
+      "got_category": "beach",
+      "got_attributes": [
+        "hike"
+      ],
+      "missing_attrs": [],
+      "extracted_names": [
+        "Bondi Beach"
+      ],
+      "verdict": "PASS",
+      "reasons": [],
+      "elapsed_s": 1.6
+    },
+    {
+      "label": "Uluru",
+      "region": "Oceania",
+      "tier": "famous",
+      "place_name": "Uluru",
+      "expect": "landmark",
+      "accept": [
+        "hike",
+        "landmark",
+        "park"
+      ],
+      "expect_attrs": [],
+      "got_category": "hike",
+      "got_attributes": [
+        "viewpoint"
+      ],
+      "missing_attrs": [],
+      "extracted_names": [
+        "Uluru"
+      ],
+      "verdict": "PASS",
+      "reasons": [
+        "accepted alt (landmark\u2192hike)"
+      ],
+      "elapsed_s": 1.5
+    },
+    {
+      "label": "Milford Sound",
+      "region": "Oceania",
+      "tier": "famous",
+      "place_name": "Milford Sound",
+      "expect": "park",
+      "accept": [
+        "landmark",
+        "park",
+        "viewpoint"
+      ],
+      "expect_attrs": [],
+      "got_category": "landmark",
+      "got_attributes": [],
+      "missing_attrs": [],
+      "extracted_names": [
+        "Milford Sound"
+      ],
+      "verdict": "PASS",
+      "reasons": [
+        "accepted alt (park\u2192landmark)"
+      ],
+      "elapsed_s": 1.6
+    },
+    {
+      "label": "Cathedral Cove",
+      "region": "Oceania",
+      "tier": "hidden",
+      "place_name": "Cathedral Cove",
+      "expect": "beach",
+      "accept": [
+        "beach"
+      ],
+      "expect_attrs": [
+        "hike"
+      ],
+      "got_category": "beach",
+      "got_attributes": [
+        "hike"
+      ],
+      "missing_attrs": [],
+      "extracted_names": [
+        "Cathedral Cove"
+      ],
+      "verdict": "PASS",
+      "reasons": [],
+      "elapsed_s": 1.5
+    },
+    {
+      "label": "Eiffel Tower",
+      "region": "Europe",
+      "tier": "famous",
+      "place_name": "Eiffel Tower",
+      "expect": "landmark",
+      "accept": [
+        "landmark"
+      ],
+      "expect_attrs": [
+        "viewpoint"
+      ],
+      "got_category": "landmark",
+      "got_attributes": [
+        "viewpoint"
+      ],
+      "missing_attrs": [],
+      "extracted_names": [
+        "Eiffel Tower"
+      ],
+      "verdict": "PASS",
+      "reasons": [],
+      "elapsed_s": 1.8
+    },
+    {
+      "label": "Colosseum",
+      "region": "Europe",
+      "tier": "famous",
+      "place_name": "Colosseum",
+      "expect": "landmark",
+      "accept": [
+        "landmark",
+        "museum"
+      ],
+      "expect_attrs": [],
+      "got_category": "landmark",
+      "got_attributes": [],
+      "missing_attrs": [],
+      "extracted_names": [
+        "Colosseum"
+      ],
+      "verdict": "PASS",
+      "reasons": [],
+      "elapsed_s": 1.6
+    },
+    {
+      "label": "Sagrada Familia",
+      "region": "Europe",
+      "tier": "famous",
+      "place_name": "Sagrada Familia",
+      "expect": "landmark",
+      "accept": [
+        "landmark",
+        "museum"
+      ],
+      "expect_attrs": [],
+      "got_category": "landmark",
+      "got_attributes": [],
+      "missing_attrs": [],
+      "extracted_names": [
+        "Sagrada Familia"
+      ],
+      "verdict": "PASS",
+      "reasons": [],
+      "elapsed_s": 1.3
+    },
+    {
+      "label": "Louvre",
+      "region": "Europe",
+      "tier": "famous",
+      "place_name": "Louvre Museum",
+      "expect": "museum",
+      "accept": [
+        "museum"
+      ],
+      "expect_attrs": [],
+      "got_category": "museum",
+      "got_attributes": [],
+      "missing_attrs": [],
+      "extracted_names": [
+        "Louvre Museum"
+      ],
+      "verdict": "PASS",
+      "reasons": [],
+      "elapsed_s": 1.7
+    },
+    {
+      "label": "Alfama",
+      "region": "Europe",
+      "tier": "famous",
+      "place_name": "Alfama",
+      "expect": "neighborhood",
+      "accept": [
+        "neighborhood"
+      ],
+      "expect_attrs": [],
+      "got_category": "neighborhood",
+      "got_attributes": [],
+      "missing_attrs": [],
+      "extracted_names": [
+        "Alfama"
+      ],
+      "verdict": "PASS",
+      "reasons": [],
+      "elapsed_s": 1.9
+    },
+    {
+      "label": "Plitvice Lakes",
+      "region": "Europe",
+      "tier": "famous",
+      "place_name": "Plitvice Lakes National Park",
+      "expect": "park",
+      "accept": [
+        "park",
+        "waterfall"
+      ],
+      "expect_attrs": [],
+      "got_category": "park",
+      "got_attributes": [],
+      "missing_attrs": [],
+      "extracted_names": [
+        "Plitvice Lakes National Park"
+      ],
+      "verdict": "PASS",
+      "reasons": [],
+      "elapsed_s": 1.9
+    },
+    {
+      "label": "Trolltunga",
+      "region": "Europe",
+      "tier": "hidden",
+      "place_name": "Trolltunga",
+      "expect": "hike",
+      "accept": [
+        "hike"
+      ],
+      "expect_attrs": [
+        "viewpoint"
+      ],
+      "got_category": "hike",
+      "got_attributes": [
+        "viewpoint"
+      ],
+      "missing_attrs": [],
+      "extracted_names": [
+        "Trolltunga"
+      ],
+      "verdict": "PASS",
+      "reasons": [],
+      "elapsed_s": 1.8
+    },
+    {
+      "label": "Neist Point",
+      "region": "Europe",
+      "tier": "hidden",
+      "place_name": "Neist Point",
+      "expect": "viewpoint",
+      "accept": [
+        "landmark",
+        "viewpoint"
+      ],
+      "expect_attrs": [],
+      "got_category": "viewpoint",
+      "got_attributes": [
+        "hike"
+      ],
+      "missing_attrs": [],
+      "extracted_names": [
+        "Neist Point"
+      ],
+      "verdict": "PASS",
+      "reasons": [],
+      "elapsed_s": 1.6
+    },
+    {
+      "label": "Taj Mahal",
+      "region": "Asia",
+      "tier": "famous",
+      "place_name": "Taj Mahal",
+      "expect": "landmark",
+      "accept": [
+        "landmark",
+        "museum"
+      ],
+      "expect_attrs": [],
+      "got_category": "landmark",
+      "got_attributes": [],
+      "missing_attrs": [],
+      "extracted_names": [
+        "Taj Mahal"
+      ],
+      "verdict": "PASS",
+      "reasons": [],
+      "elapsed_s": 1.6
+    },
+    {
+      "label": "Angkor Wat",
+      "region": "Asia",
+      "tier": "famous",
+      "place_name": "Angkor Wat",
+      "expect": "landmark",
+      "accept": [
+        "landmark",
+        "museum",
+        "park"
+      ],
+      "expect_attrs": [],
+      "got_category": "landmark",
+      "got_attributes": [],
+      "missing_attrs": [],
+      "extracted_names": [
+        "Angkor Wat"
+      ],
+      "verdict": "PASS",
+      "reasons": [],
+      "elapsed_s": 1.8
+    },
+    {
+      "label": "Mount Fuji",
+      "region": "Asia",
+      "tier": "famous",
+      "place_name": "Mount Fuji",
+      "expect": "hike",
+      "accept": [
+        "hike"
+      ],
+      "expect_attrs": [],
+      "got_category": "hike",
+      "got_attributes": [
+        "viewpoint"
+      ],
+      "missing_attrs": [],
+      "extracted_names": [
+        "Mount Fuji"
+      ],
+      "verdict": "PASS",
+      "reasons": [],
+      "elapsed_s": 1.8
+    },
+    {
+      "label": "Fushimi Inari",
+      "region": "Asia",
+      "tier": "famous",
+      "place_name": "Fushimi Inari Shrine",
+      "expect": "landmark",
+      "accept": [
+        "hike",
+        "landmark"
+      ],
+      "expect_attrs": [],
+      "got_category": "hike",
+      "got_attributes": [
+        "viewpoint"
+      ],
+      "missing_attrs": [],
+      "extracted_names": [
+        "Fushimi Inari Shrine"
+      ],
+      "verdict": "PASS",
+      "reasons": [
+        "accepted alt (landmark\u2192hike)"
+      ],
+      "elapsed_s": 1.6
+    },
+    {
+      "label": "Ha Long Bay",
+      "region": "Asia",
+      "tier": "famous",
+      "place_name": "Ha Long Bay",
+      "expect": "park",
+      "accept": [
+        "landmark",
+        "park",
+        "viewpoint"
+      ],
+      "expect_attrs": [],
+      "got_category": "landmark",
+      "got_attributes": [],
+      "missing_attrs": [],
+      "extracted_names": [
+        "Ha Long Bay"
+      ],
+      "verdict": "PASS",
+      "reasons": [
+        "accepted alt (park\u2192landmark)"
+      ],
+      "elapsed_s": 1.8
+    },
+    {
+      "label": "Tiger's Nest",
+      "region": "Asia",
+      "tier": "hidden",
+      "place_name": "Paro Taktsang",
+      "expect": "hike",
+      "accept": [
+        "hike",
+        "landmark"
+      ],
+      "expect_attrs": [
+        "viewpoint"
+      ],
+      "got_category": "hike",
+      "got_attributes": [
+        "viewpoint"
+      ],
+      "missing_attrs": [],
+      "extracted_names": [
+        "Paro Taktsang (Tiger's Nest)"
+      ],
+      "verdict": "PASS",
+      "reasons": [],
+      "elapsed_s": 2.3
+    },
+    {
+      "label": "Railay Beach",
+      "region": "Asia",
+      "tier": "hidden",
+      "place_name": "Railay Beach",
+      "expect": "beach",
+      "accept": [
+        "beach"
+      ],
+      "expect_attrs": [],
+      "got_category": "beach",
+      "got_attributes": [
+        "hike"
+      ],
+      "missing_attrs": [],
+      "extracted_names": [
+        "Railay Beach"
+      ],
+      "verdict": "PASS",
+      "reasons": [],
+      "elapsed_s": 1.6
+    },
+    {
+      "label": "Table Mountain",
+      "region": "Africa",
+      "tier": "famous",
+      "place_name": "Table Mountain",
+      "expect": "hike",
+      "accept": [
+        "hike",
+        "landmark",
+        "viewpoint"
+      ],
+      "expect_attrs": [
+        "viewpoint"
+      ],
+      "got_category": "landmark",
+      "got_attributes": [
+        "viewpoint"
+      ],
+      "missing_attrs": [],
+      "extracted_names": [
+        "Table Mountain"
+      ],
+      "verdict": "PASS",
+      "reasons": [
+        "accepted alt (hike\u2192landmark)"
+      ],
+      "elapsed_s": 5.2
+    },
+    {
+      "label": "Victoria Falls",
+      "region": "Africa",
+      "tier": "famous",
+      "place_name": "Victoria Falls",
+      "expect": "waterfall",
+      "accept": [
+        "waterfall"
+      ],
+      "expect_attrs": [],
+      "got_category": "waterfall",
+      "got_attributes": [
+        "hike",
+        "viewpoint"
+      ],
+      "missing_attrs": [],
+      "extracted_names": [
+        "Victoria Falls"
+      ],
+      "verdict": "PASS",
+      "reasons": [],
+      "elapsed_s": 2.1
+    },
+    {
+      "label": "Pyramids of Giza",
+      "region": "Africa",
+      "tier": "famous",
+      "place_name": "Great Pyramid of Giza",
+      "expect": "landmark",
+      "accept": [
+        "landmark"
+      ],
+      "expect_attrs": [],
+      "got_category": "landmark",
+      "got_attributes": [
+        "viewpoint"
+      ],
+      "missing_attrs": [],
+      "extracted_names": [
+        "Great Pyramid of Giza"
+      ],
+      "verdict": "PASS",
+      "reasons": [],
+      "elapsed_s": 1.8
+    },
+    {
+      "label": "Petra",
+      "region": "Middle East",
+      "tier": "famous",
+      "place_name": "Petra",
+      "expect": "landmark",
+      "accept": [
+        "hike",
+        "landmark"
+      ],
+      "expect_attrs": [],
+      "got_category": "hike",
+      "got_attributes": [],
+      "missing_attrs": [],
+      "extracted_names": [
+        "Petra"
+      ],
+      "verdict": "PASS",
+      "reasons": [
+        "accepted alt (landmark\u2192hike)"
+      ],
+      "elapsed_s": 2.4
+    },
+    {
+      "label": "Wadi Rum",
+      "region": "Middle East",
+      "tier": "famous",
+      "place_name": "Wadi Rum",
+      "expect": "park",
+      "accept": [
+        "landmark",
+        "park"
+      ],
+      "expect_attrs": [],
+      "got_category": "park",
+      "got_attributes": [],
+      "missing_attrs": [],
+      "extracted_names": [
+        "Wadi Rum"
+      ],
+      "verdict": "PASS",
+      "reasons": [],
+      "elapsed_s": 1.9
+    },
+    {
+      "label": "Tsukiji Outer Market",
+      "region": "Asia",
+      "tier": "famous",
+      "place_name": "Tsukiji Outer Market",
+      "expect": "market",
+      "accept": [
+        "market"
+      ],
+      "expect_attrs": [],
+      "got_category": "market",
+      "got_attributes": [],
+      "missing_attrs": [],
+      "extracted_names": [
+        "Tsukiji Outer Market"
+      ],
+      "verdict": "PASS",
+      "reasons": [],
+      "elapsed_s": 1.6
+    },
+    {
+      "label": "Cafe Central Vienna",
+      "region": "Europe",
+      "tier": "famous",
+      "place_name": "Caf\u00e9 Central",
+      "expect": "cafe",
+      "accept": [
+        "cafe",
+        "restaurant"
+      ],
+      "expect_attrs": [],
+      "got_category": "cafe",
+      "got_attributes": [],
+      "missing_attrs": [],
+      "extracted_names": [
+        "Caf\u00e9 Central"
+      ],
+      "verdict": "PASS",
+      "reasons": [],
+      "elapsed_s": 2.0
+    },
+    {
+      "label": "Noma Copenhagen",
+      "region": "Europe",
+      "tier": "famous",
+      "place_name": "Noma",
+      "expect": "restaurant",
+      "accept": [
+        "restaurant"
+      ],
+      "expect_attrs": [],
+      "got_category": "restaurant",
+      "got_attributes": [],
+      "missing_attrs": [],
+      "extracted_names": [
+        "Noma"
+      ],
+      "verdict": "PASS",
+      "reasons": [],
+      "elapsed_s": 1.6
+    },
+    {
+      "label": "Aman Tokyo",
+      "region": "Asia",
+      "tier": "famous",
+      "place_name": "Aman Tokyo",
+      "expect": "hotel",
+      "accept": [
+        "hotel"
+      ],
+      "expect_attrs": [],
+      "got_category": "hotel",
+      "got_attributes": [],
+      "missing_attrs": [],
+      "extracted_names": [
+        "Aman Tokyo"
+      ],
+      "verdict": "PASS",
+      "reasons": [],
+      "elapsed_s": 1.5
+    },
+    {
+      "label": "Old Faithful",
+      "region": "Americas",
+      "tier": "famous",
+      "place_name": "Old Faithful",
+      "expect": "landmark",
+      "accept": [
+        "landmark",
+        "park",
+        "viewpoint"
+      ],
+      "expect_attrs": [],
+      "got_category": "landmark",
+      "got_attributes": [
+        "viewpoint"
+      ],
+      "missing_attrs": [],
+      "extracted_names": [
+        "Old Faithful"
+      ],
+      "verdict": "PASS",
+      "reasons": [],
+      "elapsed_s": 2.1
+    },
+    {
+      "label": "Lake Louise",
+      "region": "Americas",
+      "tier": "famous",
+      "place_name": "Lake Louise",
+      "expect": "viewpoint",
+      "accept": [
+        "landmark",
+        "park",
+        "viewpoint"
+      ],
+      "expect_attrs": [],
+      "got_category": "park",
+      "got_attributes": [],
+      "missing_attrs": [],
+      "extracted_names": [
+        "Lake Louise"
+      ],
+      "verdict": "PASS",
+      "reasons": [
+        "accepted alt (viewpoint\u2192park)"
+      ],
+      "elapsed_s": 1.4
+    }
+  ]
+}

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import math
 from dataclasses import replace
 
@@ -13,6 +14,8 @@ from travelplanner.places import (
   slugify,
 )
 from travelplanner.store import load_all_posts
+
+logger = logging.getLogger(__name__)
 
 CLUSTER_PROXIMITY_METERS = 25_000
 
@@ -358,8 +361,10 @@ def link_places() -> None:
   """Recompute every parent_place_id over the whole library. Idempotent."""
   places = load_all_places()
   if not places:
+    logger.info("hierarchy link_places skipped: empty library")
     return
 
+  logger.info("hierarchy link_places start places=%d", len(places))
   places_by_id = {place.place_id: replace(place, parent_place_id=None) for place in places}
   posts = load_all_posts()
 
@@ -367,6 +372,7 @@ def link_places() -> None:
   parent_hints = _parent_hints_from_posts(posts, places_by_id)
   updated = _apply_cluster_roots(places_by_id, clusters, parent_hints)
 
+  saved = 0
   for place_id, place in updated.items():
     original = places_by_id.get(place_id)
     if original is None:
@@ -377,3 +383,9 @@ def link_places() -> None:
       or place.aliases != original.aliases
     ):
       save_place(place)
+      saved += 1
+  logger.info(
+    "hierarchy link_places done places=%d saved=%d",
+    len(places),
+    saved,
+  )

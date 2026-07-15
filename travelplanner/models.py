@@ -5,26 +5,6 @@ from enum import Enum
 
 from travelplanner.place_hints import ExtractedPlace, PlaceMention, PlatformPlace
 
-# Controlled vocabulary for place tags. The LLM extraction picks from this list
-# (multi-select); grow it deliberately to avoid drift (e.g. "hike" vs "trail").
-TAGS: tuple[str, ...] = (
-  "viewpoint",
-  "hike",
-  "waterfall",
-  "beach",
-  "restaurant",
-  "cafe",
-  "bar",
-  "hotel",
-  "museum",
-  "market",
-  "park",
-  "landmark",
-  "neighborhood",
-  "activity",
-  "nature",
-)
-
 
 class Platform(str, Enum):
   INSTAGRAM = "instagram"
@@ -110,7 +90,8 @@ class Place:
   display_name: str
   location: PlaceLocation
   aliases: tuple[str, ...] = ()
-  tags: tuple[str, ...] = ()
+  category: str | None = None
+  attributes: tuple[str, ...] = ()
   details: tuple[str, ...] = ()
   tips: tuple[str, ...] = ()
   source_post_ids: tuple[str, ...] = ()

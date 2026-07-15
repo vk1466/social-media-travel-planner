@@ -79,12 +79,15 @@ def delete_all_places() -> int:
 
 
 def cleanup_all_data() -> tuple[int, int, int]:
-  """Delete all shared posts/places, user memberships, and visits."""
+  """Delete all shared posts/places, user memberships, visits, and candidates."""
+  from travelplanner.db import place_candidates_repo
+
   posts_deleted = delete_all_posts()
   places_deleted = delete_all_places()
   visits_deleted = visits_repo.delete_all_visits()
   user_posts_repo.delete_all_user_posts()
   user_places_repo.delete_all_user_places()
+  place_candidates_repo.delete_all_candidates()
   return posts_deleted, places_deleted, visits_deleted
 
 
@@ -98,7 +101,7 @@ def list_places(
   country: str | None = None,
   state_province: str | None = None,
   city: str | None = None,
-  tag: str | None = None,
+  category: str | None = None,
   roots_only: bool = False,
   parent_place_id: str | None = None,
   place_ids: list[str] | None = None,
@@ -123,8 +126,13 @@ def list_places(
     places = [place for place in places if _matches_ci(place.location.state_province, state_province)]
   if city:
     places = [place for place in places if _matches_ci(place.location.city, city)]
-  if tag:
-    places = [place for place in places if tag in place.tags]
+  if category:
+    from travelplanner.categories import UNCATEGORIZED
+
+    if category.strip().lower() == UNCATEGORIZED:
+      places = [place for place in places if place.category is None]
+    else:
+      places = [place for place in places if place.category == category]
   return sorted(places, key=lambda place: place.display_name)
 
 
