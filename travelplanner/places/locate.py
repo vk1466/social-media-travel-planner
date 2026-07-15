@@ -302,15 +302,44 @@ def _dedupe_candidates(candidates: list[GeocodeResult]) -> list[GeocodeResult]:
   return unique
 
 
+def _parent_cache_key(mention: PlaceMention) -> str:
+  parts = (mention.parent_place_name, mention.state_province, mention.country)
+  return "|".join((part or "").strip().lower() for part in parts)
+
+
 def _parent_anchor(
   mention: PlaceMention,
   queries_tried: list[str],
   notes: list[str],
+  anchor_cache: dict[str, tuple[float, float] | None] | None = None,
 ) -> tuple[float, float] | None:
-  """Geocode the parent once to get a geographic anchor for the child search."""
+  """Geocode the parent once to get a geographic anchor for the child search.
+
+  `anchor_cache` (one dict per post) reuses a resolved parent across sibling
+  mentions so we never geocode the same park/region twice in a single run.
+  """
   parent = mention.parent_place_name
   if not parent:
     return None
+  if anchor_cache is not None:
+    cache_key = _parent_cache_key(mention)
+    if cache_key in anchor_cache:
+      cached = anchor_cache[cache_key]
+      if cached is not None:
+        notes.append(f"parent anchor (cached) @ {cached[0]:.4f},{cached[1]:.4f}")
+      return cached
+  anchor = _geocode_parent_anchor(mention, parent, queries_tried, notes)
+  if anchor_cache is not None:
+    anchor_cache[_parent_cache_key(mention)] = anchor
+  return anchor
+
+
+def _geocode_parent_anchor(
+  mention: PlaceMention,
+  parent: str,
+  queries_tried: list[str],
+  notes: list[str],
+) -> tuple[float, float] | None:
   parent_queries = [
     ", ".join(part for part in (parent, mention.state_province, mention.country) if part),
     ", ".join(part for part in (parent, mention.country) if part),
@@ -533,13 +562,20 @@ def _finalize(
   )
 
 
-def locate_mention_debug(mention: PlaceMention) -> LocateDebugResult:
-  """Locate with multi-candidate ranking + parent viewbox. No persistence."""
+def locate_mention_debug(
+  mention: PlaceMention,
+  *,
+  anchor_cache: dict[str, tuple[float, float] | None] | None = None,
+) -> LocateDebugResult:
+  """Locate with multi-candidate ranking + parent viewbox. No persistence.
+
+  Pass a per-post `anchor_cache` to reuse parent-anchor geocodes across mentions.
+  """
   queries_tried: list[str] = []
   notes: list[str] = []
   candidates: list[GeocodeResult] = []
 
-  parent_coords = _parent_anchor(mention, queries_tried, notes)
+  parent_coords = _parent_anchor(mention, queries_tried, notes, anchor_cache)
   viewbox: Viewbox | None = None
   anchor_lat: float | None = None
   anchor_lon: float | None = None

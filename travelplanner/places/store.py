@@ -80,7 +80,7 @@ def delete_all_places() -> int:
 
 def cleanup_all_data() -> tuple[int, int, int]:
   """Delete all shared posts/places, user memberships, visits, and candidates."""
-  from travelplanner.db import place_candidates_repo
+  from travelplanner.db import ingest_failures_repo, place_candidates_repo
 
   posts_deleted = delete_all_posts()
   places_deleted = delete_all_places()
@@ -88,6 +88,7 @@ def cleanup_all_data() -> tuple[int, int, int]:
   user_posts_repo.delete_all_user_posts()
   user_places_repo.delete_all_user_places()
   place_candidates_repo.delete_all_candidates()
+  ingest_failures_repo.delete_all_failures()
   return posts_deleted, places_deleted, visits_deleted
 
 

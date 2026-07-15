@@ -46,11 +46,15 @@ def find_existing_place(
   library: list[Place] | None = None,
 ) -> Place | None:
   """Name-aware merge: exact key, same-region alias, or near+compatible name."""
-  existing = load_place(key)
+  places = library if library is not None else load_all_places()
+
+  # Exact identity match. Prefer the in-memory library to avoid a redundant read.
+  if library is not None:
+    existing = next((place for place in places if place.place_id == key), None)
+  else:
+    existing = load_place(key)
   if existing is not None:
     return existing
-
-  places = library if library is not None else load_all_places()
 
   # Alias / name match in the same region (even if coords differ).
   best_alias: Place | None = None
@@ -161,13 +165,14 @@ def _new_place(
   )
 
 
-def upsert_place(
+def upsert_place_record(
   mention: PlaceMention,
   location: PlaceLocation,
   source_post_id: str | None = None,
   *,
   library: list[Place] | None = None,
-) -> str:
+) -> Place:
+  """Merge/create + persist, returning the saved Place (no extra read needed)."""
   key = place_key(location)
   existing = find_existing_place(key, location, mention, library=library)
   if existing is not None:
@@ -189,4 +194,14 @@ def upsert_place(
       source_post_id,
     )
   save_place(place)
-  return place.place_id
+  return place
+
+
+def upsert_place(
+  mention: PlaceMention,
+  location: PlaceLocation,
+  source_post_id: str | None = None,
+  *,
+  library: list[Place] | None = None,
+) -> str:
+  return upsert_place_record(mention, location, source_post_id, library=library).place_id

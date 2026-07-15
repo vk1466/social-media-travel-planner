@@ -43,7 +43,7 @@ def test_persists_unresolved_candidate(monkeypatch, dynamodb) -> None:
   post = _sample_post(places=(PlatformPlace(place_name="Nowhereville"),))
   monkeypatch.setattr(
     "travelplanner.places.pipeline.locate_mention_debug",
-    lambda mention: LocateDebugResult(status="unresolved"),
+    lambda mention, **_: LocateDebugResult(status="unresolved"),
   )
 
   place_ids = process_post_places(post)
@@ -65,7 +65,7 @@ def test_persists_low_confidence_and_upserts_place(monkeypatch, dynamodb) -> Non
   location = _falls_location()
   monkeypatch.setattr(
     "travelplanner.places.pipeline.locate_mention_debug",
-    lambda mention: LocateDebugResult(
+    lambda mention, **_: LocateDebugResult(
       status="low_confidence",
       location=location,
       match_confidence=0.55,
@@ -89,14 +89,14 @@ def test_resolved_clears_prior_candidate(monkeypatch, dynamodb) -> None:
 
   monkeypatch.setattr(
     "travelplanner.places.pipeline.locate_mention_debug",
-    lambda mention: LocateDebugResult(status="unresolved"),
+    lambda mention, **_: LocateDebugResult(status="unresolved"),
   )
   process_post_places(post)
   assert len(place_candidates_repo.load_open_candidates()) == 1
 
   monkeypatch.setattr(
     "travelplanner.places.pipeline.locate_mention_debug",
-    lambda mention: LocateDebugResult(status="resolved", location=location),
+    lambda mention, **_: LocateDebugResult(status="resolved", location=location),
   )
   place_ids = process_post_places(post)
 

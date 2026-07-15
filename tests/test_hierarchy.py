@@ -91,7 +91,7 @@ def test_process_post_places_skips_non_visitable_admin_regions(monkeypatch, dyna
   post = _sample_post(extracted_places=(ExtractedPlace(place_name="Oregon", state_province="Oregon"),))
   monkeypatch.setattr(
     "travelplanner.places.pipeline.locate_mention_debug",
-    lambda mention: LocateDebugResult(status="unresolved", notes=("rejected admin",)),
+    lambda mention, **_: LocateDebugResult(status="unresolved", notes=("rejected admin",)),
   )
 
   place_ids = process_post_places(post)

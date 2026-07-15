@@ -201,6 +201,7 @@ class TravelPlannerStack(Stack):
       "Posts": simple("Posts", "post_id"),
       "Places": simple("Places", "place_id"),
       "PlaceCandidates": places_candidates,
+      "IngestFailures": simple("IngestFailures", "failure_id"),
       "UserPosts": composite("UserPosts", "user_id", "post_id"),
       "UserPlaces": composite("UserPlaces", "user_id", "place_id"),
       "Visits": composite("Visits", "user_id", "visit_id"),

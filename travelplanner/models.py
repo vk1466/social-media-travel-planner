@@ -132,3 +132,26 @@ class PlaceCandidate:
   hints: PlaceMention
   last_tried_at: str | None = None
   resolved_place_id: str | None = None
+
+
+@dataclass(frozen=True)
+class IngestFailure:
+  """Durable record of an ingest that could not produce a clean saved post.
+
+  One row per `(user_id, post_url)` so repeated attempts update in place and
+  `attempts` counts retries. Cleared once the same link ingests successfully.
+
+  `stage`: validation | unsupported | post_id | fetch | place_processing
+  `status`: error | unsupported
+  """
+
+  failure_id: str
+  post_url: str
+  user_id: str
+  status: str
+  stage: str
+  error_message: str | None = None
+  post_id: str | None = None
+  attempts: int = 1
+  first_failed_at: str | None = None
+  last_failed_at: str | None = None

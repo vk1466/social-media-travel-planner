@@ -92,6 +92,39 @@ def test_mentions_from_post_normalizes_both_hint_shapes() -> None:
   )
 
 
+def test_mentions_from_post_merges_platform_and_extracted_same_place() -> None:
+  post = _sample_post(
+    places=(
+      PlatformPlace(
+        place_name="Belem Tower",
+        city="Lisbon",
+        country="Portugal",
+        latitude=38.6916,
+        longitude=-9.2160,
+      ),
+    ),
+    extracted_places=(
+      ExtractedPlace(
+        place_name="belem tower",
+        country="Portugal",
+        details="Historic tower",
+        tips=("Go early",),
+        category="landmark",
+      ),
+    ),
+  )
+
+  mentions = mentions_from_post(post)
+
+  assert len(mentions) == 1
+  merged = mentions[0]
+  assert merged.place_name == "Belem Tower"
+  assert (merged.latitude, merged.longitude) == (38.6916, -9.2160)
+  assert merged.details == "Historic tower"
+  assert merged.tips == ("Go early",)
+  assert merged.category == "landmark"
+
+
 def test_mentions_from_post_synthesizes_parent_from_parent_place_name() -> None:
   post = _sample_post(
     extracted_places=(
@@ -335,7 +368,7 @@ def test_process_post_places_skips_mentions_that_fail_to_locate(monkeypatch, dyn
   post = _sample_post(places=(PlatformPlace(place_name="Nowhereville"),))
   monkeypatch.setattr(
     "travelplanner.places.pipeline.locate_mention_debug",
-    lambda mention: LocateDebugResult(status="unresolved"),
+    lambda mention, **_: LocateDebugResult(status="unresolved"),
   )
 
   place_ids = process_post_places(post)
@@ -358,7 +391,7 @@ def test_process_post_places_returns_ids_for_located_mentions(monkeypatch, dynam
   )
   monkeypatch.setattr(
     "travelplanner.places.pipeline.locate_mention_debug",
-    lambda mention: LocateDebugResult(status="resolved", location=location),
+    lambda mention, **_: LocateDebugResult(status="resolved", location=location),
   )
 
   place_ids = process_post_places(post)
@@ -382,7 +415,7 @@ def test_process_post_places_materializes_parent_from_parent_place_name(monkeypa
     ),
   )
 
-  def fake_locate(mention: PlaceMention) -> LocateDebugResult:
+  def fake_locate(mention: PlaceMention, **_) -> LocateDebugResult:
     if mention.place_name == "Misery Ridge Trail":
       return LocateDebugResult(
         status="resolved",
@@ -466,7 +499,7 @@ def test_reprocess_all_places_rebuilds_library_and_updates_posts(monkeypatch, dy
   )
   monkeypatch.setattr(
     "travelplanner.places.pipeline.locate_mention_debug",
-    lambda mention: LocateDebugResult(status="resolved", location=location),
+    lambda mention, **_: LocateDebugResult(status="resolved", location=location),
   )
 
   reprocess_all_places()

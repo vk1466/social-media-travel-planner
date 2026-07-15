@@ -7,8 +7,8 @@ from travelplanner.models import Platform, SavedPost
 from travelplanner.places.candidates import mark_candidate_resolved, record_candidate
 from travelplanner.places.locate import locate_mention_debug
 from travelplanner.places.mentions import mentions_from_post
-from travelplanner.places.resolve import upsert_place
-from travelplanner.places.store import delete_all_places, load_all_places, load_place
+from travelplanner.places.resolve import upsert_place_record
+from travelplanner.places.store import delete_all_places, load_all_places
 from travelplanner.store import load_all_posts, save_post
 
 logger = logging.getLogger(__name__)
@@ -24,6 +24,7 @@ def process_post_places(post: SavedPost) -> tuple[str, ...]:
   place_ids: list[str] = []
   library = load_all_places()
   mentions = mentions_from_post(post)
+  anchor_cache: dict[str, tuple[float, float] | None] = {}
   logger.info(
     "places process start post_id=%s mentions=%d",
     source_post_id,
@@ -32,7 +33,7 @@ def process_post_places(post: SavedPost) -> tuple[str, ...]:
 
   for mention in mentions:
     try:
-      debug = locate_mention_debug(mention)
+      debug = locate_mention_debug(mention, anchor_cache=anchor_cache)
     except Exception:
       logger.exception(
         "locate failed place_name=%r post_id=%s",
@@ -60,16 +61,15 @@ def process_post_places(post: SavedPost) -> tuple[str, ...]:
       )
       continue
 
-    place_id = upsert_place(
+    saved = upsert_place_record(
       mention,
       debug.location,
       source_post_id,
       library=library,
     )
-    saved = load_place(place_id)
-    if saved is not None:
-      library = [place for place in library if place.place_id != place_id]
-      library.append(saved)
+    place_id = saved.place_id
+    library = [place for place in library if place.place_id != place_id]
+    library.append(saved)
 
     if debug.status == "low_confidence":
       logger.info(

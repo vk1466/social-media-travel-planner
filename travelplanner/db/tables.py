@@ -5,7 +5,16 @@ from botocore.exceptions import ClientError
 from travelplanner import settings
 from travelplanner.db.client import get_dynamodb_resource
 
-TABLE_NAMES = ("Posts", "Places", "PlaceCandidates", "UserPosts", "UserPlaces", "Visits", "Jobs")
+TABLE_NAMES = (
+  "Posts",
+  "Places",
+  "PlaceCandidates",
+  "IngestFailures",
+  "UserPosts",
+  "UserPlaces",
+  "Visits",
+  "Jobs",
+)
 
 SOURCE_POST_INDEX = "source_post_id-index"
 
@@ -75,6 +84,7 @@ def ensure_tables() -> list[str]:
   specs: list[tuple[str, str, str | None]] = [
     ("Posts", "post_id", None),
     ("Places", "place_id", None),
+    ("IngestFailures", "failure_id", None),
     ("UserPosts", "user_id", "post_id"),
     ("UserPlaces", "user_id", "place_id"),
     ("Visits", "user_id", "visit_id"),

@@ -1,6 +1,6 @@
-from travelplanner.db import user_posts_repo
+from travelplanner.db import ingest_failures_repo, user_posts_repo
 from travelplanner.models import Platform, SavedPost, make_post_id
-from travelplanner.pipeline import ingest_link, ingest_links
+from travelplanner.pipeline import IngestDeps, ingest_link, ingest_links
 from travelplanner.sources import PLATFORM_FETCHERS
 from travelplanner.store import load_post, save_post
 
@@ -127,6 +127,104 @@ def test_ingest_link_saves_post_even_when_place_processing_fails(monkeypatch, dy
   saved = load_post(Platform.INSTAGRAM, "noplace")
   assert saved is not None
   assert saved.place_ids == ()
+
+
+def _boom_fetch(_: str) -> SavedPost:
+  raise RuntimeError("API down")
+
+
+def test_ingest_link_persists_fetch_failure(monkeypatch, dynamodb) -> None:
+  monkeypatch.setitem(PLATFORM_FETCHERS, Platform.INSTAGRAM, _boom_fetch)
+
+  result = ingest_link("https://www.instagram.com/p/bad123/", user_id=USER)
+
+  assert result.status == "error"
+  failures = ingest_failures_repo.list_failures(user_id=USER)
+  assert len(failures) == 1
+  assert failures[0].stage == "fetch"
+  assert failures[0].status == "error"
+  assert failures[0].error_message == "API down"
+  assert failures[0].post_id == "instagram:bad123"
+  assert failures[0].attempts == 1
+
+
+def test_ingest_link_persists_unsupported(dynamodb) -> None:
+  result = ingest_link("https://example.com/unknown", user_id=USER)
+
+  assert result.status == "unsupported"
+  failures = ingest_failures_repo.list_failures()
+  assert len(failures) == 1
+  assert failures[0].status == "unsupported"
+  assert failures[0].stage == "unsupported"
+
+
+def test_ingest_link_persists_bad_post_id(dynamodb) -> None:
+  result = ingest_link("https://www.instagram.com/", user_id=USER)
+
+  assert result.status == "error"
+  failures = ingest_failures_repo.list_failures(user_id=USER)
+  assert len(failures) == 1
+  assert failures[0].stage == "post_id"
+
+
+def test_ingest_link_increments_attempts_on_repeated_failure(monkeypatch, dynamodb) -> None:
+  monkeypatch.setitem(PLATFORM_FETCHERS, Platform.INSTAGRAM, _boom_fetch)
+  url = "https://www.instagram.com/p/bad123/"
+
+  ingest_link(url, user_id=USER)
+  ingest_link(url, user_id=USER)
+
+  failures = ingest_failures_repo.list_failures(user_id=USER)
+  assert len(failures) == 1
+  assert failures[0].attempts == 2
+
+
+def test_ingest_link_clears_failure_on_success(monkeypatch, dynamodb) -> None:
+  url = "https://www.instagram.com/p/abc123/"
+  monkeypatch.setitem(PLATFORM_FETCHERS, Platform.INSTAGRAM, _boom_fetch)
+  ingest_link(url, user_id=USER)
+  assert len(ingest_failures_repo.list_failures(user_id=USER)) == 1
+
+  monkeypatch.setitem(PLATFORM_FETCHERS, Platform.INSTAGRAM, _fake_instagram_post)
+  result = ingest_link(url, user_id=USER, refresh=True)
+
+  assert result.status == "saved"
+  assert ingest_failures_repo.list_failures(user_id=USER) == []
+
+
+def test_ingest_link_persists_place_processing_failure(monkeypatch, dynamodb) -> None:
+  monkeypatch.setitem(PLATFORM_FETCHERS, Platform.INSTAGRAM, _fake_instagram_post)
+
+  def fail_places(post: SavedPost):
+    raise RuntimeError("geocoder unavailable")
+
+  monkeypatch.setattr("travelplanner.pipeline.process_post_places", fail_places)
+
+  result = ingest_link("https://www.instagram.com/p/noplace/", user_id=USER)
+
+  assert result.status == "saved"
+  failures = ingest_failures_repo.list_failures(user_id=USER)
+  assert len(failures) == 1
+  assert failures[0].stage == "place_processing"
+  assert failures[0].post_id == "instagram:noplace"
+
+
+def test_ingest_link_uses_injected_deps(dynamodb) -> None:
+  recorded: list[dict] = []
+  cleared: list[dict] = []
+
+  deps = IngestDeps(
+    fetchers={Platform.INSTAGRAM: _fake_instagram_post},
+    process_places=lambda post: (),
+    record_failure=lambda **kwargs: recorded.append(kwargs),
+    clear_failure=lambda **kwargs: cleared.append(kwargs),
+  )
+
+  result = ingest_link("https://www.instagram.com/p/inj123/", user_id=USER, deps=deps)
+
+  assert result.status == "saved"
+  assert recorded == []
+  assert len(cleared) == 1
 
 
 def test_ingest_links_on_result_callback(monkeypatch, dynamodb) -> None:

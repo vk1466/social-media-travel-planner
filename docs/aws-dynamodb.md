@@ -30,7 +30,7 @@ python3 cli.py links.txt --user-id <clerk-user-id>
 ### IAM policy (least privilege)
 
 Allow on the app tables for that stage/region
-(Posts, Places, PlaceCandidates, UserPosts, UserPlaces, Visits, Jobs):
+(Posts, Places, PlaceCandidates, IngestFailures, UserPosts, UserPlaces, Visits, Jobs):
 
 - `dynamodb:GetItem`
 - `dynamodb:PutItem`
@@ -61,4 +61,8 @@ CDK grants these to the API and worker Lambdas automatically.
   Fine at small scale; add GSIs or a background index when the library grows.
 - **Jobs:** stored in DynamoDB (`Jobs` table) with ~7 day TTL. Ingest runs via
   Step Functions; see [`serverless-deploy.md`](./serverless-deploy.md).
+- **IngestFailures:** durable record of any ingest that could not produce a clean
+  saved post (validation, unsupported, bad id, fetch/API error, place-processing
+  error). Keyed per `(user_id, post_url)`; retries bump `attempts`; a later clean
+  ingest clears the row. No TTL — outstanding failures persist until resolved.
 - **Rate limits:** consider per-user ingest limits before public launch.
