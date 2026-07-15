@@ -114,6 +114,7 @@ class TravelPlannerStack(Stack):
         "CORS_ORIGINS": cors_origins,
         "CLERK_ISSUER": clerk_issuer,
         "ADMIN_USER_IDS": admin_user_ids,
+        "INSTAGRAM_PROFILE_POST_LIMIT": "5",
       },
     )
     for table in tables.values():
@@ -197,6 +198,20 @@ class TravelPlannerStack(Stack):
       projection_type=dynamodb.ProjectionType.ALL,
     )
 
+    jobs = simple("Jobs", "job_id", time_to_live_attribute="ttl")
+    jobs.add_global_secondary_index(
+      index_name="user_id-created_at-index",
+      partition_key=dynamodb.Attribute(
+        name="user_id",
+        type=dynamodb.AttributeType.STRING,
+      ),
+      sort_key=dynamodb.Attribute(
+        name="created_at",
+        type=dynamodb.AttributeType.STRING,
+      ),
+      projection_type=dynamodb.ProjectionType.ALL,
+    )
+
     return {
       "Posts": simple("Posts", "post_id"),
       "Places": simple("Places", "place_id"),
@@ -205,7 +220,7 @@ class TravelPlannerStack(Stack):
       "UserPosts": composite("UserPosts", "user_id", "post_id"),
       "UserPlaces": composite("UserPlaces", "user_id", "place_id"),
       "Visits": composite("Visits", "user_id", "visit_id"),
-      "Jobs": simple("Jobs", "job_id", time_to_live_attribute="ttl"),
+      "Jobs": jobs,
     }
 
   def _create_state_machine(
@@ -229,6 +244,7 @@ class TravelPlannerStack(Stack):
         "job_id.$": "$.job_id",
         "user_id.$": "$.user_id",
         "refresh.$": "$.refresh",
+        "mark_visited.$": "$.mark_visited",
         "post_url.$": "$$.Map.Item.Value.post_url",
       },
       result_path="$.ingest_results",

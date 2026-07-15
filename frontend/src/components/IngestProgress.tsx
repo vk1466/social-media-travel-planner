@@ -3,6 +3,8 @@ import type { JobLink } from "../api";
 interface IngestProgressProps {
   links: JobLink[];
   running: boolean;
+  title?: string;
+  subtitle?: string | null;
   onOpenPost?: (platform: string, postId: string) => void;
 }
 
@@ -58,7 +60,13 @@ function platformFromUrl(postUrl: string): string | null {
   }
 }
 
-export function IngestProgress({ links, running, onOpenPost }: IngestProgressProps) {
+export function IngestProgress({
+  links,
+  running,
+  title = "Progress",
+  subtitle = null,
+  onOpenPost,
+}: IngestProgressProps) {
   if (links.length === 0) {
     return null;
   }
@@ -66,7 +74,10 @@ export function IngestProgress({ links, running, onOpenPost }: IngestProgressPro
   return (
     <section className="panel">
       <div className="section-header">
-        <h2>Progress</h2>
+        <div>
+          <h2>{title}</h2>
+          {subtitle && <p className="ingest-panel-subtitle">{subtitle}</p>}
+        </div>
         {running && <span className="badge badge-running">Running</span>}
       </div>
       <ul className="progress-list">

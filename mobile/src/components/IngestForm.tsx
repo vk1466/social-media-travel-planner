@@ -74,6 +74,8 @@ export function LinkSubmitForm({
 interface IngestProgressProps {
   links: JobLink[];
   running: boolean;
+  title?: string;
+  subtitle?: string;
   onOpenPost?: (platform: string, postId: string) => void;
 }
 
@@ -119,7 +121,13 @@ function platformFromUrl(postUrl: string): string | null {
   }
 }
 
-export function IngestProgress({ links, running, onOpenPost }: IngestProgressProps) {
+export function IngestProgress({
+  links,
+  running,
+  title = "Progress",
+  subtitle,
+  onOpenPost,
+}: IngestProgressProps) {
   if (links.length === 0) {
     return null;
   }
@@ -127,7 +135,10 @@ export function IngestProgress({ links, running, onOpenPost }: IngestProgressPro
   return (
     <View style={styles.panel}>
       <View style={styles.progressHeader}>
-        <Text style={styles.title}>Progress</Text>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.title}>{title}</Text>
+          {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+        </View>
         {running ? <Text style={styles.runningBadge}>Running</Text> : null}
       </View>
       {links.map((link) => {

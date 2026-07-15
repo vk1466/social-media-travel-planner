@@ -185,8 +185,13 @@ def create_visit(
   return visit
 
 
-def mark_visited(*, user_id: str, place_id: str) -> Visit:
-  """Idempotent visited mark — reuse an existing visit or create an undated one."""
+def mark_visited(
+  *,
+  user_id: str,
+  place_id: str,
+  visited_from: str | None = None,
+) -> Visit:
+  """Idempotent visited mark — reuse an existing visit or create one."""
   existing = visits_for_place(user_id, place_id)
   if existing:
     return sorted(
@@ -194,7 +199,11 @@ def mark_visited(*, user_id: str, place_id: str) -> Visit:
       key=lambda visit: (visit.visited_from or "", visit.created_at or ""),
       reverse=True,
     )[0]
-  return create_visit(user_id=user_id, place_id=place_id)
+  return create_visit(
+    user_id=user_id,
+    place_id=place_id,
+    visited_from=visited_from,
+  )
 
 
 def unmark_visited(*, user_id: str, place_id: str) -> int:

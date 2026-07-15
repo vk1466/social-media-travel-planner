@@ -17,6 +17,7 @@ def start_ingest_job(
   *,
   user_id: str,
   refresh: bool,
+  mark_visited: bool = False,
 ) -> str:
   state_machine_arn = settings.state_machine_arn()
   if not state_machine_arn:
@@ -26,6 +27,7 @@ def start_ingest_job(
     "job_id": job_id,
     "user_id": user_id,
     "refresh": refresh,
+    "mark_visited": mark_visited,
     "links": [{"post_url": post_url} for post_url in post_urls],
   }
   client = boto3.client("stepfunctions", region_name=settings.dynamodb_region())

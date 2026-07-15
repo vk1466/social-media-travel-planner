@@ -11,8 +11,9 @@ from travelplanner.models import Place, Platform, SavedPost, Visit, make_post_id
 from travelplanner.pipeline import unlink_post_from_user
 from travelplanner.place_hints import PlaceMention
 from travelplanner.places import cleanup_all_data, list_places, load_place, place_to_dict, reprocess_all_places
-from travelplanner.db import place_candidates_repo
+from travelplanner.db import jobs_repo, place_candidates_repo
 from travelplanner.places.debug import debug_locate
+from travelplanner.sources.instagram_profile import list_recent_post_urls, normalize_instagram_username
 from travelplanner.store import load_post, post_to_dict
 from travelplanner.visits import (
   create_visit,
@@ -36,6 +37,7 @@ from server.schemas import (
   ErrorResponse,
   IngestRequest,
   IngestResponse,
+  InstagramImportRequest,
   JobSchema,
   LocateDebugRequest,
   LocateDebugResponse,
@@ -111,12 +113,65 @@ def start_ingest(
   return IngestResponse(job_id=job_id)
 
 
+@app.get("/api/jobs/active", response_model=JobSchema | None)
+def get_active_job(
+  user_id: CurrentUserId,
+  kind: str | None = Query(default=None),
+) -> JobSchema | None:
+  return jobs.get_active_job_for_user(user_id, kind=kind)
+
+
 @app.get("/api/jobs/{job_id}", response_model=JobSchema, responses={404: {"model": ErrorResponse}})
 def get_job(job_id: str, user_id: CurrentUserId) -> JobSchema:
   job = jobs.get_job_for_user(job_id, user_id)
   if job is None:
     raise HTTPException(status_code=404, detail="Job not found")
   return job
+
+
+@app.post(
+  "/api/visits/import-instagram",
+  response_model=IngestResponse,
+  status_code=201,
+  responses={400: {"model": ErrorResponse}},
+)
+def import_instagram_profile(
+  request: InstagramImportRequest,
+  user_id: CurrentUserId,
+) -> IngestResponse:
+  try:
+    username = normalize_instagram_username(request.username)
+    post_urls = list_recent_post_urls(username)
+  except ValueError as exc:
+    raise HTTPException(status_code=400, detail=str(exc)) from exc
+  except Exception as exc:
+    raise HTTPException(
+      status_code=400,
+      detail=f"Could not load Instagram profile: {exc}",
+    ) from exc
+
+  if not post_urls:
+    raise HTTPException(
+      status_code=400,
+      detail="No public posts found for that username (private or empty).",
+    )
+
+  job_id = jobs.create_job(
+    post_urls,
+    user_id=user_id,
+    refresh=False,
+    kind=jobs_repo.JOB_KIND_INSTAGRAM_PROFILE_IMPORT,
+    mark_visited=True,
+    username=username,
+  )
+  start_ingest_job(
+    job_id,
+    post_urls,
+    user_id=user_id,
+    refresh=False,
+    mark_visited=True,
+  )
+  return IngestResponse(job_id=job_id)
 
 
 @app.get("/api/posts", response_model=list[SavedPostSchema])

@@ -7,13 +7,17 @@ import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
+from boto3.dynamodb.conditions import Attr, Key
 from botocore.exceptions import ClientError
 
 from travelplanner.db.serialize import from_dynamo, to_dynamo
-from travelplanner.db.tables import get_table
+from travelplanner.db.tables import JOBS_USER_CREATED_INDEX, get_table
 
 JOB_TTL_DAYS = 7
 _LINK_UPDATE_ATTEMPTS = 8
+
+JOB_KIND_LINK_INGEST = "link_ingest"
+JOB_KIND_INSTAGRAM_PROFILE_IMPORT = "instagram_profile_import"
 
 
 def create_job(
@@ -21,19 +25,27 @@ def create_job(
   *,
   user_id: str,
   refresh: bool,
+  kind: str = JOB_KIND_LINK_INGEST,
+  mark_visited: bool = False,
+  username: str | None = None,
 ) -> str:
   job_id = str(uuid.uuid4())
   now = datetime.now(timezone.utc)
-  item = {
+  created_at = now.strftime("%Y-%m-%dT%H:%M:%SZ")
+  item: dict[str, Any] = {
     "job_id": job_id,
     "user_id": user_id,
     "status": "running",
     "refresh": refresh,
+    "kind": kind,
+    "mark_visited": mark_visited,
     "links": [{"post_url": post_url, "status": "pending"} for post_url in post_urls],
     "version": 0,
-    "created_at": now.strftime("%Y-%m-%dT%H:%M:%SZ"),
+    "created_at": created_at,
     "ttl": int((now + timedelta(days=JOB_TTL_DAYS)).timestamp()),
   }
+  if username:
+    item["username"] = username
   get_table("Jobs").put_item(Item=to_dynamo(item))
   return job_id
 
@@ -44,6 +56,30 @@ def get_job(job_id: str) -> dict[str, Any] | None:
   if item is None:
     return None
   return from_dynamo(item)
+
+
+def get_active_job_for_user(
+  user_id: str,
+  *,
+  kind: str | None = None,
+) -> dict[str, Any] | None:
+  """Newest running job for this user (optionally filtered by kind)."""
+  table = get_table("Jobs")
+  query_kwargs: dict[str, Any] = {
+    "IndexName": JOBS_USER_CREATED_INDEX,
+    "KeyConditionExpression": Key("user_id").eq(user_id),
+    "ScanIndexForward": False,
+  }
+  if kind:
+    query_kwargs["FilterExpression"] = Attr("kind").eq(kind) & Attr("status").eq("running")
+  else:
+    query_kwargs["FilterExpression"] = Attr("status").eq("running")
+
+  response = table.query(**query_kwargs)
+  items = response.get("Items") or []
+  if not items:
+    return None
+  return from_dynamo(items[0])
 
 
 def set_execution_arn(job_id: str, execution_arn: str) -> None:

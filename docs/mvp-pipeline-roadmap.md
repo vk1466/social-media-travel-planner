@@ -25,10 +25,11 @@ Builds on: reel extraction (`extract.py`), geocode → upsert (`places.py`), hie
 | # | Feature | What the user gets | Status |
 |---|---------|-------------------|--------|
 | 1 | **Accurate place pins** | Places land on the correct map location; duplicates merged; fewer mentions lost when geocode fails | Not started — [breakdown](#accurate-place-pins) |
+| 1h | **Post & carousel image text (OCR)** | Place names on static posts and carousel slides (overlays, maps, signage) feed the same extract → locate path as reel captions/transcripts | Not started — [breakdown](#post--carousel-image-text-ocr) |
 | 2 | **Attraction categories** | Typed for browse/filter (hike, viewpoint, park, hotel, restaurant, …). One category + attributes; UI groups by category | Phase 1 done — [plan](./attraction-categories-plan.md) · [implementation](./attraction-categories-implementation.md) |
 | 3 | **Region buckets & hierarchy** | Linked attractions under the same region root (national park, state park, city, neighborhood). Trails/spots nest under parents | In progress — category-aware roots + `parent_category` / OSM |
 
-**Why first:** Wrong pins and flat/wrong trees poison enrichment, relations, itineraries, and maps.
+**Why first:** Wrong pins and flat/wrong trees poison enrichment, relations, itineraries, and maps. Image-only posts/carousels without OCR never produce places to pin.
 
 ---
 
@@ -49,7 +50,7 @@ Builds on: reel extraction (`extract.py`), geocode → upsert (`places.py`), hie
 | # | Feature | What the user gets | Status |
 |---|---------|-------------------|--------|
 | 7 | **Itinerary from a reel / cluster** | Turn a region root + children into a day plan (order by tips, access links, tags) | Not started |
-| 8 | **Visit / want-to-go status** | Want to go · Visited · Skip on places; filter the library by status (builds on existing `Visit`) | In progress — Visited one-tap + optional dates; Want/Skip + filters TBD |
+| 8 | **Visit / want-to-go status** | Want to go · Visited · Skip on places; filter the library by status (builds on existing `Visit`) | In progress — Visited one-tap + optional dates + Instagram profile import; Want/Skip + filters TBD |
 | 9 | **Map-first trip view** | Map filtered by region root or tag; pins by category; tap → tips + facts | Partially done — maps exist; trip-scoped / root-filtered view TBD |
 | 10 | **Access & logistics pack** | Derived view: trailhead, fees, duration, “need this hike to reach this lake” from relations + facts | Not started |
 
@@ -106,6 +107,7 @@ After a reel is saved, we collect place names from the Instagram location tag (s
 | 1e | Specific pin over big region | In progress — parent geo filter |
 | 1f | **Google geocode fallback** | Not started — when Nominatim unresolved / low-confidence |
 | 1g | **LLM candidate picker fallback** | Done — pick among Nominatim hits when ranking is ambiguous; see [locate-v3-validation.md](./locate-v3-validation.md) (historical) |
+| 1h | **Post & carousel image text (OCR)** | Not started — [breakdown](#post--carousel-image-text-ocr) |
 
 ### 1f. Google geocode fallback
 
@@ -155,6 +157,30 @@ After a reel is saved, we collect place names from the Instagram location tag (s
 
 ---
 
+## Post & carousel image text (OCR)
+
+P0 feature **1h**. Goal: static Instagram **posts** and **carousel** slides contribute place mentions the same way reel captions / Supadata transcripts do today — via text we can pass into the existing extract → locate → resolve pipeline.
+
+Mark **1h** done when media URLs are available in the fetch path, image text is extracted for each relevant frame/slide, and that text is folded into place extraction without a separate geocode/vision path.
+
+### What we do today
+
+Reels can get a Supadata transcript. For image posts and carousels we only use caption, comments, hashtags, and the Instagram location tag. Overlay text on slides (place names, maps, “day 1 / day 2” labels, signage) is ignored, so many travel carousels save with weak or empty place lists.
+
+### Approach
+
+1. **Media inputs** — From EnsembleData (or equivalent), collect displayable image URL(s): single-image posts and each carousel child. Cap slides per post (config) so cost/latency stay bounded.
+2. **OCR (preferred first)** — Run a cheap text-detection API (e.g. Google Vision Text Detection, ~$1.50/1k images after free tier) on each image. Concatenate OCR strings into a post-scoped `image_text` (or per-slide snippets) stored on the post / passed into extract.
+3. **Feed existing extract** — Treat `image_text` like caption/transcript context for the place LLM (same schema). Do **not** invent lat/lon from pixels; locate stays Nominatim → optional Google (1f) → LLM pick (1g).
+4. **Optional vision LLM later** — If OCR text is empty or useless (stylized fonts, maps without labels), optionally call a vision model for place-name candidates only. Gate behind flag; expect higher $/image than OCR.
+5. **Skip when unnecessary** — If location tag + caption already yield strong places, OCR can be deferred or skipped to save cost (same spirit as not re-fetching transcripts).
+
+**Cost note:** OCR is pennies per thousand images; vision LLM is roughly cents per image. Volume at MVP is not the constraint — media URL availability and latency are.
+
+**Out of scope for 1h:** video-frame sampling inside reels (transcript covers spoken places); full multimodal “describe this photo” enrichment tips (belongs closer to P1 tips/facts).
+
+---
+
 ## Explicitly not prioritizing yet
 
 - Multi-agent research copilots for ingest
@@ -173,6 +199,7 @@ Not a standalone product feature. Code gates ship with foundation and usefulness
 - Property key whitelists and basic ranges
 - Locate: deterministic ranking first; LLM may only **pick among geocode candidates** (1g), not invent pins
 - Google geocode as optional provider fallback (1f)
+- Image OCR / vision (1h) may only produce **text or place-name candidates** for extract — never coordinates
 
 No open-ended LLM “geocoder agent” that invents coordinates for MVP.
 
@@ -182,6 +209,7 @@ No open-ended LLM “geocoder agent” that invents coordinates for MVP.
 
 ```text
 P0  1 pins (1a keep fails → 1b/1e clues → 1c validate → 1g LLM pick → 1f Google → 1d merge)
+    → 1h post/carousel OCR (media URLs → OCR → extract; vision LLM optional)
     → 2 categories → 3 hierarchy
 P1  4 relations → 5 tips → 6 type-specific facts
 P2  8 visits UI → 9 map-first trip → 7 itinerary → 10 logistics pack

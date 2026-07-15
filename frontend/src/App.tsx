@@ -4,6 +4,7 @@ import { UserButton, useAuth, useUser } from "@clerk/react";
 
 import {
   fetchAdminMe,
+  fetchActiveJob,
   fetchPlaces,
   fetchPosts,
   fetchVisits,
@@ -108,6 +109,26 @@ function AppShell({ authReady }: { authReady: boolean }) {
     }
     void refreshPosts();
   }, [authReady, refreshPosts]);
+
+  useEffect(() => {
+    if (!authReady || jobId) {
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      try {
+        const active = await fetchActiveJob();
+        if (!cancelled && active?.status === "running") {
+          setJobId(active.job_id);
+        }
+      } catch {
+        // ignore — no active job to resume
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [authReady, jobId]);
 
   useEffect(() => {
     if (!authReady) {
@@ -264,6 +285,16 @@ function AppShell({ authReady }: { authReady: boolean }) {
           <IngestProgress
             links={job.links}
             running={job.status === "running"}
+            title={
+              job.kind === "instagram_profile_import"
+                ? "Importing Instagram visits"
+                : "Progress"
+            }
+            subtitle={
+              job.kind === "instagram_profile_import" && job.username
+                ? `@${job.username} · places will be marked visited automatically`
+                : null
+            }
             onOpenPost={openPostFromProgress}
           />
         )}
@@ -371,8 +402,10 @@ function AppShell({ authReady }: { authReady: boolean }) {
             element={
               <TravelHistory
                 refreshToken={libraryVersion}
+                jobRunning={job?.status === "running"}
                 onChanged={handleMaintenanceComplete}
                 onNavigateToPlace={navigateToPlace}
+                onImportStarted={(nextJobId) => setJobId(nextJobId)}
               />
             }
           />

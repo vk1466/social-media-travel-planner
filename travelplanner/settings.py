@@ -117,3 +117,20 @@ def log_level() -> str:
   if value in {"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"}:
     return value
   return "INFO"
+
+
+def instagram_profile_post_limit() -> int:
+  """How many latest Instagram posts to import from a profile (default 5).
+
+  Set high (e.g. 500) to approximate “everything”. Must be >= 1.
+  """
+  raw = os.getenv("INSTAGRAM_PROFILE_POST_LIMIT", "5").strip()
+  try:
+    limit = int(raw)
+  except ValueError as exc:
+    raise RuntimeError(
+      f"INSTAGRAM_PROFILE_POST_LIMIT must be an integer, got {raw!r}"
+    ) from exc
+  if limit < 1:
+    raise RuntimeError("INSTAGRAM_PROFILE_POST_LIMIT must be >= 1")
+  return limit

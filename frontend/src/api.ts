@@ -172,6 +172,9 @@ export interface Job {
   job_id: string;
   status: "running" | "done";
   refresh: boolean;
+  kind?: string;
+  mark_visited?: boolean;
+  username?: string | null;
   counts: JobCounts;
   links: JobLink[];
 }
@@ -210,8 +213,22 @@ export async function startIngest(links: string[], refresh: boolean): Promise<st
   return body.job_id;
 }
 
+export async function startInstagramImport(username: string): Promise<string> {
+  const body = await request<{ job_id: string }>("/api/visits/import-instagram", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username }),
+  });
+  return body.job_id;
+}
+
 export async function fetchJob(jobId: string): Promise<Job> {
   return request<Job>(`/api/jobs/${jobId}`);
+}
+
+export async function fetchActiveJob(kind?: string): Promise<Job | null> {
+  const query = kind ? `?kind=${encodeURIComponent(kind)}` : "";
+  return request<Job | null>(`/api/jobs/active${query}`);
 }
 
 export async function fetchPosts(platform?: string): Promise<SavedPost[]> {

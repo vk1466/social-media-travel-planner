@@ -122,8 +122,15 @@ class JobSchema(BaseModel):
   job_id: str
   status: Literal["running", "done"]
   refresh: bool
+  kind: str = "link_ingest"
+  mark_visited: bool = False
+  username: str | None = None
   counts: JobCountsSchema
   links: list[JobLinkSchema]
+
+
+class InstagramImportRequest(BaseModel):
+  username: str = Field(..., min_length=1)
 
 
 class ErrorResponse(BaseModel):

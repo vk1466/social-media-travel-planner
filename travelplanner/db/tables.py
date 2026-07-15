@@ -17,6 +17,7 @@ TABLE_NAMES = (
 )
 
 SOURCE_POST_INDEX = "source_post_id-index"
+JOBS_USER_CREATED_INDEX = "user_id-created_at-index"
 
 
 def table_name(logical_name: str) -> str:
@@ -75,6 +76,29 @@ def _create_place_candidates_table(dynamodb, name: str) -> None:
   )
 
 
+def _create_jobs_table(dynamodb, name: str) -> None:
+  dynamodb.create_table(
+    TableName=name,
+    KeySchema=[{"AttributeName": "job_id", "KeyType": "HASH"}],
+    AttributeDefinitions=[
+      {"AttributeName": "job_id", "AttributeType": "S"},
+      {"AttributeName": "user_id", "AttributeType": "S"},
+      {"AttributeName": "created_at", "AttributeType": "S"},
+    ],
+    GlobalSecondaryIndexes=[
+      {
+        "IndexName": JOBS_USER_CREATED_INDEX,
+        "KeySchema": [
+          {"AttributeName": "user_id", "KeyType": "HASH"},
+          {"AttributeName": "created_at", "KeyType": "RANGE"},
+        ],
+        "Projection": {"ProjectionType": "ALL"},
+      }
+    ],
+    BillingMode="PAY_PER_REQUEST",
+  )
+
+
 def ensure_tables() -> list[str]:
   """Create all app tables if they do not already exist. Returns created names."""
   dynamodb = get_dynamodb_resource()
@@ -88,7 +112,6 @@ def ensure_tables() -> list[str]:
     ("UserPosts", "user_id", "post_id"),
     ("UserPlaces", "user_id", "place_id"),
     ("Visits", "user_id", "visit_id"),
-    ("Jobs", "job_id", None),
   ]
 
   for logical, pk, sk in specs:
@@ -111,6 +134,16 @@ def ensure_tables() -> list[str]:
     try:
       _create_place_candidates_table(dynamodb, candidates_name)
       created.append(candidates_name)
+    except ClientError as exc:
+      error_code = exc.response.get("Error", {}).get("Code", "")
+      if error_code != "ResourceInUseException":
+        raise
+
+  jobs_name = table_name("Jobs")
+  if jobs_name not in existing:
+    try:
+      _create_jobs_table(dynamodb, jobs_name)
+      created.append(jobs_name)
     except ClientError as exc:
       error_code = exc.response.get("Error", {}).get("Code", "")
       if error_code != "ResourceInUseException":

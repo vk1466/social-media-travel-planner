@@ -10,8 +10,23 @@ from travelplanner.pipeline import IngestResult
 from server.schemas import JobCountsSchema, JobLinkSchema, JobSchema
 
 
-def create_job(post_urls: list[str], *, user_id: str, refresh: bool) -> str:
-  return jobs_repo.create_job(post_urls, user_id=user_id, refresh=refresh)
+def create_job(
+  post_urls: list[str],
+  *,
+  user_id: str,
+  refresh: bool,
+  kind: str = jobs_repo.JOB_KIND_LINK_INGEST,
+  mark_visited: bool = False,
+  username: str | None = None,
+) -> str:
+  return jobs_repo.create_job(
+    post_urls,
+    user_id=user_id,
+    refresh=refresh,
+    kind=kind,
+    mark_visited=mark_visited,
+    username=username,
+  )
 
 
 def mark_fetching(job_id: str, post_url: str) -> None:
@@ -43,6 +58,13 @@ def get_job_for_user(job_id: str, user_id: str) -> JobSchema | None:
   return _to_schema(job)
 
 
+def get_active_job_for_user(user_id: str, *, kind: str | None = None) -> JobSchema | None:
+  job = jobs_repo.get_active_job_for_user(user_id, kind=kind)
+  if job is None:
+    return None
+  return _to_schema(job)
+
+
 def _to_schema(job: dict) -> JobSchema:
   links = [
     JobLinkSchema(
@@ -57,6 +79,9 @@ def _to_schema(job: dict) -> JobSchema:
     job_id=job["job_id"],
     status=job.get("status", "running"),
     refresh=bool(job.get("refresh", False)),
+    kind=job.get("kind") or jobs_repo.JOB_KIND_LINK_INGEST,
+    mark_visited=bool(job.get("mark_visited", False)),
+    username=job.get("username"),
     counts=JobCountsSchema(**Counter(link.status for link in links)),
     links=links,
   )

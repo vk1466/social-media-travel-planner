@@ -5,14 +5,17 @@ import {
   deleteVisit,
   fetchPlaces,
   fetchVisits,
+  startInstagramImport,
   type Place,
   type VisitDetail,
 } from "../api";
 
 interface TravelHistoryProps {
   refreshToken?: number;
+  jobRunning?: boolean;
   onChanged?: () => void;
   onNavigateToPlace?: (placeId: string) => void;
+  onImportStarted?: (jobId: string) => void;
 }
 
 function formatVisitDates(visitedFrom?: string | null, visitedTo?: string | null): string {
@@ -35,14 +38,18 @@ function locationLine(place: Place | null | undefined): string {
 
 export function TravelHistory({
   refreshToken = 0,
+  jobRunning = false,
   onChanged,
   onNavigateToPlace,
+  onImportStarted,
 }: TravelHistoryProps) {
   const [visits, setVisits] = useState<VisitDetail[]>([]);
   const [places, setPlaces] = useState<Place[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [instagramUsername, setInstagramUsername] = useState("");
 
   const [destinationQuery, setDestinationQuery] = useState("");
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
@@ -97,6 +104,26 @@ export function TravelHistory({
     setSuggestionsOpen(false);
   };
 
+  const handleImportInstagram = async (event: FormEvent) => {
+    event.preventDefault();
+    setError(null);
+    const username = instagramUsername.trim();
+    if (!username) {
+      setError("Enter an Instagram username");
+      return;
+    }
+    setImporting(true);
+    try {
+      const jobId = await startInstagramImport(username);
+      setInstagramUsername("");
+      onImportStarted?.(jobId);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to start Instagram import");
+    } finally {
+      setImporting(false);
+    }
+  };
+
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
     setError(null);
@@ -147,6 +174,47 @@ export function TravelHistory({
 
   return (
     <section className="library-section">
+      <section className="panel visit-form-panel">
+        <div className="ingest-panel-header">
+          <span className="ingest-panel-icon" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 18 18">
+              <circle cx="9" cy="9" r="6.5" fill="none" stroke="currentColor" strokeWidth="1.4" />
+              <circle cx="9" cy="9" r="2.2" fill="currentColor" />
+            </svg>
+          </span>
+          <div>
+            <h2 className="ingest-panel-title">Import from Instagram</h2>
+            <p className="ingest-panel-subtitle">
+              Pull your latest public posts, run the full place pipeline, and mark places as
+              visited. Progress stays visible if you refresh.
+            </p>
+          </div>
+        </div>
+        <form className="visit-form" onSubmit={(event) => void handleImportInstagram(event)}>
+          <label className="visit-field visit-field-destination">
+            <span className="field-label">Instagram username</span>
+            <input
+              type="text"
+              className="place-search visit-destination-input"
+              placeholder="@yourusername"
+              value={instagramUsername}
+              onChange={(event) => setInstagramUsername(event.target.value)}
+              autoComplete="off"
+              disabled={importing || jobRunning}
+            />
+          </label>
+          <div className="form-actions">
+            <button
+              type="submit"
+              className="primary-button"
+              disabled={importing || jobRunning}
+            >
+              {importing ? "Starting…" : jobRunning ? "Import running…" : "Import visits"}
+            </button>
+          </div>
+        </form>
+      </section>
+
       <section className="panel visit-form-panel">
         <div className="ingest-panel-header">
           <span className="ingest-panel-icon" aria-hidden="true">

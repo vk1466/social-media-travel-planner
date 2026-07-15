@@ -13,7 +13,7 @@ import {
   View,
 } from "react-native";
 
-import { createVisit, deleteVisit, type Place } from "@/src/api";
+import { createVisit, deleteVisit, startInstagramImport, type Place } from "@/src/api";
 import { Button, EmptyState, ErrorBanner, SuccessBanner } from "@/src/components/ui";
 import { useLibrary } from "@/src/context/LibraryContext";
 import { colors, spacing } from "@/src/theme";
@@ -43,6 +43,8 @@ export default function HistoryScreen() {
   const [showFromPicker, setShowFromPicker] = useState(false);
   const [showToPicker, setShowToPicker] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [instagramUsername, setInstagramUsername] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
   const [formSuccess, setFormSuccess] = useState<string | null>(null);
 
@@ -59,6 +61,28 @@ export default function HistoryScreen() {
       )
       .slice(0, 6);
   }, [destination, places, selectedPlace]);
+
+  const handleImportInstagram = async () => {
+    setFormError(null);
+    setFormSuccess(null);
+    const username = instagramUsername.trim();
+    if (!username) {
+      setFormError("Enter an Instagram username");
+      return;
+    }
+    setImporting(true);
+    try {
+      await startInstagramImport(username);
+      setInstagramUsername("");
+      setFormSuccess("Import started — open Add links to watch progress");
+      bumpRefresh();
+      router.push("/ingest");
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : "Failed to start Instagram import");
+    } finally {
+      setImporting(false);
+    }
+  };
 
   const handleSave = async () => {
     setFormError(null);
@@ -126,13 +150,33 @@ export default function HistoryScreen() {
       keyExtractor={(item) => item.visit.visit_id}
       ListHeaderComponent={
         <View style={styles.form}>
-          <Text style={styles.title}>Add a place you’ve visited</Text>
+          <Text style={styles.title}>Import from Instagram</Text>
           <Text style={styles.subtitle}>
-            Pick a library place or type a new destination. Dates are optional.
+            Latest public posts are ingested and places marked visited. Progress survives refresh.
           </Text>
           {error ? <ErrorBanner message={error} /> : null}
           {formError ? <ErrorBanner message={formError} /> : null}
           {formSuccess ? <SuccessBanner message={formSuccess} /> : null}
+          <Text style={styles.label}>Instagram username</Text>
+          <TextInput
+            style={styles.input}
+            value={instagramUsername}
+            onChangeText={setInstagramUsername}
+            placeholder="@yourusername"
+            placeholderTextColor={colors.muted}
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+          <Button
+            label="Import visits"
+            loading={importing}
+            onPress={() => void handleImportInstagram()}
+          />
+
+          <Text style={[styles.title, { marginTop: spacing.lg }]}>Add a place you’ve visited</Text>
+          <Text style={styles.subtitle}>
+            Pick a library place or type a new destination. Dates are optional.
+          </Text>
 
           <Text style={styles.label}>Destination</Text>
           <TextInput

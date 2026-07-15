@@ -2,7 +2,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 
-import { postRouteParts, startIngest } from "@/src/api";
+import { fetchActiveJob, postRouteParts, startIngest } from "@/src/api";
 import { IngestProgress, LinkSubmitForm } from "@/src/components/IngestForm";
 import { ErrorBanner } from "@/src/components/ui";
 import { useLibrary } from "@/src/context/LibraryContext";
@@ -45,6 +45,26 @@ export default function IngestScreen() {
   );
 
   useEffect(() => {
+    if (jobId) {
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      try {
+        const active = await fetchActiveJob();
+        if (!cancelled && active?.status === "running") {
+          setJobId(active.job_id);
+        }
+      } catch {
+        // ignore
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [jobId]);
+
+  useEffect(() => {
     if (autoStarted.current || pendingUrls.length === 0 || shared !== "1") {
       return;
     }
@@ -72,6 +92,13 @@ export default function IngestScreen() {
     router.push(`/posts/${parts.platform}/${parts.nativeId}`);
   };
 
+  const progressTitle =
+    job?.kind === "instagram_profile_import" ? "Importing Instagram visits" : "Progress";
+  const progressSubtitle =
+    job?.kind === "instagram_profile_import" && job.username
+      ? `@${job.username} · places marked visited automatically`
+      : undefined;
+
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
       {submitError ? <ErrorBanner message={submitError} /> : null}
@@ -84,6 +111,8 @@ export default function IngestScreen() {
       <IngestProgress
         links={job?.links ?? []}
         running={job?.status === "running"}
+        title={progressTitle}
+        subtitle={progressSubtitle}
         onOpenPost={openPost}
       />
     </ScrollView>
