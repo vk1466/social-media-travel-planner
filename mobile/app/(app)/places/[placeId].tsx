@@ -13,9 +13,9 @@ import {
 import {
   fetchPlaceDetail,
   fetchVisitedPlaceIds,
-  markPlaceBeen,
+  markPlaceVisited,
   nativePostId,
-  unmarkPlaceBeen,
+  unmarkPlaceVisited,
   type PlaceDetail,
 } from "@/src/api";
 import { PlaceMap } from "@/src/components/PlaceMap";
@@ -32,9 +32,9 @@ export default function PlaceDetailScreen() {
   const [detail, setDetail] = useState<PlaceDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isBeen, setIsBeen] = useState(false);
-  const [beenSaving, setBeenSaving] = useState(false);
-  const [beenError, setBeenError] = useState<string | null>(null);
+  const [isVisited, setIsVisited] = useState(false);
+  const [visitedSaving, setVisitedSaving] = useState(false);
+  const [visitedError, setVisitedError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -48,7 +48,7 @@ export default function PlaceDetailScreen() {
         ]);
         if (!cancelled) {
           setDetail(next);
-          setIsBeen(visitedIds.includes(placeId));
+          setIsVisited(visitedIds.includes(placeId));
         }
       } catch (err) {
         if (!cancelled) {
@@ -66,23 +66,23 @@ export default function PlaceDetailScreen() {
     };
   }, [placeId]);
 
-  const handleToggleBeen = async () => {
+  const handleToggleVisited = async () => {
     if (!placeId) return;
-    setBeenError(null);
-    setBeenSaving(true);
-    const next = !isBeen;
+    setVisitedError(null);
+    setVisitedSaving(true);
+    const next = !isVisited;
     try {
       if (next) {
-        await markPlaceBeen(placeId);
+        await markPlaceVisited(placeId);
       } else {
-        await unmarkPlaceBeen(placeId);
+        await unmarkPlaceVisited(placeId);
       }
-      setIsBeen(next);
+      setIsVisited(next);
       bumpRefresh();
     } catch (err) {
-      setBeenError(err instanceof Error ? err.message : "Failed to update Been status");
+      setVisitedError(err instanceof Error ? err.message : "Failed to update visited status");
     } finally {
-      setBeenSaving(false);
+      setVisitedSaving(false);
     }
   };
 
@@ -122,14 +122,14 @@ export default function PlaceDetailScreen() {
       ) : null}
 
       <Button
-        label={isBeen ? "Been" : "Mark as Been"}
-        variant={isBeen ? "secondary" : "primary"}
-        loading={beenSaving}
-        onPress={() => void handleToggleBeen()}
-        style={styles.beenButton}
+        label={isVisited ? "Visited" : "Mark as visited"}
+        variant={isVisited ? "secondary" : "primary"}
+        loading={visitedSaving}
+        onPress={() => void handleToggleVisited()}
+        style={styles.visitedButton}
       />
-      {isBeen ? <Text style={styles.beenHint}>In your travel history</Text> : null}
-      {beenError ? <ErrorBanner message={beenError} /> : null}
+      {isVisited ? <Text style={styles.visitedHint}>In your travel history</Text> : null}
+      {visitedError ? <ErrorBanner message={visitedError} /> : null}
 
       <PlaceMap places={[place, ...children]} height={220} />
 
@@ -214,8 +214,8 @@ const styles = StyleSheet.create({
   parent: { color: colors.brand, fontWeight: "600", marginBottom: 6 },
   title: { fontSize: 24, fontWeight: "700", color: colors.ink },
   meta: { marginTop: 4, color: colors.muted, marginBottom: spacing.sm },
-  beenButton: { marginBottom: spacing.sm, alignSelf: "flex-start" },
-  beenHint: { color: colors.muted, marginBottom: spacing.md, fontSize: 13 },
+  visitedButton: { marginBottom: spacing.sm, alignSelf: "flex-start" },
+  visitedHint: { color: colors.muted, marginBottom: spacing.md, fontSize: 13 },
   mapLink: { marginBottom: spacing.md },
   link: { color: colors.brand, fontWeight: "700" },
   section: { marginBottom: spacing.lg },

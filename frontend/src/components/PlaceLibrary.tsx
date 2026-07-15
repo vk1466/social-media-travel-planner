@@ -427,7 +427,7 @@ export function PlaceLibrary({
                         key={place.place_id}
                         place={place}
                         children={childrenByParent.get(place.place_id) ?? []}
-                        been={visitedPlaceIds.has(place.place_id)}
+                        visited={visitedPlaceIds.has(place.place_id)}
                         onSelect={openPlace}
                       />
                     ))}
@@ -499,14 +499,14 @@ export function PlaceLibrary({
       {selectedPlace && (
         <PlaceDetail
           place={selectedPlace}
-          been={visitedPlaceIds.has(selectedPlace.place_id)}
+          visited={visitedPlaceIds.has(selectedPlace.place_id)}
           onClose={closePlace}
           onNavigateToPlace={openPlace}
           onNavigateToPost={onNavigateToPost}
-          onBeenChange={(placeId, nextBeen) => {
+          onVisitedChange={(placeId, nextVisited) => {
             setVisitedPlaceIds((prev) => {
               const next = new Set(prev);
-              if (nextBeen) {
+              if (nextVisited) {
                 next.add(placeId);
               } else {
                 next.delete(placeId);

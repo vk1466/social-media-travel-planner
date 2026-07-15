@@ -17,7 +17,7 @@ interface TravelHistoryProps {
 
 function formatVisitDates(visitedFrom?: string | null, visitedTo?: string | null): string {
   if (!visitedFrom) {
-    return "Been · date unknown";
+    return "Visited · date unknown";
   }
   if (!visitedTo || visitedTo === visitedFrom) {
     return visitedFrom;
@@ -161,7 +161,7 @@ export function TravelHistory({
             </svg>
           </span>
           <div>
-            <h2 className="ingest-panel-title">Add somewhere you’ve been</h2>
+            <h2 className="ingest-panel-title">Add a place you’ve visited</h2>
             <p className="ingest-panel-subtitle">
               Pick a place from your library or type a new destination. Dates are optional.
             </p>
@@ -257,7 +257,7 @@ export function TravelHistory({
 
           <div className="form-actions">
             <button type="submit" className="primary-button" disabled={saving}>
-              {saving ? "Saving…" : "Mark as Been"}
+              {saving ? "Saving…" : "Mark as visited"}
             </button>
           </div>
         </form>
@@ -268,7 +268,7 @@ export function TravelHistory({
       {loading ? (
         <p className="loading-copy">Loading travel history…</p>
       ) : visits.length === 0 ? (
-        <p className="empty-copy">No visits yet. Mark places as Been from here or from a place page.</p>
+        <p className="empty-copy">No visits yet. Mark places as visited from here or from a place page.</p>
       ) : (
         <ul className="visit-list">
           {visits.map(({ visit, place }) => (

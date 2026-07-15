@@ -185,8 +185,8 @@ def create_visit(
   return visit
 
 
-def mark_been(*, user_id: str, place_id: str) -> Visit:
-  """Idempotent “Been” mark — reuse an existing visit or create an undated one."""
+def mark_visited(*, user_id: str, place_id: str) -> Visit:
+  """Idempotent visited mark — reuse an existing visit or create an undated one."""
   existing = visits_for_place(user_id, place_id)
   if existing:
     return sorted(
@@ -197,8 +197,8 @@ def mark_been(*, user_id: str, place_id: str) -> Visit:
   return create_visit(user_id=user_id, place_id=place_id)
 
 
-def unmark_been(*, user_id: str, place_id: str) -> int:
-  """Remove all visits for a place (clears Been status). Returns deleted count."""
+def unmark_visited(*, user_id: str, place_id: str) -> int:
+  """Remove all visits for a place (clears visited status). Returns deleted count."""
   deleted = 0
   for visit in visits_for_place(user_id, place_id):
     if delete_visit(user_id, visit.visit_id):

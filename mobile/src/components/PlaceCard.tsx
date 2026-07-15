@@ -20,7 +20,7 @@ export function PlaceCard({ place, visited = false, onPress }: PlaceCardProps) {
         <Text style={styles.title} numberOfLines={2}>
           {place.display_name}
         </Text>
-        {visited ? <Text style={styles.visited}>Been</Text> : null}
+        {visited ? <Text style={styles.visited}>Visited</Text> : null}
       </View>
       {locationLine ? <Text style={styles.location}>{locationLine}</Text> : null}
       <View style={styles.tags}>

@@ -272,9 +272,9 @@ export interface VisitCreateInput {
   country?: string | null;
 }
 
-export interface BeenStatus {
+export interface VisitedStatus {
   place_id: string;
-  been: boolean;
+  visited: boolean;
   visit?: Visit | null;
 }
 
@@ -294,12 +294,12 @@ export async function createVisit(input: VisitCreateInput): Promise<VisitDetail>
   });
 }
 
-export async function markPlaceBeen(placeId: string): Promise<BeenStatus> {
-  return request<BeenStatus>(`/api/places/${placeId}/been`, { method: "POST" });
+export async function markPlaceVisited(placeId: string): Promise<VisitedStatus> {
+  return request<VisitedStatus>(`/api/places/${placeId}/visited`, { method: "POST" });
 }
 
-export async function unmarkPlaceBeen(placeId: string): Promise<BeenStatus> {
-  return request<BeenStatus>(`/api/places/${placeId}/been`, { method: "DELETE" });
+export async function unmarkPlaceVisited(placeId: string): Promise<VisitedStatus> {
+  return request<VisitedStatus>(`/api/places/${placeId}/visited`, { method: "DELETE" });
 }
 
 export async function deleteVisit(visitId: string): Promise<void> {

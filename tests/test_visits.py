@@ -7,10 +7,10 @@ from travelplanner.visits import (
   delete_visit,
   list_visits,
   load_visit,
-  mark_been,
+  mark_visited,
   relink_visits,
   resolve_place_for_visit,
-  unmark_been,
+  unmark_visited,
   visited_place_ids,
 )
 
@@ -144,22 +144,22 @@ def test_create_visit_rejects_to_without_from(dynamodb) -> None:
     assert "visited_from" in str(exc)
 
 
-def test_mark_been_is_idempotent(dynamodb) -> None:
+def test_mark_visited_is_idempotent(dynamodb) -> None:
   place_id = upsert_place(
     PlaceMention(place_name="Multnomah Falls"),
     _sample_location(),
     "instagram:reel1",
   )
 
-  first = mark_been(user_id=USER, place_id=place_id)
-  second = mark_been(user_id=USER, place_id=place_id)
+  first = mark_visited(user_id=USER, place_id=place_id)
+  second = mark_visited(user_id=USER, place_id=place_id)
 
   assert first.visit_id == second.visit_id
   assert first.visited_from is None
   assert list_visits(USER) == [first]
 
 
-def test_unmark_been_removes_visits(dynamodb) -> None:
+def test_unmark_visited_removes_visits(dynamodb) -> None:
   place_id = upsert_place(
     PlaceMention(place_name="Multnomah Falls"),
     _sample_location(),
@@ -172,7 +172,7 @@ def test_unmark_been_removes_visits(dynamodb) -> None:
   )
   create_visit(user_id=USER, place_id=place_id)
 
-  deleted = unmark_been(user_id=USER, place_id=place_id)
+  deleted = unmark_visited(user_id=USER, place_id=place_id)
 
   assert deleted == 2
   assert visited_place_ids(USER) == set()

@@ -756,7 +756,7 @@ a {
   margin: 0;
 }
 
-.been-badge {
+.visited-badge {
   flex-shrink: 0;
   padding: var(--size-1) var(--size-3);
   border-radius: var(--radius-sm);
@@ -769,7 +769,7 @@ a {
   text-transform: uppercase;
 }
 
-.place-been-row {
+.place-visited-row {
   display: flex;
   align-items: center;
   gap: var(--size-3);
@@ -777,7 +777,7 @@ a {
   flex-wrap: wrap;
 }
 
-.been-button {
+.visited-button {
   padding: var(--size-2) var(--size-4);
   border-radius: var(--radius-pill);
   border: 1px solid var(--border);
@@ -788,23 +788,23 @@ a {
   cursor: pointer;
 }
 
-.been-button:hover:not(:disabled) {
+.visited-button:hover:not(:disabled) {
   border-color: var(--success);
   color: var(--success);
 }
 
-.been-button-active {
+.visited-button-active {
   background: #e8f5ef;
   border-color: #c8e6d6;
   color: var(--success);
 }
 
-.been-button:disabled {
+.visited-button:disabled {
   opacity: 0.55;
   cursor: not-allowed;
 }
 
-.place-been-hint {
+.place-visited-hint {
   color: var(--text-muted);
   font-size: var(--font-size-0);
 }

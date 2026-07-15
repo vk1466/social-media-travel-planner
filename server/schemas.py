@@ -156,9 +156,9 @@ class VisitDetailSchema(BaseModel):
   place: PlaceSchema | None = None
 
 
-class BeenStatusSchema(BaseModel):
+class VisitedStatusSchema(BaseModel):
   place_id: str
-  been: bool
+  visited: bool
   visit: VisitSchema | None = None
 
 

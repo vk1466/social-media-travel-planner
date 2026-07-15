@@ -24,7 +24,7 @@ function toDateInput(date: Date): string {
 
 function formatVisitDates(visitedFrom?: string | null, visitedTo?: string | null): string {
   if (!visitedFrom) {
-    return "Been · date unknown";
+    return "Visited · date unknown";
   }
   if (!visitedTo || visitedTo === visitedFrom) {
     return visitedFrom;
@@ -126,7 +126,7 @@ export default function HistoryScreen() {
       keyExtractor={(item) => item.visit.visit_id}
       ListHeaderComponent={
         <View style={styles.form}>
-          <Text style={styles.title}>Add somewhere you’ve been</Text>
+          <Text style={styles.title}>Add a place you’ve visited</Text>
           <Text style={styles.subtitle}>
             Pick a library place or type a new destination. Dates are optional.
           </Text>
@@ -206,12 +206,12 @@ export default function HistoryScreen() {
             placeholder="Optional notes"
             placeholderTextColor={colors.muted}
           />
-          <Button label="Mark as Been" loading={saving} onPress={() => void handleSave()} />
+          <Button label="Mark as visited" loading={saving} onPress={() => void handleSave()} />
           <Text style={[styles.title, { marginTop: spacing.lg }]}>Your visits</Text>
         </View>
       }
       ListEmptyComponent={
-        <EmptyState title="No visits yet" body="Mark places as Been from here or a place page." />
+        <EmptyState title="No visits yet" body="Mark places as visited from here or a place page." />
       }
       renderItem={({ item }) => {
         const { visit, place } = item;

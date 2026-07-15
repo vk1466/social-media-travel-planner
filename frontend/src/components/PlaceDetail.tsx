@@ -2,9 +2,9 @@ import { useEffect, useMemo, useState, lazy, Suspense } from "react";
 
 import {
   fetchPlaceDetail,
-  markPlaceBeen,
+  markPlaceVisited,
   nativePostId,
-  unmarkPlaceBeen,
+  unmarkPlaceVisited,
   type Place,
   type PlaceDetail as PlaceDetailData,
 } from "../api";
@@ -16,11 +16,11 @@ const PlaceMap = lazy(() => import("./PlaceMap").then((module) => ({ default: mo
 
 interface PlaceDetailProps {
   place: Place;
-  been?: boolean;
+  visited?: boolean;
   onClose: () => void;
   onNavigateToPlace?: (place: Place) => void;
   onNavigateToPost?: (platform: string, postId: string) => void;
-  onBeenChange?: (placeId: string, been: boolean) => void;
+  onVisitedChange?: (placeId: string, visited: boolean) => void;
 }
 
 function locationBreadcrumb(place: Place): string {
@@ -30,21 +30,21 @@ function locationBreadcrumb(place: Place): string {
 
 export function PlaceDetail({
   place: initialPlace,
-  been = false,
+  visited = false,
   onClose,
   onNavigateToPlace,
   onNavigateToPost,
-  onBeenChange,
+  onVisitedChange,
 }: PlaceDetailProps) {
   const [detail, setDetail] = useState<PlaceDetailData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isBeen, setIsBeen] = useState(been);
-  const [beenSaving, setBeenSaving] = useState(false);
-  const [beenError, setBeenError] = useState<string | null>(null);
+  const [isVisited, setIsVisited] = useState(visited);
+  const [visitedSaving, setVisitedSaving] = useState(false);
+  const [visitedError, setVisitedError] = useState<string | null>(null);
 
   useEffect(() => {
-    setIsBeen(been);
-  }, [been, initialPlace.place_id]);
+    setIsVisited(visited);
+  }, [visited, initialPlace.place_id]);
 
   useEffect(() => {
     let cancelled = false;
@@ -80,22 +80,22 @@ export function PlaceDetail({
   const mapUrl = googleMapsUrl(place.location);
   const mapPlaces = useMemo(() => [place, ...children], [place, children]);
 
-  const handleToggleBeen = async () => {
-    setBeenError(null);
-    setBeenSaving(true);
-    const next = !isBeen;
+  const handleToggleVisited = async () => {
+    setVisitedError(null);
+    setVisitedSaving(true);
+    const next = !isVisited;
     try {
       if (next) {
-        await markPlaceBeen(place.place_id);
+        await markPlaceVisited(place.place_id);
       } else {
-        await unmarkPlaceBeen(place.place_id);
+        await unmarkPlaceVisited(place.place_id);
       }
-      setIsBeen(next);
-      onBeenChange?.(place.place_id, next);
+      setIsVisited(next);
+      onVisitedChange?.(place.place_id, next);
     } catch (err) {
-      setBeenError(err instanceof Error ? err.message : "Failed to update Been status");
+      setVisitedError(err instanceof Error ? err.message : "Failed to update visited status");
     } finally {
-      setBeenSaving(false);
+      setVisitedSaving(false);
     }
   };
 
@@ -120,19 +120,19 @@ export function PlaceDetail({
           {place.aliases.length > 0 && (
             <p className="detail-muted">also known as {place.aliases.join(", ")}</p>
           )}
-          <div className="place-been-row">
+          <div className="place-visited-row">
             <button
               type="button"
-              className={isBeen ? "been-button been-button-active" : "been-button"}
-              onClick={() => void handleToggleBeen()}
-              disabled={beenSaving}
-              aria-pressed={isBeen}
+              className={isVisited ? "visited-button visited-button-active" : "visited-button"}
+              onClick={() => void handleToggleVisited()}
+              disabled={visitedSaving}
+              aria-pressed={isVisited}
             >
-              {beenSaving ? "Saving…" : isBeen ? "Been" : "Mark as Been"}
+              {visitedSaving ? "Saving…" : isVisited ? "Visited" : "Mark as visited"}
             </button>
-            {isBeen && <span className="place-been-hint">In your travel history</span>}
+            {isVisited && <span className="place-visited-hint">In your travel history</span>}
           </div>
-          {beenError && <p className="banner-error">{beenError}</p>}
+          {visitedError && <p className="banner-error">{visitedError}</p>}
         </div>
         <button type="button" className="icon-button icon-button-close" onClick={onClose} aria-label="Close" />
       </header>
