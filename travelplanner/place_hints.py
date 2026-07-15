@@ -34,6 +34,7 @@ class ExtractedPlace:
   category: str | None = None
   attributes: tuple[str, ...] = ()
   parent_place_name: str | None = None
+  parent_category: str | None = None
 
 
 @dataclass(frozen=True)

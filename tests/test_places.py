@@ -100,6 +100,7 @@ def test_mentions_from_post_synthesizes_parent_from_parent_place_name() -> None:
         state_province="Oregon",
         country="USA",
         parent_place_name="Smith Rock State Park",
+        parent_category="park",
         category="hike",
       ),
     ),
@@ -121,6 +122,43 @@ def test_mentions_from_post_synthesizes_parent_from_parent_place_name() -> None:
       category="park",
     ),
   )
+
+
+def test_mentions_from_post_uses_parent_category_neighborhood() -> None:
+  post = _sample_post(
+    extracted_places=(
+      ExtractedPlace(
+        place_name="Steam Clock",
+        state_province="British Columbia",
+        country="Canada",
+        parent_place_name="Gastown",
+        parent_category="neighborhood",
+        category="landmark",
+      ),
+    ),
+  )
+
+  mentions = mentions_from_post(post)
+  parent = next(mention for mention in mentions if mention.place_name == "Gastown")
+  assert parent.category == "neighborhood"
+
+
+def test_mentions_from_post_leaves_parent_category_none_without_hint() -> None:
+  post = _sample_post(
+    extracted_places=(
+      ExtractedPlace(
+        place_name="Misery Ridge Trail",
+        state_province="Oregon",
+        country="USA",
+        parent_place_name="Smith Rock State Park",
+        category="hike",
+      ),
+    ),
+  )
+
+  mentions = mentions_from_post(post)
+  parent = next(mention for mention in mentions if mention.place_name == "Smith Rock State Park")
+  assert parent.category is None
 
 
 def test_mentions_from_post_dedupes_same_parent_across_children() -> None:

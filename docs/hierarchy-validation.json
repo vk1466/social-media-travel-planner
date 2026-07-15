@@ -1,0 +1,107 @@
+{
+  "passed": 20,
+  "total": 20,
+  "failed": [],
+  "results": [
+    {
+      "label": "materialize parent category=park",
+      "passed": true,
+      "detail": "parent='park' child='hike'"
+    },
+    {
+      "label": "materialize parent category=neighborhood",
+      "passed": true,
+      "detail": "parent='neighborhood'"
+    },
+    {
+      "label": "blank parent_category stays None",
+      "passed": true,
+      "detail": "parent=None"
+    },
+    {
+      "label": "OSM fallback \u2192 neighborhood",
+      "passed": true,
+      "detail": "category='neighborhood'"
+    },
+    {
+      "label": "OSM fallback \u2192 city",
+      "passed": true,
+      "detail": "category='city'"
+    },
+    {
+      "label": "category root: park over hike (no hint)",
+      "passed": true,
+      "detail": "root_parent=None child_parent='us-oregon-smith-rock-state-park'"
+    },
+    {
+      "label": "LLM name cannot promote landmark over neighborhood",
+      "passed": true,
+      "detail": "root='Gastown' child_parent='ca-british-columbia-gastown'"
+    },
+    {
+      "label": "category root: city over restaurant",
+      "passed": true,
+      "detail": "root_parent=None child_parent='us-oregon-portland'"
+    },
+    {
+      "label": "parent hint links without categories",
+      "passed": true,
+      "detail": "child_parent='us-utah-zion-national-park'"
+    },
+    {
+      "label": "cross-post hint clusters under park",
+      "passed": true,
+      "detail": "child_parent='us-oregon-crater-lake-national-park'"
+    },
+    {
+      "label": "link_places idempotent",
+      "passed": true,
+      "detail": "before=2 after=2"
+    },
+    {
+      "label": "all-hike cluster still elects one root",
+      "passed": true,
+      "detail": "roots=1 kids=1"
+    },
+    {
+      "label": "dedupe synthesized parent once",
+      "passed": true,
+      "detail": "parent_count=1"
+    },
+    {
+      "label": "LLM category wins over OSM",
+      "passed": true,
+      "detail": "category='city'"
+    },
+    {
+      "label": "OSM national_park \u2192 park",
+      "passed": true,
+      "detail": "category='park'"
+    },
+    {
+      "label": "live: Misery Ridge \u2192 Smith Rock park",
+      "passed": true,
+      "detail": "place='Misery Ridge Trail' cat='hike' parent='Smith Rock State Park' parent_cat='park'"
+    },
+    {
+      "label": "live: Steam Clock \u2192 Gastown neighborhood",
+      "passed": true,
+      "detail": "place='Steam Clock' cat='landmark' parent='Gastown' parent_cat='neighborhood'"
+    },
+    {
+      "label": "live: restaurant \u2192 Portland city",
+      "passed": true,
+      "detail": "place='Canard' cat='restaurant' parent='Portland' parent_cat='city'"
+    },
+    {
+      "label": "live: Angel's Landing \u2192 Zion park",
+      "passed": true,
+      "detail": "place=\"Angel's Landing\" cat='hike' parent='Zion National Park' parent_cat='park'"
+    },
+    {
+      "label": "live: Picture Lake \u2192 Mt. Baker landmark/park",
+      "passed": true,
+      "detail": "place='Picture Lake' cat='viewpoint' parent='Mt. Baker' parent_cat='landmark'"
+    }
+  ]
+}

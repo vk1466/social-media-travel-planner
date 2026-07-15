@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from travelplanner.categories import normalize_category
 from travelplanner.models import SavedPost
 from travelplanner.place_hints import ExtractedPlace, PlaceMention, PlatformPlace
 
@@ -34,11 +35,12 @@ def _mention_from_extracted_place(extracted: ExtractedPlace) -> PlaceMention:
 def _parent_mention_from_extracted(extracted: ExtractedPlace) -> PlaceMention | None:
   if not extracted.parent_place_name:
     return None
+  # Prefer LLM parent_category; leave None so locate/upsert can fill from OSM.
   return PlaceMention(
     place_name=extracted.parent_place_name,
     state_province=extracted.state_province,
     country=extracted.country,
-    category="park",
+    category=normalize_category(extracted.parent_category),
   )
 
 

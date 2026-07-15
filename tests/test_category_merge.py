@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 from travelplanner.categories import (
+  category_from_osm,
   filter_attributes,
   normalize_category,
   resolve_category,
+  root_category_rank,
 )
 from travelplanner.models import PlaceLocation
 from travelplanner.place_hints import PlaceMention
@@ -16,9 +18,30 @@ from travelplanner.places.store import load_place
 def test_normalize_category_unknown_is_none() -> None:
   assert normalize_category("hike") == "hike"
   assert normalize_category("HIKE") == "hike"
+  assert normalize_category("city") == "city"
   assert normalize_category("spaceship") is None
   assert normalize_category("") is None
   assert normalize_category(None) is None
+
+
+def test_category_from_osm_maps_settlements_and_parks() -> None:
+  assert category_from_osm("place", "city") == "city"
+  assert category_from_osm("place", "town") == "city"
+  assert category_from_osm("place", "suburb") == "neighborhood"
+  assert category_from_osm("place", "neighbourhood") == "neighborhood"
+  assert category_from_osm("boundary", "national_park") == "park"
+  assert category_from_osm("leisure", "park") == "park"
+  assert category_from_osm("highway", "path") == "hike"
+  assert category_from_osm("tourism", "viewpoint") == "viewpoint"
+  assert category_from_osm("natural", "peak") == "landmark"
+  assert category_from_osm("office", "estate_agent") is None
+
+
+def test_root_category_rank_prefers_broad_containers() -> None:
+  assert root_category_rank("park") < root_category_rank("hike")
+  assert root_category_rank("city") < root_category_rank("landmark")
+  assert root_category_rank("neighborhood") < root_category_rank("landmark")
+  assert root_category_rank(None) == 2
 
 
 def test_filter_attributes_clips_and_drops_self() -> None:
@@ -131,3 +154,49 @@ def test_upsert_does_not_overwrite_specific_with_park(dynamodb) -> None:
   assert place is not None
   assert place.category == "waterfall"
   assert place.attributes == ("hike",)
+
+
+def test_upsert_fills_category_from_osm_when_mention_blank(dynamodb) -> None:
+  location = PlaceLocation(
+    display_name="Gastown",
+    continent="North America",
+    country="Canada",
+    country_code="CA",
+    state_province="British Columbia",
+    city="Vancouver",
+    latitude=49.2840,
+    longitude=-123.1090,
+    osm_class="place",
+    osm_type="neighbourhood",
+  )
+  place_id = upsert_place(
+    PlaceMention(place_name="Gastown"),
+    location,
+    "instagram:a",
+  )
+  place = load_place(place_id)
+  assert place is not None
+  assert place.category == "neighborhood"
+
+
+def test_upsert_llm_category_wins_over_osm(dynamodb) -> None:
+  location = PlaceLocation(
+    display_name="Portland",
+    continent="North America",
+    country="United States",
+    country_code="US",
+    state_province="Oregon",
+    city="Portland",
+    latitude=45.5152,
+    longitude=-122.6784,
+    osm_class="place",
+    osm_type="city",
+  )
+  place_id = upsert_place(
+    PlaceMention(place_name="Portland", category="city"),
+    location,
+    "instagram:a",
+  )
+  place = load_place(place_id)
+  assert place is not None
+  assert place.category == "city"

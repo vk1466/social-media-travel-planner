@@ -370,3 +370,135 @@ def test_backward_compat_place_without_new_fields(dynamodb) -> None:
   assert place.location.osm_class is None
 
 
+def test_link_places_category_prefers_park_over_hike_without_hint(monkeypatch, dynamodb) -> None:
+  park = upsert_place(
+    PlaceMention(place_name="Smith Rock State Park", category="park"),
+    PlaceLocation(
+      display_name="Smith Rock State Park",
+      country_code="US",
+      state_province="Oregon",
+      latitude=44.3665,
+      longitude=-121.1408,
+    ),
+    "instagram:post1",
+  )
+  trail = upsert_place(
+    PlaceMention(place_name="Misery Ridge", category="hike"),
+    PlaceLocation(
+      display_name="Misery Ridge",
+      country_code="US",
+      state_province="Oregon",
+      latitude=44.3670,
+      longitude=-121.1410,
+    ),
+    "instagram:post1",
+  )
+
+  # Same post IG-tag cluster, no parent_place_name hint.
+  save_post(
+    _sample_post(
+      places=(PlatformPlace(place_name="Smith Rock State Park"),),
+      place_ids=(park, trail),
+      post_id="instagram:post1",
+    ),
+  )
+
+  monkeypatch.setattr("travelplanner.hierarchy.choose_group_name", lambda names: None)
+  link_places()
+
+  root = load_place(park)
+  child = load_place(trail)
+  assert root is not None and child is not None
+  assert root.parent_place_id is None
+  assert child.parent_place_id == park
+
+
+def test_link_places_category_prefers_neighborhood_over_landmark(monkeypatch, dynamodb) -> None:
+  gastown = upsert_place(
+    PlaceMention(place_name="Gastown", category="neighborhood"),
+    PlaceLocation(
+      display_name="Gastown",
+      country_code="CA",
+      state_province="British Columbia",
+      latitude=49.2840,
+      longitude=-123.1090,
+    ),
+    "instagram:post1",
+  )
+  clock = upsert_place(
+    PlaceMention(place_name="Steam Clock", category="landmark"),
+    PlaceLocation(
+      display_name="Steam Clock",
+      country_code="CA",
+      state_province="British Columbia",
+      latitude=49.2845,
+      longitude=-123.1087,
+    ),
+    "instagram:post1",
+  )
+
+  save_post(
+    _sample_post(
+      places=(PlatformPlace(place_name="Gastown"),),
+      place_ids=(gastown, clock),
+      post_id="instagram:post1",
+    ),
+  )
+
+  monkeypatch.setattr(
+    "travelplanner.hierarchy.choose_group_name",
+    lambda names: "Steam Clock",
+  )
+  link_places()
+
+  root = load_place(gastown)
+  child = load_place(clock)
+  assert root is not None and child is not None
+  assert root.parent_place_id is None
+  assert child.parent_place_id == gastown
+  assert root.display_name == "Gastown"
+
+
+def test_link_places_all_hikes_still_elects_a_root(monkeypatch, dynamodb) -> None:
+  left = upsert_place(
+    PlaceMention(place_name="Misery Ridge Trail", category="hike"),
+    PlaceLocation(
+      display_name="Misery Ridge Trail",
+      country_code="US",
+      state_province="Oregon",
+      latitude=44.3670,
+      longitude=-121.1410,
+    ),
+    "instagram:post1",
+  )
+  right = upsert_place(
+    PlaceMention(place_name="Monkey Face Trail", category="hike"),
+    PlaceLocation(
+      display_name="Monkey Face Trail",
+      country_code="US",
+      state_province="Oregon",
+      latitude=44.3680,
+      longitude=-121.1420,
+    ),
+    "instagram:post1",
+  )
+
+  save_post(
+    _sample_post(
+      places=(PlatformPlace(place_name="Misery Ridge Trail"),),
+      place_ids=(left, right),
+      post_id="instagram:post1",
+    ),
+  )
+
+  monkeypatch.setattr("travelplanner.hierarchy.choose_group_name", lambda names: None)
+  link_places()
+
+  places = {place.place_id: place for place in load_all_places()}
+  roots = [place for place in places.values() if place.parent_place_id is None]
+  children = [place for place in places.values() if place.parent_place_id is not None]
+  assert len(roots) == 1
+  assert len(children) == 1
+  assert children[0].parent_place_id == roots[0].place_id
+
+

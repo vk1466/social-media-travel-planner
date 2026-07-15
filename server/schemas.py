@@ -24,6 +24,7 @@ class ExtractedPlaceSchema(BaseModel):
   category: str | None = None
   attributes: list[str] = Field(default_factory=list)
   parent_place_name: str | None = None
+  parent_category: str | None = None
 
 
 class SavedPostSchema(BaseModel):

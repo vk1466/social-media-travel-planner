@@ -6,6 +6,7 @@ import math
 from dataclasses import replace
 
 from travelplanner import settings
+from travelplanner.categories import root_category_rank
 from travelplanner.clients.openai import get_client
 from travelplanner.models import Place, SavedPost
 from travelplanner.places import (
@@ -148,6 +149,7 @@ def _deterministic_elect_root(members: list[Place]) -> Place:
   return min(
     members,
     key=lambda place: (
+      root_category_rank(place.category),
       len(_name_tokens(place.display_name)),
       -len(place.source_post_ids),
       place.place_id,
@@ -330,8 +332,12 @@ def _apply_cluster_roots(
         (member for member in members if slugify(member.display_name) == slugify(chosen_name)),
         None,
       )
+      # Only let the LLM name promote a member that is at least as broad as
+      # the category-elected root (park/city/neighborhood beat hike).
       if matched is not None:
-        root = matched
+        if root_category_rank(matched.category) <= root_category_rank(elected.category):
+          root = matched
+        # else: keep elected; do not rename it to a more-specific child's name
       elif elected.display_name != chosen_name:
         aliases = list(elected.aliases)
         if elected.display_name not in aliases:

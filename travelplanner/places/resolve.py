@@ -3,7 +3,11 @@ from __future__ import annotations
 import logging
 from dataclasses import replace
 
-from travelplanner.categories import filter_attributes, resolve_category
+from travelplanner.categories import (
+  category_from_osm,
+  filter_attributes,
+  resolve_category,
+)
 from travelplanner.models import Place, PlaceLocation
 from travelplanner.place_hints import PlaceMention
 from travelplanner.places.store import load_all_places, load_place, place_key, save_place
@@ -84,9 +88,17 @@ def find_existing_place(
   return None
 
 
+def _effective_category(mention: PlaceMention, location: PlaceLocation) -> str | None:
+  """LLM category first; OSM class/type fills gaps (esp. synthesized parents)."""
+  if mention.category:
+    return mention.category
+  return category_from_osm(location.osm_class, location.osm_type)
+
+
 def _merge_place(
   existing: Place,
   mention: PlaceMention,
+  location: PlaceLocation,
   source_post_id: str | None,
 ) -> Place:
   aliases = list(existing.aliases)
@@ -102,7 +114,8 @@ def _merge_place(
     if tip not in tips:
       tips.append(tip)
 
-  winning_category = resolve_category(existing.category, mention.category)
+  incoming_category = _effective_category(mention, location)
+  winning_category = resolve_category(existing.category, incoming_category)
   attr_pool: list[str] = list(existing.attributes) + list(mention.attributes)
   if (
     existing.category
@@ -134,7 +147,7 @@ def _new_place(
   source_post_id: str | None,
 ) -> Place:
   aliases = () if mention.place_name == location.display_name else (mention.place_name,)
-  category = resolve_category(None, mention.category)
+  category = resolve_category(None, _effective_category(mention, location))
   return Place(
     place_id=place_id,
     display_name=location.display_name,
@@ -158,7 +171,7 @@ def upsert_place(
   key = place_key(location)
   existing = find_existing_place(key, location, mention, library=library)
   if existing is not None:
-    place = _merge_place(existing, mention, source_post_id)
+    place = _merge_place(existing, mention, location, source_post_id)
     logger.info(
       "place merge mention=%r into place_id=%s display=%r post_id=%s",
       mention.place_name,

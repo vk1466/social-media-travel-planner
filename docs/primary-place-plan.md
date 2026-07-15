@@ -63,10 +63,18 @@ Gaps:
 
 | Gap | Effect |
 |-----|--------|
-| Parent not auto-created | If a reel only mentions the trail, Smith Rock State Park never gets upserted; linking fails and the trail stays a root |
-| `parent_place_name` ignored at upsert | Hint is only read later by `link_places()` to match an **existing** place by name |
-| No role/tag root policy | A hike can remain a root when clustering or naming heuristics don't fire |
-| Children are full places, not "activities" | Works structurally, but UI copy ("Places within this attraction") doesn't reflect activity semantics |
+| No role field | Covered by `category` + `parent_category` instead of `destination_role` |
+| Parent category was hardcoded `park` | Fixed — LLM `parent_category` + OSM `category_from_osm` fallback |
+| Root election ignored category | Fixed — `root_category_rank` prefers park/city/neighborhood |
+
+### Parent typing (current approach)
+
+1. **LLM `parent_category`** on extract — park, city, neighborhood, or landmark.
+2. **OSM fallback** on upsert — when category is empty, map `osm_class`/`osm_type`
+   via `category_from_osm` (e.g. `place=neighbourhood` → neighborhood,
+   `place=city` → city, `boundary=national_park` → park).
+3. **Category-aware `link_places`** — lower `CATEGORY_PRECEDENCE` wins root;
+   LLM group naming cannot promote a hike over a park/city/neighborhood.
 
 ---
 

@@ -19,6 +19,7 @@ def _extracted_place_from_dict(data: dict) -> ExtractedPlace:
     category=data.get("category"),
     attributes=tuple(data.get("attributes", [])),
     parent_place_name=data.get("parent_place_name"),
+    parent_category=data.get("parent_category"),
   )
 
 

@@ -46,6 +46,7 @@ export interface ExtractedPlace {
   category?: string | null;
   attributes: string[];
   parent_place_name?: string | null;
+  parent_category?: string | null;
 }
 
 export interface SavedPost {

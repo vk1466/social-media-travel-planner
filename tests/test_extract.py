@@ -13,17 +13,10 @@ from travelplanner.place_hints import ExtractedPlace, PlatformPlace
 def test_reel_extract_prompt_includes_geocoding_rules() -> None:
   assert "city — a real city or town only" in REEL_EXTRACT_PROMPT
   assert "parent_place_name" in REEL_EXTRACT_PROMPT
+  assert "parent_category" in REEL_EXTRACT_PROMPT
   assert "Skip vague regions as standalone places" in REEL_EXTRACT_PROMPT
-  assert "Picture Lake, Mt. Baker, Washington" in REEL_EXTRACT_PROMPT
-  assert "Travel destinations only" in REEL_EXTRACT_PROMPT
-  assert "real estate offices" in REEL_EXTRACT_PROMPT
-  assert "reel_summary" in REEL_EXTRACT_PROMPT
-  assert "Category = what the pin is" in REEL_EXTRACT_PROMPT
-  assert "Allowed attributes by category" in REEL_EXTRACT_PROMPT
-  assert "waterfall / falls" in REEL_EXTRACT_PROMPT
-  assert "Victoria Falls" in REEL_EXTRACT_PROMPT
-  assert "hike: viewpoint, waterfall, summit, loop" in REEL_EXTRACT_PROMPT
-  assert "landmark: hike, viewpoint" in REEL_EXTRACT_PROMPT
+  assert "Gastown" in REEL_EXTRACT_PROMPT
+  assert "Parents → park, city, neighborhood, or landmark" in REEL_EXTRACT_PROMPT
 
 
 def test_parse_extracted_places() -> None:
@@ -39,6 +32,7 @@ def test_parse_extracted_places() -> None:
         "category": "park",
         "attributes": [],
         "parent_place_name": "Oregon Coast",
+        "parent_category": "landmark",
       },
       {
         "place_name": "Tillamook Creamery",
@@ -50,6 +44,7 @@ def test_parse_extracted_places() -> None:
         "category": "landmark",
         "attributes": [],
         "parent_place_name": None,
+        "parent_category": None,
       },
     ]
   }
@@ -66,6 +61,7 @@ def test_parse_extracted_places() -> None:
       category="park",
       attributes=(),
       parent_place_name="Oregon Coast",
+      parent_category="landmark",
     ),
     ExtractedPlace(
       place_name="Tillamook Creamery",

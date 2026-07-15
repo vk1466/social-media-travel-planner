@@ -81,8 +81,16 @@ PLACE_EXTRACT_SCHEMA: dict[str, Any] = {
           "parent_place_name": {
             "type": ["string", "null"],
             "description": (
-              "Broader containing attraction (national park, state park, mountain, gorge, "
-              "area). Null if the place stands alone"
+              "Broader containing attraction (national park, state park, city, "
+              "neighborhood, mountain, gorge). Null if the place stands alone"
+            ),
+          },
+          "parent_category": {
+            "type": ["string", "null"],
+            "enum": [*list(CATEGORIES), None],
+            "description": (
+              "Browse category for parent_place_name when set — usually park, city, "
+              "neighborhood, or landmark. Null when parent_place_name is null"
             ),
           },
         },
@@ -96,6 +104,7 @@ PLACE_EXTRACT_SCHEMA: dict[str, Any] = {
           "category",
           "attributes",
           "parent_place_name",
+          "parent_category",
         ],
         "additionalProperties": False,
       },
@@ -127,14 +136,18 @@ REEL_EXTRACT_PROMPT = (
   "4. country — the country (e.g. USA), or null if unknown.\n"
   "5. parent_place_name — the broader containing attraction when inferable "
   "(e.g. Picture Lake → 'Mt. Baker'; Misery Ridge Trail → 'Smith Rock State "
-  "Park'; Tunnel Falls → 'Columbia River Gorge'). Null if the place stands "
-  "alone.\n"
-  "6. Skip vague regions as standalone places — do not extract 'Pacific Northwest', "
+  "Park'; Steam Clock → 'Gastown'; a Portland restaurant → 'Portland'). Null "
+  "if the place stands alone.\n"
+  "6. parent_category — when parent_place_name is set, the browse type of that "
+  "parent: park (state/national park), city (town/city), neighborhood (district/"
+  "quarter like Gastown), or landmark (named mountain, gorge, scenic area). "
+  "Null when parent_place_name is null.\n"
+  "7. Skip vague regions as standalone places — do not extract 'Pacific Northwest', "
   "'Oregon Coast', a state alone, or a country alone.\n"
-  "7. When the caption gives 'Place, Area, State' (e.g. '📍 Picture Lake, Mt. Baker, "
+  "8. When the caption gives 'Place, Area, State' (e.g. '📍 Picture Lake, Mt. Baker, "
   "Washington'), use Place as place_name, Area as parent_place_name, and State as "
   "state_province — not city.\n"
-  "8. Travel destinations only — extract places a tourist would visit: parks, trails, "
+  "9. Travel destinations only — extract places a tourist would visit: parks, trails, "
   "lakes, waterfalls, landmarks, museums, restaurants, hotels, viewpoints. Skip real "
   "estate offices, generic businesses, services, and commercial listings even if a "
   "name appears in the caption or comments.\n\n"
@@ -142,8 +155,8 @@ REEL_EXTRACT_PROMPT = (
   "1. Category = what the pin is (visit action / venue type) — pick from the enum.\n"
   "2. Attributes = extra facets only, never a second category. Emit every "
   "allowlisted attribute that clearly applies; use [] only when none apply.\n"
-  "3. Parents → park or neighborhood; children → the activity pin type "
-  "(hike, viewpoint, waterfall, etc.).\n"
+  "3. Parents → park, city, neighborhood, or landmark; children → the activity pin "
+  "type (hike, viewpoint, waterfall, restaurant, etc.).\n"
   "4. If torn between two categories, pick the more specific visit action "
   "(hike > park for a trail pin; waterfall > landmark for a named falls).\n"
   "5. Never emit two categories; never invent values outside the enums.\n"
@@ -202,6 +215,8 @@ def _extracted_richness(extracted: ExtractedPlace) -> int:
   if extracted.country:
     score += 1
   if extracted.parent_place_name:
+    score += 1
+  if extracted.parent_category:
     score += 1
   return score
 
@@ -264,6 +279,7 @@ def _parse_extracted_places(data: dict[str, Any] | None) -> tuple[ExtractedPlace
         category=category,
         attributes=attributes,
         parent_place_name=_optional_str(item.get("parent_place_name")),
+        parent_category=normalize_category(_optional_str(item.get("parent_category"))),
       )
     )
 

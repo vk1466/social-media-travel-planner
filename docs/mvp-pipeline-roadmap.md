@@ -26,7 +26,7 @@ Builds on: reel extraction (`extract.py`), geocode → upsert (`places.py`), hie
 |---|---------|-------------------|--------|
 | 1 | **Accurate place pins** | Places land on the correct map location; duplicates merged; fewer mentions lost when geocode fails | Not started — [breakdown](#accurate-place-pins) |
 | 2 | **Attraction categories** | Typed for browse/filter (hike, viewpoint, park, hotel, restaurant, …). One category + attributes; UI groups by category | Phase 1 done — [plan](./attraction-categories-plan.md) · [implementation](./attraction-categories-implementation.md) |
-| 3 | **Region buckets & hierarchy** | Linked attractions under the same region root (national park, state park, city, neighborhood). Trails/spots nest under parents | Partially done — finish primary-place plan (role + tag-aware roots) |
+| 3 | **Region buckets & hierarchy** | Linked attractions under the same region root (national park, state park, city, neighborhood). Trails/spots nest under parents | In progress — category-aware roots + `parent_category` / OSM |
 
 **Why first:** Wrong pins and flat/wrong trees poison enrichment, relations, itineraries, and maps.
 
