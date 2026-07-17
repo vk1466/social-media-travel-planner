@@ -1,7 +1,7 @@
 import DateTimePicker from "@react-native-community/datetimepicker";
 import * as DocumentPicker from "expo-document-picker";
 import { useRouter } from "expo-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -15,12 +15,16 @@ import {
 } from "react-native";
 
 import {
+  acceptTimelineReview,
+  cleanupVisits,
   createVisit,
   deleteVisit,
+  discardTimelineReview,
+  fetchTimelineReviews,
   importTimelineFile,
   startInstagramImport,
   type Place,
-  type TimelineImportResult,
+  type TimelineReviewDetail,
 } from "@/src/api";
 import { Button, EmptyState, ErrorBanner, SuccessBanner } from "@/src/components/ui";
 import { useLibrary } from "@/src/context/LibraryContext";
@@ -40,23 +44,9 @@ function formatVisitDates(visitedFrom?: string | null, visitedTo?: string | null
   return `${visitedFrom} → ${visitedTo}`;
 }
 
-function formatTimelineSummary(result: TimelineImportResult): string {
-  const parts = [
-    `${result.format}: ${result.imported} imported`,
-    `${result.unique_places} unique places`,
-  ];
-  if (result.skipped_existing) {
-    parts.push(`${result.skipped_existing} already visited`);
-  }
-  if (result.skipped_limit) {
-    parts.push(`${result.skipped_limit} over limit`);
-  }
-  return parts.join(" · ");
-}
-
 export default function HistoryScreen() {
   const router = useRouter();
-  const { places, visits, loading, error, bumpRefresh } = useLibrary();
+  const { places, visits, loading, error, bumpRefresh, refreshToken } = useLibrary();
   const [destination, setDestination] = useState("");
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [visitedFrom, setVisitedFrom] = useState("");
@@ -70,6 +60,18 @@ export default function HistoryScreen() {
   const [instagramUsername, setInstagramUsername] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
   const [formSuccess, setFormSuccess] = useState<string | null>(null);
+  const [reviews, setReviews] = useState<TimelineReviewDetail[]>([]);
+  const [reviewBusyId, setReviewBusyId] = useState<string | null>(null);
+
+  useEffect(() => {
+    void (async () => {
+      try {
+        setReviews(await fetchTimelineReviews());
+      } catch {
+        setReviews([]);
+      }
+    })();
+  }, [refreshToken]);
 
   const suggestions = useMemo(() => {
     const q = destination.trim().toLowerCase();
@@ -125,14 +127,76 @@ export default function HistoryScreen() {
     }
     setTimelineImporting(true);
     try {
-      const result = await importTimelineFile(asset.uri, filename);
-      setFormSuccess(formatTimelineSummary(result));
+      await importTimelineFile(asset.uri, filename);
+      setFormSuccess("Timeline import started — open Add links to watch progress");
       bumpRefresh();
+      router.push("/ingest");
     } catch (err) {
       setFormError(err instanceof Error ? err.message : "Failed to import Timeline");
     } finally {
       setTimelineImporting(false);
     }
+  };
+
+  const handleAcceptReview = (visitId: string) => {
+    setReviewBusyId(visitId);
+    void (async () => {
+      try {
+        await acceptTimelineReview(visitId);
+        setFormSuccess("Kept in travel history");
+        bumpRefresh();
+      } catch (err) {
+        setFormError(err instanceof Error ? err.message : "Failed to keep place");
+      } finally {
+        setReviewBusyId(null);
+      }
+    })();
+  };
+
+  const handleDiscardReview = (visitId: string) => {
+    setReviewBusyId(visitId);
+    void (async () => {
+      try {
+        await discardTimelineReview(visitId);
+        setFormSuccess("Discarded");
+        bumpRefresh();
+      } catch (err) {
+        setFormError(err instanceof Error ? err.message : "Failed to discard place");
+      } finally {
+        setReviewBusyId(null);
+      }
+    })();
+  };
+
+  const handleCleanupVisits = (scope: "timeline" | "all") => {
+    const title = scope === "timeline" ? "Clear Timeline visits" : "Clear all visit history";
+    const message =
+      scope === "timeline"
+        ? "Delete all visits imported from Google Maps Timeline? Places with no remaining visits will be unlinked."
+        : "Delete ALL visited-place history (Timeline, Instagram, and manual)? Places with no remaining visits will be unlinked.";
+    Alert.alert(title, message, [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: () => {
+          void (async () => {
+            try {
+              const result = await cleanupVisits(scope);
+              const visitLabel = `${result.visits_deleted} visit${result.visits_deleted === 1 ? "" : "s"}`;
+              const placeLabel =
+                result.places_unlinked > 0
+                  ? `, unlinked ${result.places_unlinked} place${result.places_unlinked === 1 ? "" : "s"}`
+                  : "";
+              setFormSuccess(`Cleared ${visitLabel}${placeLabel}`);
+              bumpRefresh();
+            } catch (err) {
+              setFormError(err instanceof Error ? err.message : "Failed to clear visits");
+            }
+          })();
+        },
+      },
+    ]);
   };
 
   const handleSave = async () => {
@@ -228,14 +292,61 @@ export default function HistoryScreen() {
             Import from Google Maps Timeline
           </Text>
           <Text style={styles.subtitle}>
-            Upload a phone Timeline .json or Takeout .zip. Parsed on device; only place visits are
-            sent. Home/work skipped; large histories capped.
+            Upload a phone Timeline .json or Takeout .zip. Parsed on device; processes in the
+            background. Home/errands filtered; unknown types gated via OpenStreetMap.
           </Text>
           <Button
-            label={timelineImporting ? "Importing…" : "Choose Timeline file"}
+            label={timelineImporting ? "Uploading…" : "Choose Timeline file"}
             loading={timelineImporting}
             onPress={() => void handleImportTimeline()}
           />
+          <Button
+            label="Clear Timeline visits"
+            variant="danger"
+            onPress={() => handleCleanupVisits("timeline")}
+          />
+          <Button
+            label="Clear all visit history"
+            variant="danger"
+            onPress={() => handleCleanupVisits("all")}
+          />
+
+          {reviews.length > 0 ? (
+            <>
+              <Text style={[styles.title, { marginTop: spacing.lg }]}>Review Timeline places</Text>
+              <Text style={styles.subtitle}>
+                Ambiguous imports — keep trip memories, discard everyday stops. Suggestions are
+                hints only.
+              </Text>
+              {reviews.map((item) => (
+                <View key={item.visit.visit_id} style={styles.reviewCard}>
+                  <Text style={styles.suggestionName}>{item.visit.place_name}</Text>
+                  <Text style={styles.suggestionMeta}>
+                    {formatVisitDates(item.visit.visited_from, item.visit.visited_to)}
+                  </Text>
+                  {item.suggestion ? (
+                    <Text style={styles.suggestionMeta}>
+                      Suggested: {item.suggestion}
+                      {item.suggestion_reason ? ` — ${item.suggestion_reason}` : ""}
+                    </Text>
+                  ) : null}
+                  <View style={styles.reviewActions}>
+                    <Button
+                      label="Keep"
+                      loading={reviewBusyId === item.visit.visit_id}
+                      onPress={() => handleAcceptReview(item.visit.visit_id)}
+                    />
+                    <Button
+                      label="Discard"
+                      variant="danger"
+                      loading={reviewBusyId === item.visit.visit_id}
+                      onPress={() => handleDiscardReview(item.visit.visit_id)}
+                    />
+                  </View>
+                </View>
+              ))}
+            </>
+          ) : null}
 
           <Text style={[styles.title, { marginTop: spacing.lg }]}>Add a place you’ve visited</Text>
           <Text style={styles.subtitle}>
@@ -395,6 +506,15 @@ const styles = StyleSheet.create({
   },
   suggestionName: { color: colors.ink, fontWeight: "600" },
   suggestionMeta: { color: colors.muted, fontSize: 12, marginTop: 2 },
+  reviewCard: {
+    backgroundColor: colors.bg,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
+  },
+  reviewActions: { marginTop: spacing.sm, gap: spacing.sm },
   card: {
     backgroundColor: colors.surface,
     borderRadius: 14,

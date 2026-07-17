@@ -236,25 +236,179 @@ function parseTakeout(payload: unknown): TimelineVisit[] {
 export function parseTimelinePayload(payload: unknown): {
   format: TimelineFormat;
   visits: TimelineVisit[];
+  home: TimelineHome | null;
 } {
   const format = detectFormat(payload);
+  const home = extractHome(payload);
   if (format === "phone") {
-    return { format, visits: parsePhone(payload) };
+    return { format, visits: parsePhone(payload), home };
   }
   if (format === "takeout_semantic") {
-    return { format, visits: parseTakeout(payload) };
+    return { format, visits: parseTakeout(payload), home };
   }
-  return { format, visits: [] };
+  return { format, visits: [], home };
+}
+
+export interface TimelineCluster {
+  latitude: number;
+  longitude: number;
+  visited_from?: string | null;
+  visited_to?: string | null;
+  place_name?: string | null;
+  google_place_id?: string | null;
+  semantic_type?: string | null;
+  address?: string | null;
+  visit_count: number;
+}
+
+export interface TimelineHome {
+  latitude: number;
+  longitude: number;
+}
+
+const CLUSTER_METERS = 75;
+
+function haversineMeters(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const r = 6_371_000;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+  return 2 * r * Math.asin(Math.sqrt(a));
+}
+
+function clusterKey(visit: TimelineVisit): string {
+  if (visit.google_place_id) {
+    return `g:${visit.google_place_id}`;
+  }
+  return `c:${visit.latitude.toFixed(3)},${visit.longitude.toFixed(3)}`;
+}
+
+function mergeDate(a: string | null | undefined, b: string | null | undefined, prefer: "min" | "max"): string | null {
+  if (!a) return b ?? null;
+  if (!b) return a;
+  return prefer === "min" ? (a < b ? a : b) : a > b ? a : b;
+}
+
+export function clusterTimelineVisits(visits: TimelineVisit[]): TimelineCluster[] {
+  const buckets = new Map<string, TimelineVisit[]>();
+  for (const visit of visits) {
+    const key = clusterKey(visit);
+    const list = buckets.get(key) ?? [];
+    list.push(visit);
+    buckets.set(key, list);
+  }
+
+  const clusters: TimelineCluster[] = [];
+  for (const group of buckets.values()) {
+    const named = group.find((v) => v.place_name) ?? group[0];
+    const typed = group.find((v) => v.semantic_type) ?? named;
+    let visitedFrom: string | null = null;
+    let visitedTo: string | null = null;
+    for (const item of group) {
+      visitedFrom = mergeDate(visitedFrom, item.visited_from, "min");
+      visitedTo = mergeDate(visitedTo, item.visited_to ?? item.visited_from, "max");
+    }
+    const lat = group.reduce((sum, v) => sum + v.latitude, 0) / group.length;
+    const lng = group.reduce((sum, v) => sum + v.longitude, 0) / group.length;
+    clusters.push({
+      latitude: lat,
+      longitude: lng,
+      visited_from: visitedFrom,
+      visited_to: visitedTo === visitedFrom ? visitedFrom : visitedTo,
+      place_name: named.place_name ?? null,
+      google_place_id: named.google_place_id ?? null,
+      semantic_type: typed.semantic_type ?? null,
+      address: named.address ?? null,
+      visit_count: group.length,
+    });
+  }
+
+  const merged: TimelineCluster[] = [];
+  for (const cluster of clusters.sort((a, b) =>
+    (a.visited_from ?? "").localeCompare(b.visited_from ?? ""),
+  )) {
+    const mateIndex = merged.findIndex(
+      (existing) =>
+        haversineMeters(cluster.latitude, cluster.longitude, existing.latitude, existing.longitude) <=
+        CLUSTER_METERS,
+    );
+    if (mateIndex < 0) {
+      merged.push(cluster);
+      continue;
+    }
+    const existing = merged[mateIndex];
+    const total = existing.visit_count + cluster.visit_count;
+    merged[mateIndex] = {
+      latitude:
+        (existing.latitude * existing.visit_count + cluster.latitude * cluster.visit_count) / total,
+      longitude:
+        (existing.longitude * existing.visit_count + cluster.longitude * cluster.visit_count) / total,
+      visited_from: mergeDate(existing.visited_from, cluster.visited_from, "min"),
+      visited_to: mergeDate(
+        existing.visited_to ?? existing.visited_from,
+        cluster.visited_to ?? cluster.visited_from,
+        "max",
+      ),
+      place_name: existing.place_name || cluster.place_name,
+      google_place_id: existing.google_place_id || cluster.google_place_id,
+      semantic_type: existing.semantic_type || cluster.semantic_type,
+      address: existing.address || cluster.address,
+      visit_count: total,
+    };
+  }
+  return merged;
+}
+
+function extractHome(payload: unknown): TimelineHome | null {
+  if (!payload || typeof payload !== "object") {
+    return null;
+  }
+  const profile = (payload as Record<string, unknown>).userLocationProfile;
+  if (!profile || typeof profile !== "object") {
+    return null;
+  }
+  const places = (profile as Record<string, unknown>).frequentPlaces;
+  if (!Array.isArray(places)) {
+    return null;
+  }
+  for (const place of places) {
+    if (!place || typeof place !== "object") {
+      continue;
+    }
+    const row = place as Record<string, unknown>;
+    if (String(row.label || "").toUpperCase() !== "HOME") {
+      continue;
+    }
+    const loc = row.placeLocation;
+    if (typeof loc === "string") {
+      const coords = parseDegreeLatLng(loc);
+      if (coords) {
+        return { latitude: coords[0], longitude: coords[1] };
+      }
+    }
+    if (loc && typeof loc === "object") {
+      const coords = coordsFromLocation(loc);
+      if (coords) {
+        return { latitude: coords[0], longitude: coords[1] };
+      }
+    }
+  }
+  return null;
 }
 
 async function parseZipBytes(data: ArrayBuffer): Promise<{
   format: TimelineFormat;
   visits: TimelineVisit[];
+  home: TimelineHome | null;
 }> {
   const { unzipSync } = await import("fflate");
   const files = unzipSync(new Uint8Array(data));
   const formats = new Set<TimelineFormat>();
   const visits: TimelineVisit[] = [];
+  let home: TimelineHome | null = null;
   for (const [name, bytes] of Object.entries(files)) {
     if (!name.toLowerCase().endsWith(".json")) {
       continue;
@@ -265,39 +419,65 @@ async function parseZipBytes(data: ArrayBuffer): Promise<{
       const parsed = parseTimelinePayload(payload);
       formats.add(parsed.format);
       visits.push(...parsed.visits);
+      if (!home && parsed.home) {
+        home = parsed.home;
+      }
     } catch {
       // skip unreadable members
     }
   }
   if (formats.size === 0) {
-    return { format: "unknown", visits: [] };
+    return { format: "unknown", visits: [], home };
   }
   if (formats.size === 1) {
-    return { format: [...formats][0], visits };
+    return { format: [...formats][0], visits, home };
   }
   const meaningful = [...formats].filter((f) => f !== "unknown" && f !== "records");
   if (meaningful.length > 1) {
-    return { format: "mixed", visits };
+    return { format: "mixed", visits, home };
   }
   if (meaningful.length === 1) {
-    return { format: meaningful[0], visits };
+    return { format: meaningful[0], visits, home };
   }
   if (formats.has("records")) {
-    return { format: "records", visits };
+    return { format: "records", visits, home };
   }
-  return { format: "unknown", visits };
+  return { format: "unknown", visits, home };
+}
+
+export async function parseTimelineBytes(
+  buffer: ArrayBuffer,
+  filename: string,
+): Promise<{
+  format: TimelineFormat;
+  visits: TimelineVisit[];
+  clusters: TimelineCluster[];
+  home: TimelineHome | null;
+}> {
+  const name = filename.toLowerCase();
+  let parsed: { format: TimelineFormat; visits: TimelineVisit[]; home: TimelineHome | null };
+  if (
+    name.endsWith(".zip") ||
+    (buffer.byteLength >= 2 &&
+      new Uint8Array(buffer)[0] === 0x50 &&
+      new Uint8Array(buffer)[1] === 0x4b)
+  ) {
+    parsed = await parseZipBytes(buffer);
+  } else {
+    const text = new TextDecoder("utf-8").decode(buffer);
+    parsed = parseTimelinePayload(JSON.parse(text) as unknown);
+  }
+  return {
+    ...parsed,
+    clusters: clusterTimelineVisits(parsed.visits),
+  };
 }
 
 export async function parseTimelineFile(file: File): Promise<{
   format: TimelineFormat;
   visits: TimelineVisit[];
+  clusters: TimelineCluster[];
+  home: TimelineHome | null;
 }> {
-  const name = file.name.toLowerCase();
-  const buffer = await file.arrayBuffer();
-  if (name.endsWith(".zip") || (buffer.byteLength >= 2 && new Uint8Array(buffer)[0] === 0x50 && new Uint8Array(buffer)[1] === 0x4b)) {
-    return parseZipBytes(buffer);
-  }
-  const text = new TextDecoder("utf-8").decode(buffer);
-  const payload = JSON.parse(text) as unknown;
-  return parseTimelinePayload(payload);
+  return parseTimelineBytes(await file.arrayBuffer(), file.name);
 }

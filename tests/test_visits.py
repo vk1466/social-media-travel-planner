@@ -1,8 +1,9 @@
-from travelplanner.db import places_repo
+from travelplanner.db import places_repo, user_places_repo
 from travelplanner.models import PlaceLocation
 from travelplanner.place_hints import PlaceMention
 from travelplanner.places import load_place, upsert_place
 from travelplanner.visits import (
+  cleanup_visits,
   create_visit,
   delete_visit,
   list_visits,
@@ -253,3 +254,78 @@ def test_resolve_place_requires_id_or_query(dynamodb) -> None:
     assert False, "expected ValueError"
   except ValueError as exc:
     assert "place_id or place_query" in str(exc)
+
+
+def test_cleanup_visits_timeline_by_source_and_notes(dynamodb) -> None:
+  place_a = upsert_place(
+    PlaceMention(place_name="Multnomah Falls"),
+    _sample_location(),
+    "instagram:reel1",
+  )
+  place_b = upsert_place(
+    PlaceMention(place_name="Cannon Beach"),
+    _sample_location(
+      display_name="Cannon Beach",
+      city="Cannon Beach",
+      provider_place_id="67890",
+    ),
+    "instagram:reel2",
+  )
+  place_c = upsert_place(
+    PlaceMention(place_name="Powell's Books"),
+    _sample_location(
+      display_name="Powell's Books",
+      city="Portland",
+      provider_place_id="11111",
+    ),
+    "instagram:reel3",
+  )
+
+  create_visit(
+    user_id=USER,
+    place_id=place_a,
+    visited_from="2024-06-12",
+    source="timeline",
+  )
+  create_visit(
+    user_id=USER,
+    place_id=place_b,
+    visited_from="2024-05-01",
+    notes="Imported from Google Maps Timeline",
+    source="manual",
+  )
+  create_visit(
+    user_id=USER,
+    place_id=place_c,
+    visited_from="2024-04-01",
+    source="manual",
+  )
+
+  result = cleanup_visits(user_id=USER, scope="timeline", unlink_places=True)
+  assert result["visits_deleted"] == 2
+  assert result["places_unlinked"] == 2
+  remaining = list_visits(USER)
+  assert len(remaining) == 1
+  assert remaining[0].place_id == place_c
+  assert user_places_repo.list_user_place_ids(USER) == [place_c]
+
+
+def test_cleanup_visits_all(dynamodb) -> None:
+  place_id = upsert_place(
+    PlaceMention(place_name="Multnomah Falls"),
+    _sample_location(),
+    "instagram:reel1",
+  )
+  create_visit(user_id=USER, place_id=place_id, source="manual")
+  create_visit(
+    user_id=USER,
+    place_id=place_id,
+    visited_from="2024-01-01",
+    source="timeline",
+  )
+
+  result = cleanup_visits(user_id=USER, scope="all", unlink_places=True)
+  assert result["visits_deleted"] == 2
+  assert result["places_unlinked"] == 1
+  assert list_visits(USER) == []
+  assert user_places_repo.list_user_place_ids(USER) == []

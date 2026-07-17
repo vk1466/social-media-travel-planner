@@ -288,12 +288,16 @@ function AppShell({ authReady }: { authReady: boolean }) {
             title={
               job.kind === "instagram_profile_import"
                 ? "Importing Instagram visits"
-                : "Progress"
+                : job.kind === "timeline_import"
+                  ? "Importing Google Maps Timeline"
+                  : "Progress"
             }
             subtitle={
               job.kind === "instagram_profile_import" && job.username
                 ? `@${job.username} · places will be marked visited automatically`
-                : null
+                : job.kind === "timeline_import"
+                  ? "Resolving places via OpenStreetMap · progress survives refresh"
+                  : null
             }
             onOpenPost={openPostFromProgress}
           />

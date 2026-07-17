@@ -136,25 +136,61 @@ def instagram_profile_post_limit() -> int:
   return limit
 
 
-def timeline_import_max_places() -> int:
-  """Max unique Timeline places to reverse-geocode per upload (default 150).
+def timeline_max_places_per_call() -> int:
+  """Max unique Timeline places per worker batch (default 100).
 
-  Nominatim is rate-limited (~1 req/s), so large histories are capped.
+  Nominatim is ~1 req/s; one Lambda batch must finish within the timeout.
   """
-  raw = os.getenv("TIMELINE_IMPORT_MAX_PLACES", "150").strip()
+  raw = os.getenv("TIMELINE_MAX_PLACES_PER_CALL", os.getenv("TIMELINE_IMPORT_MAX_PLACES", "100")).strip()
   try:
     limit = int(raw)
   except ValueError as exc:
     raise RuntimeError(
-      f"TIMELINE_IMPORT_MAX_PLACES must be an integer, got {raw!r}"
+      f"TIMELINE_MAX_PLACES_PER_CALL must be an integer, got {raw!r}"
     ) from exc
   if limit < 1:
-    raise RuntimeError("TIMELINE_IMPORT_MAX_PLACES must be >= 1")
+    raise RuntimeError("TIMELINE_MAX_PLACES_PER_CALL must be >= 1")
   return limit
 
 
+def timeline_batch_size() -> int:
+  """How many clusters per Step Functions Map item (default 100)."""
+  raw = os.getenv("TIMELINE_BATCH_SIZE", "100").strip()
+  try:
+    limit = int(raw)
+  except ValueError as exc:
+    raise RuntimeError(f"TIMELINE_BATCH_SIZE must be an integer, got {raw!r}") from exc
+  if limit < 1:
+    raise RuntimeError("TIMELINE_BATCH_SIZE must be >= 1")
+  return limit
+
+
+def timeline_home_exclude_km() -> float:
+  """Drop Timeline visits within this many km of home (default 30)."""
+  raw = os.getenv("TIMELINE_HOME_EXCLUDE_KM", "30").strip()
+  try:
+    value = float(raw)
+  except ValueError as exc:
+    raise RuntimeError(
+      f"TIMELINE_HOME_EXCLUDE_KM must be a number, got {raw!r}"
+    ) from exc
+  if value < 0:
+    raise RuntimeError("TIMELINE_HOME_EXCLUDE_KM must be >= 0")
+  return value
+
+
+def timeline_imports_bucket() -> str | None:
+  value = os.getenv("TIMELINE_IMPORTS_BUCKET", "").strip()
+  return value or None
+
+
+def timeline_state_machine_arn() -> str | None:
+  value = os.getenv("TIMELINE_STATE_MACHINE_ARN", "").strip()
+  return value or None
+
+
 def timeline_import_max_bytes() -> int:
-  """Max upload size for Timeline JSON/ZIP (default 40 MiB)."""
+  """Max upload size for Timeline JSON/ZIP staging payload (default 40 MiB)."""
   raw = os.getenv("TIMELINE_IMPORT_MAX_BYTES", str(40 * 1024 * 1024)).strip()
   try:
     limit = int(raw)
@@ -165,3 +201,8 @@ def timeline_import_max_bytes() -> int:
   if limit < 1024:
     raise RuntimeError("TIMELINE_IMPORT_MAX_BYTES must be >= 1024")
   return limit
+
+
+# Back-compat alias used by older call sites / env docs.
+def timeline_import_max_places() -> int:
+  return timeline_max_places_per_call()

@@ -231,14 +231,18 @@ export interface TimelineImportResult {
   visits_parsed: number;
   unique_places: number;
   imported: number;
+  queued_for_review?: number;
   skipped_existing: number;
   skipped_unresolved: number;
   skipped_limit: number;
+  skipped_home?: number;
+  skipped_semantic?: number;
+  skipped_llm?: number;
   failed: number;
   place_names: string[];
 }
 
-export async function importTimelineFile(file: File): Promise<TimelineImportResult> {
+export async function importTimelineFile(file: File): Promise<string> {
   const { parseTimelineFile } = await import("./timelineParse");
   let parsed;
   try {
@@ -255,22 +259,66 @@ export async function importTimelineFile(file: File): Promise<TimelineImportResu
       "Unrecognized Timeline format. Export from Google Maps (phone) or Takeout Location History.",
     );
   }
-  if (parsed.format === "records" && parsed.visits.length === 0) {
+  if (parsed.format === "records" && parsed.clusters.length === 0) {
     throw new Error(
       "Records.json has GPS pings but no place visits. Use Semantic Location History or a phone Timeline export.",
     );
   }
-  if (parsed.visits.length === 0) {
+  if (parsed.clusters.length === 0) {
     throw new Error("No place visits found in that export (home/work visits are skipped).");
   }
-  return request<TimelineImportResult>("/api/visits/import-timeline", {
+
+  const upload = await request<{ url: string; key: string }>("/api/visits/import-timeline/upload-url", {
+    method: "POST",
+  });
+  const putResponse = await fetch(upload.url, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      format: parsed.format,
+      clusters: parsed.clusters,
+      home: parsed.home,
+    }),
+  });
+  if (!putResponse.ok) {
+    throw new Error(`Failed to upload Timeline data to staging (${putResponse.status})`);
+  }
+
+  const body = await request<{ job_id: string }>("/api/visits/import-timeline", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       format: parsed.format,
-      visits: parsed.visits,
+      s3_key: upload.key,
+      total_places: parsed.clusters.length,
+      home_latitude: parsed.home?.latitude ?? null,
+      home_longitude: parsed.home?.longitude ?? null,
     }),
   });
+  return body.job_id;
+}
+
+export async function cleanupVisits(
+  scope: "timeline" | "all",
+  unlinkPlaces = true,
+): Promise<{ visits_deleted: number; places_unlinked: number }> {
+  return request<{ visits_deleted: number; places_unlinked: number }>("/api/visits/cleanup", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ scope, unlink_places: unlinkPlaces }),
+  });
+}
+
+export async function deleteVisitsBySource(source: "manual" | "instagram" | "timeline"): Promise<number> {
+  if (source === "timeline") {
+    const result = await cleanupVisits("timeline");
+    return result.visits_deleted;
+  }
+  const body = await request<{ deleted: number }>(
+    `/api/visits?source=${encodeURIComponent(source)}`,
+    { method: "DELETE" },
+  );
+  return body.deleted;
 }
 
 export async function fetchJob(jobId: string): Promise<Job> {
@@ -341,6 +389,13 @@ export interface VisitDetail {
   place?: Place | null;
 }
 
+export interface TimelineReviewDetail {
+  visit: Visit;
+  place?: Place | null;
+  suggestion?: string | null;
+  suggestion_reason?: string | null;
+}
+
 export interface VisitCreateInput {
   visited_from?: string | null;
   visited_to?: string | null;
@@ -359,6 +414,22 @@ export interface VisitedStatus {
 
 export async function fetchVisits(): Promise<VisitDetail[]> {
   return request<VisitDetail[]>("/api/visits");
+}
+
+export async function fetchTimelineReviews(): Promise<TimelineReviewDetail[]> {
+  return request<TimelineReviewDetail[]>("/api/visits/timeline-reviews");
+}
+
+export async function acceptTimelineReview(visitId: string): Promise<VisitDetail> {
+  return request<VisitDetail>(`/api/visits/timeline-reviews/${encodeURIComponent(visitId)}/accept`, {
+    method: "POST",
+  });
+}
+
+export async function discardTimelineReview(visitId: string): Promise<void> {
+  await request(`/api/visits/timeline-reviews/${encodeURIComponent(visitId)}/discard`, {
+    method: "POST",
+  });
 }
 
 export async function fetchVisitedPlaceIds(): Promise<string[]> {

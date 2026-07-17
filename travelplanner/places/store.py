@@ -28,6 +28,143 @@ _NON_TRAVEL_OFFICE_TYPES = frozenset({
   "tax_advisor",
 })
 
+_NON_TRAVEL_AMENITIES = frozenset({
+  "fuel",
+  "parking",
+  "parking_entrance",
+  "pharmacy",
+  "hospital",
+  "clinic",
+  "doctors",
+  "dentist",
+  "veterinary",
+  "bank",
+  "atm",
+  "school",
+  "kindergarten",
+  "college",
+  "university",
+  "post_office",
+  "car_wash",
+  "car_rental",
+  "charging_station",
+  "toilets",
+  "recycling",
+  "waste_disposal",
+  "police",
+  "fire_station",
+  "bench",
+  "drinking_water",
+  "bicycle_parking",
+  "vending_machine",
+  "parcel_locker",
+  "waste_basket",
+})
+
+_NON_TRAVEL_SHOPS = frozenset({
+  "supermarket",
+  "convenience",
+  "grocery",
+  "greengrocer",
+  "butcher",
+  "doityourself",
+  "hardware",
+  "laundry",
+  "dry_cleaning",
+  "car",
+  "car_parts",
+  "car_repair",
+  "wholesale",
+  "variety_store",
+  "chemist",
+  "hairdresser",
+  "beauty",
+  "tailor",
+  "cannabis",
+  "tobacco",
+  "copyshop",
+  "stationery",
+  "mobile_phone",
+  "electronics",
+  "optician",
+})
+
+_NON_TRAVEL_LEISURE = frozenset({
+  "pitch",
+  "playground",
+  "sports_centre",
+  "fitness_centre",
+  "track",
+  "picnic_table",
+})
+
+_NON_TRAVEL_BUILDING = frozenset({
+  "college",
+  "school",
+  "university",
+  "industrial",
+  "warehouse",
+  "garage",
+  "garages",
+  "parking",
+})
+
+_NON_TRAVEL_CLASSES = frozenset({
+  "highway",
+  "railway",
+  "public_transport",
+  "aeroway",
+  "power",
+  "office",
+})
+
+# Residential / street-address OSM matches (common Timeline reverse-geocode noise).
+_RESIDENTIAL_OSM_TYPES = frozenset({
+  "house",
+  "houses",
+  "residential",
+  "apartments",
+  "detached",
+  "terrace",
+  "semidetached_house",
+  "bungalow",
+  "static_caravan",
+  "garage",
+  "garages",
+  "shed",
+  "hut",
+})
+
+# Bare house numbers ("5170", "12A").
+_BARE_HOUSE_NUMBER = re.compile(r"^\d+[A-Za-z]?(?:\s*/\s*\d+[A-Za-z]?)?$")
+# "123 Main St" / "45 Oak Avenue" style.
+_STREET_ADDRESS = re.compile(
+  r"^\d+[A-Za-z]?\s+.+\b("
+  r"st|street|ave|avenue|rd|road|dr|drive|ln|lane|way|blvd|boulevard|"
+  r"ct|court|pl|place|cir|circle|hwy|highway"
+  r")\.?\b",
+  re.IGNORECASE,
+)
+
+
+def _looks_like_street_address(location: PlaceLocation) -> bool:
+  text = (location.display_name or "").strip()
+  if not text:
+    return False
+  if _BARE_HOUSE_NUMBER.match(text):
+    return True
+  if _STREET_ADDRESS.match(text):
+    return True
+  osm_class = (location.osm_class or "").strip().lower()
+  # Skip number+city check for clearly tagged attractions ("360 Chicago").
+  if osm_class in {"tourism", "leisure", "historic", "natural", "waterway"}:
+    return False
+  # "5170 Mukilteo" when city is Mukilteo — number + city, no POI name.
+  city = (location.city or "").strip()
+  if city and re.match(rf"^\d+[A-Za-z]?\s+{re.escape(city)}\b", text, re.IGNORECASE):
+    return True
+  return False
+
 
 def is_visitable_place(location: PlaceLocation) -> bool:
   """Return False for administrative regions and non-travel commercial matches."""
@@ -37,10 +174,35 @@ def is_visitable_place(location: PlaceLocation) -> bool:
     return False
   if location.osm_class == "office" and location.osm_type in _NON_TRAVEL_OFFICE_TYPES:
     return False
-  display = location.display_name.strip().lower() if location.display_name else ""
-  if location.state_province and display == location.state_province.strip().lower():
+  osm_class = (location.osm_class or "").strip().lower()
+  osm_type = (location.osm_type or "").strip().lower()
+  if osm_class in _NON_TRAVEL_CLASSES:
+    # Named trails (path/footway) are travel — keep those.
+    if osm_class == "highway" and osm_type in {"path", "footway", "track", "steps", "bridleway"}:
+      pass
+    else:
+      return False
+  if osm_class == "amenity" and osm_type in _NON_TRAVEL_AMENITIES:
     return False
-  if location.country and display == location.country.strip().lower():
+  if osm_class == "shop" and osm_type in _NON_TRAVEL_SHOPS:
+    return False
+  # Most remaining shops are errands (clothes, tobacco, generic shop=yes).
+  # Keep gift shops and outdoor specialty via LLM gate / allowlist later.
+  if osm_class == "shop" and osm_type not in {"gift", "outdoor", "sports", "bicycle"}:
+    return False
+  if osm_class == "leisure" and osm_type in _NON_TRAVEL_LEISURE:
+    return False
+  if osm_class == "building" and osm_type in _NON_TRAVEL_BUILDING:
+    return False
+  if osm_type in _RESIDENTIAL_OSM_TYPES:
+    return False
+  display = location.display_name.strip() if location.display_name else ""
+  display_lower = display.lower()
+  if location.state_province and display_lower == location.state_province.strip().lower():
+    return False
+  if location.country and display_lower == location.country.strip().lower():
+    return False
+  if _looks_like_street_address(location):
     return False
   return True
 

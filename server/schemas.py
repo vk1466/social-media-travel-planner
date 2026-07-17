@@ -143,13 +143,22 @@ class TimelineVisitInput(BaseModel):
   semantic_type: str | None = None
   address: str | None = None
   source_format: str | None = None
+  visit_count: int = 1
 
 
-class TimelineImportRequest(BaseModel):
-  """Pre-parsed Timeline visits (client parses large exports to avoid Function URL size limits)."""
+class TimelineUploadUrlResponse(BaseModel):
+  url: str
+  key: str
+
+
+class TimelineImportStartRequest(BaseModel):
+  """Start an async Timeline import after the client uploaded clusters to S3."""
 
   format: str = "unknown"
-  visits: list[TimelineVisitInput] = Field(..., min_length=1)
+  s3_key: str = Field(..., min_length=1)
+  total_places: int = Field(..., ge=1)
+  home_latitude: float | None = None
+  home_longitude: float | None = None
 
 
 class TimelineImportResultSchema(BaseModel):
@@ -157,9 +166,13 @@ class TimelineImportResultSchema(BaseModel):
   visits_parsed: int
   unique_places: int
   imported: int
+  queued_for_review: int = 0
   skipped_existing: int
   skipped_unresolved: int
   skipped_limit: int
+  skipped_home: int = 0
+  skipped_semantic: int = 0
+  skipped_llm: int = 0
   failed: int
   place_names: list[str] = Field(default_factory=list)
 
@@ -177,7 +190,7 @@ class VisitSchema(BaseModel):
   notes: str | None = None
   created_at: str | None = None
   user_id: str | None = None
-
+  source: str | None = "manual"
 
 class VisitCreateRequest(BaseModel):
   visited_from: str | None = None
@@ -189,9 +202,28 @@ class VisitCreateRequest(BaseModel):
   country: str | None = None
 
 
+class VisitsCleanupRequest(BaseModel):
+  """Clear visit history for clean reimport / reset."""
+
+  scope: Literal["timeline", "all"] = "timeline"
+  unlink_places: bool = True
+
+
+class VisitsCleanupResultSchema(BaseModel):
+  visits_deleted: int
+  places_unlinked: int = 0
+
+
 class VisitDetailSchema(BaseModel):
   visit: VisitSchema
   place: PlaceSchema | None = None
+
+
+class TimelineReviewDetailSchema(BaseModel):
+  visit: VisitSchema
+  place: PlaceSchema | None = None
+  suggestion: str | None = None
+  suggestion_reason: str | None = None
 
 
 class VisitedStatusSchema(BaseModel):

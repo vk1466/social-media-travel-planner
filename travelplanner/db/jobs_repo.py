@@ -18,6 +18,7 @@ _LINK_UPDATE_ATTEMPTS = 8
 
 JOB_KIND_LINK_INGEST = "link_ingest"
 JOB_KIND_INSTAGRAM_PROFILE_IMPORT = "instagram_profile_import"
+JOB_KIND_TIMELINE_IMPORT = "timeline_import"
 
 
 def create_job(
@@ -46,6 +47,60 @@ def create_job(
   }
   if username:
     item["username"] = username
+  get_table("Jobs").put_item(Item=to_dynamo(item))
+  return job_id
+
+
+def create_timeline_job(
+  *,
+  user_id: str,
+  s3_key: str,
+  source_format: str,
+  total_places: int,
+  batch_size: int,
+  home_latitude: float | None = None,
+  home_longitude: float | None = None,
+) -> str:
+  """Create a timeline_import job with one synthetic link per batch."""
+  if total_places < 1:
+    raise ValueError("total_places must be >= 1")
+  if batch_size < 1:
+    raise ValueError("batch_size must be >= 1")
+
+  batch_count = (total_places + batch_size - 1) // batch_size
+  job_id = str(uuid.uuid4())
+  now = datetime.now(timezone.utc)
+  created_at = now.strftime("%Y-%m-%dT%H:%M:%SZ")
+  links = [
+    {
+      "post_url": f"timeline-batch:{index}",
+      "status": "pending",
+      "batch_index": index,
+      "batch_start": index * batch_size,
+      "batch_count": min(batch_size, total_places - index * batch_size),
+    }
+    for index in range(batch_count)
+  ]
+  item: dict[str, Any] = {
+    "job_id": job_id,
+    "user_id": user_id,
+    "status": "running",
+    "refresh": False,
+    "kind": JOB_KIND_TIMELINE_IMPORT,
+    "mark_visited": False,
+    "s3_key": s3_key,
+    "source_format": source_format,
+    "total_places": total_places,
+    "batch_size": batch_size,
+    "links": links,
+    "version": 0,
+    "created_at": created_at,
+    "ttl": int((now + timedelta(days=JOB_TTL_DAYS)).timestamp()),
+  }
+  if home_latitude is not None:
+    item["home_latitude"] = home_latitude
+  if home_longitude is not None:
+    item["home_longitude"] = home_longitude
   get_table("Jobs").put_item(Item=to_dynamo(item))
   return job_id
 

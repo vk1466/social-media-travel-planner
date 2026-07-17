@@ -219,73 +219,93 @@ export interface TimelineImportResult {
   visits_parsed: number;
   unique_places: number;
   imported: number;
+  queued_for_review?: number;
   skipped_existing: number;
   skipped_unresolved: number;
   skipped_limit: number;
+  skipped_home?: number;
+  skipped_semantic?: number;
+  skipped_llm?: number;
   failed: number;
   place_names: string[];
 }
 
-export async function importTimelineFile(uri: string, filename: string): Promise<TimelineImportResult> {
-  const { parseTimelinePayload } = await import("./timelineParse");
-  const { unzipSync } = await import("fflate");
+export async function importTimelineFile(uri: string, filename: string): Promise<string> {
+  const { parseTimelineBytes } = await import("./timelineParse");
 
   const response = await fetch(uri);
   const buffer = await response.arrayBuffer();
-  const lower = filename.toLowerCase();
-  let parsed: { format: string; visits: unknown[] };
 
-  if (
-    lower.endsWith(".zip") ||
-    (buffer.byteLength >= 2 &&
-      new Uint8Array(buffer)[0] === 0x50 &&
-      new Uint8Array(buffer)[1] === 0x4b)
-  ) {
-    const files = unzipSync(new Uint8Array(buffer));
-    const formats = new Set<string>();
-    const visits: unknown[] = [];
-    for (const [name, bytes] of Object.entries(files)) {
-      if (!name.toLowerCase().endsWith(".json")) {
-        continue;
-      }
-      try {
-        const text = new TextDecoder("utf-8").decode(bytes);
-        const part = parseTimelinePayload(JSON.parse(text) as unknown);
-        formats.add(part.format);
-        visits.push(...part.visits);
-      } catch {
-        // skip
-      }
-    }
-    const format =
-      formats.size === 1
-        ? [...formats][0]
-        : formats.size > 1
-          ? "mixed"
-          : "unknown";
-    parsed = { format, visits };
-  } else {
-    const text = new TextDecoder("utf-8").decode(buffer);
-    parsed = parseTimelinePayload(JSON.parse(text) as unknown);
+  let parsed;
+  try {
+    parsed = await parseTimelineBytes(buffer, filename);
+  } catch (err) {
+    throw new Error(
+      err instanceof Error
+        ? `Could not read Timeline file: ${err.message}`
+        : "Could not read Timeline file",
+    );
   }
-
   if (parsed.format === "unknown") {
     throw new Error(
       "Unrecognized Timeline format. Export from Google Maps (phone) or Takeout Location History.",
     );
   }
-  if (parsed.visits.length === 0) {
+  if (parsed.clusters.length === 0) {
     throw new Error("No place visits found in that export (home/work visits are skipped).");
   }
 
-  return request<TimelineImportResult>("/api/visits/import-timeline", {
+  const upload = await request<{ url: string; key: string }>("/api/visits/import-timeline/upload-url", {
+    method: "POST",
+  });
+  const putResponse = await fetch(upload.url, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      format: parsed.format,
+      clusters: parsed.clusters,
+      home: parsed.home,
+    }),
+  });
+  if (!putResponse.ok) {
+    throw new Error(`Failed to upload Timeline data to staging (${putResponse.status})`);
+  }
+
+  const body = await request<{ job_id: string }>("/api/visits/import-timeline", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       format: parsed.format,
-      visits: parsed.visits,
+      s3_key: upload.key,
+      total_places: parsed.clusters.length,
+      home_latitude: parsed.home?.latitude ?? null,
+      home_longitude: parsed.home?.longitude ?? null,
     }),
   });
+  return body.job_id;
+}
+
+export async function cleanupVisits(
+  scope: "timeline" | "all",
+  unlinkPlaces = true,
+): Promise<{ visits_deleted: number; places_unlinked: number }> {
+  return request<{ visits_deleted: number; places_unlinked: number }>("/api/visits/cleanup", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ scope, unlink_places: unlinkPlaces }),
+  });
+}
+
+export async function deleteVisitsBySource(source: "manual" | "instagram" | "timeline"): Promise<number> {
+  if (source === "timeline") {
+    const result = await cleanupVisits("timeline");
+    return result.visits_deleted;
+  }
+  const body = await request<{ deleted: number }>(
+    `/api/visits?source=${encodeURIComponent(source)}`,
+    { method: "DELETE" },
+  );
+  return body.deleted;
 }
 
 export async function fetchJob(jobId: string): Promise<Job> {
@@ -356,6 +376,13 @@ export interface VisitDetail {
   place?: Place | null;
 }
 
+export interface TimelineReviewDetail {
+  visit: Visit;
+  place?: Place | null;
+  suggestion?: string | null;
+  suggestion_reason?: string | null;
+}
+
 export interface VisitCreateInput {
   visited_from?: string | null;
   visited_to?: string | null;
@@ -374,6 +401,22 @@ export interface VisitedStatus {
 
 export async function fetchVisits(): Promise<VisitDetail[]> {
   return request<VisitDetail[]>("/api/visits");
+}
+
+export async function fetchTimelineReviews(): Promise<TimelineReviewDetail[]> {
+  return request<TimelineReviewDetail[]>("/api/visits/timeline-reviews");
+}
+
+export async function acceptTimelineReview(visitId: string): Promise<VisitDetail> {
+  return request<VisitDetail>(`/api/visits/timeline-reviews/${encodeURIComponent(visitId)}/accept`, {
+    method: "POST",
+  });
+}
+
+export async function discardTimelineReview(visitId: string): Promise<void> {
+  await request(`/api/visits/timeline-reviews/${encodeURIComponent(visitId)}/discard`, {
+    method: "POST",
+  });
 }
 
 export async function fetchVisitedPlaceIds(): Promise<string[]> {

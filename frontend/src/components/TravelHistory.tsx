@@ -1,14 +1,18 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 
 import {
+  acceptTimelineReview,
+  cleanupVisits,
   createVisit,
   deleteVisit,
+  discardTimelineReview,
   fetchPlaces,
+  fetchTimelineReviews,
   fetchVisits,
   importTimelineFile,
   startInstagramImport,
   type Place,
-  type TimelineImportResult,
+  type TimelineReviewDetail,
   type VisitDetail,
 } from "../api";
 
@@ -38,27 +42,6 @@ function locationLine(place: Place | null | undefined): string {
   return [city, stateProvince, country].filter(Boolean).join(", ");
 }
 
-function formatTimelineSummary(result: TimelineImportResult): string {
-  const parts = [
-    `Detected ${result.format} format`,
-    `${result.visits_parsed} visits → ${result.unique_places} places`,
-    `imported ${result.imported}`,
-  ];
-  if (result.skipped_existing) {
-    parts.push(`${result.skipped_existing} already visited`);
-  }
-  if (result.skipped_unresolved) {
-    parts.push(`${result.skipped_unresolved} unresolved`);
-  }
-  if (result.skipped_limit) {
-    parts.push(`${result.skipped_limit} over limit`);
-  }
-  if (result.failed) {
-    parts.push(`${result.failed} failed`);
-  }
-  return parts.join(" · ");
-}
-
 export function TravelHistory({
   refreshToken = 0,
   jobRunning = false,
@@ -67,6 +50,7 @@ export function TravelHistory({
   onImportStarted,
 }: TravelHistoryProps) {
   const [visits, setVisits] = useState<VisitDetail[]>([]);
+  const [reviews, setReviews] = useState<TimelineReviewDetail[]>([]);
   const [places, setPlaces] = useState<Place[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -74,6 +58,7 @@ export function TravelHistory({
   const [importing, setImporting] = useState(false);
   const [timelineImporting, setTimelineImporting] = useState(false);
   const [timelineSummary, setTimelineSummary] = useState<string | null>(null);
+  const [reviewBusyId, setReviewBusyId] = useState<string | null>(null);
   const [instagramUsername, setInstagramUsername] = useState("");
   const timelineInputRef = useRef<HTMLInputElement>(null);
 
@@ -88,9 +73,14 @@ export function TravelHistory({
     setLoading(true);
     setError(null);
     try {
-      const [nextVisits, nextPlaces] = await Promise.all([fetchVisits(), fetchPlaces()]);
+      const [nextVisits, nextPlaces, nextReviews] = await Promise.all([
+        fetchVisits(),
+        fetchPlaces(),
+        fetchTimelineReviews(),
+      ]);
       setVisits(nextVisits);
       setPlaces(nextPlaces);
+      setReviews(nextReviews);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load travel history");
     } finally {
@@ -163,17 +153,72 @@ export function TravelHistory({
     }
     setTimelineImporting(true);
     try {
-      const result = await importTimelineFile(file);
-      setTimelineSummary(formatTimelineSummary(result));
+      const jobId = await importTimelineFile(file);
+      setTimelineSummary("Timeline import started — watch progress above. You can refresh anytime.");
       if (input) {
         input.value = "";
       }
-      await refresh();
-      onChanged?.();
+      onImportStarted?.(jobId);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to import Timeline");
     } finally {
       setTimelineImporting(false);
+    }
+  };
+
+  const handleCleanupVisits = async (scope: "timeline" | "all") => {
+    const message =
+      scope === "timeline"
+        ? "Delete all visits imported from Google Maps Timeline? Linked places with no remaining visits will be unlinked. This cannot be undone."
+        : "Delete ALL visited-place history (Timeline, Instagram, and manual)? Linked places with no remaining visits will be unlinked. This cannot be undone.";
+    if (!window.confirm(message)) {
+      return;
+    }
+    setError(null);
+    try {
+      const result = await cleanupVisits(scope);
+      const visitLabel = `${result.visits_deleted} visit${result.visits_deleted === 1 ? "" : "s"}`;
+      const placeLabel =
+        result.places_unlinked > 0
+          ? ` and unlinked ${result.places_unlinked} place${result.places_unlinked === 1 ? "" : "s"}`
+          : "";
+      setTimelineSummary(
+        scope === "timeline"
+          ? `Cleared ${visitLabel}${placeLabel} from Timeline.`
+          : `Cleared ${visitLabel}${placeLabel} from travel history.`,
+      );
+      await refresh();
+      onChanged?.();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to clear visits");
+    }
+  };
+
+  const handleAcceptReview = async (visitId: string) => {
+    setReviewBusyId(visitId);
+    setError(null);
+    try {
+      await acceptTimelineReview(visitId);
+      await refresh();
+      onChanged?.();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to keep place");
+    } finally {
+      setReviewBusyId(null);
+    }
+  };
+
+  const handleDiscardReview = async (visitId: string) => {
+    setReviewBusyId(visitId);
+    setError(null);
+    try {
+      await discardTimelineReview(visitId);
+      await refresh();
+      onChanged?.();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to discard place");
+    } finally {
+      setReviewBusyId(null);
     }
   };
 
@@ -285,10 +330,9 @@ export function TravelHistory({
           <div>
             <h2 className="ingest-panel-title">Import from Google Maps Timeline</h2>
             <p className="ingest-panel-subtitle">
-              Upload a phone Timeline .json or Takeout Location History .zip. The file is parsed in
-              your browser (large exports stay local); only place visits are sent to the API and
-              resolved with OpenStreetMap. Home/work visits are skipped. Large histories are capped
-              (default 150 unique places).
+              Upload a phone Timeline .json or Takeout .zip. Parsed in your browser; clusters upload
+              to staging and process in the background (survives refresh). Home-area and errand
+              places are filtered; TYPE_UNKNOWN places are gated via OpenStreetMap.
             </p>
           </div>
         </div>
@@ -300,17 +344,102 @@ export function TravelHistory({
               type="file"
               accept=".json,.zip,application/json,application/zip"
               className="visit-file-input"
-              disabled={timelineImporting}
+              disabled={timelineImporting || jobRunning}
             />
           </label>
           <div className="form-actions">
-            <button type="submit" className="primary-button" disabled={timelineImporting}>
-              {timelineImporting ? "Importing… (may take a few minutes)" : "Import Timeline"}
+            <button
+              type="submit"
+              className="primary-button"
+              disabled={timelineImporting || jobRunning}
+            >
+              {timelineImporting
+                ? "Uploading…"
+                : jobRunning
+                  ? "Import running…"
+                  : "Import Timeline"}
+            </button>
+            <button
+              type="button"
+              className="danger-button"
+              disabled={timelineImporting || jobRunning}
+              onClick={() => void handleCleanupVisits("timeline")}
+            >
+              Clear Timeline visits
+            </button>
+            <button
+              type="button"
+              className="danger-button"
+              disabled={timelineImporting || jobRunning}
+              onClick={() => void handleCleanupVisits("all")}
+            >
+              Clear all visit history
             </button>
           </div>
         </form>
         {timelineSummary ? <p className="banner-success">{timelineSummary}</p> : null}
       </section>
+
+      {reviews.length > 0 ? (
+        <section className="panel visit-form-panel">
+          <div className="ingest-panel-header">
+            <div>
+              <h2 className="ingest-panel-title">Review Timeline places</h2>
+              <p className="ingest-panel-subtitle">
+                Ambiguous imports — keep trip memories, discard everyday stops. AI suggestions are
+                hints only.
+              </p>
+            </div>
+          </div>
+          <ul className="visit-list">
+            {reviews.map((item) => {
+              const { visit, place, suggestion, suggestion_reason: suggestionReason } = item;
+              const busy = reviewBusyId === visit.visit_id;
+              const where = locationLine(place);
+              return (
+                <li key={visit.visit_id} className="visit-row">
+                  <div className="visit-row-main">
+                    <button
+                      type="button"
+                      className="visit-place-link"
+                      onClick={() => place && onNavigateToPlace?.(place.place_id)}
+                      disabled={!place}
+                    >
+                      {visit.place_name}
+                    </button>
+                    {where ? <p className="visit-meta">{where}</p> : null}
+                    <p className="visit-meta">{formatVisitDates(visit.visited_from, visit.visited_to)}</p>
+                    {suggestion ? (
+                      <p className="visit-meta">
+                        Suggested: {suggestion}
+                        {suggestionReason ? ` — ${suggestionReason}` : ""}
+                      </p>
+                    ) : null}
+                  </div>
+                  <div className="form-actions">
+                    <button
+                      type="button"
+                      className="primary-button"
+                      disabled={busy}
+                      onClick={() => void handleAcceptReview(visit.visit_id)}
+                    >
+                      Keep
+                    </button>
+                    <button
+                      type="button"
+                      className="danger-button"
+                      disabled={busy}
+                      onClick={() => void handleDiscardReview(visit.visit_id)}
+                    >
+                      Discard
+                    </button>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      ) : null}
 
       {error && <p className="banner-error">{error}</p>}
 

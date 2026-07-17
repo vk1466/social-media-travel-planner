@@ -98,6 +98,9 @@ class Place:
   parent_place_id: str | None = None
 
 
+VISIT_SOURCES = frozenset({"manual", "instagram", "timeline", "timeline_review"})
+
+
 @dataclass(frozen=True)
 class Visit:
   """One personal trip to a place. Places stay geography; visits hold when.
@@ -105,6 +108,8 @@ class Visit:
   `place_id` references Place.place_id. `place_name` is a denormalized snapshot.
   `user_id` scopes the visit to a Clerk (or local) user.
   `visited_from` / `visited_to` are optional — undated visits mean visited only.
+  `source` is how the visit was created: manual | instagram | timeline | timeline_review.
+  `timeline_review` items await user Keep/Discard and are hidden from normal history.
   """
 
   visit_id: str
@@ -115,6 +120,7 @@ class Visit:
   notes: str | None = None
   created_at: str | None = None
   user_id: str = ""
+  source: str = "manual"
 
 
 @dataclass(frozen=True)

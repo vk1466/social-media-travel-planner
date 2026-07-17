@@ -15,13 +15,18 @@ from travelplanner.db import jobs_repo, place_candidates_repo
 from travelplanner.places.debug import debug_locate
 from travelplanner.sources.instagram_profile import list_recent_post_urls, normalize_instagram_username
 from travelplanner.store import load_post, post_to_dict
-from travelplanner.timeline import TimelineVisit, import_timeline_visits
 from travelplanner.visits import (
+  accept_timeline_review,
+  cleanup_visits,
   create_visit,
   delete_visit,
+  delete_visits_by_source,
+  discard_timeline_review,
+  list_timeline_reviews,
   list_visits,
   load_visit,
   mark_visited,
+  parse_review_suggestion,
   unmark_visited,
   visit_to_dict,
   visited_place_ids,
@@ -30,6 +35,7 @@ from travelplanner.visits import (
 from server.auth import AdminUserId, CurrentUserId
 from server.ingest_runner import start_ingest_job
 from server import jobs
+from server import timeline_staging
 from server.media_proxy import fetch_proxied_media
 from server.schemas import (
   AdminMeSchema,
@@ -48,12 +54,16 @@ from server.schemas import (
   PlaceCandidateSchema,
   PlaceDetailSchema,
   SavedPostSchema,
-  TimelineImportRequest,
-  TimelineImportResultSchema,
+  TimelineImportStartRequest,
+  TimelineUploadUrlResponse,
   VisitCreateRequest,
   VisitDetailSchema,
   VisitSchema,
+  VisitsCleanupRequest,
+  VisitsCleanupResultSchema,
+  TimelineReviewDetailSchema,
 )
+from server.timeline_runner import create_and_start_timeline_job
 
 configure_logging()
 
@@ -178,20 +188,30 @@ def import_instagram_profile(
 
 
 @app.post(
+  "/api/visits/import-timeline/upload-url",
+  response_model=TimelineUploadUrlResponse,
+  responses={400: {"model": ErrorResponse}},
+)
+def timeline_upload_url(user_id: CurrentUserId) -> TimelineUploadUrlResponse:
+  """Presigned S3 PUT URL for clustered Timeline JSON (avoids Function URL size limits)."""
+  try:
+    result = timeline_staging.presign_put_url(user_id=user_id)
+  except RuntimeError as exc:
+    raise HTTPException(status_code=400, detail=str(exc)) from exc
+  return TimelineUploadUrlResponse(url=result["url"], key=result["key"])
+
+
+@app.post(
   "/api/visits/import-timeline",
-  response_model=TimelineImportResultSchema,
-  status_code=200,
+  response_model=IngestResponse,
+  status_code=202,
   responses={400: {"model": ErrorResponse}},
 )
 def import_google_timeline(
-  request: TimelineImportRequest,
+  request: TimelineImportStartRequest,
   user_id: CurrentUserId,
-) -> TimelineImportResultSchema:
-  """Import visited places from pre-parsed Google Maps Timeline visits.
-
-  Clients parse large Timeline JSON/ZIP locally (Function URL body limit ~6MB)
-  and POST the compact visit list here for OSM resolve + Visit creation.
-  """
+) -> IngestResponse:
+  """Start an async Timeline import job over clusters already uploaded to S3."""
   source_format = request.format if request.format in {
     "phone",
     "takeout_semantic",
@@ -200,39 +220,80 @@ def import_google_timeline(
     "unknown",
   } else "unknown"
 
-  visits = [
-    TimelineVisit(
-      latitude=item.latitude,
-      longitude=item.longitude,
-      visited_from=item.visited_from,
-      visited_to=item.visited_to,
-      place_name=item.place_name,
-      google_place_id=item.google_place_id,
-      semantic_type=item.semantic_type,
-      address=item.address,
-      source_format=source_format,  # type: ignore[arg-type]
-    )
-    for item in request.visits
-    if -90 <= item.latitude <= 90 and -180 <= item.longitude <= 180
-  ]
-  if not visits:
+  if not request.s3_key.startswith(f"timeline/{user_id}/"):
+    raise HTTPException(status_code=400, detail="Invalid Timeline staging key")
+
+  try:
+    # Verify the object exists and has clusters before starting SFN.
+    clusters = timeline_staging.load_clusters(request.s3_key)
+  except Exception as exc:
     raise HTTPException(
       status_code=400,
-      detail="No valid place visits in payload (need latitude/longitude).",
-    )
+      detail=f"Could not read Timeline staging payload: {exc}",
+    ) from exc
 
-  result = import_timeline_visits(visits, user_id=user_id, source_format=source_format)  # type: ignore[arg-type]
-  return TimelineImportResultSchema(
-    format=result.format,
-    visits_parsed=result.visits_parsed,
-    unique_places=result.unique_places,
-    imported=result.imported,
-    skipped_existing=result.skipped_existing,
-    skipped_unresolved=result.skipped_unresolved,
-    skipped_limit=result.skipped_limit,
-    failed=result.failed,
-    place_names=list(result.place_names),
-  )
+  if not clusters:
+    raise HTTPException(status_code=400, detail="No place clusters in staging payload")
+
+  total = request.total_places
+  if total != len(clusters):
+    # Trust the actual uploaded list; client may have miscounted.
+    total = len(clusters)
+
+  try:
+    job_id = create_and_start_timeline_job(
+      user_id=user_id,
+      s3_key=request.s3_key,
+      source_format=source_format,
+      total_places=total,
+      home_latitude=request.home_latitude,
+      home_longitude=request.home_longitude,
+    )
+  except RuntimeError as exc:
+    raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+  return IngestResponse(job_id=job_id)
+
+
+@app.post(
+  "/api/visits/cleanup",
+  response_model=VisitsCleanupResultSchema,
+  responses={400: {"model": ErrorResponse}},
+)
+def cleanup_user_visits(
+  request: VisitsCleanupRequest,
+  user_id: CurrentUserId,
+) -> VisitsCleanupResultSchema:
+  """Clear Timeline visits or all visited-place history for the current user."""
+  try:
+    result = cleanup_visits(
+      user_id=user_id,
+      scope=request.scope,
+      unlink_places=request.unlink_places,
+    )
+  except ValueError as exc:
+    raise HTTPException(status_code=400, detail=str(exc)) from exc
+  return VisitsCleanupResultSchema(**result)
+
+
+@app.delete(
+  "/api/visits",
+  status_code=200,
+  responses={400: {"model": ErrorResponse}},
+)
+def delete_visits(
+  user_id: CurrentUserId,
+  source: str = Query(..., description="manual | instagram | timeline"),
+) -> dict[str, int]:
+  """Delete visits for the current user filtered by source (legacy). Prefer POST /api/visits/cleanup."""
+  source_value = source.strip().lower()
+  if source_value not in {"manual", "instagram", "timeline"}:
+    raise HTTPException(status_code=400, detail="source must be manual, instagram, or timeline")
+  if source_value == "timeline":
+    result = cleanup_visits(user_id=user_id, scope="timeline", unlink_places=True)
+    return {"deleted": result["visits_deleted"], "places_unlinked": result["places_unlinked"]}
+  deleted = delete_visits_by_source(user_id=user_id, source=source_value)
+  return {"deleted": deleted}
 
 
 @app.get("/api/posts", response_model=list[SavedPostSchema])
@@ -389,6 +450,57 @@ def list_all_visits(user_id: CurrentUserId) -> list[VisitDetailSchema]:
       )
     )
   return details
+
+
+@app.get("/api/visits/timeline-reviews", response_model=list[TimelineReviewDetailSchema])
+def list_pending_timeline_reviews(user_id: CurrentUserId) -> list[TimelineReviewDetailSchema]:
+  details: list[TimelineReviewDetailSchema] = []
+  for visit in list_timeline_reviews(user_id):
+    place = load_place(visit.place_id)
+    suggestion, reason = parse_review_suggestion(visit.notes)
+    details.append(
+      TimelineReviewDetailSchema(
+        visit=_visit_to_schema(visit),
+        place=_place_to_schema(place) if place is not None else None,
+        suggestion=suggestion,
+        suggestion_reason=reason,
+      )
+    )
+  return details
+
+
+@app.post(
+  "/api/visits/timeline-reviews/{visit_id}/accept",
+  response_model=VisitDetailSchema,
+  responses={404: {"model": ErrorResponse}, 400: {"model": ErrorResponse}},
+)
+def accept_pending_timeline_review(visit_id: str, user_id: CurrentUserId) -> VisitDetailSchema:
+  try:
+    visit = accept_timeline_review(user_id=user_id, visit_id=visit_id)
+  except ValueError as exc:
+    message = str(exc)
+    status = 404 if "not found" in message.lower() else 400
+    raise HTTPException(status_code=status, detail=message) from exc
+  place = load_place(visit.place_id)
+  return VisitDetailSchema(
+    visit=_visit_to_schema(visit),
+    place=_place_to_schema(place) if place is not None else None,
+  )
+
+
+@app.post(
+  "/api/visits/timeline-reviews/{visit_id}/discard",
+  status_code=204,
+  responses={404: {"model": ErrorResponse}, 400: {"model": ErrorResponse}},
+)
+def discard_pending_timeline_review(visit_id: str, user_id: CurrentUserId) -> Response:
+  try:
+    deleted = discard_timeline_review(user_id=user_id, visit_id=visit_id)
+  except ValueError as exc:
+    raise HTTPException(status_code=400, detail=str(exc)) from exc
+  if not deleted:
+    raise HTTPException(status_code=404, detail="Visit not found")
+  return Response(status_code=204)
 
 
 @app.get("/api/visits/place-ids", response_model=list[str])

@@ -23,6 +23,7 @@ def visit_from_dict(data: dict) -> Visit:
     notes=data.get("notes"),
     created_at=data.get("created_at"),
     user_id=data.get("user_id", ""),
+    source=data.get("source") or "manual",
   )
 
 
@@ -85,4 +86,16 @@ def delete_all_visits(user_id: str | None = None) -> int:
     if not last_key:
       break
     scan_kwargs["ExclusiveStartKey"] = last_key
+  return deleted
+
+
+def delete_visits_by_source(user_id: str, source: str) -> int:
+  """Delete visits for one user that match source. Returns deleted count."""
+  table = get_table("Visits")
+  deleted = 0
+  for visit in load_all_visits(user_id):
+    if visit.source != source:
+      continue
+    table.delete_item(Key={"user_id": user_id, "visit_id": visit.visit_id})
+    deleted += 1
   return deleted

@@ -42,20 +42,82 @@ def delete_all_visits(user_id: str | None = None) -> int:
 
 
 def list_visits(user_id: str) -> list[Visit]:
-  """Newest trip first (by visited_from, then created_at). Undated last among peers."""
+  """Newest trip first (by visited_from, then created_at). Undated last among peers.
+
+  Hides pending Timeline review items (`source=timeline_review`).
+  """
   return sorted(
-    load_all_visits(user_id),
+    (visit for visit in load_all_visits(user_id) if visit.source != "timeline_review"),
     key=lambda visit: (visit.visited_from or "", visit.created_at or ""),
     reverse=True,
   )
 
 
 def visited_place_ids(user_id: str) -> set[str]:
-  return {visit.place_id for visit in load_all_visits(user_id)}
+  return {
+    visit.place_id
+    for visit in load_all_visits(user_id)
+    if visit.source != "timeline_review"
+  }
 
 
 def visits_for_place(user_id: str, place_id: str) -> list[Visit]:
   return [visit for visit in load_all_visits(user_id) if visit.place_id == place_id]
+
+
+def list_timeline_reviews(user_id: str) -> list[Visit]:
+  """Pending Timeline imports awaiting Keep / Discard."""
+  return sorted(
+    (visit for visit in load_all_visits(user_id) if visit.source == "timeline_review"),
+    key=lambda visit: (visit.visited_from or "", visit.created_at or ""),
+    reverse=True,
+  )
+
+
+def parse_review_suggestion(notes: str | None) -> tuple[str | None, str | None]:
+  """Extract suggest=… and reason from Timeline review notes."""
+  text = (notes or "").strip()
+  if not text.startswith("Timeline review"):
+    return None, text or None
+  suggestion: str | None = None
+  reason: str | None = None
+  for part in text.split(" · "):
+    part = part.strip()
+    if part.startswith("suggest="):
+      suggestion = part.removeprefix("suggest=").strip() or None
+    elif part != "Timeline review":
+      reason = part or None
+  return suggestion, reason
+
+
+def accept_timeline_review(*, user_id: str, visit_id: str) -> Visit:
+  visit = load_visit(user_id, visit_id)
+  if visit is None:
+    raise ValueError("Visit not found")
+  if visit.source != "timeline_review":
+    raise ValueError("Visit is not pending Timeline review")
+  updated = replace(
+    visit,
+    source="timeline",
+    notes="Imported from Google Maps Timeline",
+  )
+  save_visit(updated)
+  return updated
+
+
+def discard_timeline_review(*, user_id: str, visit_id: str) -> bool:
+  visit = load_visit(user_id, visit_id)
+  if visit is None:
+    return False
+  if visit.source != "timeline_review":
+    raise ValueError("Visit is not pending Timeline review")
+  place_id = visit.place_id
+  deleted = delete_visit(user_id, visit_id)
+  if deleted and place_id:
+    still = any(item.place_id == place_id for item in load_all_visits(user_id))
+    if not still:
+      user_places_repo.unlink_user_place(user_id, place_id)
+  return deleted
 
 
 def _parse_iso_date(value: str, field_name: str) -> date:
@@ -154,12 +216,14 @@ def create_visit(
   place_query: str | None = None,
   city: str | None = None,
   country: str | None = None,
+  source: str = "manual",
 ) -> Visit:
   if not user_id:
     raise ValueError("user_id is required")
   start = _normalize_optional_date(visited_from)
   end = _normalize_optional_date(visited_to)
   _validate_dates(start, end)
+  source_value = (source or "manual").strip().lower() or "manual"
 
   visit_id = uuid.uuid4().hex
   place = resolve_place_for_visit(
@@ -180,6 +244,7 @@ def create_visit(
     notes=(notes.strip() if notes and notes.strip() else None),
     created_at=datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
     user_id=user_id,
+    source=source_value,
   )
   save_visit(visit)
   return visit
@@ -190,6 +255,7 @@ def mark_visited(
   user_id: str,
   place_id: str,
   visited_from: str | None = None,
+  source: str = "manual",
 ) -> Visit:
   """Idempotent visited mark — reuse an existing visit or create one."""
   existing = visits_for_place(user_id, place_id)
@@ -203,7 +269,73 @@ def mark_visited(
     user_id=user_id,
     place_id=place_id,
     visited_from=visited_from,
+    source=source,
   )
+
+
+def delete_visits_by_source(*, user_id: str, source: str) -> int:
+  """Delete visits created via a given source (e.g. timeline). Returns count."""
+  if not user_id:
+    raise ValueError("user_id is required")
+  source_value = (source or "").strip().lower()
+  if not source_value:
+    raise ValueError("source is required")
+  return visits_repo.delete_visits_by_source(user_id, source_value)
+
+
+_TIMELINE_NOTES_MARKER = "Google Maps Timeline"
+
+
+def _is_timeline_visit(visit: Visit) -> bool:
+  if visit.source in {"timeline", "timeline_review"}:
+    return True
+  notes = visit.notes or ""
+  return _TIMELINE_NOTES_MARKER in notes or notes.startswith("Timeline review")
+
+
+def cleanup_visits(
+  *,
+  user_id: str,
+  scope: str,
+  unlink_places: bool = True,
+) -> dict[str, int]:
+  """Delete visits for a user by scope and optionally unlink emptied user places.
+
+  scope:
+    - timeline: visits with source=timeline or Timeline import notes
+    - all: every visit for the user
+  """
+  if not user_id:
+    raise ValueError("user_id is required")
+  scope_value = (scope or "").strip().lower()
+  if scope_value not in {"timeline", "all"}:
+    raise ValueError("scope must be timeline or all")
+
+  visits = load_all_visits(user_id)
+  if scope_value == "timeline":
+    targets = [visit for visit in visits if _is_timeline_visit(visit)]
+  else:
+    targets = list(visits)
+
+  place_ids = {visit.place_id for visit in targets if visit.place_id}
+  visits_deleted = 0
+  for visit in targets:
+    if delete_visit(user_id, visit.visit_id):
+      visits_deleted += 1
+
+  places_unlinked = 0
+  if unlink_places and place_ids:
+    still_visited = visited_place_ids(user_id)
+    for place_id in place_ids:
+      if place_id in still_visited:
+        continue
+      if user_places_repo.unlink_user_place(user_id, place_id):
+        places_unlinked += 1
+
+  return {
+    "visits_deleted": visits_deleted,
+    "places_unlinked": places_unlinked,
+  }
 
 
 def unmark_visited(*, user_id: str, place_id: str) -> int:

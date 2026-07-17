@@ -50,7 +50,7 @@ Builds on: reel extraction (`extract.py`), geocode → upsert (`places.py`), hie
 | # | Feature | What the user gets | Status |
 |---|---------|-------------------|--------|
 | 7 | **Itinerary from a reel / cluster** | Turn a region root + children into a day plan (order by tips, access links, tags) | Not started |
-| 8 | **Visit / want-to-go status** | Want to go · Visited · Skip on places; filter the library by status (builds on existing `Visit`) | In progress — Visited one-tap + optional dates + Instagram profile import + Google Timeline upload (phone/Takeout, OSM reverse); Want/Skip + filters TBD |
+| 8 | **Visit / want-to-go status** | Want to go · Visited · Skip on places; filter the library by status (builds on existing `Visit`) | In progress — Visited + Instagram import + Timeline async import (semantic/home/OSM filter, SFN batches); Want/Skip + filters TBD |
 | 9 | **Map-first trip view** | Map filtered by region root or tag; pins by category; tap → tips + facts | Partially done — maps exist; trip-scoped / root-filtered view TBD |
 | 10 | **Access & logistics pack** | Derived view: trailhead, fees, duration, “need this hike to reach this lake” from relations + facts | Not started |
 

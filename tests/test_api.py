@@ -237,6 +237,108 @@ def test_create_and_list_visits(dynamodb) -> None:
   assert client.get("/api/visits", headers=HEADERS).json() == []
 
 
+def test_cleanup_visits_endpoint(dynamodb) -> None:
+  location = PlaceLocation(
+    display_name="Multnomah Falls",
+    continent="North America",
+    country="United States",
+    country_code="US",
+    state_province="Oregon",
+    city="Portland",
+    latitude=45.5762,
+    longitude=-122.1158,
+  )
+  place_id = places.upsert_place(
+    PlaceMention(place_name="Multnomah Falls", category="waterfall"),
+    location,
+    "instagram:reelA",
+  )
+  client = TestClient(app)
+  created = client.post(
+    "/api/visits",
+    json={
+      "place_id": place_id,
+      "visited_from": "2024-06-12",
+      "notes": "Imported from Google Maps Timeline",
+    },
+    headers=HEADERS,
+  )
+  assert created.status_code == 201
+
+  bad = client.post("/api/visits/cleanup", json={"scope": "bogus"}, headers=HEADERS)
+  assert bad.status_code == 422
+
+  cleaned = client.post(
+    "/api/visits/cleanup",
+    json={"scope": "timeline", "unlink_places": True},
+    headers=HEADERS,
+  )
+  assert cleaned.status_code == 200
+  body = cleaned.json()
+  assert body["visits_deleted"] == 1
+  assert body["places_unlinked"] == 1
+  assert client.get("/api/visits", headers=HEADERS).json() == []
+
+
+def test_timeline_review_accept_discard_endpoints(dynamodb) -> None:
+  from travelplanner.visits import create_visit
+
+  location = PlaceLocation(
+    display_name="Telus Garden",
+    continent="North America",
+    country="Canada",
+    country_code="CA",
+    state_province="British Columbia",
+    city="Vancouver",
+    latitude=49.28,
+    longitude=-123.12,
+    osm_class="building",
+    osm_type="commercial",
+  )
+  place_id = places.upsert_place(
+    PlaceMention(place_name="Telus Garden"),
+    location,
+    None,
+  )
+  review = create_visit(
+    user_id="user-a",
+    place_id=place_id,
+    visited_from="2024-04-01",
+    notes="Timeline review · suggest=discard · office building",
+    source="timeline_review",
+  )
+  client = TestClient(app)
+
+  listed = client.get("/api/visits/timeline-reviews", headers=HEADERS)
+  assert listed.status_code == 200
+  assert len(listed.json()) == 1
+  assert listed.json()[0]["suggestion"] == "discard"
+  assert client.get("/api/visits", headers=HEADERS).json() == []
+
+  kept = client.post(
+    f"/api/visits/timeline-reviews/{review.visit_id}/accept",
+    headers=HEADERS,
+  )
+  assert kept.status_code == 200
+  assert kept.json()["visit"]["source"] == "timeline"
+  assert len(client.get("/api/visits", headers=HEADERS).json()) == 1
+  assert client.get("/api/visits/timeline-reviews", headers=HEADERS).json() == []
+
+  review2 = create_visit(
+    user_id="user-a",
+    place_id=place_id,
+    visited_from="2024-05-01",
+    notes="Timeline review · suggest=unsure · maybe",
+    source="timeline_review",
+  )
+  discarded = client.post(
+    f"/api/visits/timeline-reviews/{review2.visit_id}/discard",
+    headers=HEADERS,
+  )
+  assert discarded.status_code == 204
+  assert client.get("/api/visits/timeline-reviews", headers=HEADERS).json() == []
+
+
 def test_reprocess_places_endpoint(monkeypatch, dynamodb) -> None:
   called = {"reprocess": False}
 
