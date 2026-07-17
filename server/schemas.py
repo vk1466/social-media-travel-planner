@@ -133,6 +133,37 @@ class InstagramImportRequest(BaseModel):
   username: str = Field(..., min_length=1)
 
 
+class TimelineVisitInput(BaseModel):
+  latitude: float
+  longitude: float
+  visited_from: str | None = None
+  visited_to: str | None = None
+  place_name: str | None = None
+  google_place_id: str | None = None
+  semantic_type: str | None = None
+  address: str | None = None
+  source_format: str | None = None
+
+
+class TimelineImportRequest(BaseModel):
+  """Pre-parsed Timeline visits (client parses large exports to avoid Function URL size limits)."""
+
+  format: str = "unknown"
+  visits: list[TimelineVisitInput] = Field(..., min_length=1)
+
+
+class TimelineImportResultSchema(BaseModel):
+  format: str
+  visits_parsed: int
+  unique_places: int
+  imported: int
+  skipped_existing: int
+  skipped_unresolved: int
+  skipped_limit: int
+  failed: int
+  place_names: list[str] = Field(default_factory=list)
+
+
 class ErrorResponse(BaseModel):
   detail: str
 

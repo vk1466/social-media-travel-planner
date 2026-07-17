@@ -1,4 +1,5 @@
 import DateTimePicker from "@react-native-community/datetimepicker";
+import * as DocumentPicker from "expo-document-picker";
 import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
 import {
@@ -13,7 +14,14 @@ import {
   View,
 } from "react-native";
 
-import { createVisit, deleteVisit, startInstagramImport, type Place } from "@/src/api";
+import {
+  createVisit,
+  deleteVisit,
+  importTimelineFile,
+  startInstagramImport,
+  type Place,
+  type TimelineImportResult,
+} from "@/src/api";
 import { Button, EmptyState, ErrorBanner, SuccessBanner } from "@/src/components/ui";
 import { useLibrary } from "@/src/context/LibraryContext";
 import { colors, spacing } from "@/src/theme";
@@ -32,6 +40,20 @@ function formatVisitDates(visitedFrom?: string | null, visitedTo?: string | null
   return `${visitedFrom} → ${visitedTo}`;
 }
 
+function formatTimelineSummary(result: TimelineImportResult): string {
+  const parts = [
+    `${result.format}: ${result.imported} imported`,
+    `${result.unique_places} unique places`,
+  ];
+  if (result.skipped_existing) {
+    parts.push(`${result.skipped_existing} already visited`);
+  }
+  if (result.skipped_limit) {
+    parts.push(`${result.skipped_limit} over limit`);
+  }
+  return parts.join(" · ");
+}
+
 export default function HistoryScreen() {
   const router = useRouter();
   const { places, visits, loading, error, bumpRefresh } = useLibrary();
@@ -44,6 +66,7 @@ export default function HistoryScreen() {
   const [showToPicker, setShowToPicker] = useState(false);
   const [saving, setSaving] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [timelineImporting, setTimelineImporting] = useState(false);
   const [instagramUsername, setInstagramUsername] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
   const [formSuccess, setFormSuccess] = useState<string | null>(null);
@@ -81,6 +104,34 @@ export default function HistoryScreen() {
       setFormError(err instanceof Error ? err.message : "Failed to start Instagram import");
     } finally {
       setImporting(false);
+    }
+  };
+
+  const handleImportTimeline = async () => {
+    setFormError(null);
+    setFormSuccess(null);
+    const picked = await DocumentPicker.getDocumentAsync({
+      type: ["application/json", "application/zip", "public.zip-archive", "*/*"],
+      copyToCacheDirectory: true,
+    });
+    if (picked.canceled || !picked.assets?.[0]) {
+      return;
+    }
+    const asset = picked.assets[0];
+    const filename = asset.name || "Timeline.json";
+    if (!/\.(json|zip)$/i.test(filename)) {
+      setFormError("Choose a Timeline .json or Takeout .zip file");
+      return;
+    }
+    setTimelineImporting(true);
+    try {
+      const result = await importTimelineFile(asset.uri, filename);
+      setFormSuccess(formatTimelineSummary(result));
+      bumpRefresh();
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : "Failed to import Timeline");
+    } finally {
+      setTimelineImporting(false);
     }
   };
 
@@ -171,6 +222,19 @@ export default function HistoryScreen() {
             label="Import visits"
             loading={importing}
             onPress={() => void handleImportInstagram()}
+          />
+
+          <Text style={[styles.title, { marginTop: spacing.lg }]}>
+            Import from Google Maps Timeline
+          </Text>
+          <Text style={styles.subtitle}>
+            Upload a phone Timeline .json or Takeout .zip. Parsed on device; only place visits are
+            sent. Home/work skipped; large histories capped.
+          </Text>
+          <Button
+            label={timelineImporting ? "Importing…" : "Choose Timeline file"}
+            loading={timelineImporting}
+            onPress={() => void handleImportTimeline()}
           />
 
           <Text style={[styles.title, { marginTop: spacing.lg }]}>Add a place you’ve visited</Text>

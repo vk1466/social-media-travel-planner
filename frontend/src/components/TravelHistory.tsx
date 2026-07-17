@@ -1,12 +1,14 @@
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 
 import {
   createVisit,
   deleteVisit,
   fetchPlaces,
   fetchVisits,
+  importTimelineFile,
   startInstagramImport,
   type Place,
+  type TimelineImportResult,
   type VisitDetail,
 } from "../api";
 
@@ -36,6 +38,27 @@ function locationLine(place: Place | null | undefined): string {
   return [city, stateProvince, country].filter(Boolean).join(", ");
 }
 
+function formatTimelineSummary(result: TimelineImportResult): string {
+  const parts = [
+    `Detected ${result.format} format`,
+    `${result.visits_parsed} visits → ${result.unique_places} places`,
+    `imported ${result.imported}`,
+  ];
+  if (result.skipped_existing) {
+    parts.push(`${result.skipped_existing} already visited`);
+  }
+  if (result.skipped_unresolved) {
+    parts.push(`${result.skipped_unresolved} unresolved`);
+  }
+  if (result.skipped_limit) {
+    parts.push(`${result.skipped_limit} over limit`);
+  }
+  if (result.failed) {
+    parts.push(`${result.failed} failed`);
+  }
+  return parts.join(" · ");
+}
+
 export function TravelHistory({
   refreshToken = 0,
   jobRunning = false,
@@ -49,7 +72,10 @@ export function TravelHistory({
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [timelineImporting, setTimelineImporting] = useState(false);
+  const [timelineSummary, setTimelineSummary] = useState<string | null>(null);
   const [instagramUsername, setInstagramUsername] = useState("");
+  const timelineInputRef = useRef<HTMLInputElement>(null);
 
   const [destinationQuery, setDestinationQuery] = useState("");
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
@@ -107,6 +133,7 @@ export function TravelHistory({
   const handleImportInstagram = async (event: FormEvent) => {
     event.preventDefault();
     setError(null);
+    setTimelineSummary(null);
     const username = instagramUsername.trim();
     if (!username) {
       setError("Enter an Instagram username");
@@ -121,6 +148,32 @@ export function TravelHistory({
       setError(err instanceof Error ? err.message : "Failed to start Instagram import");
     } finally {
       setImporting(false);
+    }
+  };
+
+  const handleImportTimeline = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError(null);
+    setTimelineSummary(null);
+    const input = timelineInputRef.current;
+    const file = input?.files?.[0];
+    if (!file) {
+      setError("Choose a Timeline .json or Takeout .zip file");
+      return;
+    }
+    setTimelineImporting(true);
+    try {
+      const result = await importTimelineFile(file);
+      setTimelineSummary(formatTimelineSummary(result));
+      if (input) {
+        input.value = "";
+      }
+      await refresh();
+      onChanged?.();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to import Timeline");
+    } finally {
+      setTimelineImporting(false);
     }
   };
 
@@ -213,6 +266,50 @@ export function TravelHistory({
             </button>
           </div>
         </form>
+      </section>
+
+      <section className="panel visit-form-panel">
+        <div className="ingest-panel-header">
+          <span className="ingest-panel-icon" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 18 18">
+              <path
+                d="M3 14.5V3.5h7.2L15 8.3v6.2H3z"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.4"
+                strokeLinejoin="round"
+              />
+              <path d="M10 3.5V8h4.8" fill="none" stroke="currentColor" strokeWidth="1.4" />
+            </svg>
+          </span>
+          <div>
+            <h2 className="ingest-panel-title">Import from Google Maps Timeline</h2>
+            <p className="ingest-panel-subtitle">
+              Upload a phone Timeline .json or Takeout Location History .zip. The file is parsed in
+              your browser (large exports stay local); only place visits are sent to the API and
+              resolved with OpenStreetMap. Home/work visits are skipped. Large histories are capped
+              (default 150 unique places).
+            </p>
+          </div>
+        </div>
+        <form className="visit-form" onSubmit={(event) => void handleImportTimeline(event)}>
+          <label className="visit-field visit-field-destination">
+            <span className="field-label">Timeline file</span>
+            <input
+              ref={timelineInputRef}
+              type="file"
+              accept=".json,.zip,application/json,application/zip"
+              className="visit-file-input"
+              disabled={timelineImporting}
+            />
+          </label>
+          <div className="form-actions">
+            <button type="submit" className="primary-button" disabled={timelineImporting}>
+              {timelineImporting ? "Importing… (may take a few minutes)" : "Import Timeline"}
+            </button>
+          </div>
+        </form>
+        {timelineSummary ? <p className="banner-success">{timelineSummary}</p> : null}
       </section>
 
       {error && <p className="banner-error">{error}</p>}

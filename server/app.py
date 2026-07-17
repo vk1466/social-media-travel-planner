@@ -15,6 +15,7 @@ from travelplanner.db import jobs_repo, place_candidates_repo
 from travelplanner.places.debug import debug_locate
 from travelplanner.sources.instagram_profile import list_recent_post_urls, normalize_instagram_username
 from travelplanner.store import load_post, post_to_dict
+from travelplanner.timeline import TimelineVisit, import_timeline_visits
 from travelplanner.visits import (
   create_visit,
   delete_visit,
@@ -47,6 +48,8 @@ from server.schemas import (
   PlaceCandidateSchema,
   PlaceDetailSchema,
   SavedPostSchema,
+  TimelineImportRequest,
+  TimelineImportResultSchema,
   VisitCreateRequest,
   VisitDetailSchema,
   VisitSchema,
@@ -172,6 +175,64 @@ def import_instagram_profile(
     mark_visited=True,
   )
   return IngestResponse(job_id=job_id)
+
+
+@app.post(
+  "/api/visits/import-timeline",
+  response_model=TimelineImportResultSchema,
+  status_code=200,
+  responses={400: {"model": ErrorResponse}},
+)
+def import_google_timeline(
+  request: TimelineImportRequest,
+  user_id: CurrentUserId,
+) -> TimelineImportResultSchema:
+  """Import visited places from pre-parsed Google Maps Timeline visits.
+
+  Clients parse large Timeline JSON/ZIP locally (Function URL body limit ~6MB)
+  and POST the compact visit list here for OSM resolve + Visit creation.
+  """
+  source_format = request.format if request.format in {
+    "phone",
+    "takeout_semantic",
+    "records",
+    "mixed",
+    "unknown",
+  } else "unknown"
+
+  visits = [
+    TimelineVisit(
+      latitude=item.latitude,
+      longitude=item.longitude,
+      visited_from=item.visited_from,
+      visited_to=item.visited_to,
+      place_name=item.place_name,
+      google_place_id=item.google_place_id,
+      semantic_type=item.semantic_type,
+      address=item.address,
+      source_format=source_format,  # type: ignore[arg-type]
+    )
+    for item in request.visits
+    if -90 <= item.latitude <= 90 and -180 <= item.longitude <= 180
+  ]
+  if not visits:
+    raise HTTPException(
+      status_code=400,
+      detail="No valid place visits in payload (need latitude/longitude).",
+    )
+
+  result = import_timeline_visits(visits, user_id=user_id, source_format=source_format)  # type: ignore[arg-type]
+  return TimelineImportResultSchema(
+    format=result.format,
+    visits_parsed=result.visits_parsed,
+    unique_places=result.unique_places,
+    imported=result.imported,
+    skipped_existing=result.skipped_existing,
+    skipped_unresolved=result.skipped_unresolved,
+    skipped_limit=result.skipped_limit,
+    failed=result.failed,
+    place_names=list(result.place_names),
+  )
 
 
 @app.get("/api/posts", response_model=list[SavedPostSchema])

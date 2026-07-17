@@ -134,3 +134,34 @@ def instagram_profile_post_limit() -> int:
   if limit < 1:
     raise RuntimeError("INSTAGRAM_PROFILE_POST_LIMIT must be >= 1")
   return limit
+
+
+def timeline_import_max_places() -> int:
+  """Max unique Timeline places to reverse-geocode per upload (default 150).
+
+  Nominatim is rate-limited (~1 req/s), so large histories are capped.
+  """
+  raw = os.getenv("TIMELINE_IMPORT_MAX_PLACES", "150").strip()
+  try:
+    limit = int(raw)
+  except ValueError as exc:
+    raise RuntimeError(
+      f"TIMELINE_IMPORT_MAX_PLACES must be an integer, got {raw!r}"
+    ) from exc
+  if limit < 1:
+    raise RuntimeError("TIMELINE_IMPORT_MAX_PLACES must be >= 1")
+  return limit
+
+
+def timeline_import_max_bytes() -> int:
+  """Max upload size for Timeline JSON/ZIP (default 40 MiB)."""
+  raw = os.getenv("TIMELINE_IMPORT_MAX_BYTES", str(40 * 1024 * 1024)).strip()
+  try:
+    limit = int(raw)
+  except ValueError as exc:
+    raise RuntimeError(
+      f"TIMELINE_IMPORT_MAX_BYTES must be an integer, got {raw!r}"
+    ) from exc
+  if limit < 1024:
+    raise RuntimeError("TIMELINE_IMPORT_MAX_BYTES must be >= 1024")
+  return limit

@@ -185,6 +185,10 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   for (const [key, value] of Object.entries(auth)) {
     headers.set(key, value);
   }
+  // Let the browser set multipart boundary for FormData bodies.
+  if (init?.body instanceof FormData) {
+    headers.delete("Content-Type");
+  }
   const response = await fetch(`${API_BASE_URL}${path}`, { ...init, headers });
   if (!response.ok) {
     let detail = response.statusText;
@@ -220,6 +224,53 @@ export async function startInstagramImport(username: string): Promise<string> {
     body: JSON.stringify({ username }),
   });
   return body.job_id;
+}
+
+export interface TimelineImportResult {
+  format: string;
+  visits_parsed: number;
+  unique_places: number;
+  imported: number;
+  skipped_existing: number;
+  skipped_unresolved: number;
+  skipped_limit: number;
+  failed: number;
+  place_names: string[];
+}
+
+export async function importTimelineFile(file: File): Promise<TimelineImportResult> {
+  const { parseTimelineFile } = await import("./timelineParse");
+  let parsed;
+  try {
+    parsed = await parseTimelineFile(file);
+  } catch (err) {
+    throw new Error(
+      err instanceof Error
+        ? `Could not read Timeline file: ${err.message}`
+        : "Could not read Timeline file",
+    );
+  }
+  if (parsed.format === "unknown") {
+    throw new Error(
+      "Unrecognized Timeline format. Export from Google Maps (phone) or Takeout Location History.",
+    );
+  }
+  if (parsed.format === "records" && parsed.visits.length === 0) {
+    throw new Error(
+      "Records.json has GPS pings but no place visits. Use Semantic Location History or a phone Timeline export.",
+    );
+  }
+  if (parsed.visits.length === 0) {
+    throw new Error("No place visits found in that export (home/work visits are skipped).");
+  }
+  return request<TimelineImportResult>("/api/visits/import-timeline", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      format: parsed.format,
+      visits: parsed.visits,
+    }),
+  });
 }
 
 export async function fetchJob(jobId: string): Promise<Job> {

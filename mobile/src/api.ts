@@ -174,6 +174,9 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   for (const [key, value] of Object.entries(auth)) {
     headers.set(key, value);
   }
+  if (init?.body instanceof FormData) {
+    headers.delete("Content-Type");
+  }
   const response = await fetch(`${API_BASE_URL}${path}`, { ...init, headers });
   if (!response.ok) {
     let detail = response.statusText;
@@ -209,6 +212,80 @@ export async function startInstagramImport(username: string): Promise<string> {
     body: JSON.stringify({ username }),
   });
   return body.job_id;
+}
+
+export interface TimelineImportResult {
+  format: string;
+  visits_parsed: number;
+  unique_places: number;
+  imported: number;
+  skipped_existing: number;
+  skipped_unresolved: number;
+  skipped_limit: number;
+  failed: number;
+  place_names: string[];
+}
+
+export async function importTimelineFile(uri: string, filename: string): Promise<TimelineImportResult> {
+  const { parseTimelinePayload } = await import("./timelineParse");
+  const { unzipSync } = await import("fflate");
+
+  const response = await fetch(uri);
+  const buffer = await response.arrayBuffer();
+  const lower = filename.toLowerCase();
+  let parsed: { format: string; visits: unknown[] };
+
+  if (
+    lower.endsWith(".zip") ||
+    (buffer.byteLength >= 2 &&
+      new Uint8Array(buffer)[0] === 0x50 &&
+      new Uint8Array(buffer)[1] === 0x4b)
+  ) {
+    const files = unzipSync(new Uint8Array(buffer));
+    const formats = new Set<string>();
+    const visits: unknown[] = [];
+    for (const [name, bytes] of Object.entries(files)) {
+      if (!name.toLowerCase().endsWith(".json")) {
+        continue;
+      }
+      try {
+        const text = new TextDecoder("utf-8").decode(bytes);
+        const part = parseTimelinePayload(JSON.parse(text) as unknown);
+        formats.add(part.format);
+        visits.push(...part.visits);
+      } catch {
+        // skip
+      }
+    }
+    const format =
+      formats.size === 1
+        ? [...formats][0]
+        : formats.size > 1
+          ? "mixed"
+          : "unknown";
+    parsed = { format, visits };
+  } else {
+    const text = new TextDecoder("utf-8").decode(buffer);
+    parsed = parseTimelinePayload(JSON.parse(text) as unknown);
+  }
+
+  if (parsed.format === "unknown") {
+    throw new Error(
+      "Unrecognized Timeline format. Export from Google Maps (phone) or Takeout Location History.",
+    );
+  }
+  if (parsed.visits.length === 0) {
+    throw new Error("No place visits found in that export (home/work visits are skipped).");
+  }
+
+  return request<TimelineImportResult>("/api/visits/import-timeline", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      format: parsed.format,
+      visits: parsed.visits,
+    }),
+  });
 }
 
 export async function fetchJob(jobId: string): Promise<Job> {

@@ -12,6 +12,7 @@
     "@clerk/react": "^6.12.2",
     "@fontsource-variable/dm-sans": "^5.2.8",
     "@fontsource/instrument-serif": "^5.2.8",
+    "fflate": "^0.8.3",
     "leaflet": "^1.9.4",
     "open-props": "^1.7.23",
     "react": "^19.1.0",

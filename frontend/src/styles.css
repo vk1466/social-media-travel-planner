@@ -2075,6 +2075,16 @@ a {
   gap: var(--size-2);
 }
 
+.visit-file-input {
+  width: 100%;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+  color: var(--ink);
+  font: inherit;
+}
+
 .visit-destination-wrap {
   position: relative;
 }

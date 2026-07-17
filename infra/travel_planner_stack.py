@@ -107,7 +107,8 @@ class TravelPlannerStack(Stack):
       ),
       architecture=lambda_.Architecture.X86_64,
       memory_size=1024,
-      timeout=Duration.seconds(90),
+      # Timeline import reverse-geocodes via Nominatim (~1 req/s); allow long uploads.
+      timeout=Duration.seconds(900),
       environment={
         **shared_env,
         "STATE_MACHINE_ARN": state_machine.state_machine_arn,
@@ -115,6 +116,7 @@ class TravelPlannerStack(Stack):
         "CLERK_ISSUER": clerk_issuer,
         "ADMIN_USER_IDS": admin_user_ids,
         "INSTAGRAM_PROFILE_POST_LIMIT": "5",
+        "TIMELINE_IMPORT_MAX_PLACES": "150",
       },
     )
     for table in tables.values():
