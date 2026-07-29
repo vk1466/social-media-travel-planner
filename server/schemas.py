@@ -191,6 +191,10 @@ class VisitSchema(BaseModel):
   created_at: str | None = None
   user_id: str | None = None
   source: str | None = "manual"
+  status: str | None = "confirmed"
+  review_suggestion: str | None = None
+  review_reason: str | None = None
+  travel_kind: str | None = None
 
 class VisitCreateRequest(BaseModel):
   visited_from: str | None = None
