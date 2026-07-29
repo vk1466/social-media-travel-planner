@@ -2,31 +2,17 @@
 
 from __future__ import annotations
 
-import re
 from typing import Any
-from urllib.parse import urlparse
 
 from travelplanner.models import FactEvidence, PlaceFacts
-from travelplanner.places.facts.schema import FILLABLE_FIELDS, completeness_status
+from travelplanner.places.facts.schema import (
+  FILLABLE_FIELDS,
+  completeness_status,
+  field_value_ok,
+  source_may_fill,
+  source_priority,
+)
 from travelplanner.places.facts.types import SourceDocument, utc_now_iso
-
-# Structured fields: higher priority wins conflicts.
-_SOURCE_PRIORITY = {
-  "nps": 40,
-  "google_places": 30,
-  "osm": 20,
-  "wikipedia": 10,
-}
-
-# Wikipedia may only win prose fields.
-_PROSE_FIELDS = frozenset({"famous_for", "best_time_to_visit"})
-
-_DIFFICULTY = frozenset({"easy", "moderate", "hard"})
-_HTTP_RE = re.compile(r"^https?://", re.IGNORECASE)
-
-
-def _source_priority(source_name: str) -> int:
-  return _SOURCE_PRIORITY.get(source_name, 0)
 
 
 def _normalize_comparable(value: Any) -> str:
@@ -37,41 +23,6 @@ def _normalize_comparable(value: Any) -> str:
   if value is None:
     return ""
   return str(value).strip().lower()
-
-
-def _format_ok(field_name: str, value: Any) -> bool:
-  if value is None:
-    return False
-  if field_name == "price_level":
-    return isinstance(value, int) and 0 <= value <= 4
-  if field_name == "website_url":
-    if not isinstance(value, str) or not value.strip():
-      return False
-    if not _HTTP_RE.match(value.strip()):
-      return False
-    parsed = urlparse(value.strip())
-    return bool(parsed.netloc)
-  if field_name == "opening_hours_text":
-    if not isinstance(value, (list, tuple)) or not value:
-      return False
-    return all(isinstance(line, str) and 0 < len(line.strip()) <= 200 for line in value)
-  if field_name == "cuisines":
-    if not isinstance(value, (list, tuple)) or not value:
-      return False
-    return all(isinstance(item, str) and item.strip() for item in value)
-  if field_name == "difficulty":
-    return isinstance(value, str) and value in _DIFFICULTY
-  if field_name == "distance_km":
-    return isinstance(value, (int, float)) and 0 < float(value) <= 200
-  if field_name == "elevation_gain_m":
-    return isinstance(value, int) and 0 <= value <= 9000
-  if field_name == "typical_duration_minutes":
-    return isinstance(value, int) and 0 < value <= 7 * 24 * 60
-  if field_name in {"phone_number", "admission_text", "famous_for", "best_time_to_visit"}:
-    return isinstance(value, str) and bool(value.strip())
-  if field_name == "reservation_required":
-    return isinstance(value, bool)
-  return value is not None
 
 
 def verify_facts(
@@ -100,12 +51,11 @@ def verify_facts(
       continue
     if not isinstance(source_name, str) or not source_name.strip():
       source_name = known_refs[source_ref].source_name
+    if not source_may_fill(source_name, field_name):
+      continue
     # Prefer an explicit per-citation value when present (conflict tests / future).
     value = item["value"] if "value" in item else draft.get(field_name)
-    if not _format_ok(field_name, value):
-      continue
-    # Wikipedia never wins structured fields.
-    if source_name == "wikipedia" and field_name not in _PROSE_FIELDS:
+    if not field_value_ok(field_name, value):
       continue
     by_field.setdefault(field_name, []).append((source_name, source_ref, value))
 
@@ -114,8 +64,7 @@ def verify_facts(
   conflicts: list[str] = []
 
   for field_name, citations in by_field.items():
-    # Prefer highest-priority source; detect value disagreements.
-    ranked = sorted(citations, key=lambda row: _source_priority(row[0]), reverse=True)
+    ranked = sorted(citations, key=lambda row: source_priority(row[0]), reverse=True)
     winner_name, winner_ref, winner_value = ranked[0]
     winner_cmp = _normalize_comparable(winner_value)
     for other_name, _other_ref, other_value in ranked[1:]:
@@ -131,7 +80,6 @@ def verify_facts(
       )
     )
 
-  # Fields present in draft with evidence already handled; ignore uncited values.
   status = completeness_status(category, values)
 
   def _tuple_str(field: str) -> tuple[str, ...]:
@@ -160,4 +108,3 @@ def verify_facts(
     conflicts=tuple(dict.fromkeys(conflicts)),
     notes=tuple(notes),
   )
-
