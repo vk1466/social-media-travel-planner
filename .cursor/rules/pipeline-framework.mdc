@@ -21,6 +21,6 @@ That doc is the source of truth. Do not invent a parallel architecture.
 - Shared steps return **explicit outcomes**; policy at the edge.
 - Contextual names; keep the framework small (no plugin/DAG framework).
 - `server/` remains a thin adapter — no place/visit business logic in workers beyond calling the library.
-- New product behavior uses `travelplanner/features.py` (`enabled(FLAG)`, default off) — no ad-hoc env feature checks. See AGENTS.md § Feature flags.
+- New product behavior uses `FeatureFlag.get/set` in `travelplanner/feature_flag.py` (default off) — no ad-hoc env feature checks. See AGENTS.md § Feature flags.
 
 Use the checklist at the end of the design doc in your change summary.

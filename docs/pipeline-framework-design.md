@@ -49,26 +49,26 @@ Persona-specific prep and post-work stay **outside** the pipeline.
 8. **Keep the framework small.** Plain functions + dataclasses + a runner.
    No plugin base classes, middleware stacks, or DAG engines unless this doc
    is updated first.
-9. **New product behavior is feature-flagged.** Register flags in
-   `travelplanner/features.py` (default off) and gate with `enabled(...)`.
-   Do not add ad-hoc env checks for product features. See [Feature flags](#feature-flags).
+9. **New product behavior is feature-flagged.** Use `FeatureFlag.get/set` in
+   `travelplanner/feature_flag.py` (default off). Do not add ad-hoc env checks
+   for product features. See [Feature flags](#feature-flags).
 
 ---
 
 ## Feature flags
 
-Module: [`travelplanner/features.py`](../travelplanner/features.py). Also documented
+Module: [`travelplanner/feature_flag.py`](../travelplanner/feature_flag.py). Also documented
 in [AGENTS.md](../AGENTS.md#feature-flags).
 
 | Do | Don't |
 |----|--------|
-| Add a constant + `_FLAGS` entry (`default=False`) | Gate on a one-off `os.getenv("MY_THING")` |
-| Call `enabled(MY_FLAG)` or `require(MY_FLAG)` | Pass an unregistered string key at call sites |
-| Use env `FEATURE_<KEY>=true` | Invent a second flag system in server/frontend |
-| Ship incomplete steps (e.g. OCR) behind a flag | Turn risky paths on by default in prod |
+| Add a key to `FeatureFlag._flags` (default off) | Gate on a one-off `os.getenv("MY_THING")` |
+| Call `FeatureFlag.get("my_flag")` | Invent a second flag system in server/frontend |
+| Flip with `FeatureFlag.set(...)` in tests/ops | Turn risky paths on by default in prod |
+| Ship incomplete steps (e.g. OCR) behind a flag | |
 
 Examples already in this design: `extract_image_text` (OCR) stays flagged off until
-implemented; place-facts enrichment uses `PLACE_FACTS` / `FEATURE_PLACE_FACTS`.
+implemented; place-facts enrichment uses `place_facts`.
 
 When adding a pipeline step that is not ready for all environments, register a
 flag and keep the composition able to skip or no-op when the flag is off — do
