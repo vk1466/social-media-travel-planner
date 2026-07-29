@@ -14,7 +14,7 @@ export default function IngestScreen() {
   const router = useRouter();
   const { shared } = useLocalSearchParams<{ shared?: string }>();
   const { bumpRefresh } = useLibrary();
-  const { pendingUrls, clearPendingUrls } = usePendingShare();
+  const { pendingUrls, autoSubmit, clearPendingUrls } = usePendingShare();
   const [jobId, setJobId] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -23,6 +23,7 @@ export default function IngestScreen() {
   const navigated = useRef(false);
 
   const initialText = pendingUrls.join("\n");
+  const shouldAutoStart = autoSubmit || shared === "1";
 
   const handleSubmit = useCallback(
     async (links: string[], refresh: boolean): Promise<boolean> => {
@@ -65,7 +66,7 @@ export default function IngestScreen() {
   }, [jobId]);
 
   useEffect(() => {
-    if (autoStarted.current || pendingUrls.length === 0 || shared !== "1") {
+    if (autoStarted.current || pendingUrls.length === 0 || !shouldAutoStart || submitting || jobId) {
       return;
     }
     autoStarted.current = true;
@@ -74,7 +75,7 @@ export default function IngestScreen() {
         autoStarted.current = false;
       }
     });
-  }, [pendingUrls, shared, handleSubmit]);
+  }, [pendingUrls, shouldAutoStart, handleSubmit, submitting, jobId]);
 
   useEffect(() => {
     if (job?.status !== "done" || navigated.current) {

@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "dependencies": {
     "@clerk/clerk-expo": "^2.19.31",
+    "@expo/vector-icons": "^15.0.2",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@react-native-community/datetimepicker": "9.1.0",
     "expo": "~57.0.4",
@@ -40,8 +41,8 @@
   },
   "scripts": {
     "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
     "typecheck": "tsc --noEmit",
     "prebuild": "expo prebuild",
     "run:ios": "expo run:ios",

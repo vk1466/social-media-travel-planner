@@ -1,3 +1,4 @@
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { useSSO, useSignIn } from "@clerk/clerk-expo";
 import { Redirect } from "expo-router";
 import * as Linking from "expo-linking";
@@ -14,7 +15,25 @@ import {
 
 import { Button, ErrorBanner } from "@/src/components/ui";
 import { clerkEnabled } from "@/src/config";
-import { colors, spacing } from "@/src/theme";
+import { colors, radius, shadow, spacing } from "@/src/theme";
+
+type IconName = keyof typeof Ionicons.glyphMap;
+
+function IconField({
+  icon,
+  ...props
+}: { icon: IconName } & React.ComponentProps<typeof TextInput>) {
+  return (
+    <View style={styles.field}>
+      <Ionicons name={icon} size={18} color={colors.muted} />
+      <TextInput
+        style={styles.fieldInput}
+        placeholderTextColor={colors.muted}
+        {...props}
+      />
+    </View>
+  );
+}
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -152,13 +171,17 @@ function ClerkSignInForm() {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <View style={styles.card}>
+        <View style={styles.logoMark}>
+          <Ionicons name="airplane" size={26} color="#fff" />
+        </View>
         <Text style={styles.brand}>Travel Planner</Text>
-        <Text style={styles.title}>Sign in</Text>
+        <Text style={styles.title}>Welcome back</Text>
         <Text style={styles.subtitle}>Same Clerk account as the web app — Google works best.</Text>
         {error ? <ErrorBanner message={error} /> : null}
 
         <Button
           label="Continue with Google"
+          icon="logo-google"
           loading={googleLoading}
           onPress={() => void onGoogleSignIn()}
           style={{ marginBottom: spacing.md }}
@@ -173,37 +196,40 @@ function ClerkSignInForm() {
         {pendingVerification ? (
           <>
             <Text style={styles.hint}>Enter the verification code sent to your email.</Text>
-            <TextInput
-              style={styles.input}
+            <IconField
+              icon="keypad-outline"
               keyboardType="number-pad"
               placeholder="Verification code"
-              placeholderTextColor={colors.muted}
               value={verificationCode}
               onChangeText={setVerificationCode}
             />
-            <Button label="Verify and sign in" loading={loading} onPress={() => void onVerifyCode()} />
+            <Button
+              label="Verify and sign in"
+              icon="checkmark-circle-outline"
+              loading={loading}
+              onPress={() => void onVerifyCode()}
+            />
           </>
         ) : (
           <>
-            <TextInput
-              style={styles.input}
+            <IconField
+              icon="mail-outline"
               autoCapitalize="none"
               keyboardType="email-address"
               placeholder="Email"
-              placeholderTextColor={colors.muted}
               value={emailAddress}
               onChangeText={setEmailAddress}
             />
-            <TextInput
-              style={styles.input}
+            <IconField
+              icon="lock-closed-outline"
               secureTextEntry
               placeholder="Password"
-              placeholderTextColor={colors.muted}
               value={password}
               onChangeText={setPassword}
             />
             <Button
               label="Sign in with email"
+              icon="mail-outline"
               variant="secondary"
               loading={loading}
               onPress={() => void onPasswordSignIn()}
@@ -236,21 +262,32 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: colors.surface,
-    borderRadius: 18,
+    borderRadius: radius.xl,
     padding: spacing.lg,
+    ...shadow(3),
+  },
+  logoMark: {
+    height: 56,
+    width: 56,
+    borderRadius: radius.lg,
+    backgroundColor: colors.brand,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: spacing.md,
   },
   brand: {
-    color: colors.brand,
+    color: colors.accent,
     fontWeight: "800",
-    fontSize: 14,
-    letterSpacing: 0.5,
+    fontSize: 13,
+    letterSpacing: 0.8,
     textTransform: "uppercase",
-    marginBottom: spacing.sm,
+    marginBottom: spacing.xs,
   },
   title: {
     fontSize: 28,
-    fontWeight: "700",
+    fontWeight: "800",
     color: colors.ink,
+    letterSpacing: -0.5,
   },
   subtitle: {
     marginTop: 6,
@@ -280,16 +317,22 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
     fontSize: 14,
   },
-  input: {
+  field: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: 10,
+    borderRadius: radius.md,
     paddingHorizontal: spacing.md,
-    paddingVertical: 12,
     marginBottom: spacing.md,
+    backgroundColor: colors.bg,
+  },
+  fieldInput: {
+    flex: 1,
+    paddingVertical: 13,
     fontSize: 16,
     color: colors.ink,
-    backgroundColor: colors.bg,
   },
   footer: {
     marginTop: spacing.md,
