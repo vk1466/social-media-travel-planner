@@ -10,12 +10,13 @@ from travelplanner.extract import (
 from travelplanner.place_hints import ExtractedPlace, PlatformPlace
 
 
-def test_reel_extract_prompt_includes_geocoding_rules() -> None:
-  assert "city — a real city or town only" in REEL_EXTRACT_PROMPT
+def test_reel_extract_prompt_includes_core_rules() -> None:
+  assert "Sources for place NAMES" in REEL_EXTRACT_PROMPT
+  assert "VIDEO SUMMARY is supporting context only" in REEL_EXTRACT_PROMPT
+  assert "Never invent or guess a place name" in REEL_EXTRACT_PROMPT
   assert "parent_place_name" in REEL_EXTRACT_PROMPT
   assert "parent_category" in REEL_EXTRACT_PROMPT
-  assert "Skip vague regions as standalone places" in REEL_EXTRACT_PROMPT
-  assert "Gastown" in REEL_EXTRACT_PROMPT
+  assert "Never invent generic tips" in REEL_EXTRACT_PROMPT
   assert "Parents → park, city, neighborhood, or landmark" in REEL_EXTRACT_PROMPT
 
 
@@ -100,6 +101,18 @@ def test_parse_extracted_places_filters_attributes_and_unknown_category() -> Non
         "attributes": ["viewpoint"],
         "parent_place_name": None,
       },
+      {
+        "place_name": "Null Fields Spot",
+        "city": "null",
+        "state_province": "None",
+        "country": "n/a",
+        "details": "null",
+        "tips": [],
+        "category": "viewpoint",
+        "attributes": [],
+        "parent_place_name": "nil",
+        "parent_category": None,
+      },
     ]
   }
 
@@ -109,6 +122,11 @@ def test_parse_extracted_places_filters_attributes_and_unknown_category() -> Non
   assert places[1].category is None
   assert places[1].attributes == ()
   assert places[1].place_name == "Unknown Type Spot"
+  assert places[2].city is None
+  assert places[2].state_province is None
+  assert places[2].country is None
+  assert places[2].details is None
+  assert places[2].parent_place_name is None
 
 
 def test_parse_extracted_places_empty() -> None:
@@ -141,7 +159,7 @@ def test_parse_reel_extraction_includes_summary() -> None:
   assert result.places[0].category == "viewpoint"
 
 
-def test_format_reel_bundle_includes_all_sources() -> None:
+def test_format_reel_bundle_orders_caption_summary_transcript() -> None:
   bundle = ReelBundle(
     caption="Day 1: Alfama",
     hashtags=("lisbon", "portugal"),
@@ -152,12 +170,16 @@ def test_format_reel_bundle_includes_all_sources() -> None:
       country="Portugal",
     ),
     transcript="Welcome to Alfama, Lisbon's oldest neighborhood.",
+    video_summary="A walking tour through Lisbon's oldest neighborhood.",
   )
 
   formatted = format_reel_bundle(bundle)
 
+  assert formatted.index("CAPTION:") < formatted.index("VIDEO SUMMARY:")
+  assert formatted.index("VIDEO SUMMARY:") < formatted.index("VIDEO TRANSCRIPT:")
   assert "IG LOCATION TAG: Alfama, Lisbon, Portugal" in formatted
   assert "CAPTION:\nDay 1: Alfama" in formatted
+  assert "VIDEO SUMMARY:\nA walking tour through Lisbon's oldest neighborhood." in formatted
   assert "HASHTAGS: #lisbon #portugal" in formatted
   assert "The pastel de nata spot is Manteigaria!" in formatted
   assert "VIDEO TRANSCRIPT:\nWelcome to Alfama" in formatted
@@ -224,6 +246,7 @@ def test_fetch_places_from_reel_parses_structured_response(monkeypatch) -> None:
     caption="📍 Emerald Bay\n📍 Sand Harbor",
     top_comments=("Sand Harbor beach is best before noon",),
     transcript="First stop Emerald Bay, then Sand Harbor.",
+    video_summary="Two Tahoe stops with an overlook and a beach.",
   )
   result = fetch_places_from_reel(bundle)
 
