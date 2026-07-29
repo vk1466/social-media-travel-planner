@@ -12,7 +12,7 @@ from travelplanner.models import FactEvidence, Place, PlaceFacts, PlaceLocation
 from travelplanner.places.facts.catalog import select_tools
 from travelplanner.places.facts.enrich import enrich_place_facts, facts_are_stale
 from travelplanner.places.facts.match import match_documents, match_radius_m
-from travelplanner.places.facts.schema import completeness_status
+from travelplanner.places.facts.categories import completeness_status
 from travelplanner.places.facts.types import FactQuery, FactTool, SourceDocument, utc_now_iso
 from travelplanner.places.facts.verify import verify_facts
 from travelplanner.places.store import load_place, save_place

@@ -5,14 +5,14 @@ from __future__ import annotations
 from typing import Any
 
 from travelplanner.models import FactEvidence, PlaceFacts
-from travelplanner.places.facts.schema import (
-  FILLABLE_FIELDS,
-  completeness_status,
-  field_value_ok,
-  source_may_fill,
-  source_priority,
-)
+from travelplanner.places.facts.categories import completeness_status
+from travelplanner.places.facts.fields import FILLABLE_FIELDS, LIST_FIELDS
+from travelplanner.places.facts.rules import field_value_ok
+from travelplanner.places.facts.sources import source_may_fill, source_priority
 from travelplanner.places.facts.types import SourceDocument, utc_now_iso
+
+# One accepted citation: (source_name, source_ref, value)
+Citation = tuple[str, str, Any]
 
 
 def _normalize_comparable(value: Any) -> str:
@@ -25,21 +25,15 @@ def _normalize_comparable(value: Any) -> str:
   return str(value).strip().lower()
 
 
-def verify_facts(
+def _collect_citations(
   draft: dict[str, Any],
   documents: list[SourceDocument],
-  *,
-  category: str | None,
-  fetched_at: str | None = None,
-) -> PlaceFacts:
-  """Drop fabricated refs / bad formats; resolve conflicts by source priority."""
+) -> dict[str, list[Citation]]:
+  """Keep only known refs, allowed sources, and format-valid values."""
   known_refs = {doc.source_ref: doc for doc in documents}
-  evidence_raw = draft.get("evidence") or []
-  notes = [str(note) for note in (draft.get("notes") or []) if str(note).strip()]
+  by_field: dict[str, list[Citation]] = {}
 
-  # field → list of (source_name, source_ref, value) from cited evidence
-  by_field: dict[str, list[tuple[str, str, Any]]] = {}
-  for item in evidence_raw:
+  for item in draft.get("evidence") or []:
     if not isinstance(item, dict):
       continue
     field_name = item.get("field_name")
@@ -59,6 +53,13 @@ def verify_facts(
       continue
     by_field.setdefault(field_name, []).append((source_name, source_ref, value))
 
+  return by_field
+
+
+def _resolve_conflicts(
+  by_field: dict[str, list[Citation]],
+) -> tuple[dict[str, Any], list[FactEvidence], list[str]]:
+  """Pick highest-priority source per field; record value disagreements."""
   values: dict[str, Any] = {}
   evidence: list[FactEvidence] = []
   conflicts: list[str] = []
@@ -80,31 +81,58 @@ def verify_facts(
       )
     )
 
-  status = completeness_status(category, values)
+  return values, evidence, conflicts
 
-  def _tuple_str(field: str) -> tuple[str, ...]:
-    raw = values.get(field)
-    if not isinstance(raw, (list, tuple)):
-      return ()
-    return tuple(str(item) for item in raw)
+
+def _tuple_str(values: dict[str, Any], field_name: str) -> tuple[str, ...]:
+  raw = values.get(field_name)
+  if not isinstance(raw, (list, tuple)):
+    return ()
+  return tuple(str(item) for item in raw)
+
+
+def _to_place_facts(
+  values: dict[str, Any],
+  *,
+  category: str | None,
+  evidence: list[FactEvidence],
+  conflicts: list[str],
+  notes: list[str],
+  fetched_at: str | None,
+) -> PlaceFacts:
+  field_values: dict[str, Any] = {}
+  for field_name in FILLABLE_FIELDS:
+    if field_name in LIST_FIELDS:
+      field_values[field_name] = _tuple_str(values, field_name)
+    else:
+      field_values[field_name] = values.get(field_name)
 
   return PlaceFacts(
-    status=status,
+    status=completeness_status(category, values),
     fetched_at=fetched_at or utc_now_iso(),
-    website_url=values.get("website_url"),
-    phone_number=values.get("phone_number"),
-    opening_hours_text=_tuple_str("opening_hours_text"),
-    admission_text=values.get("admission_text"),
-    famous_for=values.get("famous_for"),
-    best_time_to_visit=values.get("best_time_to_visit"),
-    typical_duration_minutes=values.get("typical_duration_minutes"),
-    cuisines=_tuple_str("cuisines"),
-    price_level=values.get("price_level"),
-    reservation_required=values.get("reservation_required"),
-    distance_km=values.get("distance_km"),
-    elevation_gain_m=values.get("elevation_gain_m"),
-    difficulty=values.get("difficulty"),
     evidence=tuple(evidence),
     conflicts=tuple(dict.fromkeys(conflicts)),
     notes=tuple(notes),
+    **field_values,
+  )
+
+
+def verify_facts(
+  draft: dict[str, Any],
+  documents: list[SourceDocument],
+  *,
+  category: str | None,
+  fetched_at: str | None = None,
+) -> PlaceFacts:
+  """Drop fabricated refs / bad formats; resolve conflicts by source priority."""
+  by_field = _collect_citations(draft, documents)
+  values, evidence, conflicts = _resolve_conflicts(by_field)
+  notes = [str(note) for note in (draft.get("notes") or []) if str(note).strip()]
+  return _to_place_facts(
+    values,
+    category=category,
+    evidence=evidence,
+    conflicts=conflicts,
+    notes=notes,
+    fetched_at=fetched_at,
   )
