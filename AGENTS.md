@@ -43,31 +43,22 @@ deployed **TravelPlanner-dev** API.
 
 ## Feature flags
 
-Config-gated product behavior lives in [`travelplanner/features.py`](travelplanner/features.py).
-Agents must use this module — do not invent ad-hoc `os.getenv("SOME_FLAG")` checks for product features.
+Product on/off toggles live as attributes on `Features` in
+[`travelplanner/features.py`](travelplanner/features.py). Edit the class by hand to
+add or flip a flag — no registry, env vars, or helpers.
 
 **Rules:**
 
-- Register every new product capability in `_FLAGS` with a module-level constant
-  (e.g. `PLACE_FACTS = "place_facts"`). Default is **off**.
-- Gate call sites with `enabled(FLAG_CONSTANT)` (or `require(FLAG)` when the path
-  must fail closed if disabled). Prefer the constant over a raw string so typos
-  fail at import / `KeyError`.
-- Env var name is always `FEATURE_<KEY>` in uppercase (e.g. `FEATURE_PLACE_FACTS=true`).
-  Accepted values: `1` / `true` / `yes` / `on` and `0` / `false` / `no` / `off`.
-- Use `legacy_env` only when renaming an older env var; do not add new bare env
-  names for product features.
-- Incomplete steps or risky paths (OCR, experimental locate, etc.) ship behind a
-  flag until validated — wire the step, leave the flag off.
-- Wire flags through CDK / Lambda env when the feature must be toggleable in
-  deployed stages; document the var in `.env.example` when local override matters.
-- Tests: assert both on and off paths when behavior differs; unknown keys must
-  raise `KeyError`.
+- Check with `Features.place_facts` (contextual attribute names).
+- New flags default to **False** until the path is validated.
+- Related knobs (TTL, max docs, …) can sit on the same class as plain constants.
+- Tests: cover on and off paths when behavior differs; `monkeypatch.setattr`
+  if a test needs a flag on.
 
 ```python
-from travelplanner.features import enabled, PLACE_FACTS
+from travelplanner.features import Features
 
-if enabled(PLACE_FACTS):
+if Features.place_facts:
   ...
 ```
 

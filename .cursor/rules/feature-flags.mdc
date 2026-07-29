@@ -11,14 +11,13 @@ Full rules: [AGENTS.md](AGENTS.md) § Feature flags.
 
 ## When adding a feature
 
-1. Add a module constant and `_FLAGS` entry (`default=False`, short `description`).
-2. Gate call sites with `enabled(MY_FLAG)` or `require(MY_FLAG)` — use the constant, not a raw string.
-3. Env name is `FEATURE_<KEY>` (e.g. `FEATURE_PLACE_FACTS=true`).
-4. Document in `.env.example` when local override matters; wire CDK/Lambda env when stages must toggle it.
-5. Prefer flagging incomplete or risky paths (OCR, experimental steps) until validated.
+1. Add a boolean attribute on `Features` (default `False`).
+2. Gate call sites with `if Features.my_flag:`.
+3. Prefer flagging incomplete or risky paths until validated.
 
 ## Do not
 
-- Add `os.getenv("SOME_FEATURE")` (or similar) for product behavior outside `features.py`.
+- Add `os.getenv("SOME_FEATURE")` (or similar) for product behavior.
+- Build a registry / `enabled()` / `register()` layer — edit the class by hand.
 - Default new product flags to on.
 - Invent a second flag system in `server/` or the clients for backend product gates.
