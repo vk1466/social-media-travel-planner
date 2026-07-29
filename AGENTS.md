@@ -41,6 +41,27 @@ deployed **TravelPlanner-dev** API.
 - **places** — platform-agnostic place pipeline (identity, geocoding, dedup, tags). Runs the same for every platform; sources never do this work themselves.
 - **server** — HTTP adapter only. JWT auth + validation and job tracking. No business logic beyond that.
 
+## Feature flags
+
+Product toggles live in [`travelplanner/feature_flag.py`](travelplanner/feature_flag.py) as an
+in-process dict on `FeatureFlag`. Use `get` / `set` — no env vars.
+
+**Rules:**
+
+- Check with `FeatureFlag.get("place_facts")` (contextual names).
+- Add or flip with `FeatureFlag.set("place_facts", True)`, or edit the initial
+  `_flags` dict by hand.
+- New flags default to **False** when unset (`get` default).
+- Related knobs (TTL, max docs, …) can live in the same dict.
+- Tests: cover on and off paths when behavior differs; prefer `set` in tests.
+
+```python
+from travelplanner.feature_flag import FeatureFlag
+
+if FeatureFlag.get("place_facts"):
+  ...
+```
+
 ## Implementation
 
 Keep it **simple, modular, and extendable**. Do not add layers you don't need yet.

@@ -1,0 +1,22 @@
+---
+description: Require travelplanner/feature_flag.py for product feature gates
+globs: travelplanner/**/*.py,server/**/*.py,infra/**/*.py,tests/test_feature_flag.py
+alwaysApply: false
+---
+
+# Feature flags
+
+Product features are gated only through **[travelplanner/feature_flag.py](travelplanner/feature_flag.py)**.
+Full rules: [AGENTS.md](AGENTS.md) § Feature flags.
+
+## When adding a feature
+
+1. Add an entry to `FeatureFlag._flags` (default `False`), or `FeatureFlag.set("name", value)`.
+2. Gate call sites with `FeatureFlag.get("contextual_name")`.
+3. Prefer flagging incomplete or risky paths until validated.
+
+## Do not
+
+- Add `os.getenv("SOME_FEATURE")` (or similar) for product behavior.
+- Default new product flags to on.
+- Invent a second flag system in `server/` or the clients for backend product gates.
