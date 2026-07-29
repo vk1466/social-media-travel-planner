@@ -185,6 +185,9 @@ class ReelBundle:
   transcript: str | None = None
 
 
+ContentBundle = ReelBundle
+
+
 @dataclass(frozen=True)
 class ReelExtraction:
   places: tuple[ExtractedPlace, ...] = ()
