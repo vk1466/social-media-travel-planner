@@ -19,7 +19,7 @@ function ClerkAuthBridge({ children }: { children: ReactNode }) {
   const { getToken, isLoaded, isSignedIn } = useAuth();
   const segments = useSegments();
   const router = useRouter();
-  const { pendingUrls } = usePendingShare();
+  const { pendingUrls, autoSubmit } = usePendingShare();
 
   useShareIntentHandler(Boolean(isLoaded && isSignedIn));
 
@@ -44,8 +44,11 @@ function ClerkAuthBridge({ children }: { children: ReactNode }) {
       } else {
         router.replace("/(app)/(tabs)/posts");
       }
+    } else if (isSignedIn && autoSubmit && pendingUrls.length > 0 && !segments.includes("ingest")) {
+      // Share arrived while already signed in — open Add links for auto-ingest.
+      router.replace({ pathname: "/(app)/ingest", params: { shared: "1" } });
     }
-  }, [isLoaded, isSignedIn, segments, router, pendingUrls.length]);
+  }, [isLoaded, isSignedIn, segments, router, pendingUrls.length, autoSubmit]);
 
   if (!isLoaded) {
     return (
@@ -59,12 +62,22 @@ function ClerkAuthBridge({ children }: { children: ReactNode }) {
 }
 
 function LocalAuthBridge({ children }: { children: ReactNode }) {
+  const router = useRouter();
+  const segments = useSegments();
+  const { pendingUrls, autoSubmit } = usePendingShare();
+
   useShareIntentHandler(true);
 
   useEffect(() => {
     setAuthTokenGetter(async () => "dev:local-dev-user");
     SplashScreen.hideAsync();
   }, []);
+
+  useEffect(() => {
+    if (autoSubmit && pendingUrls.length > 0 && !segments.includes("ingest")) {
+      router.replace({ pathname: "/(app)/ingest", params: { shared: "1" } });
+    }
+  }, [autoSubmit, pendingUrls.length, segments, router]);
 
   return <>{children}</>;
 }
@@ -96,8 +109,6 @@ function RootTree() {
 }
 
 export default function RootLayout() {
-  const router = useRouter();
-
   const tree = clerkEnabled ? (
     <ClerkProvider publishableKey={clerkPublishableKey} tokenCache={tokenCache}>
       <RootTree />
@@ -106,7 +117,5 @@ export default function RootLayout() {
     <RootTree />
   );
 
-  return (
-    <ShareIntentRoot onReset={() => router.replace("/(app)/(tabs)/posts")}>{tree}</ShareIntentRoot>
-  );
+  return <ShareIntentRoot>{tree}</ShareIntentRoot>;
 }

@@ -1,10 +1,13 @@
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { useEffect, useMemo, useState } from "react";
-import { Pressable, StyleSheet, Switch, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Pressable, StyleSheet, Switch, Text, TextInput, View } from "react-native";
 
 import type { JobLink } from "../api";
 import { parseLinkLines } from "../lib/shareUrl";
-import { colors, spacing } from "../theme";
+import { colors, radius, shadow, spacing } from "../theme";
 import { Button, ErrorBanner } from "./ui";
+
+type IconName = keyof typeof Ionicons.glyphMap;
 
 interface LinkSubmitFormProps {
   disabled?: boolean;
@@ -29,7 +32,10 @@ export function LinkSubmitForm({
 
   return (
     <View style={styles.panel}>
-      <Text style={styles.title}>Paste travel links</Text>
+      <View style={styles.titleRow}>
+        <Ionicons name="link" size={18} color={colors.brand} />
+        <Text style={styles.title}>Paste travel links</Text>
+      </View>
       <Text style={styles.subtitle}>
         One per line. Instagram reels work best — or share a reel to this app.
       </Text>
@@ -64,11 +70,32 @@ export function LinkSubmitForm({
       </View>
       <Button
         label="Analyze links"
+        icon="sparkles"
         disabled={disabled || parsed.valid.length === 0}
         onPress={() => onSubmit(parsed.valid, refresh)}
       />
     </View>
   );
+}
+
+function statusIcon(status: JobLink["status"]): { name: IconName; color: string } {
+  switch (status) {
+    case "pending":
+      return { name: "ellipse-outline", color: colors.faint };
+    case "fetching":
+      return { name: "sync", color: colors.running };
+    case "saved":
+    case "linked":
+      return { name: "checkmark-circle", color: colors.success };
+    case "skipped":
+      return { name: "checkmark-done", color: colors.brand };
+    case "unsupported":
+      return { name: "help-circle-outline", color: colors.faint };
+    case "error":
+      return { name: "close-circle", color: colors.danger };
+    default:
+      return { name: "ellipse-outline", color: colors.faint };
+  }
 }
 
 interface IngestProgressProps {
@@ -139,7 +166,12 @@ export function IngestProgress({
           <Text style={styles.title}>{title}</Text>
           {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
         </View>
-        {running ? <Text style={styles.runningBadge}>Running</Text> : null}
+        {running ? (
+          <View style={styles.runningBadge}>
+            <ActivityIndicator size="small" color={colors.running} />
+            <Text style={styles.runningText}>Running</Text>
+          </View>
+        ) : null}
       </View>
       {links.map((link) => {
         const platform = platformFromUrl(link.post_url);
@@ -148,15 +180,17 @@ export function IngestProgress({
           link.post_id &&
           platform &&
           onOpenPost;
+        const icon = statusIcon(link.status);
         return (
           <View key={link.post_url} style={styles.progressItem}>
-            <View style={[styles.dot, styles[`dot_${link.status}` as keyof typeof styles] as object]} />
+            <Ionicons name={icon.name} size={20} color={icon.color} style={styles.statusIcon} />
             <View style={styles.progressCopy}>
               <Text style={styles.progressUrl}>{shortenUrl(link.post_url)}</Text>
               <Text style={styles.progressStatus}>{statusLabel(link)}</Text>
               {canOpen ? (
-                <Pressable onPress={() => onOpenPost(platform, link.post_id!)}>
+                <Pressable onPress={() => onOpenPost(platform, link.post_id!)} style={styles.openRow}>
                   <Text style={styles.openLink}>View saved post</Text>
+                  <Ionicons name="arrow-forward" size={14} color={colors.brand} />
                 </Pressable>
               ) : null}
             </View>
@@ -170,15 +204,21 @@ export function IngestProgress({
 const styles = StyleSheet.create({
   panel: {
     backgroundColor: colors.surface,
-    borderRadius: 14,
+    borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: colors.border,
     padding: spacing.md,
     marginBottom: spacing.md,
+    ...shadow(1),
+  },
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
   title: {
     fontSize: 18,
-    fontWeight: "700",
+    fontWeight: "800",
     color: colors.ink,
   },
   subtitle: {
@@ -192,7 +232,7 @@ const styles = StyleSheet.create({
     minHeight: 120,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: 10,
+    borderRadius: radius.md,
     padding: spacing.md,
     fontSize: 14,
     color: colors.ink,
@@ -225,8 +265,17 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   runningBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "#fef6ec",
+    borderRadius: radius.pill,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  runningText: {
     color: colors.running,
-    fontWeight: "600",
+    fontWeight: "700",
     fontSize: 12,
   },
   progressItem: {
@@ -234,20 +283,9 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     marginBottom: spacing.md,
   },
-  dot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    marginTop: 5,
-    backgroundColor: colors.muted,
+  statusIcon: {
+    marginTop: 1,
   },
-  dot_pending: { backgroundColor: colors.muted },
-  dot_fetching: { backgroundColor: colors.running },
-  dot_saved: { backgroundColor: colors.success },
-  dot_linked: { backgroundColor: colors.success },
-  dot_skipped: { backgroundColor: colors.brand },
-  dot_unsupported: { backgroundColor: colors.muted },
-  dot_error: { backgroundColor: colors.danger },
   progressCopy: {
     flex: 1,
   },
@@ -261,10 +299,15 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colors.muted,
   },
-  openLink: {
+  openRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
     marginTop: 6,
+  },
+  openLink: {
     color: colors.brand,
-    fontWeight: "600",
+    fontWeight: "700",
     fontSize: 13,
   },
 });
