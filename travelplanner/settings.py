@@ -35,6 +35,19 @@ def openai_api_key() -> str | None:
 def openai_model() -> str:
   return os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 
+def openai_temperature() -> float:
+  """Sampling temperature for extraction.
+
+  Defaults to 0 so the same reel yields the same places and categories across
+  runs; anything higher makes category assignment drift between ingests.
+  """
+  raw = os.getenv("OPENAI_TEMPERATURE", "0").strip()
+  try:
+    return float(raw)
+  except ValueError as exc:
+    raise RuntimeError(f"OPENAI_TEMPERATURE must be a number, got {raw!r}") from exc
+
+
 
 def dynamodb_region() -> str:
   return os.getenv("DYNAMODB_REGION", "us-east-1").strip() or "us-east-1"
