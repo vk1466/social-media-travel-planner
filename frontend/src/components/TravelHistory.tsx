@@ -15,6 +15,8 @@ import {
   type TimelineReviewDetail,
   type VisitDetail,
 } from "../api";
+import { categoryLabel } from "../categoryLabels";
+import { CategoryChip } from "./CategoryChip";
 
 interface TravelHistoryProps {
   refreshToken?: number;
@@ -42,6 +44,19 @@ function locationLine(place: Place | null | undefined): string {
   return [city, stateProvince, country].filter(Boolean).join(", ");
 }
 
+function sourceLabel(source: string | undefined): string | null {
+  if (source === "timeline") {
+    return "Timeline";
+  }
+  if (source === "instagram") {
+    return "Instagram";
+  }
+  if (source === "manual") {
+    return "Manual";
+  }
+  return null;
+}
+
 export function TravelHistory({
   refreshToken = 0,
   jobRunning = false,
@@ -60,6 +75,7 @@ export function TravelHistory({
   const [timelineSummary, setTimelineSummary] = useState<string | null>(null);
   const [reviewBusyId, setReviewBusyId] = useState<string | null>(null);
   const [instagramUsername, setInstagramUsername] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("all");
   const timelineInputRef = useRef<HTMLInputElement>(null);
 
   const [destinationQuery, setDestinationQuery] = useState("");
@@ -104,6 +120,33 @@ export function TravelHistory({
       })
       .slice(0, 8);
   }, [destinationQuery, places]);
+
+  const categoryCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const { place } of visits) {
+      const key = place?.category ?? "uncategorized";
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+    }
+    return Array.from(counts.entries()).sort(([a], [b]) => {
+      if (a === "uncategorized") {
+        return 1;
+      }
+      if (b === "uncategorized") {
+        return -1;
+      }
+      return categoryLabel(a).localeCompare(categoryLabel(b));
+    });
+  }, [visits]);
+
+  const filteredVisits = useMemo(() => {
+    if (categoryFilter === "all") {
+      return visits;
+    }
+    return visits.filter(({ place }) => {
+      const key = place?.category ?? "uncategorized";
+      return key === categoryFilter;
+    });
+  }, [visits, categoryFilter]);
 
   const resetForm = () => {
     setDestinationQuery("");
@@ -399,6 +442,9 @@ export function TravelHistory({
               return (
                 <li key={visit.visit_id} className="visit-row">
                   <div className="visit-row-main">
+                    <div className="visit-card-meta-row">
+                      <CategoryChip category={place?.category} small />
+                    </div>
                     <button
                       type="button"
                       className="visit-place-link"
@@ -498,8 +544,13 @@ export function TravelHistory({
                         >
                           <span className="visit-suggestion-name">{place.display_name}</span>
                           <span className="visit-suggestion-meta">
-                            {[place.location.city, place.location.country].filter(Boolean).join(", ") ||
-                              "in your library"}
+                            {[
+                              categoryLabel(place.category),
+                              place.location.city,
+                              place.location.country,
+                            ]
+                              .filter(Boolean)
+                              .join(" · ") || "in your library"}
                           </span>
                         </button>
                       </li>
@@ -508,7 +559,9 @@ export function TravelHistory({
                 )}
               </div>
               {selectedPlace ? (
-                <p className="visit-resolve-hint">Using place from your library</p>
+                <p className="visit-resolve-hint">
+                  Using {categoryLabel(selectedPlace.category).toLowerCase()} from your library
+                </p>
               ) : destinationQuery.trim().length >= 2 ? (
                 <p className="visit-resolve-hint">
                   Will look up “{destinationQuery.trim()}” and add it if it’s new
@@ -564,41 +617,90 @@ export function TravelHistory({
       ) : visits.length === 0 ? (
         <p className="empty-copy">No visits yet. Mark places as visited from here or from a place page.</p>
       ) : (
-        <ul className="visit-list">
-          {visits.map(({ visit, place }) => (
-            <li key={visit.visit_id} className="visit-card panel">
-              <div className="visit-card-main">
-                <div>
-                  <h3 className="visit-card-title">
-                    {onNavigateToPlace ? (
+        <section>
+          <div className="visit-list-header">
+            <h2>Your visits</h2>
+            <p className="visit-list-count">
+              {filteredVisits.length}
+              {categoryFilter !== "all"
+                ? ` · ${categoryLabel(categoryFilter === "uncategorized" ? null : categoryFilter)}`
+                : ""}
+              {" of "}
+              {visits.length}
+            </p>
+          </div>
+          {categoryCounts.length > 1 ? (
+            <div className="category-filter-row" role="group" aria-label="Filter visits by category">
+              <button
+                type="button"
+                className={`category-filter-chip${categoryFilter === "all" ? " is-active" : ""}`}
+                onClick={() => setCategoryFilter("all")}
+              >
+                All
+                <span className="category-filter-count">{visits.length}</span>
+              </button>
+              {categoryCounts.map(([key, count]) => (
+                <button
+                  key={key}
+                  type="button"
+                  className={`category-filter-chip${categoryFilter === key ? " is-active" : ""}`}
+                  onClick={() => setCategoryFilter(key)}
+                >
+                  {key === "uncategorized" ? "Uncategorized" : categoryLabel(key)}
+                  <span className="category-filter-count">{count}</span>
+                </button>
+              ))}
+            </div>
+          ) : null}
+          {filteredVisits.length === 0 ? (
+            <p className="empty-copy">No visits in this category.</p>
+          ) : (
+            <ul className="visit-list">
+              {filteredVisits.map(({ visit, place }) => {
+                const source = sourceLabel(visit.source);
+                return (
+                  <li key={visit.visit_id} className="visit-card panel">
+                    <div className="visit-card-main">
+                      <div>
+                        <div className="visit-card-meta-row">
+                          <CategoryChip category={place?.category} />
+                          {source ? <span className="visit-source-pill">{source}</span> : null}
+                        </div>
+                        <h3 className="visit-card-title">
+                          {onNavigateToPlace ? (
+                            <button
+                              type="button"
+                              className="inline-link-button"
+                              onClick={() => onNavigateToPlace(visit.place_id)}
+                            >
+                              {visit.place_name}
+                            </button>
+                          ) : (
+                            visit.place_name
+                          )}
+                        </h3>
+                        {locationLine(place) && (
+                          <p className="visit-card-location">{locationLine(place)}</p>
+                        )}
+                        <p className="visit-card-dates">
+                          {formatVisitDates(visit.visited_from, visit.visited_to)}
+                        </p>
+                        {visit.notes && <p className="visit-card-notes">{visit.notes}</p>}
+                      </div>
                       <button
                         type="button"
-                        className="inline-link-button"
-                        onClick={() => onNavigateToPlace(visit.place_id)}
+                        className="text-button"
+                        onClick={() => void handleDelete(visit.visit_id)}
                       >
-                        {visit.place_name}
+                        Remove
                       </button>
-                    ) : (
-                      visit.place_name
-                    )}
-                  </h3>
-                  {locationLine(place) && <p className="visit-card-location">{locationLine(place)}</p>}
-                  <p className="visit-card-dates">
-                    {formatVisitDates(visit.visited_from, visit.visited_to)}
-                  </p>
-                  {visit.notes && <p className="visit-card-notes">{visit.notes}</p>}
-                </div>
-                <button
-                  type="button"
-                  className="text-button"
-                  onClick={() => void handleDelete(visit.visit_id)}
-                >
-                  Remove
-                </button>
-              </div>
-            </li>
-          ))}
-        </ul>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </section>
       )}
     </section>
   );
