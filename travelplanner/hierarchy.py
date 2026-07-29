@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import logging
-import math
 from dataclasses import replace
 
 from travelplanner import settings
@@ -14,6 +13,7 @@ from travelplanner.places import (
   save_place,
   slugify,
 )
+from travelplanner.places.identity import haversine_meters, same_region
 from travelplanner.store import load_all_posts
 
 logger = logging.getLogger(__name__)
@@ -48,15 +48,6 @@ class _UnionFind:
       self._parent[right_root] = left_root
 
 
-def _haversine_meters(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
-  earth_radius_meters = 6_371_000
-  phi1, phi2 = math.radians(lat1), math.radians(lat2)
-  delta_phi = math.radians(lat2 - lat1)
-  delta_lambda = math.radians(lon2 - lon1)
-  a = math.sin(delta_phi / 2) ** 2 + math.cos(phi1) * math.cos(phi2) * math.sin(delta_lambda / 2) ** 2
-  return 2 * earth_radius_meters * math.asin(math.sqrt(a))
-
-
 def _name_tokens(name: str) -> frozenset[str]:
   slug = slugify(name)
   return frozenset(part for part in slug.split("-") if part)
@@ -72,15 +63,7 @@ def _is_broader_name_match(name_a: str, name_b: str) -> bool:
 
 
 def _same_region(left: Place, right: Place) -> bool:
-  left_code = (left.location.country_code or "").upper()
-  right_code = (right.location.country_code or "").upper()
-  if left_code and right_code and left_code != right_code:
-    return False
-  left_state = (left.location.state_province or "").strip().lower()
-  right_state = (right.location.state_province or "").strip().lower()
-  if left_state and right_state and left_state != right_state:
-    return False
-  return True
+  return same_region(left.location, right.location)
 
 
 def _within_cluster_distance(left: Place, right: Place) -> bool:
@@ -93,7 +76,7 @@ def _within_cluster_distance(left: Place, right: Place) -> bool:
     or right_location.longitude is None
   ):
     return False
-  distance = _haversine_meters(
+  distance = haversine_meters(
     left_location.latitude,
     left_location.longitude,
     right_location.latitude,

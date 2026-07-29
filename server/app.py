@@ -15,7 +15,7 @@ from travelplanner.places import cleanup_all_data, list_places, load_place, plac
 from travelplanner.places.facts import enrich_place_facts, facts_are_stale
 from travelplanner.db import jobs_repo, place_candidates_repo
 from travelplanner.places.debug import debug_locate
-from travelplanner.sources.instagram_profile import list_recent_post_urls, normalize_instagram_username
+from travelplanner.personas.profile_import import list_recent_post_urls, normalize_instagram_username
 from travelplanner.store import load_post, post_to_dict
 from travelplanner.visits import (
   accept_timeline_review,
@@ -473,7 +473,12 @@ def list_pending_timeline_reviews(user_id: CurrentUserId) -> list[TimelineReview
   details: list[TimelineReviewDetailSchema] = []
   for visit in list_timeline_reviews(user_id):
     place = load_place(visit.place_id)
-    suggestion, reason = parse_review_suggestion(visit.notes)
+    suggestion = visit.review_suggestion
+    reason = visit.review_reason
+    if suggestion is None:
+      parsed = parse_review_suggestion(visit.notes)
+      suggestion = parsed[0]
+      reason = parsed[1] if reason is None else reason
     details.append(
       TimelineReviewDetailSchema(
         visit=_visit_to_schema(visit),

@@ -1,3 +1,4 @@
+import Ionicons from "@expo/vector-icons/Ionicons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import * as DocumentPicker from "expo-document-picker";
 import { useRouter } from "expo-router";
@@ -26,9 +27,36 @@ import {
   type Place,
   type TimelineReviewDetail,
 } from "@/src/api";
-import { Button, EmptyState, ErrorBanner, SuccessBanner } from "@/src/components/ui";
+import { categoryLabel } from "@/src/categoryLabels";
+import {
+  Button,
+  EmptyState,
+  ErrorBanner,
+  IconButton,
+  SuccessBanner,
+  TagChip,
+} from "@/src/components/ui";
 import { useLibrary } from "@/src/context/LibraryContext";
-import { colors, spacing } from "@/src/theme";
+import { colors, radius, shadow, spacing } from "@/src/theme";
+
+type IconName = keyof typeof Ionicons.glyphMap;
+
+function SectionTitle({
+  icon,
+  title,
+  style,
+}: {
+  icon: IconName;
+  title: string;
+  style?: object;
+}) {
+  return (
+    <View style={[styles.sectionTitleRow, style]}>
+      <Ionicons name={icon} size={18} color={colors.brand} />
+      <Text style={styles.title}>{title}</Text>
+    </View>
+  );
+}
 
 function toDateInput(date: Date): string {
   return date.toISOString().slice(0, 10);
@@ -62,6 +90,7 @@ export default function HistoryScreen() {
   const [formSuccess, setFormSuccess] = useState<string | null>(null);
   const [reviews, setReviews] = useState<TimelineReviewDetail[]>([]);
   const [reviewBusyId, setReviewBusyId] = useState<string | null>(null);
+  const [categoryFilter, setCategoryFilter] = useState("all");
 
   useEffect(() => {
     void (async () => {
@@ -86,6 +115,33 @@ export default function HistoryScreen() {
       )
       .slice(0, 6);
   }, [destination, places, selectedPlace]);
+
+  const categoryCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const { place } of visits) {
+      const key = place?.category ?? "uncategorized";
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+    }
+    return Array.from(counts.entries()).sort(([a], [b]) => {
+      if (a === "uncategorized") {
+        return 1;
+      }
+      if (b === "uncategorized") {
+        return -1;
+      }
+      return categoryLabel(a).localeCompare(categoryLabel(b));
+    });
+  }, [visits]);
+
+  const filteredVisits = useMemo(() => {
+    if (categoryFilter === "all") {
+      return visits;
+    }
+    return visits.filter(({ place }) => {
+      const key = place?.category ?? "uncategorized";
+      return key === categoryFilter;
+    });
+  }, [visits, categoryFilter]);
 
   const handleImportInstagram = async () => {
     setFormError(null);
@@ -261,11 +317,11 @@ export default function HistoryScreen() {
     <FlatList
       style={styles.screen}
       contentContainerStyle={styles.list}
-      data={visits}
+      data={filteredVisits}
       keyExtractor={(item) => item.visit.visit_id}
       ListHeaderComponent={
         <View style={styles.form}>
-          <Text style={styles.title}>Import from Instagram</Text>
+          <SectionTitle icon="logo-instagram" title="Import from Instagram" />
           <Text style={styles.subtitle}>
             Latest public posts are ingested and places marked visited. Progress survives refresh.
           </Text>
@@ -284,42 +340,55 @@ export default function HistoryScreen() {
           />
           <Button
             label="Import visits"
+            icon="download-outline"
             loading={importing}
             onPress={() => void handleImportInstagram()}
           />
 
-          <Text style={[styles.title, { marginTop: spacing.lg }]}>
-            Import from Google Maps Timeline
-          </Text>
+          <SectionTitle
+            icon="map-outline"
+            title="Import from Google Maps Timeline"
+            style={{ marginTop: spacing.lg }}
+          />
           <Text style={styles.subtitle}>
             Upload a phone Timeline .json or Takeout .zip. Parsed on device; processes in the
             background. Home/errands filtered; unknown types gated via OpenStreetMap.
           </Text>
           <Button
             label={timelineImporting ? "Uploading…" : "Choose Timeline file"}
+            icon="cloud-upload-outline"
             loading={timelineImporting}
             onPress={() => void handleImportTimeline()}
           />
           <Button
             label="Clear Timeline visits"
+            icon="trash-outline"
             variant="danger"
             onPress={() => handleCleanupVisits("timeline")}
           />
           <Button
             label="Clear all visit history"
+            icon="trash-outline"
             variant="danger"
             onPress={() => handleCleanupVisits("all")}
           />
 
           {reviews.length > 0 ? (
             <>
-              <Text style={[styles.title, { marginTop: spacing.lg }]}>Review Timeline places</Text>
+              <SectionTitle
+                icon="help-circle-outline"
+                title="Review Timeline places"
+                style={{ marginTop: spacing.lg }}
+              />
               <Text style={styles.subtitle}>
                 Ambiguous imports — keep trip memories, discard everyday stops. Suggestions are
                 hints only.
               </Text>
               {reviews.map((item) => (
                 <View key={item.visit.visit_id} style={styles.reviewCard}>
+                  <View style={styles.chipRow}>
+                    <TagChip category={item.place?.category} />
+                  </View>
                   <Text style={styles.suggestionName}>{item.visit.place_name}</Text>
                   <Text style={styles.suggestionMeta}>
                     {formatVisitDates(item.visit.visited_from, item.visit.visited_to)}
@@ -333,11 +402,13 @@ export default function HistoryScreen() {
                   <View style={styles.reviewActions}>
                     <Button
                       label="Keep"
+                      icon="checkmark"
                       loading={reviewBusyId === item.visit.visit_id}
                       onPress={() => handleAcceptReview(item.visit.visit_id)}
                     />
                     <Button
                       label="Discard"
+                      icon="close"
                       variant="danger"
                       loading={reviewBusyId === item.visit.visit_id}
                       onPress={() => handleDiscardReview(item.visit.visit_id)}
@@ -348,7 +419,11 @@ export default function HistoryScreen() {
             </>
           ) : null}
 
-          <Text style={[styles.title, { marginTop: spacing.lg }]}>Add a place you’ve visited</Text>
+          <SectionTitle
+            icon="add-circle-outline"
+            title="Add a place you’ve visited"
+            style={{ marginTop: spacing.lg }}
+          />
           <Text style={styles.subtitle}>
             Pick a library place or type a new destination. Dates are optional.
           </Text>
@@ -381,8 +456,11 @@ export default function HistoryScreen() {
           ))}
 
           <Text style={styles.label}>From (optional)</Text>
-          <Pressable style={styles.input} onPress={() => setShowFromPicker(true)}>
-            <Text style={styles.dateText}>{visitedFrom || "No date"}</Text>
+          <Pressable style={styles.dateInput} onPress={() => setShowFromPicker(true)}>
+            <Ionicons name="calendar-outline" size={16} color={colors.muted} />
+            <Text style={[styles.dateText, !visitedFrom && styles.datePlaceholder]}>
+              {visitedFrom || "No date"}
+            </Text>
           </Pressable>
           {showFromPicker ? (
             <DateTimePicker
@@ -399,8 +477,11 @@ export default function HistoryScreen() {
           ) : null}
 
           <Text style={styles.label}>To (optional)</Text>
-          <Pressable style={styles.input} onPress={() => setShowToPicker(true)}>
-            <Text style={styles.dateText}>{visitedTo || "No date"}</Text>
+          <Pressable style={styles.dateInput} onPress={() => setShowToPicker(true)}>
+            <Ionicons name="calendar-outline" size={16} color={colors.muted} />
+            <Text style={[styles.dateText, !visitedTo && styles.datePlaceholder]}>
+              {visitedTo || "No date"}
+            </Text>
           </Pressable>
           {showToPicker ? (
             <DateTimePicker
@@ -425,8 +506,31 @@ export default function HistoryScreen() {
             placeholder="Optional notes"
             placeholderTextColor={colors.muted}
           />
-          <Button label="Mark as visited" loading={saving} onPress={() => void handleSave()} />
-          <Text style={[styles.title, { marginTop: spacing.lg }]}>Your visits</Text>
+          <Button
+            label="Mark as visited"
+            icon="checkmark-circle-outline"
+            loading={saving}
+            onPress={() => void handleSave()}
+          />
+          <SectionTitle
+            icon="albums-outline"
+            title="Your visits"
+            style={{ marginTop: spacing.lg }}
+          />
+          {categoryCounts.length > 1 ? (
+            <View style={styles.filterRow}>
+              <Pressable onPress={() => setCategoryFilter("all")}>
+                <TagChip label={categoryFilter === "all" ? "All ✓" : `All (${visits.length})`} />
+              </Pressable>
+              {categoryCounts.map(([key, count]) => (
+                <Pressable key={key} onPress={() => setCategoryFilter(key)}>
+                  <TagChip
+                    label={`${key === "uncategorized" ? "Uncategorized" : categoryLabel(key)} (${count})${categoryFilter === key ? " ✓" : ""}`}
+                  />
+                </Pressable>
+              ))}
+            </View>
+          ) : null}
         </View>
       }
       ListEmptyComponent={
@@ -434,26 +538,57 @@ export default function HistoryScreen() {
       }
       renderItem={({ item }) => {
         const { visit, place } = item;
+        const canOpen = Boolean(visit.place_id);
         return (
           <View style={styles.card}>
+            <View style={styles.cardTopRow}>
+              <View style={styles.chipRow}>
+                <TagChip category={place?.category} />
+                {visit.source === "timeline" || visit.source === "instagram" || visit.source === "manual" ? (
+                  <TagChip
+                    label={
+                      visit.source === "timeline"
+                        ? "Timeline"
+                        : visit.source === "instagram"
+                          ? "Instagram"
+                          : "Manual"
+                    }
+                  />
+                ) : null}
+              </View>
+              <IconButton
+                icon="trash-outline"
+                onPress={() => handleDelete(visit.visit_id)}
+                color={colors.faint}
+                size={16}
+                accessibilityLabel="Delete trip"
+              />
+            </View>
             <Pressable
-              disabled={!visit.place_id}
+              disabled={!canOpen}
               onPress={() => visit.place_id && router.push(`/places/${visit.place_id}`)}
+              style={styles.cardTitleRow}
             >
               <Text style={styles.cardTitle}>{visit.place_name}</Text>
+              {canOpen ? (
+                <Ionicons name="chevron-forward" size={16} color={colors.brand} />
+              ) : null}
             </Pressable>
             {place ? (
-              <Text style={styles.cardMeta}>
-                {[place.location.city, place.location.country].filter(Boolean).join(", ")}
-              </Text>
+              <View style={styles.cardMetaRow}>
+                <Ionicons name="location-outline" size={13} color={colors.muted} />
+                <Text style={styles.cardMeta}>
+                  {[place.location.city, place.location.country].filter(Boolean).join(", ")}
+                </Text>
+              </View>
             ) : null}
-            <Text style={styles.cardDates}>
-              {formatVisitDates(visit.visited_from, visit.visited_to)}
-            </Text>
+            <View style={styles.cardMetaRow}>
+              <Ionicons name="calendar-outline" size={13} color={colors.ink} />
+              <Text style={styles.cardDates}>
+                {formatVisitDates(visit.visited_from, visit.visited_to)}
+              </Text>
+            </View>
             {visit.notes ? <Text style={styles.cardNotes}>{visit.notes}</Text> : null}
-            <Pressable onPress={() => handleDelete(visit.visit_id)}>
-              <Text style={styles.delete}>Delete</Text>
-            </Pressable>
           </View>
         );
       }}
@@ -472,13 +607,15 @@ const styles = StyleSheet.create({
   list: { padding: spacing.md, flexGrow: 1 },
   form: {
     backgroundColor: colors.surface,
-    borderRadius: 14,
+    borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: colors.border,
     padding: spacing.md,
     marginBottom: spacing.lg,
+    ...shadow(1),
   },
-  title: { fontSize: 18, fontWeight: "700", color: colors.ink },
+  sectionTitleRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  title: { fontSize: 18, fontWeight: "800", color: colors.ink },
   subtitle: { marginTop: 4, marginBottom: spacing.md, color: colors.muted, fontSize: 14 },
   label: {
     marginTop: spacing.sm,
@@ -498,7 +635,20 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   notes: { minHeight: 80, textAlignVertical: "top" },
-  dateText: { color: colors.ink },
+  dateInput: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 13,
+    backgroundColor: colors.bg,
+    marginBottom: spacing.sm,
+  },
+  dateText: { color: colors.ink, fontWeight: "500" },
+  datePlaceholder: { color: colors.muted, fontWeight: "400" },
   suggestion: {
     paddingVertical: 10,
     borderBottomWidth: 1,
@@ -515,17 +665,27 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   reviewActions: { marginTop: spacing.sm, gap: spacing.sm },
+  chipRow: { flexDirection: "row", flexWrap: "wrap", alignItems: "center" },
+  filterRow: { flexDirection: "row", flexWrap: "wrap", marginTop: spacing.sm },
   card: {
     backgroundColor: colors.surface,
-    borderRadius: 14,
+    borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: colors.border,
     padding: spacing.md,
     marginBottom: spacing.md,
+    ...shadow(1),
   },
-  cardTitle: { fontSize: 16, fontWeight: "700", color: colors.brand },
-  cardMeta: { marginTop: 4, color: colors.muted, fontSize: 13 },
-  cardDates: { marginTop: 6, color: colors.ink, fontWeight: "500" },
+  cardTopRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 2,
+  },
+  cardTitleRow: { flexDirection: "row", alignItems: "center", gap: 4 },
+  cardTitle: { flex: 1, fontSize: 16, fontWeight: "700", color: colors.brand },
+  cardMetaRow: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 5 },
+  cardMeta: { color: colors.muted, fontSize: 13 },
+  cardDates: { color: colors.ink, fontWeight: "500", fontSize: 13 },
   cardNotes: { marginTop: 8, color: colors.muted, lineHeight: 20 },
-  delete: { marginTop: 12, color: colors.danger, fontWeight: "600" },
 });

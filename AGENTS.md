@@ -20,7 +20,7 @@ travelplanner/
   personas/   discover / gates / link-or-visit (outside pipelines)
   places/     geocode / identity internals used by steps
   clients/    external API wrappers
-  features.py product feature flags (FEATURE_* env, default off)
+  feature_flag.py product toggles (FeatureFlag get/set, default off)
   db/         persistence
 ```
 

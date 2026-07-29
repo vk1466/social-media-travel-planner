@@ -90,7 +90,7 @@ def test_is_visitable_place_rejects_administrative_regions() -> None:
 def test_process_post_places_skips_non_visitable_admin_regions(monkeypatch, dynamodb) -> None:
   post = _sample_post(extracted_places=(ExtractedPlace(place_name="Oregon", state_province="Oregon"),))
   monkeypatch.setattr(
-    "travelplanner.places.pipeline.locate_mention_debug",
+    "travelplanner.steps.process_mentions.locate_mention_debug",
     lambda mention, **_: LocateDebugResult(status="unresolved", notes=("rejected admin",)),
   )
 

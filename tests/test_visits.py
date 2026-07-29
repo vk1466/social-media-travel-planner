@@ -292,7 +292,7 @@ def test_cleanup_visits_timeline_by_source_and_notes(dynamodb) -> None:
     place_id=place_b,
     visited_from="2024-05-01",
     notes="Imported from Google Maps Timeline",
-    source="manual",
+    source="timeline",
   )
   create_visit(
     user_id=USER,

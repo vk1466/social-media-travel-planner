@@ -157,7 +157,7 @@ def haversine_meters(lat1: float, lon1: float, lat2: float, lon2: float) -> floa
   return 2 * earth_radius_meters * math.asin(math.sqrt(a))
 
 
-def _location_from_result(result: GeocodeResult) -> PlaceLocation:
+def location_from_geocode(result: GeocodeResult) -> PlaceLocation:
   return PlaceLocation(
     display_name=result.display_name,
     continent=COUNTRY_CODE_TO_CONTINENT.get(result.country_code) if result.country_code else None,
@@ -673,3 +673,6 @@ def locate_mention(mention: PlaceMention) -> PlaceLocation | None:
   if debug.status == "resolved":
     return debug.location
   return None
+
+
+_location_from_result = location_from_geocode

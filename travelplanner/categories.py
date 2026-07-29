@@ -10,6 +10,7 @@ CATEGORIES: tuple[str, ...] = (
   "hike",
   "viewpoint",
   "waterfall",
+  "lake",
   "beach",
   "park",
   "city",
@@ -32,9 +33,10 @@ ROOT_CATEGORIES: frozenset[str] = frozenset({"park", "city", "neighborhood"})
 # Category-scoped facets. Grow deliberately — unknown values are dropped on write.
 # A value may be both a category (for one pin) and an attribute (on another).
 ATTRIBUTES_BY_CATEGORY: dict[str, tuple[str, ...]] = {
-  "hike": ("viewpoint", "waterfall", "summit", "loop"),
+  "hike": ("viewpoint", "waterfall", "lake", "summit", "loop"),
   "viewpoint": ("hike",),
   "waterfall": ("hike", "viewpoint"),
+  "lake": ("hike", "viewpoint"),
   "beach": ("hike",),
   "park": (),
   "city": (),
@@ -59,6 +61,7 @@ ALL_ATTRIBUTES: tuple[str, ...] = tuple(
 CATEGORY_PRECEDENCE: dict[str, int] = {
   "hike": 3,
   "waterfall": 3,
+  "lake": 3,
   "viewpoint": 3,
   "beach": 3,
   "museum": 3,
@@ -84,6 +87,7 @@ _OSM_PARK_TYPES = frozenset(
 _OSM_HIKE_TYPES = frozenset({"path", "footway", "track", "steps", "bridleway", "via_ferrata"})
 _OSM_VIEWPOINT_TYPES = frozenset({"viewpoint"})
 _OSM_WATERFALL_TYPES = frozenset({"waterfall"})
+_OSM_LAKE_TYPES = frozenset({"lake", "water", "reservoir", "pond", "lagoon"})
 _OSM_BEACH_TYPES = frozenset({"beach", "bay"})
 _OSM_MUSEUM_TYPES = frozenset({"museum", "gallery"})
 _OSM_MARKET_TYPES = frozenset({"marketplace", "market"})
@@ -138,6 +142,10 @@ def category_from_osm(
     osm_class in {"waterway", "natural"} and osm_type in _OSM_WATERFALL_TYPES
   ):
     return "waterfall"
+  if osm_type in _OSM_LAKE_TYPES or (
+    osm_class in {"natural", "water", "waterway", "landuse"} and osm_type in _OSM_LAKE_TYPES
+  ):
+    return "lake"
   if osm_type in _OSM_BEACH_TYPES or (osm_class == "natural" and osm_type in _OSM_BEACH_TYPES):
     return "beach"
   if osm_type in _OSM_VIEWPOINT_TYPES or (

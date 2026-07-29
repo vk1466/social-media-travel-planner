@@ -35,6 +35,19 @@ def openai_api_key() -> str | None:
 def openai_model() -> str:
   return os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 
+def openai_temperature() -> float:
+  """Sampling temperature for extraction.
+
+  Defaults to 0 so the same reel yields the same places and categories across
+  runs; anything higher makes category assignment drift between ingests.
+  """
+  raw = os.getenv("OPENAI_TEMPERATURE", "0").strip()
+  try:
+    return float(raw)
+  except ValueError as exc:
+    raise RuntimeError(f"OPENAI_TEMPERATURE must be a number, got {raw!r}") from exc
+
+
 
 def dynamodb_region() -> str:
   return os.getenv("DYNAMODB_REGION", "us-east-1").strip() or "us-east-1"
@@ -206,3 +219,47 @@ def timeline_import_max_bytes() -> int:
 # Back-compat alias used by older call sites / env docs.
 def timeline_import_max_places() -> int:
   return timeline_max_places_per_call()
+
+def timeline_day_trip_min_km() -> float:
+  """Distance from home that counts as travel on its own (default 150 km).
+
+  Lets a single-day excursion qualify without an overnight stay.
+  """
+  raw = os.getenv("TIMELINE_DAY_TRIP_MIN_KM", "150").strip()
+  try:
+    value = float(raw)
+  except ValueError as exc:
+    raise RuntimeError(
+      f"TIMELINE_DAY_TRIP_MIN_KM must be a number, got {raw!r}"
+    ) from exc
+  if value < 0:
+    raise RuntimeError("TIMELINE_DAY_TRIP_MIN_KM must be >= 0")
+  return value
+
+def timeline_min_trip_days() -> int:
+  """Consecutive away-from-home days needed to call a run a trip (default 2)."""
+  raw = os.getenv("TIMELINE_MIN_TRIP_DAYS", "2").strip()
+  try:
+    value = int(raw)
+  except ValueError as exc:
+    raise RuntimeError(f"TIMELINE_MIN_TRIP_DAYS must be an integer, got {raw!r}") from exc
+  if value < 1:
+    raise RuntimeError("TIMELINE_MIN_TRIP_DAYS must be >= 1")
+  return value
+
+def timeline_routine_visit_count() -> int:
+  """Separate visits after which a place is routine, not a travel memory (default 5).
+
+  Set to 0 to keep places regardless of how often they were visited.
+  """
+  raw = os.getenv("TIMELINE_ROUTINE_VISIT_COUNT", "5").strip()
+  try:
+    value = int(raw)
+  except ValueError as exc:
+    raise RuntimeError(
+      f"TIMELINE_ROUTINE_VISIT_COUNT must be an integer, got {raw!r}"
+    ) from exc
+  if value < 0:
+    raise RuntimeError("TIMELINE_ROUTINE_VISIT_COUNT must be >= 0")
+  return value
+
