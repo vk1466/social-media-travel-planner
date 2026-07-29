@@ -43,22 +43,22 @@ deployed **TravelPlanner-dev** API.
 
 ## Feature flags
 
-Product on/off toggles live as attributes on `FeatureFlag` in
-[`travelplanner/features.py`](travelplanner/features.py). Edit the class by hand to
-add or flip a flag — no registry or env vars.
+Product toggles live in [`travelplanner/features.py`](travelplanner/features.py) as an
+in-process dict on `FeatureFlag`. Use `get` / `set` — no env vars.
 
 **Rules:**
 
-- Check with `FeatureFlag.place_facts` or `FeatureFlag.get("place_facts")`.
-- New flags default to **False** until the path is validated.
-- Related knobs (TTL, max docs, …) can sit on the same class as plain constants.
-- Tests: cover on and off paths when behavior differs; `monkeypatch.setattr`
-  if a test needs a flag on.
+- Check with `FeatureFlag.get("place_facts")` (contextual names).
+- Add or flip with `FeatureFlag.set("place_facts", True)`, or edit the initial
+  `_flags` dict by hand.
+- New flags default to **False** when unset (`get` default).
+- Related knobs (TTL, max docs, …) can live in the same dict.
+- Tests: cover on and off paths when behavior differs; prefer `set` in tests.
 
 ```python
 from travelplanner.features import FeatureFlag
 
-if FeatureFlag.place_facts:
+if FeatureFlag.get("place_facts"):
   ...
 ```
 

@@ -11,13 +11,12 @@ Full rules: [AGENTS.md](AGENTS.md) § Feature flags.
 
 ## When adding a feature
 
-1. Add a boolean attribute on `FeatureFlag` (default `False`).
-2. Gate call sites with `if FeatureFlag.my_flag:` or `FeatureFlag.get("my_flag")`.
+1. Add an entry to `FeatureFlag._flags` (default `False`), or `FeatureFlag.set("name", value)`.
+2. Gate call sites with `FeatureFlag.get("contextual_name")`.
 3. Prefer flagging incomplete or risky paths until validated.
 
 ## Do not
 
 - Add `os.getenv("SOME_FEATURE")` (or similar) for product behavior.
-- Build a registry / `register()` layer — edit the class by hand.
 - Default new product flags to on.
 - Invent a second flag system in `server/` or the clients for backend product gates.
