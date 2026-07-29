@@ -367,7 +367,7 @@ def test_upsert_place_merges_near_duplicate_coordinates_without_shared_key(dynam
 def test_process_post_places_skips_mentions_that_fail_to_locate(monkeypatch, dynamodb) -> None:
   post = _sample_post(places=(PlatformPlace(place_name="Nowhereville"),))
   monkeypatch.setattr(
-    "travelplanner.places.pipeline.locate_mention_debug",
+    "travelplanner.steps.process_mentions.locate_mention_debug",
     lambda mention, **_: LocateDebugResult(status="unresolved"),
   )
 
@@ -390,7 +390,7 @@ def test_process_post_places_returns_ids_for_located_mentions(monkeypatch, dynam
     longitude=-122.1158,
   )
   monkeypatch.setattr(
-    "travelplanner.places.pipeline.locate_mention_debug",
+    "travelplanner.steps.process_mentions.locate_mention_debug",
     lambda mention, **_: LocateDebugResult(status="resolved", location=location),
   )
 
@@ -440,7 +440,7 @@ def test_process_post_places_materializes_parent_from_parent_place_name(monkeypa
       )
     return LocateDebugResult(status="unresolved")
 
-  monkeypatch.setattr("travelplanner.places.pipeline.locate_mention_debug", fake_locate)
+  monkeypatch.setattr("travelplanner.steps.process_mentions.locate_mention_debug", fake_locate)
 
   place_ids = process_post_places(post)
 
@@ -498,7 +498,7 @@ def test_reprocess_all_places_rebuilds_library_and_updates_posts(monkeypatch, dy
     longitude=-122.1158,
   )
   monkeypatch.setattr(
-    "travelplanner.places.pipeline.locate_mention_debug",
+    "travelplanner.steps.process_mentions.locate_mention_debug",
     lambda mention, **_: LocateDebugResult(status="resolved", location=location),
   )
 
