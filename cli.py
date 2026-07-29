@@ -6,21 +6,21 @@ from collections import Counter
 from pathlib import Path
 
 from travelplanner.logging_config import configure_logging
-from travelplanner.pipeline import IngestResult, ingest_links
+from travelplanner.pipeline import IngestResult, ingest_links, reextract_all_posts
 from travelplanner.places import reprocess_all_places, retry_place_candidates
 
 
 def _print_result(result: IngestResult) -> None:
-  if result.status == "saved":
+  if result.outcome == "saved":
     print(f"saved     {result.post_url} ({result.post_id})")
-  elif result.status == "linked":
+  elif result.outcome == "linked":
     print(f"linked    {result.post_url} ({result.post_id})")
-  elif result.status == "skipped":
+  elif result.outcome == "skipped":
     print(f"skipped   {result.post_url} ({result.post_id})")
-  elif result.status == "unsupported":
+  elif result.outcome == "unsupported":
     print(f"unsupported {result.post_url}")
   else:
-    detail = f": {result.error_message}" if result.error_message else ""
+    detail = f": {result.reason}" if result.reason else ""
     print(f"error     {result.post_url}{detail}")
 
 
@@ -60,6 +60,14 @@ def main() -> None:
     help="Re-run place enrichment on all saved posts without re-fetching links",
   )
   parser.add_argument(
+    "--reextract",
+    action="store_true",
+    help=(
+      "Re-run place extraction on saved posts from stored caption + summary "
+      "(no link re-fetch), then rebuild the place library"
+    ),
+  )
+  parser.add_argument(
     "--retry-place-candidates",
     action="store_true",
     help="Retry unresolved PlaceCandidates without re-fetching Instagram posts",
@@ -76,6 +84,7 @@ def main() -> None:
   )
   args = parser.parse_args()
 
+
   if args.retry_place_candidates:
     result = retry_place_candidates(
       source_post_id=args.source_post_id,
@@ -90,6 +99,12 @@ def main() -> None:
     )
     return
 
+  if args.reextract:
+    changed = reextract_all_posts()
+    reprocess_all_places()
+    print(f"done: re-extracted {changed} post(s) and rebuilt the place library")
+    return
+
   if args.reprocess_places:
     reprocess_all_places()
     print("done: reprocessed places for all saved posts")
@@ -97,7 +112,8 @@ def main() -> None:
 
   if args.links_file is None:
     parser.error(
-      "links_file is required unless --reprocess-places or --retry-place-candidates is set"
+      "links_file is required unless --reextract, --reprocess-places, "
+      "--retry-place-candidates is set"
     )
 
   post_urls = _read_links(args.links_file)
@@ -108,7 +124,7 @@ def main() -> None:
     on_result=_print_result,
   )
 
-  counts = Counter(result.status for result in results)
+  counts = Counter(result.outcome for result in results)
   print(
     "summary: "
     f"saved: {counts.get('saved', 0)}, "
