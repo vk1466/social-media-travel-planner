@@ -89,6 +89,20 @@ ALLOW_SEMANTIC: frozenset[str] = frozenset(
   }
 )
 
+# Allowed, but only as travel when the timing says so: eating out is a memory
+# on a trip and lunch at home. These still require OSM to confirm the pin, and
+# the import gate weighs trip evidence before auto-saving them.
+FOOD_SEMANTIC: frozenset[str] = frozenset(
+  {
+    "TYPE_RESTAURANT",
+    "TYPE_CAFE",
+    "TYPE_BAR",
+    "TYPE_NIGHT_CLUB",
+    "TYPE_BAKERY",
+    "TYPE_FOOD",
+  }
+)
+
 # Vague Google labels — treat as unknown so OSM must confirm travel-worthiness.
 # (TYPE_POINT_OF_INTEREST is especially noisy for residential pins.)
 _UNKNOWN_SEMANTIC: frozenset[str] = frozenset(
@@ -102,27 +116,35 @@ _UNKNOWN_SEMANTIC: frozenset[str] = frozenset(
   }
 )
 
-# Google semanticType → our Place.category
+# Google semanticType → our Place.category.
+# Prefer coarse-but-correct labels; OSM can upgrade via resolve_category
+# (e.g. TYPE_TOURIST_ATTRACTION → landmark, OSM waterfall → waterfall).
+# Omit vague types (TYPE_POINT_OF_INTEREST, etc.) so OSM alone decides.
 SEMANTIC_TO_CATEGORY: dict[str, str] = {
+  # Food & drink
   "TYPE_CAFE": "cafe",
   "TYPE_BAKERY": "cafe",
   "TYPE_RESTAURANT": "restaurant",
   "TYPE_FOOD": "restaurant",
   "TYPE_BAR": "bar",
   "TYPE_NIGHT_CLUB": "bar",
+  # Culture
   "TYPE_MUSEUM": "museum",
   "TYPE_ART_GALLERY": "museum",
+  # Outdoors
   "TYPE_PARK": "park",
   "TYPE_NATIONAL_PARK": "park",
   "TYPE_CAMPGROUND": "park",
   "TYPE_RV_PARK": "park",
   "TYPE_NATURAL_FEATURE": "park",
   "TYPE_BEACH": "beach",
+  # Lodging
   "TYPE_LODGING": "hotel",
   "TYPE_HOTEL": "hotel",
   "TYPE_RESORT_HOTEL": "hotel",
   "TYPE_GUEST_HOUSE": "hotel",
   "TYPE_HOSTEL": "hotel",
+  # Attractions / landmarks (OSM may specialize)
   "TYPE_TOURIST_ATTRACTION": "landmark",
   "TYPE_LANDMARK": "landmark",
   "TYPE_HISTORICAL_LANDMARK": "landmark",
@@ -138,10 +160,10 @@ SEMANTIC_TO_CATEGORY: dict[str, str] = {
   "TYPE_PERFORMING_ARTS_THEATER": "landmark",
   "TYPE_MOVIE_THEATER": "landmark",
   "TYPE_CASINO": "landmark",
-  "TYPE_SPA": "landmark",
+  "TYPE_SPA": "hotel",
+  # Shopping
   "TYPE_SHOPPING_MALL": "market",
   "TYPE_MARKET": "market",
-  "TYPE_POINT_OF_INTEREST": "landmark",
 }
 
 
@@ -162,6 +184,12 @@ def classify_semantic(semantic_type: str | None) -> SemanticClass:
   if key in ALLOW_SEMANTIC:
     return "allow"
   return "unknown"
+
+
+def is_food_semantic(semantic_type: str | None) -> bool:
+  """True for eat/drink labels, which need travel context to count."""
+  key = _normalize(semantic_type)
+  return key is not None and key in FOOD_SEMANTIC
 
 
 def category_from_semantic_type(semantic_type: str | None) -> str | None:

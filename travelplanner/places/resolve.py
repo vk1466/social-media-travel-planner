@@ -25,18 +25,22 @@ def _names_compatible(mention_name: str, place: Place) -> bool:
   return any(name_similarity(mention_name, candidate) >= NAME_COMPATIBLE for candidate in candidates)
 
 
-def _same_region(location: PlaceLocation, place: Place) -> bool:
-  left = place.location
-  if location.country_code and left.country_code:
-    if location.country_code != left.country_code:
+def same_region(left: PlaceLocation, right: PlaceLocation) -> bool:
+  """True when two locations share country (code or name) and state when both set."""
+  if left.country_code and right.country_code:
+    if left.country_code != right.country_code:
       return False
-  elif location.country and left.country:
-    if location.country.strip().lower() != left.country.strip().lower():
+  elif left.country and right.country:
+    if left.country.strip().lower() != right.country.strip().lower():
       return False
-  if location.state_province and left.state_province:
-    if location.state_province.strip().lower() != left.state_province.strip().lower():
+  if left.state_province and right.state_province:
+    if left.state_province.strip().lower() != right.state_province.strip().lower():
       return False
   return True
+
+
+def _same_region(location: PlaceLocation, place: Place) -> bool:
+  return same_region(location, place.location)
 
 
 def find_existing_place(
@@ -93,10 +97,11 @@ def find_existing_place(
 
 
 def _effective_category(mention: PlaceMention, location: PlaceLocation) -> str | None:
-  """LLM category first; OSM class/type fills gaps (esp. synthesized parents)."""
-  if mention.category:
-    return mention.category
-  return category_from_osm(location.osm_class, location.osm_type)
+  """Merge mention + OSM categories; more specific wins (e.g. landmark ← waterfall)."""
+  return resolve_category(
+    mention.category,
+    category_from_osm(location.osm_class, location.osm_type),
+  )
 
 
 def _merge_place(
