@@ -79,6 +79,42 @@ class PlaceLocation:
 
 
 @dataclass(frozen=True)
+class FactEvidence:
+  """Which source backed one field. `source_ref` must exist in the fetched docs."""
+
+  field_name: str
+  source_name: str  # google_places | osm | wikipedia | nps
+  source_ref: str  # provider id or URL
+
+
+@dataclass(frozen=True)
+class PlaceFacts:
+  """Objective, source-backed facts. Separate from reel `details` / `tips`."""
+
+  status: str  # complete | partial | empty
+  fetched_at: str
+  # Shared
+  website_url: str | None = None
+  phone_number: str | None = None
+  opening_hours_text: tuple[str, ...] = ()  # one line per day, as published
+  admission_text: str | None = None  # "Free", "$30 per vehicle, 7 days"
+  famous_for: str | None = None
+  best_time_to_visit: str | None = None
+  typical_duration_minutes: int | None = None
+  # Food & drink
+  cuisines: tuple[str, ...] = ()
+  price_level: int | None = None  # 0–4
+  reservation_required: bool | None = None
+  # Trail
+  distance_km: float | None = None
+  elevation_gain_m: int | None = None
+  difficulty: str | None = None  # easy | moderate | hard
+  # Provenance / trust
+  evidence: tuple[FactEvidence, ...] = ()
+  conflicts: tuple[str, ...] = ()  # "opening_hours_text: google≠osm"
+  notes: tuple[str, ...] = ()
+
+@dataclass(frozen=True)
 class Place:
   """One real-world place in the travel library, deduplicated across posts.
 
@@ -96,6 +132,7 @@ class Place:
   tips: tuple[str, ...] = ()
   source_post_ids: tuple[str, ...] = ()
   parent_place_id: str | None = None
+  facts: PlaceFacts | None = None
 
 
 VISIT_SOURCES = frozenset({"manual", "instagram", "timeline", "timeline_review"})
