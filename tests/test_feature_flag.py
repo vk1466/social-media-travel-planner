@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from travelplanner.features import FeatureFlag
+from travelplanner.feature_flag import FeatureFlag
 
 
 def test_flags_default_off() -> None:

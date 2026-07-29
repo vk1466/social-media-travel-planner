@@ -1,12 +1,12 @@
 ---
-description: Require travelplanner/features.py for product feature gates
-globs: travelplanner/**/*.py,server/**/*.py,infra/**/*.py,tests/test_features.py
+description: Require travelplanner/feature_flag.py for product feature gates
+globs: travelplanner/**/*.py,server/**/*.py,infra/**/*.py,tests/test_feature_flag.py
 alwaysApply: false
 ---
 
 # Feature flags
 
-Product features are gated only through **[travelplanner/features.py](travelplanner/features.py)**.
+Product features are gated only through **[travelplanner/feature_flag.py](travelplanner/feature_flag.py)**.
 Full rules: [AGENTS.md](AGENTS.md) § Feature flags.
 
 ## When adding a feature

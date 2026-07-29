@@ -43,7 +43,7 @@ deployed **TravelPlanner-dev** API.
 
 ## Feature flags
 
-Product toggles live in [`travelplanner/features.py`](travelplanner/features.py) as an
+Product toggles live in [`travelplanner/feature_flag.py`](travelplanner/feature_flag.py) as an
 in-process dict on `FeatureFlag`. Use `get` / `set` — no env vars.
 
 **Rules:**
@@ -56,7 +56,7 @@ in-process dict on `FeatureFlag`. Use `get` / `set` — no env vars.
 - Tests: cover on and off paths when behavior differs; prefer `set` in tests.
 
 ```python
-from travelplanner.features import FeatureFlag
+from travelplanner.feature_flag import FeatureFlag
 
 if FeatureFlag.get("place_facts"):
   ...

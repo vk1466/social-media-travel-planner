@@ -2,7 +2,7 @@
 
 Flags live in an in-process dict. Call sites use ``get`` / ``set``:
 
-  from travelplanner.features import FeatureFlag
+  from travelplanner.feature_flag import FeatureFlag
 
   if FeatureFlag.get("place_facts"):
     ...
