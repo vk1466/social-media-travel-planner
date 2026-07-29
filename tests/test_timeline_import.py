@@ -1233,6 +1233,6 @@ def test_create_timeline_job_schema(dynamodb) -> None:
   assert job is not None
   assert job["kind"] == jobs_repo.JOB_KIND_TIMELINE_IMPORT
   assert job["total_places"] == 250
-  assert len(job["links"]) == 3
-  assert job["links"][0]["post_url"] == "timeline-batch:0"
-  assert job["links"][2]["batch_count"] == 50
+  assert len(job["items"]) == 3
+  assert job["items"][0]["item_ref"] == "timeline-batch:0"
+  assert job["items"][2]["batch_count"] == 50

@@ -151,6 +151,18 @@ export type LinkStatus =
   | "unsupported"
   | "error";
 
+export interface JobItem {
+  item_ref: string;
+  item_kind: "post_url" | "timeline_batch";
+  status: LinkStatus;
+  post_id?: string | null;
+  stats?: Record<string, number> | null;
+  error_message?: string | null;
+  batch_index?: number | null;
+  batch_start?: number | null;
+  batch_count?: number | null;
+}
+
 export interface JobLink {
   post_url: string;
   status: LinkStatus;
@@ -176,6 +188,7 @@ export interface Job {
   mark_visited?: boolean;
   username?: string | null;
   counts: JobCounts;
+  items?: JobItem[];
   links: JobLink[];
 }
 
