@@ -42,7 +42,7 @@ def test_ingest_requires_links(dynamodb) -> None:
 
 
 def test_ingest_job_completes_and_lists_posts(monkeypatch, dynamodb) -> None:
-  def fake_ingest(post_url: str, *, user_id: str, refresh: bool = False) -> IngestResult:
+  def fake_ingest(post_url: str, *, user_id: str, refresh: bool = False, mark_visited: bool = False) -> IngestResult:
     shortcode = post_url.rstrip("/").split("/")[-1]
     post = SavedPost(
       post_id=f"instagram:{shortcode}",
@@ -54,7 +54,7 @@ def test_ingest_job_completes_and_lists_posts(monkeypatch, dynamodb) -> None:
     )
     save_post(post)
     user_posts_repo.link_user_post(user_id, post.post_id)
-    return IngestResult(post_url=post_url, status="saved", post_id=post.post_id)
+    return IngestResult(post_url=post_url, outcome="saved", post_id=post.post_id)
 
   monkeypatch.setattr("server.workers.ingest_link", fake_ingest)
   monkeypatch.setattr("server.workers.link_places", lambda: None)
@@ -84,8 +84,8 @@ def test_ingest_job_completes_and_lists_posts(monkeypatch, dynamodb) -> None:
 def test_get_job_scoped_to_owner(monkeypatch, dynamodb) -> None:
   monkeypatch.setattr(
     "server.workers.ingest_link",
-    lambda post_url, *, user_id, refresh=False: IngestResult(
-      post_url=post_url, status="skipped"
+    lambda post_url, *, user_id, refresh=False, mark_visited=False: IngestResult(
+      post_url=post_url, outcome="skipped"
     ),
   )
   monkeypatch.setattr("server.workers.link_places", lambda: None)
@@ -165,6 +165,8 @@ def test_list_and_get_place(dynamodb) -> None:
   assert body["parent"] is None
 
 
+
+
 def test_get_place_not_found(dynamodb) -> None:
   client = TestClient(app)
   response = client.get("/api/places/does-not-exist", headers=HEADERS)
@@ -238,6 +240,8 @@ def test_create_and_list_visits(dynamodb) -> None:
 
 
 def test_cleanup_visits_endpoint(dynamodb) -> None:
+  from travelplanner.visits import create_visit
+
   location = PlaceLocation(
     display_name="Multnomah Falls",
     continent="North America",
@@ -253,17 +257,14 @@ def test_cleanup_visits_endpoint(dynamodb) -> None:
     location,
     "instagram:reelA",
   )
-  client = TestClient(app)
-  created = client.post(
-    "/api/visits",
-    json={
-      "place_id": place_id,
-      "visited_from": "2024-06-12",
-      "notes": "Imported from Google Maps Timeline",
-    },
-    headers=HEADERS,
+  create_visit(
+    user_id="user-a",
+    place_id=place_id,
+    visited_from="2024-06-12",
+    notes="Imported from Google Maps Timeline",
+    source="timeline",
   )
-  assert created.status_code == 201
+  client = TestClient(app)
 
   bad = client.post("/api/visits/cleanup", json={"scope": "bogus"}, headers=HEADERS)
   assert bad.status_code == 422
@@ -304,8 +305,10 @@ def test_timeline_review_accept_discard_endpoints(dynamodb) -> None:
     user_id="user-a",
     place_id=place_id,
     visited_from="2024-04-01",
-    notes="Timeline review · suggest=discard · office building",
-    source="timeline_review",
+    source="timeline",
+    status="needs_review",
+    review_suggestion="discard",
+    review_reason="office building",
   )
   client = TestClient(app)
 
@@ -328,8 +331,10 @@ def test_timeline_review_accept_discard_endpoints(dynamodb) -> None:
     user_id="user-a",
     place_id=place_id,
     visited_from="2024-05-01",
-    notes="Timeline review · suggest=unsure · maybe",
-    source="timeline_review",
+    source="timeline",
+    status="needs_review",
+    review_suggestion="unsure",
+    review_reason="maybe",
   )
   discarded = client.post(
     f"/api/visits/timeline-reviews/{review2.visit_id}/discard",
