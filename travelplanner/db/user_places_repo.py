@@ -8,7 +8,9 @@ from boto3.dynamodb.conditions import Key
 from travelplanner.db.serialize import from_dynamo, to_dynamo
 from travelplanner.db.tables import get_table
 
-PlaceSource = Literal["from_post", "manual"]
+PlaceSource = Literal["from_post", "manual", "timeline", "instagram"]
+
+_STRONGER_SOURCES = frozenset({"manual", "timeline", "instagram"})
 
 
 def _now_iso() -> str:
@@ -24,10 +26,12 @@ def link_user_place(
 ) -> None:
   table = get_table("UserPlaces")
   existing = table.get_item(Key={"user_id": user_id, "place_id": place_id}).get("Item")
-  # Prefer keeping manual if already manual; otherwise upsert.
+  # Prefer stronger provenance (manual/timeline/instagram) over from_post.
   if existing is not None:
     existing_source = existing.get("source", "from_post")
-    if existing_source == "manual" and source == "from_post":
+    if existing_source in _STRONGER_SOURCES and source == "from_post":
+      return
+    if existing_source in _STRONGER_SOURCES and source in _STRONGER_SOURCES:
       return
   table.put_item(
     Item=to_dynamo(

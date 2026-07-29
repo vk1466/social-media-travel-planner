@@ -44,10 +44,10 @@ def delete_all_visits(user_id: str | None = None) -> int:
 def list_visits(user_id: str) -> list[Visit]:
   """Newest trip first (by visited_from, then created_at). Undated last among peers.
 
-  Hides pending Timeline review items (`source=timeline_review`).
+  Hides pending Timeline review items (`status=needs_review`).
   """
   return sorted(
-    (visit for visit in load_all_visits(user_id) if visit.source != "timeline_review"),
+    (visit for visit in load_all_visits(user_id) if visit.status != "needs_review"),
     key=lambda visit: (visit.visited_from or "", visit.created_at or ""),
     reverse=True,
   )
@@ -57,7 +57,7 @@ def visited_place_ids(user_id: str) -> set[str]:
   return {
     visit.place_id
     for visit in load_all_visits(user_id)
-    if visit.source != "timeline_review"
+    if visit.status != "needs_review"
   }
 
 
@@ -68,37 +68,45 @@ def visits_for_place(user_id: str, place_id: str) -> list[Visit]:
 def list_timeline_reviews(user_id: str) -> list[Visit]:
   """Pending Timeline imports awaiting Keep / Discard."""
   return sorted(
-    (visit for visit in load_all_visits(user_id) if visit.source == "timeline_review"),
+    (visit for visit in load_all_visits(user_id) if visit.status == "needs_review"),
     key=lambda visit: (visit.visited_from or "", visit.created_at or ""),
     reverse=True,
   )
 
 
-def parse_review_suggestion(notes: str | None) -> tuple[str | None, str | None]:
-  """Extract suggest=… and reason from Timeline review notes."""
+def parse_review_suggestion(
+  notes: str | None,
+) -> tuple[str | None, str | None, str | None]:
+  """Extract suggest=…, when=…, and reason from legacy Timeline review notes."""
   text = (notes or "").strip()
   if not text.startswith("Timeline review"):
-    return None, text or None
+    return None, text or None, None
   suggestion: str | None = None
   reason: str | None = None
+  travel_kind: str | None = None
   for part in text.split(" · "):
     part = part.strip()
     if part.startswith("suggest="):
       suggestion = part.removeprefix("suggest=").strip() or None
+    elif part.startswith("when="):
+      travel_kind = part.removeprefix("when=").strip() or None
     elif part != "Timeline review":
       reason = part or None
-  return suggestion, reason
+  return suggestion, reason, travel_kind
 
 
 def accept_timeline_review(*, user_id: str, visit_id: str) -> Visit:
   visit = load_visit(user_id, visit_id)
   if visit is None:
     raise ValueError("Visit not found")
-  if visit.source != "timeline_review":
+  if visit.status != "needs_review":
     raise ValueError("Visit is not pending Timeline review")
   updated = replace(
     visit,
-    source="timeline",
+    status="confirmed",
+    review_suggestion=None,
+    review_reason=None,
+    travel_kind=None,
     notes="Imported from Google Maps Timeline",
   )
   save_visit(updated)
@@ -109,7 +117,7 @@ def discard_timeline_review(*, user_id: str, visit_id: str) -> bool:
   visit = load_visit(user_id, visit_id)
   if visit is None:
     return False
-  if visit.source != "timeline_review":
+  if visit.status != "needs_review":
     raise ValueError("Visit is not pending Timeline review")
   place_id = visit.place_id
   deleted = delete_visit(user_id, visit_id)
@@ -206,6 +214,15 @@ def resolve_place_for_visit(
   raise ValueError("Provide place_id or place_query")
 
 
+def _place_source_for_visit(source: str) -> user_places_repo.PlaceSource:
+  mapping: dict[str, user_places_repo.PlaceSource] = {
+    "manual": "manual",
+    "timeline": "timeline",
+    "instagram": "instagram",
+  }
+  return mapping.get(source, "manual")
+
+
 def create_visit(
   *,
   user_id: str,
@@ -217,6 +234,10 @@ def create_visit(
   city: str | None = None,
   country: str | None = None,
   source: str = "manual",
+  status: str = "confirmed",
+  review_suggestion: str | None = None,
+  review_reason: str | None = None,
+  travel_kind: str | None = None,
 ) -> Visit:
   if not user_id:
     raise ValueError("user_id is required")
@@ -224,6 +245,7 @@ def create_visit(
   end = _normalize_optional_date(visited_to)
   _validate_dates(start, end)
   source_value = (source or "manual").strip().lower() or "manual"
+  status_value = (status or "confirmed").strip().lower() or "confirmed"
 
   visit_id = uuid.uuid4().hex
   place = resolve_place_for_visit(
@@ -233,7 +255,11 @@ def create_visit(
     country=country,
   )
 
-  user_places_repo.link_user_place(user_id, place.place_id, source="manual")
+  user_places_repo.link_user_place(
+    user_id,
+    place.place_id,
+    source=_place_source_for_visit(source_value),
+  )
 
   visit = Visit(
     visit_id=visit_id,
@@ -245,6 +271,10 @@ def create_visit(
     created_at=datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
     user_id=user_id,
     source=source_value,
+    status=status_value,
+    review_suggestion=review_suggestion,
+    review_reason=review_reason,
+    travel_kind=travel_kind,
   )
   save_visit(visit)
   return visit
@@ -287,10 +317,7 @@ _TIMELINE_NOTES_MARKER = "Google Maps Timeline"
 
 
 def _is_timeline_visit(visit: Visit) -> bool:
-  if visit.source in {"timeline", "timeline_review"}:
-    return True
-  notes = visit.notes or ""
-  return _TIMELINE_NOTES_MARKER in notes or notes.startswith("Timeline review")
+  return visit.source == "timeline"
 
 
 def cleanup_visits(

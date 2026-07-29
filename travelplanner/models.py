@@ -135,7 +135,9 @@ class Place:
   facts: PlaceFacts | None = None
 
 
-VISIT_SOURCES = frozenset({"manual", "instagram", "timeline", "timeline_review"})
+VISIT_SOURCES = frozenset({"manual", "instagram", "timeline"})
+VISIT_STATUSES = frozenset({"confirmed", "needs_review"})
+
 
 
 @dataclass(frozen=True)
@@ -145,8 +147,8 @@ class Visit:
   `place_id` references Place.place_id. `place_name` is a denormalized snapshot.
   `user_id` scopes the visit to a Clerk (or local) user.
   `visited_from` / `visited_to` are optional — undated visits mean visited only.
-  `source` is how the visit was created: manual | instagram | timeline | timeline_review.
-  `timeline_review` items await user Keep/Discard and are hidden from normal history.
+  `source` is provenance: manual | instagram | timeline.
+  `status` is review state: confirmed | needs_review (pending Keep/Discard).
   """
 
   visit_id: str
@@ -158,6 +160,10 @@ class Visit:
   created_at: str | None = None
   user_id: str = ""
   source: str = "manual"
+  status: str = "confirmed"
+  review_suggestion: str | None = None
+  review_reason: str | None = None
+  travel_kind: str | None = None
 
 
 @dataclass(frozen=True)
