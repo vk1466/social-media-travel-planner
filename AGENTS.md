@@ -41,6 +41,36 @@ deployed **TravelPlanner-dev** API.
 - **places** — platform-agnostic place pipeline (identity, geocoding, dedup, tags). Runs the same for every platform; sources never do this work themselves.
 - **server** — HTTP adapter only. JWT auth + validation and job tracking. No business logic beyond that.
 
+## Feature flags
+
+Config-gated product behavior lives in [`travelplanner/features.py`](travelplanner/features.py).
+Agents must use this module — do not invent ad-hoc `os.getenv("SOME_FLAG")` checks for product features.
+
+**Rules:**
+
+- Register every new product capability in `_FLAGS` with a module-level constant
+  (e.g. `PLACE_FACTS = "place_facts"`). Default is **off**.
+- Gate call sites with `enabled(FLAG_CONSTANT)` (or `require(FLAG)` when the path
+  must fail closed if disabled). Prefer the constant over a raw string so typos
+  fail at import / `KeyError`.
+- Env var name is always `FEATURE_<KEY>` in uppercase (e.g. `FEATURE_PLACE_FACTS=true`).
+  Accepted values: `1` / `true` / `yes` / `on` and `0` / `false` / `no` / `off`.
+- Use `legacy_env` only when renaming an older env var; do not add new bare env
+  names for product features.
+- Incomplete steps or risky paths (OCR, experimental locate, etc.) ship behind a
+  flag until validated — wire the step, leave the flag off.
+- Wire flags through CDK / Lambda env when the feature must be toggleable in
+  deployed stages; document the var in `.env.example` when local override matters.
+- Tests: assert both on and off paths when behavior differs; unknown keys must
+  raise `KeyError`.
+
+```python
+from travelplanner.features import enabled, PLACE_FACTS
+
+if enabled(PLACE_FACTS):
+  ...
+```
+
 ## Implementation
 
 Keep it **simple, modular, and extendable**. Do not add layers you don't need yet.
