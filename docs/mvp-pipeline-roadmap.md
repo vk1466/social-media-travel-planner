@@ -25,7 +25,7 @@ Builds on: reel extraction (`extract.py`), geocode → upsert (`places.py`), hie
 | # | Feature | What the user gets | Status |
 |---|---------|-------------------|--------|
 | 1 | **Accurate place pins** | Places land on the correct map location; duplicates merged; fewer mentions lost when geocode fails | Not started — [breakdown](#accurate-place-pins) |
-| 1h | **Post & carousel image text (OCR)** | Place names on static posts and carousel slides (overlays, maps, signage) feed the same extract → locate path as reel captions/transcripts | Not started — [breakdown](#post--carousel-image-text-ocr) |
+| 1h | **Post & carousel image text (OCR)** | Place names on static posts and carousel slides (overlays, maps, signage) feed the same extract → locate path as reel captions/transcripts | Not started — [breakdown](#post--carousel-image-text-ocr) · [plan](./post-image-text-plan.md) |
 | 2 | **Attraction categories** | Typed for browse/filter (hike, viewpoint, park, hotel, restaurant, …). One category + attributes; UI groups by category | Phase 1 done — [plan](./attraction-categories-plan.md) · [implementation](./attraction-categories-implementation.md) |
 | 3 | **Region buckets & hierarchy** | Linked attractions under the same region root (national park, state park, city, neighborhood). Trails/spots nest under parents | In progress — category-aware roots + `parent_category` / OSM |
 
@@ -39,7 +39,7 @@ Builds on: reel extraction (`extract.py`), geocode → upsert (`places.py`), hie
 |---|---------|-------------------|--------|
 | 4 | **Related attractions** | Reel relationships preserved (e.g. lake **accessed via** a hike); shown on both place pages | Not started |
 | 5 | **Better tips** | Short, actionable tip lists; near-duplicates removed; noise from many reels summarized | Not started |
-| 6 | **Type-specific place facts** | Objective facts by category — hike: distance, elevation, duration; park: fee, hours; hotel: price range, type — separate from reel tips | Not started |
+| 6 | **Type-specific place facts** | Objective facts by category — hike: distance, elevation, duration; park: fee, hours; hotel: price range, type — separate from reel tips | Not started — [plan](./place-facts-plan.md) |
 
 **Why next:** Makes each place page worth opening; relations feed access/logistics and itineraries.
 
@@ -107,7 +107,7 @@ After a reel is saved, we collect place names from the Instagram location tag (s
 | 1e | Specific pin over big region | In progress — parent geo filter |
 | 1f | **Google geocode fallback** | Not started — when Nominatim unresolved / low-confidence |
 | 1g | **LLM candidate picker fallback** | Done — pick among Nominatim hits when ranking is ambiguous; see [locate-v3-validation.md](./locate-v3-validation.md) (historical) |
-| 1h | **Post & carousel image text (OCR)** | Not started — [breakdown](#post--carousel-image-text-ocr) |
+| 1h | **Post & carousel image text (OCR)** | Not started — [breakdown](#post--carousel-image-text-ocr) · [plan](./post-image-text-plan.md) |
 
 ### 1f. Google geocode fallback
 
@@ -160,6 +160,8 @@ After a reel is saved, we collect place names from the Instagram location tag (s
 ## Post & carousel image text (OCR)
 
 P0 feature **1h**. Goal: static Instagram **posts** and **carousel** slides contribute place mentions the same way reel captions / Supadata transcripts do today — via text we can pass into the existing extract → locate → resolve pipeline.
+
+Implementation plan: [post-image-text-plan.md](./post-image-text-plan.md).
 
 Mark **1h** done when media URLs are available in the fetch path, image text is extracted for each relevant frame/slide, and that text is folded into place extraction without a separate geocode/vision path.
 
