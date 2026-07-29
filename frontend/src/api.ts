@@ -395,6 +395,11 @@ export interface Visit {
   notes?: string | null;
   created_at?: string | null;
   user_id?: string | null;
+  source?: string | null;
+  status?: string | null;
+  review_suggestion?: string | null;
+  review_reason?: string | null;
+  travel_kind?: string | null;
 }
 
 export interface VisitDetail {
