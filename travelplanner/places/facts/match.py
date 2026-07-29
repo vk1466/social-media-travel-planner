@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from travelplanner import settings
+from travelplanner.feature_flag import FeatureFlag
 from travelplanner.models import Place
 from travelplanner.places.facts.types import SourceDocument
 from travelplanner.places.locate import haversine_meters, name_similarity
@@ -78,7 +78,7 @@ def match_documents(
   *,
   max_docs: int | None = None,
 ) -> list[SourceDocument]:
-  """Keep documents that describe this pin; cap at PLACE_FACTS_MAX_DOCS."""
+  """Keep documents that describe this pin; cap at place_facts_max_docs."""
   if place.location.latitude is None or place.location.longitude is None:
     return []
 
@@ -101,5 +101,5 @@ def match_documents(
       kept.append(document)
 
   kept.sort(key=lambda doc: _document_score(place, doc), reverse=True)
-  limit = max_docs if max_docs is not None else settings.place_facts_max_docs()
+  limit = max_docs if max_docs is not None else int(FeatureFlag.get("place_facts_max_docs", 6))
   return kept[: max(1, limit)]

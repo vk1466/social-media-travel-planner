@@ -6,9 +6,8 @@ import logging
 from dataclasses import dataclass, replace
 from datetime import datetime, timedelta, timezone
 
-from travelplanner import settings
 from travelplanner.db.places_repo import save_place_facts
-from travelplanner.features import PLACE_FACTS, enabled as feature_enabled
+from travelplanner.feature_flag import FeatureFlag
 from travelplanner.models import Place, PlaceFacts
 from travelplanner.places.facts.catalog import select_tools
 from travelplanner.places.facts.llm_fill import fill_facts_from_documents
@@ -28,7 +27,7 @@ class EnrichResult:
 
 
 def facts_are_stale(facts: PlaceFacts | None, *, now: datetime | None = None) -> bool:
-  """True when missing or fetched_at older than PLACE_FACTS_TTL_DAYS."""
+  """True when missing or fetched_at older than place_facts_ttl_days."""
   if facts is None or not facts.fetched_at:
     return True
   try:
@@ -39,7 +38,8 @@ def facts_are_stale(facts: PlaceFacts | None, *, now: datetime | None = None) ->
     fetched = fetched.replace(tzinfo=timezone.utc)
   current = now or datetime.now(timezone.utc)
   age = current - fetched
-  return age > timedelta(days=settings.place_facts_ttl_days())
+  ttl_days = int(FeatureFlag.get("place_facts_ttl_days", 30))
+  return age > timedelta(days=ttl_days)
 
 
 def _build_query(place: Place) -> FactQuery | None:
@@ -83,11 +83,11 @@ def enrich_place_facts(
   persist: bool = True,
 ) -> EnrichResult:
   """Run the facts pipeline for one place. Never raises; fail-soft."""
-  if not feature_enabled(PLACE_FACTS) and not force:
+  if not FeatureFlag.get("place_facts") and not force:
     return EnrichResult(
       place_id=place.place_id,
       status="disabled",
-      note=f"{PLACE_FACTS} feature is disabled",
+      note="place_facts feature is disabled",
     )
 
   if not force and not facts_are_stale(place.facts):

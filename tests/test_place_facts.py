@@ -6,6 +6,8 @@ from dataclasses import replace
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
+from travelplanner.db.places_repo import save_place_facts
+from travelplanner.feature_flag import FeatureFlag
 from travelplanner.models import FactEvidence, Place, PlaceFacts, PlaceLocation
 from travelplanner.places.facts.catalog import select_tools
 from travelplanner.places.facts.enrich import enrich_place_facts, facts_are_stale
@@ -13,7 +15,7 @@ from travelplanner.places.facts.match import match_documents, match_radius_m
 from travelplanner.places.facts.schema import completeness_status
 from travelplanner.places.facts.types import FactQuery, FactTool, SourceDocument, utc_now_iso
 from travelplanner.places.facts.verify import verify_facts
-from travelplanner.places.store import load_place, save_place, save_place_facts
+from travelplanner.places.store import load_place, save_place
 
 
 def _place(
@@ -224,13 +226,13 @@ def test_facts_are_stale() -> None:
 
 
 def test_enrich_disabled_without_flag(monkeypatch) -> None:
-  monkeypatch.setenv("PLACE_FACTS_ENABLED", "false")
+  monkeypatch.setattr(FeatureFlag, "_flags", {**FeatureFlag._flags, "place_facts": False})
   result = enrich_place_facts(_place(), force=False, persist=False)
   assert result.status == "disabled"
 
 
 def test_enrich_fail_soft_no_openai(monkeypatch) -> None:
-  monkeypatch.setenv("PLACE_FACTS_ENABLED", "true")
+  monkeypatch.setattr(FeatureFlag, "_flags", {**FeatureFlag._flags, "place_facts": True})
   monkeypatch.delenv("OPENAI_API_KEY", raising=False)
 
   def _fake_fetch(query: FactQuery) -> list[SourceDocument]:
@@ -262,7 +264,7 @@ def test_enrich_fail_soft_no_openai(monkeypatch) -> None:
 
 
 def test_enrich_tool_raising_is_non_fatal(monkeypatch) -> None:
-  monkeypatch.setenv("PLACE_FACTS_ENABLED", "true")
+  monkeypatch.setattr(FeatureFlag, "_flags", {**FeatureFlag._flags, "place_facts": True})
   monkeypatch.delenv("OPENAI_API_KEY", raising=False)
 
   def _boom(query: FactQuery) -> list[SourceDocument]:

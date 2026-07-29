@@ -206,26 +206,3 @@ def timeline_import_max_bytes() -> int:
 # Back-compat alias used by older call sites / env docs.
 def timeline_import_max_places() -> int:
   return timeline_max_places_per_call()
-
-def place_facts_ttl_days() -> int:
-  """Days after which stored facts count as stale (default 30)."""
-  raw = os.getenv("PLACE_FACTS_TTL_DAYS", "30").strip()
-  try:
-    value = int(raw)
-  except ValueError as exc:
-    raise RuntimeError(f"PLACE_FACTS_TTL_DAYS must be an integer, got {raw!r}") from exc
-  if value < 1:
-    raise RuntimeError("PLACE_FACTS_TTL_DAYS must be >= 1")
-  return value
-
-
-def place_facts_max_docs() -> int:
-  """Max source documents passed to the facts LLM (default 6)."""
-  raw = os.getenv("PLACE_FACTS_MAX_DOCS", "6").strip()
-  try:
-    value = int(raw)
-  except ValueError as exc:
-    raise RuntimeError(f"PLACE_FACTS_MAX_DOCS must be an integer, got {raw!r}") from exc
-  if value < 1:
-    raise RuntimeError("PLACE_FACTS_MAX_DOCS must be >= 1")
-  return value

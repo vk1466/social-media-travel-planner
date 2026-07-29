@@ -82,9 +82,6 @@ class TravelPlannerStack(Stack):
       "TIMELINE_BATCH_SIZE": "100",
       "TIMELINE_HOME_EXCLUDE_KM": "30",
       "TIMELINE_MAX_PLACES_PER_CALL": "100",
-      "TIMELINE_DAY_TRIP_MIN_KM": "150",
-      "TIMELINE_MIN_TRIP_DAYS": "2",
-      "TIMELINE_ROUTINE_VISIT_COUNT": "5",
     }
 
     ingest_fn = lambda_.DockerImageFunction(
