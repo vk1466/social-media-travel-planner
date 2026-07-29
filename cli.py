@@ -99,7 +99,7 @@ def main() -> None:
   parser.add_argument(
     "--force",
     action="store_true",
-    help="With --enrich-place-facts, ignore TTL and FEATURE_PLACE_FACTS",
+    help="With --enrich-place-facts, ignore TTL and place_facts feature flag",
   )
 
   args = parser.parse_args()

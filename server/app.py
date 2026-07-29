@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from travelplanner.logging_config import configure_logging
 from travelplanner import settings
 from travelplanner.categories import CATEGORIES
-from travelplanner.features import PLACE_FACTS, enabled as feature_enabled
+from travelplanner.feature_flag import FeatureFlag
 from travelplanner.library import list_user_places, list_user_posts, user_owns_post
 from travelplanner.models import Place, Platform, SavedPost, Visit, make_post_id, parse_post_id
 from travelplanner.pipeline import unlink_post_from_user
@@ -672,7 +672,7 @@ def get_place(place_id: str, user_id: CurrentUserId, background_tasks: Backgroun
 
   facts_refresh_queued = False
   if (
-    feature_enabled(PLACE_FACTS)
+    FeatureFlag.get("place_facts")
     and place.category
     and place.location.latitude is not None
     and place.location.longitude is not None
