@@ -6,6 +6,7 @@ import markerIcon from "leaflet/dist/images/marker-icon.png";
 import markerShadow from "leaflet/dist/images/marker-shadow.png";
 
 import type { Place } from "../api";
+import { categoryLabel } from "../categoryLabels";
 import { mappablePlaces } from "../placeMapUtils";
 
 import "leaflet/dist/leaflet.css";
@@ -146,7 +147,7 @@ export function PlaceMap({
                   {locationLine(place) && <p>{locationLine(place)}</p>}
                   {(place.category || (place.attributes ?? []).length > 0) && (
                     <p className="place-map-popup-tags">
-                      {[place.category ?? "Uncategorized", ...(place.attributes ?? [])].join(" · ")}
+                      {[categoryLabel(place.category), ...(place.attributes ?? [])].join(" · ")}
                     </p>
                   )}
                   {onSelectPlace && (

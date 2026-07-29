@@ -1,3 +1,4 @@
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -12,11 +13,12 @@ import {
 } from "react-native";
 
 import { fetchCategories, fetchVisitedPlaceIds, type Place } from "@/src/api";
+import { categoryLabel } from "@/src/categoryLabels";
 import { PlaceCard } from "@/src/components/PlaceCard";
 import { PlaceMap } from "@/src/components/PlaceMap";
 import { EmptyState, ErrorBanner, TagChip } from "@/src/components/ui";
 import { useLibrary } from "@/src/context/LibraryContext";
-import { colors, spacing } from "@/src/theme";
+import { colors, radius, spacing } from "@/src/theme";
 
 type Pane = "browse" | "map";
 
@@ -111,22 +113,40 @@ export default function PlacesScreen() {
             onPress={() => setPane("browse")}
             style={[styles.paneBtn, pane === "browse" && styles.paneBtnActive]}
           >
+            <Ionicons
+              name="list"
+              size={16}
+              color={pane === "browse" ? colors.brand : colors.muted}
+            />
             <Text style={[styles.paneText, pane === "browse" && styles.paneTextActive]}>Browse</Text>
           </Pressable>
           <Pressable
             onPress={() => setPane("map")}
             style={[styles.paneBtn, pane === "map" && styles.paneBtnActive]}
           >
+            <Ionicons
+              name="map"
+              size={16}
+              color={pane === "map" ? colors.brand : colors.muted}
+            />
             <Text style={[styles.paneText, pane === "map" && styles.paneTextActive]}>Map</Text>
           </Pressable>
         </View>
-        <TextInput
-          style={styles.search}
-          placeholder="Search places"
-          placeholderTextColor={colors.muted}
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-        />
+        <View style={styles.searchWrap}>
+          <Ionicons name="search" size={18} color={colors.muted} />
+          <TextInput
+            style={styles.search}
+            placeholder="Search places"
+            placeholderTextColor={colors.muted}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+          {searchQuery.length > 0 ? (
+            <Pressable onPress={() => setSearchQuery("")} hitSlop={8}>
+              <Ionicons name="close-circle" size={18} color={colors.faint} />
+            </Pressable>
+          ) : null}
+        </View>
       </View>
 
       {(continentScope || countryScope) && (
@@ -157,12 +177,12 @@ export default function PlacesScreen() {
       )}
 
       {pane === "map" ? (
-        <View style={styles.pad}>
+        <View style={styles.mapPane}>
           <PlaceMap
             places={filtered}
             visitedPlaceIds={visitedPlaceIds}
             onSelectPlace={openPlace}
-            height={420}
+            height="100%"
           />
         </View>
       ) : (
@@ -235,7 +255,7 @@ export default function PlacesScreen() {
                     </Pressable>
                     {categories.slice(0, 12).map((category) => (
                       <Pressable key={category} onPress={() => setCategoryFilter(category)}>
-                        <TagChip label={category} />
+                        <TagChip category={category} />
                       </Pressable>
                     ))}
                     <Pressable onPress={() => setCategoryFilter("uncategorized")}>
@@ -274,30 +294,40 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bg,
   },
   pad: { padding: spacing.md },
+  mapPane: { flex: 1, padding: spacing.md },
   list: { padding: spacing.md, flexGrow: 1 },
   toolbar: { paddingHorizontal: spacing.md, paddingTop: spacing.sm, gap: spacing.sm },
   paneToggle: {
     flexDirection: "row",
-    backgroundColor: colors.brandSoft,
-    borderRadius: 10,
+    backgroundColor: colors.surfaceAlt,
+    borderRadius: radius.md,
     padding: 4,
   },
   paneBtn: {
     flex: 1,
-    paddingVertical: 8,
+    flexDirection: "row",
+    gap: 6,
+    paddingVertical: 9,
     alignItems: "center",
-    borderRadius: 8,
+    justifyContent: "center",
+    borderRadius: radius.sm,
   },
   paneBtnActive: { backgroundColor: colors.surface },
-  paneText: { color: colors.muted, fontWeight: "600" },
+  paneText: { color: colors.muted, fontWeight: "700" },
   paneTextActive: { color: colors.brand },
-  search: {
+  searchWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: 10,
+    borderRadius: radius.md,
     paddingHorizontal: spacing.md,
-    paddingVertical: 10,
     backgroundColor: colors.surface,
+  },
+  search: {
+    flex: 1,
+    paddingVertical: 11,
     color: colors.ink,
   },
   breadcrumb: {
