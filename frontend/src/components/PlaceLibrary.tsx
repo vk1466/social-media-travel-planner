@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, lazy, Suspense } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import { fetchPlaces, fetchCategories, fetchVisitedPlaceIds, type Place } from "../api";
+import { categoryLabel } from "../categoryLabels";
 import { PlaceCard } from "./PlaceCard";
 import { PlaceDetail } from "./PlaceDetail";
 
@@ -269,7 +270,7 @@ export function PlaceLibrary({
     : hasCategoryFilter && !countryScope
       ? categoryFilter === "uncategorized"
         ? "Uncategorized places"
-        : `Places · ${categoryFilter}`
+        : `Places · ${categoryLabel(categoryFilter)}`
       : countryScope
         ? countryScope
         : "Places";
@@ -343,7 +344,7 @@ export function PlaceLibrary({
               <option value="all">all categories</option>
               {categories.map((category) => (
                 <option key={category} value={category}>
-                  {category}
+                  {categoryLabel(category)}
                 </option>
               ))}
               <option value="uncategorized">Uncategorized</option>
