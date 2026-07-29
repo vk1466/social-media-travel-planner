@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
+import time
 from dataclasses import dataclass
 from typing import Any
 
@@ -15,6 +16,9 @@ from travelplanner.categories import (
 from travelplanner.place_hints import ExtractedPlace, PlatformPlace
 
 logger = logging.getLogger(__name__)
+
+_OPENAI_MAX_RETRIES = 2
+_OPENAI_RETRY_BACKOFF_SECONDS = 1.5
 
 PLACE_EXTRACT_SCHEMA: dict[str, Any] = {
   "type": "object",
@@ -35,8 +39,9 @@ PLACE_EXTRACT_SCHEMA: dict[str, Any] = {
           "place_name": {
             "type": "string",
             "description": (
-              "Specific pin-able travel destination (park, trail, lake, waterfall, "
-              "viewpoint, museum, restaurant, hotel, landmark). Not a business or service"
+              "Clean specific pin-able name only (park, trail, lake, waterfall, "
+              "viewpoint, beach, museum, restaurant, hotel, landmark). No day "
+              "numbers, no emoji, no access-route suffixes in the name"
             ),
           },
           "city": {
@@ -56,12 +61,20 @@ PLACE_EXTRACT_SCHEMA: dict[str, Any] = {
           },
           "details": {
             "type": ["string", "null"],
-            "description": "One short sentence of context about this place",
+            "description": (
+              "One short sentence of context copied or lightly paraphrased from the "
+              "provided sources only. Null if sources give no place-specific context. "
+              "Never invent facts"
+            ),
           },
           "tips": {
             "type": "array",
             "items": {"type": "string"},
-            "description": "Short, concrete tips or recommendations for this place",
+            "description": (
+              "Concrete tips grounded in the sources only: distances, times, fees, "
+              "passes, parking, permits, access notes, seasonal notes. Empty array "
+              "when the sources give none. Never invent generic advice"
+            ),
           },
           "category": {
             "type": "string",
@@ -115,90 +128,118 @@ PLACE_EXTRACT_SCHEMA: dict[str, Any] = {
 }
 
 REEL_EXTRACT_PROMPT = (
-  "Extract every specific, pin-able travel place mentioned in this Instagram reel "
-  "across the caption, video transcript, top comments, hashtags, and location tag. "
-  "Deduplicate places that appear in more than one source into a single entry, "
-  "merging their details and tips. Captions often use numbered lists, "
-  "'Day 1 / Day 2', bullets, and pin emoji markers like '📍 Place Name'.\n\n"
-  "Also write reel_summary: 2-3 short sentences summarizing the reel for a traveler "
-  "(what/where and why go). Be concrete and neutral — no hype, no hashtags, no "
-  "emojis. Null only if there is no usable travel content.\n\n"
-  "Location fields are used for geocoding. Follow these rules exactly:\n"
-  "1. place_name — the specific attraction (e.g. 'Picture Lake', 'Tunnel Falls', "
-  "'Misery Ridge Trail', 'Crater Lake National Park').\n"
+  "Extract every specific, pin-able travel place from this Instagram reel.\n\n"
+  "Sources for place NAMES (required evidence):\n"
+  "- CAPTION (📍 lists, Day N itineraries, bullets, prose)\n"
+  "- VIDEO TRANSCRIPT (spoken or on-screen names)\n"
+  "- IG LOCATION TAG, HASHTAGS, and TOP COMMENTS when they name a place\n\n"
+  "VIDEO SUMMARY is supporting context only. Never invent or guess a place name "
+  "that does not appear explicitly in caption, transcript, location tag, hashtags, "
+  "or comments — even if the summary vaguely mentions lakes, hikes, or viewpoints. "
+  "If the name is not in those sources, omit it. Hashtags count as name evidence "
+  "when they encode a destination (including concatenated forms).\n\n"
+  "Coverage — read every line and miss no named place:\n"
+  "1. Work line by line through the caption. A single line often names several "
+  "places; extract each one, not just the first.\n"
+  "2. Nested named spots inside a larger area are places too (visitor areas, "
+  "overlooks, trails, beaches, falls called out by name).\n"
+  "3. Names in parentheses, after 'via' or 'through', or in a comma-separated "
+  "run are separate places — extract the destination and the named route/spot "
+  "as distinct entries with clean names.\n"
+  "4. When one line lists an area plus its individually named parts, extract "
+  "every named part as its own place as well as the area.\n"
+  "5. Also emit a named parent park, city, or neighborhood as its own place when "
+  "it is pin-able and named in the sources.\n"
+  "6. A hashtag that names a real destination is a place; normalise it to its "
+  "proper name and extract it if it is not already covered.\n"
+  "7. Skip vague regions alone — do not extract a coast, province, state, or "
+  "country as a standalone place. Skip lodging-only bases unless the town itself "
+  "is presented as a visit destination. Skip campgrounds unless they are the "
+  "featured destination.\n"
+  "8. Deduplicate the same place across sources into one entry; merge details and "
+  "tips. Clean place_name — no emoji, day labels, or access-route suffixes.\n\n"
+  "Also write reel_summary: 2-3 short sentences for a traveler (what/where and why "
+  "go). Concrete and neutral — no hype, hashtags, or emojis. If VIDEO SUMMARY is "
+  "provided, refine it using caption facts; do not invent stops. Null only if "
+  "there is no usable travel content.\n\n"
+  "Location fields (for geocoding):\n"
+  "1. place_name — the specific attraction only.\n"
   "2. city — a real city or town only, or null if unknown. Never put mountains, "
   "parks, lakes, trails, gorges, coastlines, regions, states, or parent "
-  "attractions here. Wrong: city='Mt. Baker' for Picture Lake. Wrong: "
-  "city='Smith Rock State Park' for Misery Ridge Trail. Wrong: city='Oregon' "
-  "or city='Oregon Coast'.\n"
-  "3. state_province — the state or province (e.g. Oregon, Washington), or null "
-  "if unknown. Never put this in city.\n"
-  "4. country — the country (e.g. USA), or null if unknown.\n"
-  "5. parent_place_name — the broader containing attraction when inferable "
-  "(e.g. Picture Lake → 'Mt. Baker'; Misery Ridge Trail → 'Smith Rock State "
-  "Park'; Steam Clock → 'Gastown'; a Portland restaurant → 'Portland'). Null "
-  "if the place stands alone.\n"
-  "6. parent_category — when parent_place_name is set, the browse type of that "
-  "parent: park (state/national park), city (town/city), neighborhood (district/"
-  "quarter like Gastown), or landmark (named mountain, gorge, scenic area). "
-  "Null when parent_place_name is null.\n"
-  "7. Skip vague regions as standalone places — do not extract 'Pacific Northwest', "
-  "'Oregon Coast', a state alone, or a country alone.\n"
-  "8. When the caption gives 'Place, Area, State' (e.g. '📍 Picture Lake, Mt. Baker, "
-  "Washington'), use Place as place_name, Area as parent_place_name, and State as "
-  "state_province — not city.\n"
-  "9. Travel destinations only — extract places a tourist would visit: parks, trails, "
-  "lakes, waterfalls, landmarks, museums, restaurants, hotels, viewpoints. Skip real "
-  "estate offices, generic businesses, services, and commercial listings even if a "
-  "name appears in the caption or comments.\n\n"
+  "attractions here.\n"
+  "3. state_province — state or province, or null.\n"
+  "4. country — country, or null.\n"
+  "5. parent_place_name — broader containing attraction when inferable; null if "
+  "the place stands alone.\n"
+  "6. parent_category — park, city, neighborhood, or landmark when parent is set; "
+  "else null.\n"
+  "7. When sources give 'Place, Area, State', use Place as place_name, Area as "
+  "parent_place_name, and State as state_province — not city.\n\n"
+  "Details and tips — ground strictly in the sources:\n"
+  "- details: one short sentence from the source about this place, or null.\n"
+  "- tips: copy every concrete fact stated for that place (distance, duration, "
+  "fee/pass/parking, permit, roadside stop, seasonal). Use [] only if none.\n"
+  "- Never invent generic tips unless the source says them.\n\n"
   "Category and attributes (exactly one category per place):\n"
-  "1. Category = what the pin is (visit action / venue type) — pick from the enum.\n"
-  "2. Attributes = extra facets only, never a second category. Emit every "
-  "allowlisted attribute that clearly applies; use [] only when none apply.\n"
-  "3. Parents → park, city, neighborhood, or landmark; children → the activity pin "
-  "type (hike, viewpoint, waterfall, restaurant, etc.).\n"
-  "4. If torn between two categories, pick the more specific visit action "
-  "(hike > park for a trail pin; waterfall > landmark for a named falls).\n"
-  "5. Never emit two categories; never invent values outside the enums.\n"
-  "6. If the place name is a waterfall / falls / cascade (e.g. Victoria Falls, "
-  "Multnomah Falls, Tunnel Falls) → category=waterfall — never viewpoint, "
-  "landmark, or park.\n"
-  "7. Trail / scramble / climb as the visit → category=hike; put views in "
-  "attributes as viewpoint when relevant.\n"
-  "8. Monument / statue / temple / citadel as the visit → category=landmark; "
-  "add hike or viewpoint attributes when visitors also hike or look out.\n"
-  "9. For viewpoint / waterfall / beach pins, if visitors walk or hike to reach "
-  "them, include attribute hike.\n\n"
-  "Allowed attributes by category (use only these values):\n"
-  f"{attribute_allowlist_prompt_lines()}\n\n"
-  "Use details for one short sentence of context. Use tips for short, concrete "
-  "actionable phrases drawn from anywhere in the reel."
+  "1. Decide in two steps. First ask what the place IS — the noun a local would "
+  "use for it (lake, waterfall, beach, park, trail, market, museum, city). Pick "
+  "that category. Only then describe how you reach or experience it using "
+  "attributes. Never let the access method or the caption's section heading "
+  "decide the category.\n"
+  "2. Choose hike only when the trail or walk itself is the destination and no "
+  "other noun fits. If the place is a lake, waterfall, beach, viewpoint, or "
+  "park that you happen to hike to, use that category and add the hike "
+  "attribute.\n"
+  "3. Parents → park, city, neighborhood, or landmark; children → the activity "
+  "pin (hike, viewpoint, waterfall, lake, beach, restaurant, etc.).\n"
+  "4. Named waterfall / falls / cascade → waterfall.\n"
+  "5. Named lake / lagoon / reservoir → lake — never viewpoint, landmark, or "
+  "waterfall. Put the access on attributes (hike, viewpoint) instead.\n"
+  "6. Trail / scramble / climb as the visit → hike; add viewpoint or lake "
+  "attributes when relevant.\n"
+  "7. A place named as a national / state / regional park → park, even when the "
+  "caption files it under viewpoints or beaches. A named beach or cove → beach, "
+  "even when it sits inside a park and needs a walk to reach.\n"
+  "8. Monument / statue / temple / citadel → landmark; add hike or viewpoint "
+  "attributes when visitors also hike or look out.\n"
+  "9. Viewpoint / waterfall / lake / beach reached on foot → include attribute "
+  "hike.\n"
+  "10. Never invent enum values.\n\n"
+  "Allowed attributes by category:\n"
+  f"{attribute_allowlist_prompt_lines()}"
 )
 
 
 @dataclass(frozen=True)
-class ReelBundle:
+class ContentBundle:
   caption: str
   hashtags: tuple[str, ...] = ()
   top_comments: tuple[str, ...] = ()
   location_tag: PlatformPlace | None = None
   transcript: str | None = None
+  video_summary: str | None = None
+  image_text: str | None = None
 
 
-ContentBundle = ReelBundle
+ReelBundle = ContentBundle
 
 
 @dataclass(frozen=True)
-class ReelExtraction:
+class ContentExtraction:
   places: tuple[ExtractedPlace, ...] = ()
   reel_summary: str | None = None
+
+
+ReelExtraction = ContentExtraction
 
 
 def _optional_str(value: Any) -> str | None:
   if value is None:
     return None
   text = str(value).strip()
-  return text or None
+  if not text or text.lower() in {"null", "none", "nil", "n/a", "na"}:
+    return None
+  return text
 
 
 def _normalize_place_name(name: str) -> str:
@@ -289,17 +330,36 @@ def _parse_extracted_places(data: dict[str, Any] | None) -> tuple[ExtractedPlace
   return tuple(extracted)
 
 
-def _parse_reel_extraction(data: dict[str, Any] | None) -> ReelExtraction:
+def _parse_content_extraction(data: dict[str, Any] | None) -> ContentExtraction:
   if not data:
-    return ReelExtraction()
-  return ReelExtraction(
+    return ContentExtraction()
+  return ContentExtraction(
     places=_dedupe_by_name(_parse_extracted_places(data)),
     reel_summary=_optional_str(data.get("reel_summary")),
   )
 
 
-def format_reel_bundle(bundle: ReelBundle) -> str:
+_parse_reel_extraction = _parse_content_extraction
+
+
+def format_content_bundle(bundle: ContentBundle) -> str:
   sections: list[str] = []
+
+  caption = bundle.caption.strip()
+  if caption:
+    sections.append(f"CAPTION:\n{caption}")
+
+  video_summary = (bundle.video_summary or "").strip()
+  if video_summary:
+    sections.append(f"VIDEO SUMMARY:\n{video_summary}")
+
+  transcript = (bundle.transcript or "").strip()
+  if transcript:
+    sections.append(f"VIDEO TRANSCRIPT:\n{transcript}")
+
+  image_text = (bundle.image_text or "").strip()
+  if image_text:
+    sections.append(f"IMAGE TEXT:\n{image_text}")
 
   if bundle.location_tag is not None:
     location_parts = [bundle.location_tag.place_name]
@@ -309,10 +369,6 @@ def format_reel_bundle(bundle: ReelBundle) -> str:
       location_parts.append(bundle.location_tag.country)
     sections.append("IG LOCATION TAG: " + ", ".join(location_parts))
 
-  caption = bundle.caption.strip()
-  if caption:
-    sections.append(f"CAPTION:\n{caption}")
-
   if bundle.hashtags:
     sections.append("HASHTAGS: " + " ".join(f"#{tag}" for tag in bundle.hashtags))
 
@@ -320,19 +376,65 @@ def format_reel_bundle(bundle: ReelBundle) -> str:
     comment_lines = "\n".join(f"- {comment}" for comment in bundle.top_comments)
     sections.append(f"TOP COMMENTS:\n{comment_lines}")
 
-  transcript = (bundle.transcript or "").strip()
-  if transcript:
-    sections.append(f"VIDEO TRANSCRIPT:\n{transcript}")
-
   return "\n\n".join(sections)
 
 
-def fetch_places_from_reel(bundle: ReelBundle) -> ReelExtraction:
-  """Extract reel summary + places from all reel sources via one OpenAI call."""
-  content = format_reel_bundle(bundle).strip()
+format_reel_bundle = format_content_bundle
+
+
+def _create_completion(client: Any, content: str) -> Any | None:
+  """Call OpenAI with deterministic settings, retrying transient failures.
+
+  Returns None once retries are exhausted so a blip drops one post's extraction
+  instead of raising through ingest.
+  """
+  from travelplanner import settings
+
+  request: dict[str, Any] = {
+    "model": settings.openai_model(),
+    "messages": [
+      {"role": "system", "content": REEL_EXTRACT_PROMPT},
+      {"role": "user", "content": content},
+    ],
+    "response_format": {
+      "type": "json_schema",
+      "json_schema": {
+        "name": "extracted_places",
+        "strict": True,
+        "schema": PLACE_EXTRACT_SCHEMA,
+      },
+    },
+    "temperature": settings.openai_temperature(),
+  }
+
+  attempt = 0
+  while True:
+    try:
+      return client.chat.completions.create(**request)
+    except Exception as exc:
+      if "temperature" in request and "temperature" in str(exc).lower():
+        # Reasoning models accept only the default temperature.
+        request.pop("temperature")
+        continue
+      attempt += 1
+      if attempt > _OPENAI_MAX_RETRIES:
+        logger.exception("extract openai call failed after %d attempts", attempt)
+        return None
+      logger.warning(
+        "extract openai call failed (attempt %d/%d), retrying: %s",
+        attempt,
+        _OPENAI_MAX_RETRIES,
+        exc,
+      )
+      time.sleep(_OPENAI_RETRY_BACKOFF_SECONDS * attempt)
+
+
+def fetch_places_from_content(bundle: ContentBundle) -> ContentExtraction:
+  """Extract summary + places from caption, transcript/image text, and tags."""
+  content = format_content_bundle(bundle).strip()
   if not content:
-    logger.info("extract skipped: empty reel bundle")
-    return ReelExtraction()
+    logger.info("extract skipped: empty content bundle")
+    return ContentExtraction()
 
   from travelplanner import settings
   from travelplanner.clients.openai import get_client
@@ -340,47 +442,32 @@ def fetch_places_from_reel(bundle: ReelBundle) -> ReelExtraction:
   client = get_client()
   if client is None:
     logger.warning("extract skipped: OPENAI_API_KEY not set")
-    return ReelExtraction()
+    return ContentExtraction()
 
   logger.info(
-    "extract start model=%s content_chars=%d has_transcript=%s has_location_tag=%s",
+    "extract start model=%s content_chars=%d has_summary=%s has_transcript=%s has_location_tag=%s",
     settings.openai_model(),
     len(content),
+    bool((bundle.video_summary or "").strip()),
     bool((bundle.transcript or "").strip()),
     bundle.location_tag is not None,
   )
-  try:
-    response = client.chat.completions.create(
-      model=settings.openai_model(),
-      messages=[
-        {"role": "system", "content": REEL_EXTRACT_PROMPT},
-        {"role": "user", "content": content},
-      ],
-      response_format={
-        "type": "json_schema",
-        "json_schema": {
-          "name": "extracted_places",
-          "strict": True,
-          "schema": PLACE_EXTRACT_SCHEMA,
-        },
-      },
-    )
-  except Exception:
-    logger.exception("extract openai call failed")
-    return ReelExtraction()
+  response = _create_completion(client, content)
+  if response is None:
+    return ContentExtraction()
 
   message_content = response.choices[0].message.content
   if not message_content:
     logger.warning("extract empty openai response")
-    return ReelExtraction()
+    return ContentExtraction()
 
   try:
     data = json.loads(message_content)
   except (json.JSONDecodeError, TypeError):
     logger.exception("extract invalid json from openai")
-    return ReelExtraction()
+    return ContentExtraction()
 
-  result = _parse_reel_extraction(data if isinstance(data, dict) else None)
+  result = _parse_content_extraction(data if isinstance(data, dict) else None)
   logger.info(
     "extract done places=%d has_summary=%s names=%s",
     len(result.places),
@@ -390,6 +477,9 @@ def fetch_places_from_reel(bundle: ReelBundle) -> ReelExtraction:
   return result
 
 
+fetch_places_from_reel = fetch_places_from_content
+
+
 def fetch_places_from_text(text: str) -> tuple[ExtractedPlace, ...]:
   """Backward-compatible wrapper for caption-only extraction."""
-  return fetch_places_from_reel(ReelBundle(caption=text)).places
+  return fetch_places_from_content(ContentBundle(caption=text)).places
