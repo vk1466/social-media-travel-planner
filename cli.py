@@ -8,6 +8,7 @@ from pathlib import Path
 from travelplanner.logging_config import configure_logging
 from travelplanner.pipeline import IngestResult, ingest_links
 from travelplanner.places import reprocess_all_places, retry_place_candidates
+from travelplanner.places.facts.enrich import enrich_places
 
 
 def _print_result(result: IngestResult) -> None:
@@ -74,7 +75,50 @@ def main() -> None:
     default=None,
     help="With --retry-place-candidates, limit retry to one source post",
   )
+  parser.add_argument(
+    "--enrich-place-facts",
+    action="store_true",
+    help="Fetch type-specific place facts (OSM / Wikipedia) for one place or a category batch",
+  )
+  parser.add_argument(
+    "--place-id",
+    default=None,
+    help="With --enrich-place-facts, enrich a single place_id",
+  )
+  parser.add_argument(
+    "--category",
+    default=None,
+    help="With --enrich-place-facts, filter batch by category (e.g. park)",
+  )
+  parser.add_argument(
+    "--limit",
+    type=int,
+    default=10,
+    help="With --enrich-place-facts batch mode, max places to enrich (default 10)",
+  )
+  parser.add_argument(
+    "--force",
+    action="store_true",
+    help="With --enrich-place-facts, ignore TTL and place_facts feature flag",
+  )
+
   args = parser.parse_args()
+
+  if args.enrich_place_facts:
+    results = enrich_places(
+      place_id=args.place_id,
+      category=args.category,
+      limit=args.limit,
+      force=args.force,
+    )
+    for result in results:
+      facts_status = result.facts.status if result.facts else "-"
+      print(
+        f"{result.status:10} {result.place_id} "
+        f"facts={facts_status} ({result.note})"
+      )
+    print(f"done: enriched {len(results)} place(s)")
+    return
 
   if args.retry_place_candidates:
     result = retry_place_candidates(
@@ -97,7 +141,7 @@ def main() -> None:
 
   if args.links_file is None:
     parser.error(
-      "links_file is required unless --reprocess-places or --retry-place-candidates is set"
+      "links_file is required unless --reprocess-places, --retry-place-candidates, or --enrich-place-facts is set"
     )
 
   post_urls = _read_links(args.links_file)

@@ -1,3 +1,4 @@
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
@@ -22,8 +23,20 @@ import { PlaceMap } from "@/src/components/PlaceMap";
 import { Button, ErrorBanner, TagChip } from "@/src/components/ui";
 import { useLibrary } from "@/src/context/LibraryContext";
 import { googleMapsUrl } from "@/src/maps";
+import { factsAttribution, factsRows } from "@/src/placeFacts";
 import { getPostTitle } from "@/src/postDisplayUtils";
-import { colors, spacing } from "@/src/theme";
+import { colors, radius, shadow, spacing } from "@/src/theme";
+
+type IconName = keyof typeof Ionicons.glyphMap;
+
+function SectionHeader({ icon, title }: { icon: IconName; title: string }) {
+  return (
+    <View style={styles.sectionHeader}>
+      <Ionicons name={icon} size={15} color={colors.brand} />
+      <Text style={styles.sectionTitle}>{title}</Text>
+    </View>
+  );
+}
 
 export default function PlaceDetailScreen() {
   const { placeId } = useLocalSearchParams<{ placeId: string }>();
@@ -111,69 +124,117 @@ export default function PlaceDetailScreen() {
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
       {parent ? (
-        <Pressable onPress={() => router.push(`/places/${parent.place_id}`)}>
+        <Pressable
+          onPress={() => router.push(`/places/${parent.place_id}`)}
+          style={styles.parentRow}
+        >
+          <Ionicons name="arrow-up" size={14} color={colors.brand} />
           <Text style={styles.parent}>Part of {parent.display_name}</Text>
         </Pressable>
       ) : null}
       <Text style={styles.title}>{place.display_name}</Text>
-      {locationLine ? <Text style={styles.meta}>{locationLine}</Text> : null}
+      {locationLine ? (
+        <View style={styles.metaRow}>
+          <Ionicons name="location-outline" size={15} color={colors.muted} />
+          <Text style={styles.meta}>{locationLine}</Text>
+        </View>
+      ) : null}
       {place.aliases.length > 0 ? (
-        <Text style={styles.meta}>also known as {place.aliases.join(", ")}</Text>
+        <Text style={styles.aliases}>also known as {place.aliases.join(", ")}</Text>
       ) : null}
 
       <Button
         label={isVisited ? "Visited" : "Mark as visited"}
+        icon={isVisited ? "checkmark-circle" : "add-circle-outline"}
         variant={isVisited ? "secondary" : "primary"}
         loading={visitedSaving}
         onPress={() => void handleToggleVisited()}
         style={styles.visitedButton}
       />
-      {isVisited ? <Text style={styles.visitedHint}>In your travel history</Text> : null}
+      {isVisited ? (
+        <View style={styles.visitedHintRow}>
+          <Ionicons name="bookmark" size={13} color={colors.muted} />
+          <Text style={styles.visitedHint}>In your travel history</Text>
+        </View>
+      ) : null}
       {visitedError ? <ErrorBanner message={visitedError} /> : null}
 
       <PlaceMap places={[place, ...children]} height={220} />
 
       {mapUrl ? (
         <Pressable onPress={() => void Linking.openURL(mapUrl)} style={styles.mapLink}>
+          <Ionicons name="navigate" size={15} color={colors.brand} />
           <Text style={styles.link}>Open in Google Maps</Text>
         </Pressable>
       ) : null}
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Category</Text>
+        <SectionHeader icon="pricetag-outline" title="Category" />
         <View style={styles.tags}>
-          <TagChip label={place.category ?? "Uncategorized"} />
+          <TagChip category={place.category} />
           {(place.attributes ?? []).map((attr) => (
             <TagChip key={attr} label={attr} />
           ))}
         </View>
       </View>
 
+      <View style={styles.section}>
+        <SectionHeader icon="document-text-outline" title="Facts" />
+        {detail.facts_refresh_queued ? (
+          <Text style={styles.factMuted}>Looking up source-backed facts…</Text>
+        ) : null}
+        {place.facts == null && !detail.facts_refresh_queued ? (
+          <Text style={styles.factMuted}>No source-backed facts yet.</Text>
+        ) : null}
+        {place.facts?.status === "empty" ? (
+          <Text style={styles.factMuted}>No objective facts found for this place.</Text>
+        ) : null}
+        {place.facts && place.facts.status !== "empty"
+          ? factsRows(place.facts).map((row) => (
+              <View key={row.label} style={styles.factRow}>
+                <Text style={styles.factLabel}>{row.label}</Text>
+                {row.label === "Website" ? (
+                  <Pressable onPress={() => void Linking.openURL(row.value)}>
+                    <Text style={styles.factLink}>{row.value}</Text>
+                  </Pressable>
+                ) : (
+                  <Text style={styles.factValue}>{row.value}</Text>
+                )}
+              </View>
+            ))
+          : null}
+        {place.facts && factsAttribution(place.facts) ? (
+          <Text style={styles.factMuted}>{factsAttribution(place.facts)}</Text>
+        ) : null}
+      </View>
+
       {place.details.length > 0 ? (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Details</Text>
+          <SectionHeader icon="information-circle-outline" title="Details" />
           {place.details.map((item) => (
-            <Text key={item} style={styles.bullet}>
-              • {item}
-            </Text>
+            <View key={item} style={styles.bulletRow}>
+              <Ionicons name="ellipse" size={5} color={colors.brand} style={styles.bulletDot} />
+              <Text style={styles.bullet}>{item}</Text>
+            </View>
           ))}
         </View>
       ) : null}
 
       {place.tips.length > 0 ? (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Tips</Text>
+          <SectionHeader icon="bulb-outline" title="Tips" />
           {place.tips.map((tip) => (
-            <Text key={tip} style={styles.bullet}>
-              • {tip}
-            </Text>
+            <View key={tip} style={styles.bulletRow}>
+              <Ionicons name="ellipse" size={5} color={colors.accent} style={styles.bulletDot} />
+              <Text style={styles.bullet}>{tip}</Text>
+            </View>
           ))}
         </View>
       ) : null}
 
       {children.length > 0 ? (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Spots here</Text>
+          <SectionHeader icon="pin-outline" title="Spots here" />
           {children.map((child) => (
             <Pressable
               key={child.place_id}
@@ -181,6 +242,7 @@ export default function PlaceDetailScreen() {
               onPress={() => router.push(`/places/${child.place_id}`)}
             >
               <Text style={styles.rowTitle}>{child.display_name}</Text>
+              <Ionicons name="chevron-forward" size={16} color={colors.faint} />
             </Pressable>
           ))}
         </View>
@@ -188,7 +250,7 @@ export default function PlaceDetailScreen() {
 
       {sourcePosts.length > 0 ? (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Source posts</Text>
+          <SectionHeader icon="albums-outline" title="Source posts" />
           {sourcePosts.map((post) => (
             <Pressable
               key={post.post_id}
@@ -198,6 +260,7 @@ export default function PlaceDetailScreen() {
               }
             >
               <Text style={styles.rowTitle}>{getPostTitle(post)}</Text>
+              <Ionicons name="chevron-forward" size={16} color={colors.faint} />
             </Pressable>
           ))}
         </View>
@@ -211,30 +274,57 @@ const styles = StyleSheet.create({
   content: { padding: spacing.md, paddingBottom: spacing.xl },
   centered: { flex: 1, alignItems: "center", justifyContent: "center" },
   pad: { padding: spacing.md },
-  parent: { color: colors.brand, fontWeight: "600", marginBottom: 6 },
-  title: { fontSize: 24, fontWeight: "700", color: colors.ink },
-  meta: { marginTop: 4, color: colors.muted, marginBottom: spacing.sm },
-  visitedButton: { marginBottom: spacing.sm, alignSelf: "flex-start" },
-  visitedHint: { color: colors.muted, marginBottom: spacing.md, fontSize: 13 },
-  mapLink: { marginBottom: spacing.md },
+  parentRow: { flexDirection: "row", alignItems: "center", gap: 4, marginBottom: 8 },
+  parent: { color: colors.brand, fontWeight: "600" },
+  title: { fontSize: 24, fontWeight: "800", color: colors.ink, letterSpacing: -0.4 },
+  metaRow: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 6 },
+  meta: { color: colors.muted, fontSize: 14 },
+  aliases: { marginTop: 4, color: colors.faint, fontSize: 13, fontStyle: "italic" },
+  visitedButton: { marginTop: spacing.md, marginBottom: spacing.sm, alignSelf: "flex-start" },
+  visitedHintRow: { flexDirection: "row", alignItems: "center", gap: 4, marginBottom: spacing.md },
+  visitedHint: { color: colors.muted, fontSize: 13 },
+  mapLink: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: spacing.md,
+    alignSelf: "flex-start",
+  },
   link: { color: colors.brand, fontWeight: "700" },
   section: { marginBottom: spacing.lg },
+  sectionHeader: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: spacing.sm },
   sectionTitle: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: colors.muted,
+    fontSize: 12,
+    fontWeight: "800",
+    color: colors.faint,
     textTransform: "uppercase",
-    marginBottom: spacing.sm,
+    letterSpacing: 0.6,
   },
   tags: { flexDirection: "row", flexWrap: "wrap" },
-  bullet: { color: colors.ink, lineHeight: 22, marginBottom: 4 },
+  factRow: { marginBottom: spacing.sm },
+  factLabel: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: colors.faint,
+    marginBottom: 2,
+  },
+  factValue: { color: colors.ink, lineHeight: 20 },
+  factLink: { color: colors.brand, fontWeight: "600", lineHeight: 20 },
+  factMuted: { color: colors.muted, fontSize: 13, marginBottom: spacing.sm },
+  bulletRow: { flexDirection: "row", alignItems: "flex-start", gap: 8, marginBottom: 6 },
+  bulletDot: { marginTop: 8 },
+  bullet: { flex: 1, color: colors.ink, lineHeight: 22 },
   row: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     backgroundColor: colors.surface,
-    borderRadius: 12,
+    borderRadius: radius.md,
     borderWidth: 1,
     borderColor: colors.border,
     padding: spacing.md,
     marginBottom: spacing.sm,
+    ...shadow(1),
   },
-  rowTitle: { color: colors.brand, fontWeight: "600" },
+  rowTitle: { flex: 1, color: colors.brand, fontWeight: "600" },
 });
