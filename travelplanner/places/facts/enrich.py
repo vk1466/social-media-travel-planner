@@ -9,11 +9,11 @@ from datetime import datetime, timedelta, timezone
 from travelplanner.db.places_repo import save_place_facts
 from travelplanner.feature_flag import FeatureFlag
 from travelplanner.models import Place, PlaceFacts
-from travelplanner.places.facts.catalog import select_tools
-from travelplanner.places.facts.llm_fill import fill_facts_from_documents
-from travelplanner.places.facts.match import match_documents
+from travelplanner.places.facts.pipeline.fill import fill_facts_from_documents
+from travelplanner.places.facts.pipeline.match import match_documents
+from travelplanner.places.facts.pipeline.verify import verify_facts
+from travelplanner.places.facts.tools.catalog import select_tools
 from travelplanner.places.facts.types import FactQuery, SourceDocument, utc_now_iso
-from travelplanner.places.facts.verify import verify_facts
 
 logger = logging.getLogger(__name__)
 

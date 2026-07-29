@@ -363,8 +363,10 @@ moto-based suite:
 | Area | Files |
 |------|-------|
 | Model | `travelplanner/models.py` (`PlaceFacts`, `FactEvidence`, `Place.facts`) |
-| Facts package | `travelplanner/places/facts/{__init__,catalog,schema,match,enrich,verify}.py` |
-| Tools | `travelplanner/places/facts/tools/{osm,wikipedia,google,nps}.py` |
+| Facts package | `travelplanner/places/facts/{__init__,types,enrich}.py` plus `config/`, `pipeline/`, `tools/` |
+| Config | `travelplanner/places/facts/config/{fields,categories,rules,sources}.py` |
+| Pipeline | `travelplanner/places/facts/pipeline/{match,fill,schema,verify}.py` |
+| Tools | `travelplanner/places/facts/tools/{catalog,osm,wikipedia,google,nps}.py` |
 | Clients | `travelplanner/clients/{wikipedia,google_places,nps}.py` |
 | Persistence | `travelplanner/db/places_repo.py` (`save_place_facts`, (de)serialize facts) |
 | Settings | `travelplanner/settings.py` |

@@ -9,12 +9,12 @@ from typing import Any
 from travelplanner.db.places_repo import save_place_facts
 from travelplanner.feature_flag import FeatureFlag
 from travelplanner.models import FactEvidence, Place, PlaceFacts, PlaceLocation
-from travelplanner.places.facts.catalog import select_tools
+from travelplanner.places.facts.config.categories import completeness_status
 from travelplanner.places.facts.enrich import enrich_place_facts, facts_are_stale
-from travelplanner.places.facts.match import match_documents, match_radius_m
-from travelplanner.places.facts.categories import completeness_status
+from travelplanner.places.facts.pipeline.match import match_documents, match_radius_m
+from travelplanner.places.facts.pipeline.verify import verify_facts
+from travelplanner.places.facts.tools.catalog import select_tools
 from travelplanner.places.facts.types import FactQuery, FactTool, SourceDocument, utc_now_iso
-from travelplanner.places.facts.verify import verify_facts
 from travelplanner.places.store import load_place, save_place
 
 

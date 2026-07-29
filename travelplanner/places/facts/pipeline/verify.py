@@ -5,10 +5,10 @@ from __future__ import annotations
 from typing import Any
 
 from travelplanner.models import FactEvidence, PlaceFacts
-from travelplanner.places.facts.categories import completeness_status
-from travelplanner.places.facts.fields import FILLABLE_FIELDS, LIST_FIELDS
-from travelplanner.places.facts.rules import field_value_ok
-from travelplanner.places.facts.sources import source_may_fill, source_priority
+from travelplanner.places.facts.config.categories import completeness_status
+from travelplanner.places.facts.config.fields import FILLABLE_FIELDS, LIST_FIELDS
+from travelplanner.places.facts.config.rules import field_value_ok
+from travelplanner.places.facts.config.sources import source_may_fill, source_priority
 from travelplanner.places.facts.types import SourceDocument, utc_now_iso
 
 # One accepted citation: (source_name, source_ref, value)

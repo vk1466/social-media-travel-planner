@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from travelplanner.places.facts.categories import policy_for_category
-from travelplanner.places.facts.fields import FIELD_JSON_SCHEMAS
+from travelplanner.places.facts.config.categories import policy_for_category
+from travelplanner.places.facts.config.fields import FIELD_JSON_SCHEMAS
 
 
 def build_fill_schema(category: str | None) -> dict[str, Any]:

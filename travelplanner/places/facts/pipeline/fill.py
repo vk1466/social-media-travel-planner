@@ -7,8 +7,8 @@ import logging
 from typing import Any
 
 from travelplanner.models import Place
-from travelplanner.places.facts.categories import policy_for_category
-from travelplanner.places.facts.schema import build_fill_schema
+from travelplanner.places.facts.config.categories import policy_for_category
+from travelplanner.places.facts.pipeline.schema import build_fill_schema
 from travelplanner.places.facts.types import SourceDocument
 
 logger = logging.getLogger(__name__)

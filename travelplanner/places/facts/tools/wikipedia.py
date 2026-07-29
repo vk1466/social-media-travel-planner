@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from travelplanner.clients import wikipedia
-from travelplanner.places.facts.match import match_radius_m
+from travelplanner.places.facts.pipeline.match import match_radius_m
 from travelplanner.places.facts.types import FactQuery, SourceDocument, utc_now_iso
 
 TOOL_ID = "wikipedia_summary"
