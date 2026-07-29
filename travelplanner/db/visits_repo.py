@@ -13,7 +13,32 @@ def visit_to_dict(visit: Visit) -> dict:
   return asdict(visit)
 
 
+def _parse_legacy_review_notes(notes: str | None) -> tuple[str | None, str | None, str | None]:
+  """Extract review fields from legacy packed Timeline review notes."""
+  from travelplanner.visits import parse_review_suggestion
+
+  return parse_review_suggestion(notes)
+
+
 def visit_from_dict(data: dict) -> Visit:
+  source = data.get("source") or "manual"
+  status = data.get("status") or "confirmed"
+  review_suggestion = data.get("review_suggestion")
+  review_reason = data.get("review_reason")
+  travel_kind = data.get("travel_kind")
+
+  if source == "timeline_review":
+    source = "timeline"
+    status = "needs_review"
+
+  if status == "needs_review" and not review_suggestion:
+    parsed_suggestion, parsed_reason, parsed_kind = _parse_legacy_review_notes(
+      data.get("notes"),
+    )
+    review_suggestion = review_suggestion or parsed_suggestion
+    review_reason = review_reason or parsed_reason
+    travel_kind = travel_kind or parsed_kind
+
   return Visit(
     visit_id=data["visit_id"],
     place_id=data["place_id"],
@@ -23,7 +48,11 @@ def visit_from_dict(data: dict) -> Visit:
     notes=data.get("notes"),
     created_at=data.get("created_at"),
     user_id=data.get("user_id", ""),
-    source=data.get("source") or "manual",
+    source=source,
+    status=status,
+    review_suggestion=review_suggestion,
+    review_reason=review_reason,
+    travel_kind=travel_kind,
   )
 
 

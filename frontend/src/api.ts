@@ -122,6 +122,33 @@ export interface PlaceLocation {
   osm_type?: string | null;
 }
 
+export interface FactEvidence {
+  field_name: string;
+  source_name: string;
+  source_ref: string;
+}
+
+export interface PlaceFacts {
+  status: string;
+  fetched_at: string;
+  website_url?: string | null;
+  phone_number?: string | null;
+  opening_hours_text: string[];
+  admission_text?: string | null;
+  famous_for?: string | null;
+  best_time_to_visit?: string | null;
+  typical_duration_minutes?: number | null;
+  cuisines: string[];
+  price_level?: number | null;
+  reservation_required?: boolean | null;
+  distance_km?: number | null;
+  elevation_gain_m?: number | null;
+  difficulty?: string | null;
+  evidence: FactEvidence[];
+  conflicts: string[];
+  notes: string[];
+}
+
 export interface Place {
   place_id: string;
   display_name: string;
@@ -133,6 +160,7 @@ export interface Place {
   tips: string[];
   source_post_ids: string[];
   parent_place_id?: string | null;
+  facts?: PlaceFacts | null;
 }
 
 export interface PlaceDetail {
@@ -140,6 +168,7 @@ export interface PlaceDetail {
   source_posts: SavedPost[];
   parent?: Place | null;
   children: Place[];
+  facts_refresh_queued?: boolean;
 }
 
 export type LinkStatus =
@@ -150,6 +179,18 @@ export type LinkStatus =
   | "skipped"
   | "unsupported"
   | "error";
+
+export interface JobItem {
+  item_ref: string;
+  item_kind: "post_url" | "timeline_batch";
+  status: LinkStatus;
+  post_id?: string | null;
+  stats?: Record<string, number> | null;
+  error_message?: string | null;
+  batch_index?: number | null;
+  batch_start?: number | null;
+  batch_count?: number | null;
+}
 
 export interface JobLink {
   post_url: string;
@@ -176,6 +217,7 @@ export interface Job {
   mark_visited?: boolean;
   username?: string | null;
   counts: JobCounts;
+  items?: JobItem[];
   links: JobLink[];
 }
 
@@ -238,6 +280,13 @@ export interface TimelineImportResult {
   skipped_home?: number;
   skipped_semantic?: number;
   skipped_llm?: number;
+  skipped_local?: number;
+  skipped_chain?: number;
+  skipped_routine?: number;
+  skipped_errand?: number;
+  skipped_highway?: number;
+  skipped_address?: number;
+  skipped_parking?: number;
   failed: number;
   place_names: string[];
 }
@@ -382,6 +431,11 @@ export interface Visit {
   notes?: string | null;
   created_at?: string | null;
   user_id?: string | null;
+  source?: string | null;
+  status?: string | null;
+  review_suggestion?: string | null;
+  review_reason?: string | null;
+  travel_kind?: string | null;
 }
 
 export interface VisitDetail {

@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View, type DimensionValue } from "react-native";
 import MapView, { Marker, PROVIDER_DEFAULT } from "react-native-maps";
 
 import type { Place } from "../api";
@@ -10,7 +10,7 @@ interface PlaceMapProps {
   places: Place[];
   visitedPlaceIds?: ReadonlySet<string>;
   onSelectPlace?: (place: Place) => void;
-  height?: number;
+  height?: DimensionValue;
 }
 
 export function PlaceMap({

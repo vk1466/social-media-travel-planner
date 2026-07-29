@@ -1,4 +1,5 @@
 import type { Place } from "../api";
+import { CategoryChip } from "./CategoryChip";
 
 interface PlaceCardProps {
   place: Place;
@@ -22,15 +23,11 @@ function uniquePostCount(place: Place, children: Place[]): number {
   return ids.size;
 }
 
-function categoryLabel(place: Place): string {
-  return place.category ?? "Uncategorized";
-}
-
 function ChildMeta({ place }: { place: Place }) {
   const attrs = place.attributes ?? [];
   return (
     <span className="place-child-tags">
-      <span className="tag-chip tag-chip-small">{categoryLabel(place)}</span>
+      <CategoryChip category={place.category} small />
       {attrs.map((attr) => (
         <span key={attr} className="tag-chip tag-chip-small">
           {attr}
@@ -68,7 +65,7 @@ export function PlaceCard({ place, children = [], visited = false, onSelect }: P
         <p className="place-location-line">{formatLocationLine(place)}</p>
 
         <div className="tag-list">
-          <span className="tag-chip">{categoryLabel(place)}</span>
+          <CategoryChip category={place.category} />
           {attributes.map((attr) => (
             <span key={attr} className="tag-chip">
               {attr}

@@ -1540,6 +1540,37 @@ a {
   color: var(--text-muted);
 }
 
+.place-facts-list {
+  margin: 0;
+  display: grid;
+  gap: var(--size-3);
+}
+
+.place-facts-row {
+  display: grid;
+  grid-template-columns: minmax(6rem, 8rem) 1fr;
+  gap: var(--size-3);
+  align-items: start;
+}
+
+.place-facts-row dt {
+  margin: 0;
+  color: var(--text-subtle);
+  font-size: var(--font-size-0);
+  font-weight: var(--font-weight-6);
+}
+
+.place-facts-row dd {
+  margin: 0;
+  color: var(--text-muted);
+  word-break: break-word;
+}
+
+.place-facts-attribution {
+  margin-top: var(--size-3);
+  font-size: var(--font-size-0);
+}
+
 .detail-note {
   margin: 0 0 var(--size-3);
   padding: var(--size-3) var(--size-4);
@@ -1554,6 +1585,7 @@ a {
   display: flex;
   flex-wrap: wrap;
   gap: var(--size-2);
+  align-items: center;
 }
 
 .tag-chip {
@@ -1562,35 +1594,116 @@ a {
   font-size: var(--font-size-0);
   font-weight: var(--font-weight-5);
   border: 1px solid transparent;
-}
-
-.tag-list .tag-chip:nth-child(4n + 1) {
-  background: #e6f3f8;
-  color: var(--slate-accent);
-  border-color: #cce3f0;
-}
-
-.tag-list .tag-chip:nth-child(4n + 2) {
-  background: #e8f5ef;
-  color: var(--sage-accent);
-  border-color: #cce8d8;
-}
-
-.tag-list .tag-chip:nth-child(4n + 3) {
-  background: #f8efe6;
-  color: var(--clay-accent);
-  border-color: #edd9c8;
-}
-
-.tag-list .tag-chip:nth-child(4n + 4) {
-  background: #f0ebf6;
-  color: var(--plum-accent);
-  border-color: #ddd2eb;
+  background: var(--surface-muted);
+  color: var(--text-muted);
+  border-color: var(--border-subtle);
 }
 
 .tag-chip-small {
   font-size: var(--font-size-0);
   padding: 1px var(--size-2);
+}
+
+/* Stable category tones — same category always looks the same */
+.category-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-0);
+  font-weight: var(--font-weight-6);
+  letter-spacing: 0.02em;
+  border: 1px solid transparent;
+  line-height: 1.4;
+}
+
+.category-chip--small {
+  padding: 1px 6px;
+  font-size: 11px;
+}
+
+.category-chip--outdoors {
+  background: #e7f3ec;
+  color: #1f5c3d;
+  border-color: #c5e0d0;
+}
+
+.category-chip--water {
+  background: #e6f2f7;
+  color: #2a5f78;
+  border-color: #c5dce8;
+}
+
+.category-chip--place {
+  background: #eef1f3;
+  color: #3d4f5c;
+  border-color: #d5dde3;
+}
+
+.category-chip--culture {
+  background: #f5efe8;
+  color: #7a5538;
+  border-color: #e4d5c4;
+}
+
+.category-chip--food {
+  background: #f7efe6;
+  color: #8a5a2b;
+  border-color: #ead7c0;
+}
+
+.category-chip--market {
+  background: #f3ece6;
+  color: #6e4f3a;
+  border-color: #e0d0c2;
+}
+
+.category-chip--stay {
+  background: #e8eef2;
+  color: #3a5568;
+  border-color: #c9d7e0;
+}
+
+.category-chip--muted {
+  background: var(--surface-muted);
+  color: var(--text-subtle);
+  border-color: var(--border-subtle);
+}
+
+.category-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--size-2);
+  margin-bottom: var(--size-4);
+}
+
+.category-filter-chip {
+  appearance: none;
+  cursor: pointer;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-0);
+  font-weight: var(--font-weight-6);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-muted);
+}
+
+.category-filter-chip:hover {
+  border-color: var(--text-subtle);
+  color: var(--text);
+}
+
+.category-filter-chip.is-active {
+  border-color: var(--forest);
+  background: var(--forest-soft);
+  color: var(--forest);
+}
+
+.category-filter-chip .category-filter-count {
+  margin-left: 4px;
+  opacity: 0.7;
+  font-weight: var(--font-weight-5);
 }
 
 .detail-metadata {
@@ -2175,6 +2288,14 @@ a {
   font-weight: 400;
 }
 
+.visit-card-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--size-2);
+  margin-bottom: var(--size-1);
+}
+
 .visit-card-location,
 .visit-card-dates,
 .visit-card-notes {
@@ -2186,6 +2307,35 @@ a {
 .visit-card-notes {
   margin-top: var(--size-2);
   color: var(--text);
+}
+
+.visit-source-pill {
+  font-size: 11px;
+  font-weight: var(--font-weight-5);
+  color: var(--text-subtle);
+  letter-spacing: 0.02em;
+}
+
+.visit-list-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--size-3);
+  margin-bottom: var(--size-3);
+}
+
+.visit-list-header h2 {
+  margin: 0;
+  font-size: var(--font-size-3);
+  font-family: var(--font-serif);
+  font-weight: 400;
+}
+
+.visit-list-count {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--font-size-1);
 }
 
 .empty-copy {

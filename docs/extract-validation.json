@@ -1,0 +1,1610 @@
+{
+  "summary": {
+    "posts": 13,
+    "extracted_places": 67,
+    "stored_places": 58,
+    "ungrounded_places": 2,
+    "pins_total": 22,
+    "pins_covered": 21,
+    "with_category": 67,
+    "with_details": 59,
+    "with_tips": 30,
+    "ungrounded_tips": 1,
+    "tips_total": 46,
+    "repeat_checked": 0,
+    "repeat_stable": 0,
+    "judge_missed": 2,
+    "judge_wrong_category": 5,
+    "judge_spurious": 0,
+    "pin_recall": 0.955,
+    "grounded_place_rate": 0.97,
+    "category_rate": 1.0,
+    "details_rate": 0.881,
+    "tips_rate": 0.448,
+    "tip_grounded_rate": 0.978,
+    "repeat_stable_rate": null,
+    "judge_recall": 0.971,
+    "judge_category_accuracy": 0.925
+  },
+  "posts": [
+    {
+      "post_id": "instagram:DJ8gfglBO74",
+      "elapsed_s": 2.1,
+      "stored_place_count": 1,
+      "extracted_place_count": 1,
+      "delta_vs_stored": 0,
+      "pins": [
+        "Lapland, Finland"
+      ],
+      "pins_covered": [
+        "Lapland, Finland"
+      ],
+      "pins_missed": [],
+      "ungrounded_places": [],
+      "repeat_drift": [],
+      "judge": {
+        "missed": [],
+        "wrong_category": [
+          {
+            "place_name": "Lapland",
+            "assigned": "city",
+            "expected": "park",
+            "reason": "Lapland is a region known for its natural beauty and outdoor activities, fitting the 'park' category better than 'city'."
+          }
+        ],
+        "spurious": []
+      },
+      "reel_summary": "This reel showcases Lapland, Finland, as a premier winter destination offering adventures like husky sledding, reindeer rides, and unique glass cabin stays. It emphasizes the enchanting winter landscape and the opportunity to meet Santa.",
+      "places": [
+        {
+          "place_name": "Lapland",
+          "category": "city",
+          "attributes": [],
+          "parent_place_name": null,
+          "parent_category": null,
+          "city": null,
+          "state_province": null,
+          "country": "Finland",
+          "details": "Lapland is a winter wonderland full of adventure.",
+          "tips": [],
+          "grounded": true
+        }
+      ],
+      "tip_grounding": []
+    },
+    {
+      "post_id": "instagram:DUvz0arEtEo",
+      "elapsed_s": 0.57,
+      "stored_place_count": 0,
+      "extracted_place_count": 0,
+      "delta_vs_stored": 0,
+      "pins": [],
+      "pins_covered": [],
+      "pins_missed": [],
+      "ungrounded_places": [],
+      "repeat_drift": [],
+      "judge": {
+        "missed": [],
+        "wrong_category": [],
+        "spurious": []
+      },
+      "reel_summary": null,
+      "places": [],
+      "tip_grounding": []
+    },
+    {
+      "post_id": "instagram:DXc1PDEgRDV",
+      "elapsed_s": 1.24,
+      "stored_place_count": 1,
+      "extracted_place_count": 1,
+      "delta_vs_stored": 0,
+      "pins": [],
+      "pins_covered": [],
+      "pins_missed": [],
+      "ungrounded_places": [],
+      "repeat_drift": [],
+      "judge": {
+        "missed": [],
+        "wrong_category": [
+          {
+            "place_name": "Bali",
+            "assigned": "city",
+            "expected": "park",
+            "reason": "Bali is a province and island, not a city."
+          }
+        ],
+        "spurious": []
+      },
+      "reel_summary": "This reel showcases cherished moments with family in Bali, Indonesia, emphasizing the joy and connection experienced during their time together. It reflects on the memories made in this tropical destination.",
+      "places": [
+        {
+          "place_name": "Bali",
+          "category": "city",
+          "attributes": [],
+          "parent_place_name": null,
+          "parent_category": null,
+          "city": null,
+          "state_province": null,
+          "country": "Indonesia",
+          "details": "Bali is known for its beautiful landscapes and vibrant culture.",
+          "tips": [],
+          "grounded": true
+        }
+      ],
+      "tip_grounding": []
+    },
+    {
+      "post_id": "instagram:DYVThArS8Il",
+      "elapsed_s": 1.84,
+      "stored_place_count": 2,
+      "extracted_place_count": 2,
+      "delta_vs_stored": 0,
+      "pins": [],
+      "pins_covered": [],
+      "pins_missed": [],
+      "ungrounded_places": [
+        "Green Lake",
+        "Chilko Lake"
+      ],
+      "repeat_drift": [],
+      "judge": {
+        "missed": [],
+        "wrong_category": [],
+        "spurious": []
+      },
+      "reel_summary": "This reel showcases popular outdoor destinations in British Columbia, highlighting two lakes that are must-visit spots for summer adventures. Travelers can look forward to activities such as hiking and enjoying the beautiful landscapes around these lakes.",
+      "places": [
+        {
+          "place_name": "Green Lake",
+          "category": "lake",
+          "attributes": [
+            "hike"
+          ],
+          "parent_place_name": "British Columbia",
+          "parent_category": "park",
+          "city": null,
+          "state_province": "British Columbia",
+          "country": "Canada",
+          "details": null,
+          "tips": [],
+          "grounded": false
+        },
+        {
+          "place_name": "Chilko Lake",
+          "category": "lake",
+          "attributes": [
+            "hike"
+          ],
+          "parent_place_name": "British Columbia",
+          "parent_category": "park",
+          "city": null,
+          "state_province": "British Columbia",
+          "country": "Canada",
+          "details": null,
+          "tips": [],
+          "grounded": false
+        }
+      ],
+      "tip_grounding": []
+    },
+    {
+      "post_id": "instagram:DZaz1SOSpQ7",
+      "elapsed_s": 9.34,
+      "stored_place_count": 15,
+      "extracted_place_count": 15,
+      "delta_vs_stored": 0,
+      "pins": [
+        "SAVE this Lake Tahoe summer bucket list \u2600\ufe0f\ud83c\udfd4\ufe0f\ud83d\udc99 Is Lake Tahoe on your summer bucket list? \ud83d\udc40",
+        "Emerald Bay State Park\u2028Tahoe\u2019s most famous viewpoint",
+        "Inspiration Point\u2028Best panoramic view of Emerald Bay",
+        "Heavenly Observation Deck\u2028Panoramic lake views from above",
+        "Sand Harbor State Park\u2028Turquoise water + granite boulders",
+        "Secret Cove\u2028Hidden beach with ultra",
+        "Chimney Beach\u2028Beautiful cove with crystal",
+        "Kings Beach\u2028Family",
+        "Cave Rock Trail\u2028Short hike with incredible lake views",
+        "East Shore Trail\u2028Paved lakeside trail with nonstop views",
+        "D.L. Bliss State Park\u2028Hidden coves + Rubicon Trail access",
+        "Vikingsholm\u2028Scandinavian",
+        "Bonsai Rock\u2028One of Tahoe\u2019s most photographed spots",
+        "Eagle Falls\u2028One of the most popular waterfalls in Tahoe",
+        "Fallen Leaf Lake\u2028Peaceful alpine lake near South Lake Tahoe\u2028\ud83d\udea3 Great for kayaking & picnics",
+        "Glen Alpine Falls\u2028Seasonal waterfall near Fallen Leaf Lake"
+      ],
+      "pins_covered": [
+        "Emerald Bay State Park\u2028Tahoe\u2019s most famous viewpoint",
+        "Inspiration Point\u2028Best panoramic view of Emerald Bay",
+        "Heavenly Observation Deck\u2028Panoramic lake views from above",
+        "Sand Harbor State Park\u2028Turquoise water + granite boulders",
+        "Secret Cove\u2028Hidden beach with ultra",
+        "Chimney Beach\u2028Beautiful cove with crystal",
+        "Kings Beach\u2028Family",
+        "Cave Rock Trail\u2028Short hike with incredible lake views",
+        "East Shore Trail\u2028Paved lakeside trail with nonstop views",
+        "D.L. Bliss State Park\u2028Hidden coves + Rubicon Trail access",
+        "Vikingsholm\u2028Scandinavian",
+        "Bonsai Rock\u2028One of Tahoe\u2019s most photographed spots",
+        "Eagle Falls\u2028One of the most popular waterfalls in Tahoe",
+        "Fallen Leaf Lake\u2028Peaceful alpine lake near South Lake Tahoe\u2028\ud83d\udea3 Great for kayaking & picnics",
+        "Glen Alpine Falls\u2028Seasonal waterfall near Fallen Leaf Lake"
+      ],
+      "pins_missed": [
+        "SAVE this Lake Tahoe summer bucket list \u2600\ufe0f\ud83c\udfd4\ufe0f\ud83d\udc99 Is Lake Tahoe on your summer bucket list? \ud83d\udc40"
+      ],
+      "ungrounded_places": [],
+      "repeat_drift": [],
+      "judge": {
+        "missed": [],
+        "wrong_category": [
+          {
+            "place_name": "Sand Harbor State Park",
+            "assigned": "park",
+            "expected": "beach",
+            "reason": "Sand Harbor State Park is primarily known for its beach and water activities."
+          }
+        ],
+        "spurious": []
+      },
+      "reel_summary": "This reel provides a summer bucket list for Lake Tahoe, California, featuring iconic viewpoints, beaches, hikes, and waterfalls. It highlights the area's natural beauty and outdoor activities available for visitors.",
+      "places": [
+        {
+          "place_name": "Emerald Bay State Park",
+          "category": "park",
+          "attributes": [],
+          "parent_place_name": "Lake Tahoe",
+          "parent_category": "park",
+          "city": null,
+          "state_province": "California",
+          "country": "USA",
+          "details": "Tahoe\u2019s most famous viewpoint.",
+          "tips": [
+            "~$10 parking"
+          ],
+          "grounded": true
+        },
+        {
+          "place_name": "Inspiration Point",
+          "category": "viewpoint",
+          "attributes": [],
+          "parent_place_name": "Lake Tahoe",
+          "parent_category": "park",
+          "city": null,
+          "state_province": "California",
+          "country": "USA",
+          "details": "Best panoramic view of Emerald Bay.",
+          "tips": [
+            "Easy roadside stop"
+          ],
+          "grounded": true
+        },
+        {
+          "place_name": "Heavenly Observation Deck",
+          "category": "viewpoint",
+          "attributes": [],
+          "parent_place_name": "Lake Tahoe",
+          "parent_category": "park",
+          "city": null,
+          "state_province": "California",
+          "country": "USA",
+          "details": "Panoramic lake views from above.",
+          "tips": [
+            "Gondola tickets ~$70+"
+          ],
+          "grounded": true
+        },
+        {
+          "place_name": "Sand Harbor State Park",
+          "category": "park",
+          "attributes": [],
+          "parent_place_name": "Lake Tahoe",
+          "parent_category": "park",
+          "city": null,
+          "state_province": "California",
+          "country": "USA",
+          "details": "Turquoise water + granite boulders.",
+          "tips": [
+            "~$10\u201315 parking"
+          ],
+          "grounded": true
+        },
+        {
+          "place_name": "Secret Cove",
+          "category": "beach",
+          "attributes": [],
+          "parent_place_name": "Lake Tahoe",
+          "parent_category": "park",
+          "city": null,
+          "state_province": "California",
+          "country": "USA",
+          "details": "Hidden beach with ultra-clear water.",
+          "tips": [
+            "~0.8 mile round trip | 30\u201345 mins",
+            "Free"
+          ],
+          "grounded": true
+        },
+        {
+          "place_name": "Chimney Beach",
+          "category": "beach",
+          "attributes": [],
+          "parent_place_name": "Lake Tahoe",
+          "parent_category": "park",
+          "city": null,
+          "state_province": "California",
+          "country": "USA",
+          "details": "Beautiful cove with crystal-clear water.",
+          "tips": [
+            "~2 miles round trip | ~30 -45 mins",
+            "Free"
+          ],
+          "grounded": true
+        },
+        {
+          "place_name": "Kings Beach",
+          "category": "beach",
+          "attributes": [],
+          "parent_place_name": "Lake Tahoe",
+          "parent_category": "park",
+          "city": null,
+          "state_province": "California",
+          "country": "USA",
+          "details": "Family-friendly sandy beach.",
+          "tips": [
+            "Free"
+          ],
+          "grounded": true
+        },
+        {
+          "place_name": "Cave Rock Trail",
+          "category": "hike",
+          "attributes": [
+            "viewpoint"
+          ],
+          "parent_place_name": "Lake Tahoe",
+          "parent_category": "park",
+          "city": null,
+          "state_province": "California",
+          "country": "USA",
+          "details": "Short hike with incredible lake views.",
+          "tips": [
+            "0.8 mile round trip | ~30 mins",
+            "Free"
+          ],
+          "grounded": true
+        },
+        {
+          "place_name": "East Shore Trail",
+          "category": "hike",
+          "attributes": [],
+          "parent_place_name": "Lake Tahoe",
+          "parent_category": "park",
+          "city": null,
+          "state_province": "California",
+          "country": "USA",
+          "details": "Paved lakeside trail with nonstop views.",
+          "tips": [
+            "1\u20136 miles round trip | flexible",
+            "Free"
+          ],
+          "grounded": true
+        },
+        {
+          "place_name": "D.L. Bliss State Park",
+          "category": "park",
+          "attributes": [],
+          "parent_place_name": "Lake Tahoe",
+          "parent_category": "park",
+          "city": null,
+          "state_province": "California",
+          "country": "USA",
+          "details": "Hidden coves + Rubicon Trail access.",
+          "tips": [
+            "~$10 parking",
+            "Rubicon Trail: 2\u20134 miles | 1\u20133 hours"
+          ],
+          "grounded": true
+        },
+        {
+          "place_name": "Vikingsholm",
+          "category": "landmark",
+          "attributes": [
+            "hike"
+          ],
+          "parent_place_name": "Lake Tahoe",
+          "parent_category": "park",
+          "city": null,
+          "state_province": "California",
+          "country": "USA",
+          "details": "Scandinavian-style castle on Emerald Bay.",
+          "tips": [
+            "1.7 miles round trip | ~30\u201360 mins",
+            "Castle tours available seasonally"
+          ],
+          "grounded": true
+        },
+        {
+          "place_name": "Bonsai Rock",
+          "category": "landmark",
+          "attributes": [],
+          "parent_place_name": "Lake Tahoe",
+          "parent_category": "park",
+          "city": null,
+          "state_province": "California",
+          "country": "USA",
+          "details": "One of Tahoe\u2019s most photographed spots.",
+          "tips": [
+            "Roadside stop",
+            "Free"
+          ],
+          "grounded": true
+        },
+        {
+          "place_name": "Eagle Falls",
+          "category": "waterfall",
+          "attributes": [],
+          "parent_place_name": "Lake Tahoe",
+          "parent_category": "park",
+          "city": null,
+          "state_province": "California",
+          "country": "USA",
+          "details": "One of the most popular waterfalls in Tahoe.",
+          "tips": [
+            "2 miles round trip | ~1.5 hours",
+            "~$10 parking"
+          ],
+          "grounded": true
+        },
+        {
+          "place_name": "Fallen Leaf Lake",
+          "category": "lake",
+          "attributes": [],
+          "parent_place_name": "Lake Tahoe",
+          "parent_category": "park",
+          "city": null,
+          "state_province": "California",
+          "country": "USA",
+          "details": "Peaceful alpine lake near South Lake Tahoe.",
+          "tips": [
+            "Great for kayaking & picnics",
+            "Free"
+          ],
+          "grounded": true
+        },
+        {
+          "place_name": "Glen Alpine Falls",
+          "category": "waterfall",
+          "attributes": [],
+          "parent_place_name": "Lake Tahoe",
+          "parent_category": "park",
+          "city": null,
+          "state_province": "California",
+          "country": "USA",
+          "details": "Seasonal waterfall near Fallen Leaf Lake.",
+          "tips": [
+            "Short walk from parking",
+            "Free"
+          ],
+          "grounded": true
+        }
+      ],
+      "tip_grounding": [
+        {
+          "place": "Emerald Bay State Park",
+          "tip": "~$10 parking",
+          "grounded": true
+        },
+        {
+          "place": "Inspiration Point",
+          "tip": "Easy roadside stop",
+          "grounded": true
+        },
+        {
+          "place": "Heavenly Observation Deck",
+          "tip": "Gondola tickets ~$70+",
+          "grounded": true
+        },
+        {
+          "place": "Sand Harbor State Park",
+          "tip": "~$10\u201315 parking",
+          "grounded": true
+        },
+        {
+          "place": "Secret Cove",
+          "tip": "~0.8 mile round trip | 30\u201345 mins",
+          "grounded": true
+        },
+        {
+          "place": "Secret Cove",
+          "tip": "Free",
+          "grounded": true
+        },
+        {
+          "place": "Chimney Beach",
+          "tip": "~2 miles round trip | ~30 -45 mins",
+          "grounded": true
+        },
+        {
+          "place": "Chimney Beach",
+          "tip": "Free",
+          "grounded": true
+        },
+        {
+          "place": "Kings Beach",
+          "tip": "Free",
+          "grounded": true
+        },
+        {
+          "place": "Cave Rock Trail",
+          "tip": "0.8 mile round trip | ~30 mins",
+          "grounded": true
+        },
+        {
+          "place": "Cave Rock Trail",
+          "tip": "Free",
+          "grounded": true
+        },
+        {
+          "place": "East Shore Trail",
+          "tip": "1\u20136 miles round trip | flexible",
+          "grounded": true
+        },
+        {
+          "place": "East Shore Trail",
+          "tip": "Free",
+          "grounded": true
+        },
+        {
+          "place": "D.L. Bliss State Park",
+          "tip": "~$10 parking",
+          "grounded": true
+        },
+        {
+          "place": "D.L. Bliss State Park",
+          "tip": "Rubicon Trail: 2\u20134 miles | 1\u20133 hours",
+          "grounded": true
+        },
+        {
+          "place": "Vikingsholm",
+          "tip": "1.7 miles round trip | ~30\u201360 mins",
+          "grounded": true
+        },
+        {
+          "place": "Vikingsholm",
+          "tip": "Castle tours available seasonally",
+          "grounded": true
+        },
+        {
+          "place": "Bonsai Rock",
+          "tip": "Roadside stop",
+          "grounded": true
+        },
+        {
+          "place": "Bonsai Rock",
+          "tip": "Free",
+          "grounded": true
+        },
+        {
+          "place": "Eagle Falls",
+          "tip": "2 miles round trip | ~1.5 hours",
+          "grounded": true
+        },
+        {
+          "place": "Eagle Falls",
+          "tip": "~$10 parking",
+          "grounded": true
+        },
+        {
+          "place": "Fallen Leaf Lake",
+          "tip": "Great for kayaking & picnics",
+          "grounded": true
+        },
+        {
+          "place": "Fallen Leaf Lake",
+          "tip": "Free",
+          "grounded": true
+        },
+        {
+          "place": "Glen Alpine Falls",
+          "tip": "Short walk from parking",
+          "grounded": true
+        },
+        {
+          "place": "Glen Alpine Falls",
+          "tip": "Free",
+          "grounded": true
+        }
+      ]
+    },
+    {
+      "post_id": "instagram:DaFTRfgshwZolMmlswoa7qrU6xiPKEC-aNDfGM0",
+      "elapsed_s": 1.36,
+      "stored_place_count": 1,
+      "extracted_place_count": 1,
+      "delta_vs_stored": 0,
+      "pins": [],
+      "pins_covered": [],
+      "pins_missed": [],
+      "ungrounded_places": [],
+      "repeat_drift": [],
+      "judge": {
+        "missed": [
+          "Vancouver"
+        ],
+        "wrong_category": [],
+        "spurious": []
+      },
+      "reel_summary": "This reel highlights the excitement of attending a match at BC Place Stadium during the World Cup. It captures the vibrant atmosphere of a significant sporting event in Vancouver, Canada.",
+      "places": [
+        {
+          "place_name": "BC Place Stadium",
+          "category": "landmark",
+          "attributes": [],
+          "parent_place_name": null,
+          "parent_category": null,
+          "city": "Vancouver",
+          "state_province": "British Columbia",
+          "country": "Canada",
+          "details": "BC Place Stadium is a major venue for sporting events in Vancouver.",
+          "tips": [],
+          "grounded": true
+        }
+      ],
+      "tip_grounding": []
+    },
+    {
+      "post_id": "instagram:DauOd48hbV8",
+      "elapsed_s": 3.56,
+      "stored_place_count": 5,
+      "extracted_place_count": 5,
+      "delta_vs_stored": 0,
+      "pins": [],
+      "pins_covered": [],
+      "pins_missed": [],
+      "ungrounded_places": [],
+      "repeat_drift": [],
+      "judge": {
+        "missed": [],
+        "wrong_category": [
+          {
+            "place_name": "Lake Tahoe",
+            "assigned": "lake",
+            "expected": "city",
+            "reason": "Lake Tahoe is a region that includes both a lake and surrounding areas, but it is commonly referred to as a city or destination area."
+          }
+        ],
+        "spurious": []
+      },
+      "reel_summary": "This Instagram reel highlights a scenic road trip from Seattle to Lake Tahoe, featuring breathtaking views and memorable experiences. Key destinations include Crater Lake National Park and Lassen Volcanic National Park, showcasing the natural beauty of the Pacific Northwest and Northern California.",
+      "places": [
+        {
+          "place_name": "Crater Lake National Park",
+          "category": "park",
+          "attributes": [],
+          "parent_place_name": null,
+          "parent_category": null,
+          "city": null,
+          "state_province": null,
+          "country": null,
+          "details": "A stunning national park known for its deep blue lake and scenic views.",
+          "tips": [],
+          "grounded": true
+        },
+        {
+          "place_name": "Lassen Volcanic National Park",
+          "category": "park",
+          "attributes": [],
+          "parent_place_name": null,
+          "parent_category": null,
+          "city": null,
+          "state_province": null,
+          "country": null,
+          "details": "A national park featuring volcanic landscapes and geothermal features.",
+          "tips": [],
+          "grounded": true
+        },
+        {
+          "place_name": "Lake Tahoe",
+          "category": "lake",
+          "attributes": [],
+          "parent_place_name": null,
+          "parent_category": null,
+          "city": null,
+          "state_province": null,
+          "country": null,
+          "details": "A large freshwater lake known for its stunning scenery and recreational activities.",
+          "tips": [],
+          "grounded": true
+        },
+        {
+          "place_name": "Napa",
+          "category": "city",
+          "attributes": [],
+          "parent_place_name": null,
+          "parent_category": null,
+          "city": null,
+          "state_province": null,
+          "country": null,
+          "details": "A renowned wine region known for its vineyards and wineries.",
+          "tips": [],
+          "grounded": true
+        },
+        {
+          "place_name": "Sonoma",
+          "category": "city",
+          "attributes": [],
+          "parent_place_name": null,
+          "parent_category": null,
+          "city": null,
+          "state_province": null,
+          "country": null,
+          "details": "Another famous wine region known for its beautiful landscapes and wineries.",
+          "tips": [],
+          "grounded": true
+        }
+      ],
+      "tip_grounding": []
+    },
+    {
+      "post_id": "instagram:DaxuTGZOOeZ",
+      "elapsed_s": 17.63,
+      "stored_place_count": 22,
+      "extracted_place_count": 30,
+      "delta_vs_stored": 8,
+      "pins": [],
+      "pins_covered": [],
+      "pins_missed": [],
+      "ungrounded_places": [],
+      "repeat_drift": [],
+      "judge": {
+        "missed": [],
+        "wrong_category": [],
+        "spurious": []
+      },
+      "reel_summary": "This reel presents a 10-day itinerary through Washington State, highlighting natural attractions and charming towns. It covers iconic sites such as Mount Rainier, Olympic National Park, and vibrant cities like Seattle, offering a well-rounded exploration of the region's beauty.",
+      "places": [
+        {
+          "place_name": "Mount Rainier National Park",
+          "category": "park",
+          "attributes": [],
+          "parent_place_name": null,
+          "parent_category": null,
+          "city": null,
+          "state_province": "Washington",
+          "country": "USA",
+          "details": "A national park known for its stunning views and hiking trails.",
+          "tips": [],
+          "grounded": true
+        },
+        {
+          "place_name": "Skyline Trail",
+          "category": "hike",
+          "attributes": [
+            "viewpoint"
+          ],
+          "parent_place_name": "Mount Rainier National Park",
+          "parent_category": "park",
+          "city": null,
+          "state_province": "Washington",
+          "country": "USA",
+          "details": "A popular hiking trail in Mount Rainier National Park with unreal views.",
+          "tips": [],
+          "grounded": true
+        },
+        {
+          "place_name": "Myrtle Falls",
+          "category": "waterfall",
+          "attributes": [],
+          "parent_place_name": "Mount Rainier National Park",
+          "parent_category": "park",
+          "city": null,
+          "state_province": "Washington",
+          "country": "USA",
+          "details": "A beautiful waterfall located near the Skyline Trail.",
+          "tips": [],
+          "grounded": true
+        },
+        {
+          "place_name": "Sunrise",
+          "category": "viewpoint",
+          "attributes": [],
+          "parent_place_name": "Mount Rainier National Park",
+          "parent_category": "park",
+          "city": null,
+          "state_province": "Washington",
+          "country": "USA",
+          "details": "The highest point in Mount Rainier National Park accessible by car.",
+          "tips": [],
+          "grounded": true
+        },
+        {
+          "place_name": "Fremont Lookout",
+          "category": "viewpoint",
+          "attributes": [
+            "hike"
+          ],
+          "parent_place_name": "Mount Rainier National Park",
+          "parent_category": "park",
+          "city": null,
+          "state_province": "Washington",
+          "country": "USA",
+          "details": "A hiking destination offering panoramic views in Mount Rainier National Park.",
+          "tips": [],
+          "grounded": true
+        },
+        {
+          "place_name": "Dege Peak",
+          "category": "viewpoint",
+          "attributes": [
+            "hike"
+          ],
+          "parent_place_name": "Mount Rainier National Park",
+          "parent_category": "park",
+          "city": null,
+          "state_province": "Washington",
+          "country": "USA",
+          "details": "A peak accessible via hiking in Mount Rainier National Park.",
+          "tips": [],
+          "grounded": true
+        },
+        {
+          "place_name": "Leavenworth",
+          "category": "city",
+          "attributes": [],
+          "parent_place_name": null,
+          "parent_category": null,
+          "city": "Leavenworth",
+          "state_province": "Washington",
+          "country": "USA",
+          "details": "A Bavarian-style mountain town known for its charming architecture.",
+          "tips": [],
+          "grounded": true
+        },
+        {
+          "place_name": "Colchuck Lake",
+          "category": "lake",
+          "attributes": [
+            "hike"
+          ],
+          "parent_place_name": null,
+          "parent_category": null,
+          "city": null,
+          "state_province": "Washington",
+          "country": "USA",
+          "details": "A scenic lake reached by a 9-mile round trip hike.",
+          "tips": [
+            "9 miles round trip"
+          ],
+          "grounded": true
+        },
+        {
+          "place_name": "North Cascades",
+          "category": "park",
+          "attributes": [],
+          "parent_place_name": null,
+          "parent_category": null,
+          "city": null,
+          "state_province": "Washington",
+          "country": "USA",
+          "details": "A mountain range known for its stunning landscapes and outdoor activities.",
+          "tips": [],
+          "grounded": true
+        },
+        {
+          "place_name": "Artist Point",
+          "category": "viewpoint",
+          "attributes": [],
+          "parent_place_name": "North Cascades",
+          "parent_category": "park",
+          "city": null,
+          "state_province": "Washington",
+          "country": "USA",
+          "details": "A viewpoint in the North Cascades area, accessible by car.",
+          "tips": [
+            "about 4 hours from Leavenworth"
+          ],
+          "grounded": true
+        },
+        {
+          "place_name": "Chain Lakes Loop",
+          "category": "hike",
+          "attributes": [],
+          "parent_place_name": "North Cascades",
+          "parent_category": "park",
+          "city": null,
+          "state_province": "Washington",
+          "country": "USA",
+          "details": "A 7-mile loop hike offering beautiful views in the North Cascades.",
+          "tips": [
+            "7 miles"
+          ],
+          "grounded": true
+        },
+        {
+          "place_name": "Diablo Lake",
+          "category": "lake",
+          "attributes": [],
+          "parent_place_name": "North Cascades",
+          "parent_category": "park",
+          "city": null,
+          "state_province": "Washington",
+          "country": "USA",
+          "details": "A stunning lake in the North Cascades area, popular for its turquoise waters.",
+          "tips": [],
+          "grounded": true
+        },
+        {
+          "place_name": "Colonial Creek Campground",
+          "category": "park",
+          "attributes": [],
+          "parent_place_name": "North Cascades",
+          "parent_category": "park",
+          "city": null,
+          "state_province": "Washington",
+          "country": "USA",
+          "details": "A campground located near Diablo Lake.",
+          "tips": [],
+          "grounded": true
+        },
+        {
+          "place_name": "Concrete",
+          "category": "city",
+          "attributes": [],
+          "parent_place_name": null,
+          "parent_category": null,
+          "city": "Concrete",
+          "state_province": "Washington",
+          "country": "USA",
+          "details": "A small town near the North Cascades area.",
+          "tips": [],
+          "grounded": true
+        },
+        {
+          "place_name": "Mazama",
+          "category": "city",
+          "attributes": [],
+          "parent_place_name": null,
+          "parent_category": null,
+          "city": "Mazama",
+          "state_province": "Washington",
+          "country": "USA",
+          "details": "A small community located near the North Cascades.",
+          "tips": [],
+          "grounded": true
+        },
+        {
+          "place_name": "Maple Pass Loop",
+          "category": "hike",
+          "attributes": [],
+          "parent_place_name": "North Cascades",
+          "parent_category": "park",
+          "city": null,
+          "state_province": "Washington",
+          "country": "USA",
+          "details": "A 7.4-mile hike known for its stunning views in the North Cascades.",
+          "tips": [
+            "7.4 miles"
+          ],
+          "grounded": true
+        },
+        {
+          "place_name": "Port Angeles",
+          "category": "city",
+          "attributes": [],
+          "parent_place_name": null,
+          "parent_category": null,
+          "city": "Port Angeles",
+          "state_province": "Washington",
+          "country": "USA",
+          "details": "A city that serves as a base for exploring Olympic National Park.",
+          "tips": [],
+          "grounded": true
+        },
+        {
+          "place_name": "Olympic National Park",
+          "category": "park",
+          "attributes": [],
+          "parent_place_name": null,
+          "parent_category": null,
+          "city": null,
+          "state_province": "Washington",
+          "country": "USA",
+          "details": "A national park known for its diverse ecosystems and natural beauty.",
+          "tips": [],
+          "grounded": true
+        },
+        {
+          "place_name": "Lake Crescent",
+          "category": "lake",
+          "attributes": [],
+          "parent_place_name": "Olympic National Park",
+          "parent_category": "park",
+          "city": null,
+          "state_province": "Washington",
+          "country": "USA",
+          "details": "A beautiful lake located within Olympic National Park.",
+          "tips": [],
+          "grounded": true
+        },
+        {
+          "place_name": "Marymere Falls",
+          "category": "waterfall",
+          "attributes": [],
+          "parent_place_name": "Olympic National Park",
+          "parent_category": "park",
+          "city": null,
+          "state_province": "Washington",
+          "country": "USA",
+          "details": "An easy hike leads to this picturesque waterfall in Olympic National Park.",
+          "tips": [
+            "easy"
+          ],
+          "grounded": true
+        },
+        {
+          "place_name": "Mt. Storm King",
+          "category": "hike",
+          "attributes": [],
+          "parent_place_name": "Olympic National Park",
+          "parent_category": "park",
+          "city": null,
+          "state_province": "Washington",
+          "country": "USA",
+          "details": "A challenging hike in Olympic National Park that rewards with stunning views.",
+          "tips": [
+            "hard but totally worth it"
+          ],
+          "grounded": true
+        },
+        {
+          "place_name": "Second Beach",
+          "category": "beach",
+          "attributes": [],
+          "parent_place_name": "Olympic National Park",
+          "parent_category": "park",
+          "city": null,
+          "state_province": "Washington",
+          "country": "USA",
+          "details": "A scenic beach in Olympic National Park, perfect for sunset views.",
+          "tips": [
+            "catch the sunset"
+          ],
+          "grounded": true
+        },
+        {
+          "place_name": "Hoh Rainforest",
+          "category": "park",
+          "attributes": [],
+          "parent_place_name": "Olympic National Park",
+          "parent_category": "park",
+          "city": null,
+          "state_province": "Washington",
+          "country": "USA",
+          "details": "A lush rainforest area within Olympic National Park, known for its biodiversity.",
+          "tips": [],
+          "grounded": true
+        },
+        {
+          "place_name": "Hall of Mosses Trail",
+          "category": "hike",
+          "attributes": [],
+          "parent_place_name": "Hoh Rainforest",
+          "parent_category": "park",
+          "city": null,
+          "state_province": "Washington",
+          "country": "USA",
+          "details": "A trail in the Hoh Rainforest that showcases the unique moss-covered trees.",
+          "tips": [],
+          "grounded": true
+        },
+        {
+          "place_name": "Rialto Beach",
+          "category": "beach",
+          "attributes": [],
+          "parent_place_name": "Olympic National Park",
+          "parent_category": "park",
+          "city": null,
+          "state_province": "Washington",
+          "country": "USA",
+          "details": "A beautiful beach known for its dramatic scenery and sunsets in Olympic National Park.",
+          "tips": [
+            "wrap up the day with sunset"
+          ],
+          "grounded": true
+        },
+        {
+          "place_name": "Cape Flattery",
+          "category": "viewpoint",
+          "attributes": [],
+          "parent_place_name": "Olympic National Park",
+          "parent_category": "park",
+          "city": null,
+          "state_province": "Washington",
+          "country": "USA",
+          "details": "The northwesternmost point of the contiguous United States, offering stunning views.",
+          "tips": [
+            "wrap up the day with sunset"
+          ],
+          "grounded": true
+        },
+        {
+          "place_name": "Seattle",
+          "category": "city",
+          "attributes": [],
+          "parent_place_name": null,
+          "parent_category": null,
+          "city": "Seattle",
+          "state_province": "Washington",
+          "country": "USA",
+          "details": "A vibrant city known for its iconic landmarks and waterfront.",
+          "tips": [],
+          "grounded": true
+        },
+        {
+          "place_name": "Space Needle",
+          "category": "landmark",
+          "attributes": [],
+          "parent_place_name": "Seattle",
+          "parent_category": "city",
+          "city": "Seattle",
+          "state_province": "Washington",
+          "country": "USA",
+          "details": "An iconic observation tower offering panoramic views of the city.",
+          "tips": [],
+          "grounded": true
+        },
+        {
+          "place_name": "Pike Place Market",
+          "category": "market",
+          "attributes": [],
+          "parent_place_name": "Seattle",
+          "parent_category": "city",
+          "city": "Seattle",
+          "state_province": "Washington",
+          "country": "USA",
+          "details": "A famous public market known for its fresh produce and local vendors.",
+          "tips": [],
+          "grounded": true
+        },
+        {
+          "place_name": "Waterfront",
+          "category": "landmark",
+          "attributes": [],
+          "parent_place_name": "Seattle",
+          "parent_category": "city",
+          "city": "Seattle",
+          "state_province": "Washington",
+          "country": "USA",
+          "details": "A scenic area in Seattle known for its views and attractions.",
+          "tips": [],
+          "grounded": true
+        }
+      ],
+      "tip_grounding": [
+        {
+          "place": "Colchuck Lake",
+          "tip": "9 miles round trip",
+          "grounded": true
+        },
+        {
+          "place": "Artist Point",
+          "tip": "about 4 hours from Leavenworth",
+          "grounded": true
+        },
+        {
+          "place": "Chain Lakes Loop",
+          "tip": "7 miles",
+          "grounded": true
+        },
+        {
+          "place": "Maple Pass Loop",
+          "tip": "7.4 miles",
+          "grounded": true
+        },
+        {
+          "place": "Marymere Falls",
+          "tip": "easy",
+          "grounded": true
+        },
+        {
+          "place": "Mt. Storm King",
+          "tip": "hard but totally worth it",
+          "grounded": true
+        },
+        {
+          "place": "Second Beach",
+          "tip": "catch the sunset",
+          "grounded": true
+        },
+        {
+          "place": "Rialto Beach",
+          "tip": "wrap up the day with sunset",
+          "grounded": true
+        },
+        {
+          "place": "Cape Flattery",
+          "tip": "wrap up the day with sunset",
+          "grounded": true
+        }
+      ]
+    },
+    {
+      "post_id": "instagram:DayM7TVh2Ex",
+      "elapsed_s": 2.78,
+      "stored_place_count": 2,
+      "extracted_place_count": 3,
+      "delta_vs_stored": 1,
+      "pins": [],
+      "pins_covered": [],
+      "pins_missed": [],
+      "ungrounded_places": [],
+      "repeat_drift": [],
+      "judge": {
+        "missed": [],
+        "wrong_category": [],
+        "spurious": []
+      },
+      "reel_summary": "This reel showcases the scenic hike to Marymere Falls in Olympic National Park, highlighting the lush forest and the beautiful waterfall. It's a rewarding, easy hike suitable for all skill levels, making it a great choice for visitors to the Olympic Peninsula.",
+      "places": [
+        {
+          "place_name": "Marymere Falls",
+          "category": "waterfall",
+          "attributes": [
+            "hike",
+            "viewpoint"
+          ],
+          "parent_place_name": "Olympic National Park",
+          "parent_category": "park",
+          "city": null,
+          "state_province": "Washington",
+          "country": "USA",
+          "details": "The hike to Marymere Falls winds through a lush old growth forest before revealing a stunning 90 foot waterfall.",
+          "tips": [
+            "1.8 miles round trip",
+            "300 feet of elevation gain",
+            "Don't skip the upper viewpoint for a better perspective of the falls."
+          ],
+          "grounded": true
+        },
+        {
+          "place_name": "Lake Crescent",
+          "category": "lake",
+          "attributes": [],
+          "parent_place_name": "Olympic National Park",
+          "parent_category": "park",
+          "city": null,
+          "state_province": "Washington",
+          "country": "USA",
+          "details": null,
+          "tips": [],
+          "grounded": true
+        },
+        {
+          "place_name": "Olympic National Park",
+          "category": "park",
+          "attributes": [],
+          "parent_place_name": null,
+          "parent_category": null,
+          "city": null,
+          "state_province": "Washington",
+          "country": "USA",
+          "details": null,
+          "tips": [],
+          "grounded": true
+        }
+      ],
+      "tip_grounding": [
+        {
+          "place": "Marymere Falls",
+          "tip": "1.8 miles round trip",
+          "grounded": true
+        },
+        {
+          "place": "Marymere Falls",
+          "tip": "300 feet of elevation gain",
+          "grounded": true
+        },
+        {
+          "place": "Marymere Falls",
+          "tip": "Don't skip the upper viewpoint for a better perspective of the falls.",
+          "grounded": true
+        }
+      ]
+    },
+    {
+      "post_id": "instagram:DazUSxlhd50",
+      "elapsed_s": 2.42,
+      "stored_place_count": 4,
+      "extracted_place_count": 4,
+      "delta_vs_stored": 0,
+      "pins": [],
+      "pins_covered": [],
+      "pins_missed": [],
+      "ungrounded_places": [],
+      "repeat_drift": [],
+      "judge": {
+        "missed": [],
+        "wrong_category": [
+          {
+            "place_name": "Napa Valley",
+            "assigned": "city",
+            "expected": "neighborhood",
+            "reason": "Napa Valley is a wine region and not a city. It is more accurately described as a neighborhood or region within Napa County."
+          }
+        ],
+        "spurious": []
+      },
+      "reel_summary": "This reel highlights a vacation exploring various picturesque locations including Lassen National Park and scenic waters like Lake Tahoe and Burney Falls. Ideal for travelers seeking beautiful landscapes and outdoor adventures.",
+      "places": [
+        {
+          "place_name": "Napa Valley",
+          "category": "city",
+          "attributes": [],
+          "parent_place_name": null,
+          "parent_category": null,
+          "city": null,
+          "state_province": null,
+          "country": null,
+          "details": null,
+          "tips": [],
+          "grounded": true
+        },
+        {
+          "place_name": "Lake Tahoe",
+          "category": "lake",
+          "attributes": [],
+          "parent_place_name": null,
+          "parent_category": null,
+          "city": null,
+          "state_province": null,
+          "country": null,
+          "details": null,
+          "tips": [],
+          "grounded": true
+        },
+        {
+          "place_name": "Lassen National Park",
+          "category": "park",
+          "attributes": [],
+          "parent_place_name": null,
+          "parent_category": null,
+          "city": null,
+          "state_province": null,
+          "country": null,
+          "details": null,
+          "tips": [],
+          "grounded": true
+        },
+        {
+          "place_name": "Burney Falls",
+          "category": "waterfall",
+          "attributes": [],
+          "parent_place_name": null,
+          "parent_category": null,
+          "city": null,
+          "state_province": null,
+          "country": null,
+          "details": null,
+          "tips": [],
+          "grounded": true
+        }
+      ],
+      "tip_grounding": []
+    },
+    {
+      "post_id": "instagram:DbBdqs4tk5f",
+      "elapsed_s": 1.41,
+      "stored_place_count": 1,
+      "extracted_place_count": 1,
+      "delta_vs_stored": 0,
+      "pins": [
+        "Mount Aspiring National Park, New Zealand"
+      ],
+      "pins_covered": [
+        "Mount Aspiring National Park, New Zealand"
+      ],
+      "pins_missed": [],
+      "ungrounded_places": [],
+      "repeat_drift": [],
+      "judge": {
+        "missed": [],
+        "wrong_category": [],
+        "spurious": []
+      },
+      "reel_summary": "This reel showcases the stunning landscapes of Mount Aspiring National Park in New Zealand. Travelers visit for its diverse hiking opportunities and beautiful scenery.",
+      "places": [
+        {
+          "place_name": "Mount Aspiring National Park",
+          "category": "park",
+          "attributes": [],
+          "parent_place_name": null,
+          "parent_category": null,
+          "city": null,
+          "state_province": null,
+          "country": "New Zealand",
+          "details": "This park is known for its stunning landscapes and diverse hiking opportunities.",
+          "tips": [
+            "5-7 hour walk up to the glacier."
+          ],
+          "grounded": true
+        }
+      ],
+      "tip_grounding": [
+        {
+          "place": "Mount Aspiring National Park",
+          "tip": "5-7 hour walk up to the glacier.",
+          "grounded": false
+        }
+      ]
+    },
+    {
+      "post_id": "instagram:DbCjpzzSPBu",
+      "elapsed_s": 1.56,
+      "stored_place_count": 1,
+      "extracted_place_count": 1,
+      "delta_vs_stored": 0,
+      "pins": [
+        "Washington Pass Overlook offers one of the most iconic mountain views in the Pacific Northwest. A quick stop you\u2019ll never regret\u2764\ufe0f\ud83c\udf3f"
+      ],
+      "pins_covered": [
+        "Washington Pass Overlook offers one of the most iconic mountain views in the Pacific Northwest. A quick stop you\u2019ll never regret\u2764\ufe0f\ud83c\udf3f"
+      ],
+      "pins_missed": [],
+      "ungrounded_places": [],
+      "repeat_drift": [],
+      "judge": {
+        "missed": [],
+        "wrong_category": [],
+        "spurious": []
+      },
+      "reel_summary": "The reel showcases Washington Pass Overlook, known for its stunning mountain views in the North Cascades of Washington State. It's a recommended stop for nature lovers and road trippers alike, offering a quick but memorable experience.",
+      "places": [
+        {
+          "place_name": "Washington Pass Overlook",
+          "category": "viewpoint",
+          "attributes": [
+            "hike"
+          ],
+          "parent_place_name": "North Cascades",
+          "parent_category": "park",
+          "city": null,
+          "state_province": "Washington",
+          "country": "USA",
+          "details": "Washington Pass Overlook offers one of the most iconic mountain views in the Pacific Northwest.",
+          "tips": [
+            "A quick stop you\u2019ll never regret."
+          ],
+          "grounded": true
+        }
+      ],
+      "tip_grounding": [
+        {
+          "place": "Washington Pass Overlook",
+          "tip": "A quick stop you\u2019ll never regret.",
+          "grounded": true
+        }
+      ]
+    },
+    {
+      "post_id": "instagram:DbDi7Twh2PH",
+      "elapsed_s": 3.07,
+      "stored_place_count": 3,
+      "extracted_place_count": 3,
+      "delta_vs_stored": 0,
+      "pins": [
+        "Devil\u2019s Punchbowl (via Spruce Railroad Trail), Port Angeles WA, 2.4mil round trip",
+        "Cape Flattery, Neah Bay WA, 1.5mil round trip, you will need a $20 Makah Recreation Pass",
+        "La Push Beach, Forks WA, First Beach .8 round trip, Second Beach 2.2mil round trip, Third Beach 2.8mil round trip, you will need a $10 Quileute Nation Parking"
+      ],
+      "pins_covered": [
+        "Devil\u2019s Punchbowl (via Spruce Railroad Trail), Port Angeles WA, 2.4mil round trip",
+        "Cape Flattery, Neah Bay WA, 1.5mil round trip, you will need a $20 Makah Recreation Pass",
+        "La Push Beach, Forks WA, First Beach .8 round trip, Second Beach 2.2mil round trip, Third Beach 2.8mil round trip, you will need a $10 Quileute Nation Parking"
+      ],
+      "pins_missed": [],
+      "ungrounded_places": [],
+      "repeat_drift": [],
+      "judge": {
+        "missed": [
+          "Spruce Railroad Trail"
+        ],
+        "wrong_category": [],
+        "spurious": []
+      },
+      "reel_summary": "The reel showcases three popular hiking spots in the Olympic National Forest area of Washington State, perfect for outdoor enthusiasts. Each location offers unique experiences and beautiful views, ideal for a day trip triangle in the northwestern tip of Washington.",
+      "places": [
+        {
+          "place_name": "Devil\u2019s Punchbowl",
+          "category": "hike",
+          "attributes": [
+            "viewpoint"
+          ],
+          "parent_place_name": "Olympic National Forest",
+          "parent_category": "park",
+          "city": "Port Angeles",
+          "state_province": "WA",
+          "country": "USA",
+          "details": "A scenic spot accessible via the Spruce Railroad Trail.",
+          "tips": [
+            "2.4 miles round trip"
+          ],
+          "grounded": true
+        },
+        {
+          "place_name": "Cape Flattery",
+          "category": "hike",
+          "attributes": [
+            "viewpoint"
+          ],
+          "parent_place_name": "Olympic National Forest",
+          "parent_category": "park",
+          "city": "Neah Bay",
+          "state_province": "WA",
+          "country": "USA",
+          "details": "The northwesternmost point of the contiguous United States.",
+          "tips": [
+            "1.5 miles round trip",
+            "$20 Makah Recreation Pass required"
+          ],
+          "grounded": true
+        },
+        {
+          "place_name": "La Push Beach",
+          "category": "beach",
+          "attributes": [
+            "hike"
+          ],
+          "parent_place_name": "Olympic National Forest",
+          "parent_category": "park",
+          "city": "Forks",
+          "state_province": "WA",
+          "country": "USA",
+          "details": "A beautiful beach area with multiple beaches to explore.",
+          "tips": [
+            "First Beach .8 miles round trip",
+            "Second Beach 2.2 miles round trip",
+            "Third Beach 2.8 miles round trip",
+            "$10 Quileute Nation Parking required"
+          ],
+          "grounded": true
+        }
+      ],
+      "tip_grounding": [
+        {
+          "place": "Devil\u2019s Punchbowl",
+          "tip": "2.4 miles round trip",
+          "grounded": true
+        },
+        {
+          "place": "Cape Flattery",
+          "tip": "1.5 miles round trip",
+          "grounded": true
+        },
+        {
+          "place": "Cape Flattery",
+          "tip": "$20 Makah Recreation Pass required",
+          "grounded": true
+        },
+        {
+          "place": "La Push Beach",
+          "tip": "First Beach .8 miles round trip",
+          "grounded": true
+        },
+        {
+          "place": "La Push Beach",
+          "tip": "Second Beach 2.2 miles round trip",
+          "grounded": true
+        },
+        {
+          "place": "La Push Beach",
+          "tip": "Third Beach 2.8 miles round trip",
+          "grounded": true
+        },
+        {
+          "place": "La Push Beach",
+          "tip": "$10 Quileute Nation Parking required",
+          "grounded": true
+        }
+      ]
+    }
+  ]
+}

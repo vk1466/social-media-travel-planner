@@ -155,3 +155,108 @@ def search_nearby_travel_pois(
     if len(results) >= max(1, limit):
       break
   return results
+
+
+# Broader nearby query for place-facts: keep named features with useful tags.
+_FACTS_QUERY = """
+[out:json][timeout:25];
+(
+  nwr(around:{radius},{lat},{lon})["name"];
+);
+out center tags 25;
+"""
+
+_FACTS_TAG_KEYS = (
+  "name",
+  "name:en",
+  "opening_hours",
+  "website",
+  "contact:website",
+  "phone",
+  "contact:phone",
+  "fee",
+  "charge",
+  "cuisine",
+  "tourism",
+  "leisure",
+  "historic",
+  "natural",
+  "amenity",
+  "description",
+  "wikipedia",
+  "wikidata",
+  "operator",
+  "brand",
+)
+
+
+def fetch_nearby_tagged_elements(
+  latitude: float,
+  longitude: float,
+  *,
+  radius_m: int = 500,
+  limit: int = 12,
+) -> list[dict[str, Any]]:
+  """Return nearby named OSM elements with a small normalized tag dict.
+
+  Used by place-facts `osm_tags`. Fail-soft → [].
+  """
+  query = _FACTS_QUERY.format(
+    radius=max(50, min(int(radius_m), 15_000)),
+    lat=latitude,
+    lon=longitude,
+  )
+  _throttle()
+  body = urllib.parse.urlencode({"data": query}).encode("utf-8")
+  request = urllib.request.Request(
+    OVERPASS_URL,
+    data=body,
+    headers={"User-Agent": "social-media-travel-planner (place facts)"},
+    method="POST",
+  )
+  try:
+    with urllib.request.urlopen(request, timeout=30) as response:
+      payload = json.loads(response.read().decode("utf-8"))
+  except (urllib.error.URLError, TimeoutError, json.JSONDecodeError, ValueError) as exc:
+    logger.warning("overpass facts failed lat=%s lon=%s error=%s", latitude, longitude, exc)
+    return []
+
+  elements = payload.get("elements") if isinstance(payload, dict) else None
+  if not isinstance(elements, list):
+    return []
+
+  results: list[dict[str, Any]] = []
+  seen: set[str] = set()
+  for element in elements:
+    if not isinstance(element, dict):
+      continue
+    tags = element.get("tags")
+    if not isinstance(tags, dict):
+      continue
+    name = _display_name(tags)
+    if not name:
+      continue
+    coords = _element_coords(element)
+    osm_id = element.get("id")
+    osm_kind = element.get("type")
+    source_ref = f"overpass:{osm_kind}:{osm_id}" if osm_id is not None else None
+    if source_ref is None or source_ref in seen:
+      continue
+    seen.add(source_ref)
+    content = {
+      key: str(tags[key]).strip()
+      for key in _FACTS_TAG_KEYS
+      if isinstance(tags.get(key), str) and str(tags[key]).strip()
+    }
+    results.append(
+      {
+        "source_ref": source_ref,
+        "title": name,
+        "latitude": coords[0] if coords else None,
+        "longitude": coords[1] if coords else None,
+        "content": content,
+      }
+    )
+    if len(results) >= max(1, limit):
+      break
+  return results

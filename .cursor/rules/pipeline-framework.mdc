@@ -1,0 +1,26 @@
+---
+description: Enforce composable pipeline/step design for ingest, Timeline, and place resolution
+globs: travelplanner/**/*.py,server/**/*.py,tests/test_*pipeline*.py,tests/test_*timeline*.py,tests/test_*extract*.py,tests/test_workers.py,docs/pipeline-framework-design.md
+alwaysApply: false
+---
+
+# Pipeline framework
+
+Before changing ingest, Timeline, place locate/upsert, visits, jobs, or workers, read and follow:
+
+**[docs/pipeline-framework-design.md](docs/pipeline-framework-design.md)**
+
+That doc is the source of truth. Do not invent a parallel architecture.
+
+## Hard rules (summary)
+
+- Pipelines compose steps; steps do one job; the runner only logs/retries/records failure stages.
+- Prefer **generic** steps (extract, locate, dedupe, upsert). Platform steps only when the API/media requires it.
+- **Persona** logic (URL discovery, Timeline gates, link-post vs create-visit) stays **outside** pipelines — no `if timeline` inside shared steps.
+- **No overloaded fields** — one intent per field (`source` ≠ review state; do not pack stats into `post_id` / notes).
+- Shared steps return **explicit outcomes**; policy at the edge.
+- Contextual names; keep the framework small (no plugin/DAG framework).
+- `server/` remains a thin adapter — no place/visit business logic in workers beyond calling the library.
+- New product behavior uses `travelplanner/features.py` (`enabled(FLAG)`, default off) — no ad-hoc env feature checks. See AGENTS.md § Feature flags.
+
+Use the checklist at the end of the design doc in your change summary.

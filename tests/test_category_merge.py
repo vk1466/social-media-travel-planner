@@ -200,3 +200,27 @@ def test_upsert_llm_category_wins_over_osm(dynamodb) -> None:
   place = load_place(place_id)
   assert place is not None
   assert place.category == "city"
+
+
+def test_upsert_osm_upgrades_coarse_mention_category(dynamodb) -> None:
+  """Google/LLM landmark + OSM waterfall → waterfall (more specific)."""
+  location = PlaceLocation(
+    display_name="Multnomah Falls",
+    continent="North America",
+    country="United States",
+    country_code="US",
+    state_province="Oregon",
+    city="Bridal Veil",
+    latitude=45.5762,
+    longitude=-122.1158,
+    osm_class="waterway",
+    osm_type="waterfall",
+  )
+  place_id = upsert_place(
+    PlaceMention(place_name="Multnomah Falls", category="landmark"),
+    location,
+    "instagram:a",
+  )
+  place = load_place(place_id)
+  assert place is not None
+  assert place.category == "waterfall"

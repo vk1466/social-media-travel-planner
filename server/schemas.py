@@ -61,6 +61,33 @@ class PlaceLocationSchema(BaseModel):
   osm_type: str | None = None
 
 
+class FactEvidenceSchema(BaseModel):
+  field_name: str
+  source_name: str
+  source_ref: str
+
+
+class PlaceFactsSchema(BaseModel):
+  status: str
+  fetched_at: str
+  website_url: str | None = None
+  phone_number: str | None = None
+  opening_hours_text: list[str] = Field(default_factory=list)
+  admission_text: str | None = None
+  famous_for: str | None = None
+  best_time_to_visit: str | None = None
+  typical_duration_minutes: int | None = None
+  cuisines: list[str] = Field(default_factory=list)
+  price_level: int | None = None
+  reservation_required: bool | None = None
+  distance_km: float | None = None
+  elevation_gain_m: int | None = None
+  difficulty: str | None = None
+  evidence: list[FactEvidenceSchema] = Field(default_factory=list)
+  conflicts: list[str] = Field(default_factory=list)
+  notes: list[str] = Field(default_factory=list)
+
+
 class PlaceSchema(BaseModel):
   place_id: str
   display_name: str
@@ -72,6 +99,7 @@ class PlaceSchema(BaseModel):
   tips: list[str] = Field(default_factory=list)
   source_post_ids: list[str] = Field(default_factory=list)
   parent_place_id: str | None = None
+  facts: PlaceFactsSchema | None = None
 
 
 class PlaceDetailSchema(BaseModel):
@@ -79,6 +107,14 @@ class PlaceDetailSchema(BaseModel):
   source_posts: list[SavedPostSchema] = Field(default_factory=list)
   parent: PlaceSchema | None = None
   children: list[PlaceSchema] = Field(default_factory=list)
+  facts_refresh_queued: bool = False
+
+
+class PlaceFactsRefreshSchema(BaseModel):
+  place_id: str
+  status: str
+  note: str = ""
+  facts: PlaceFactsSchema | None = None
 
 
 class IngestRequest(BaseModel):
@@ -108,6 +144,18 @@ class JobLinkSchema(BaseModel):
   error_message: str | None = None
 
 
+class JobItemSchema(BaseModel):
+  item_ref: str
+  item_kind: Literal["post_url", "timeline_batch"]
+  status: LinkStatus
+  post_id: str | None = None
+  stats: dict[str, int] | None = None
+  error_message: str | None = None
+  batch_index: int | None = None
+  batch_start: int | None = None
+  batch_count: int | None = None
+
+
 class JobCountsSchema(BaseModel):
   pending: int = 0
   fetching: int = 0
@@ -126,7 +174,8 @@ class JobSchema(BaseModel):
   mark_visited: bool = False
   username: str | None = None
   counts: JobCountsSchema
-  links: list[JobLinkSchema]
+  items: list[JobItemSchema] = Field(default_factory=list)
+  links: list[JobLinkSchema] = Field(default_factory=list)
 
 
 class InstagramImportRequest(BaseModel):
@@ -173,6 +222,13 @@ class TimelineImportResultSchema(BaseModel):
   skipped_home: int = 0
   skipped_semantic: int = 0
   skipped_llm: int = 0
+  skipped_local: int = 0
+  skipped_chain: int = 0
+  skipped_routine: int = 0
+  skipped_errand: int = 0
+  skipped_highway: int = 0
+  skipped_address: int = 0
+  skipped_parking: int = 0
   failed: int
   place_names: list[str] = Field(default_factory=list)
 
@@ -191,6 +247,10 @@ class VisitSchema(BaseModel):
   created_at: str | None = None
   user_id: str | None = None
   source: str | None = "manual"
+  status: str | None = "confirmed"
+  review_suggestion: str | None = None
+  review_reason: str | None = None
+  travel_kind: str | None = None
 
 class VisitCreateRequest(BaseModel):
   visited_from: str | None = None

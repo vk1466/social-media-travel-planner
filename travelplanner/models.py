@@ -79,6 +79,43 @@ class PlaceLocation:
 
 
 @dataclass(frozen=True)
+class FactEvidence:
+  """Which source backed one field. `source_ref` must exist in the fetched docs."""
+
+  field_name: str
+  source_name: str  # google_places | osm | wikipedia | nps
+  source_ref: str  # provider id or URL
+
+
+@dataclass(frozen=True)
+class PlaceFacts:
+  """Objective, source-backed facts. Separate from reel `details` / `tips`."""
+
+  status: str  # complete | partial | empty
+  fetched_at: str
+  # Shared
+  website_url: str | None = None
+  phone_number: str | None = None
+  opening_hours_text: tuple[str, ...] = ()  # one line per day, as published
+  admission_text: str | None = None  # "Free", "$30 per vehicle, 7 days"
+  famous_for: str | None = None
+  best_time_to_visit: str | None = None
+  typical_duration_minutes: int | None = None
+  # Food & drink
+  cuisines: tuple[str, ...] = ()
+  price_level: int | None = None  # 0–4
+  reservation_required: bool | None = None
+  # Trail
+  distance_km: float | None = None
+  elevation_gain_m: int | None = None
+  difficulty: str | None = None  # easy | moderate | hard
+  # Provenance / trust
+  evidence: tuple[FactEvidence, ...] = ()
+  conflicts: tuple[str, ...] = ()  # "opening_hours_text: google≠osm"
+  notes: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
 class Place:
   """One real-world place in the travel library, deduplicated across posts.
 
@@ -96,9 +133,11 @@ class Place:
   tips: tuple[str, ...] = ()
   source_post_ids: tuple[str, ...] = ()
   parent_place_id: str | None = None
+  facts: PlaceFacts | None = None
 
 
-VISIT_SOURCES = frozenset({"manual", "instagram", "timeline", "timeline_review"})
+VISIT_SOURCES = frozenset({"manual", "instagram", "timeline"})
+VISIT_STATUSES = frozenset({"confirmed", "needs_review"})
 
 
 @dataclass(frozen=True)
@@ -108,8 +147,8 @@ class Visit:
   `place_id` references Place.place_id. `place_name` is a denormalized snapshot.
   `user_id` scopes the visit to a Clerk (or local) user.
   `visited_from` / `visited_to` are optional — undated visits mean visited only.
-  `source` is how the visit was created: manual | instagram | timeline | timeline_review.
-  `timeline_review` items await user Keep/Discard and are hidden from normal history.
+  `source` is provenance: manual | instagram | timeline.
+  `status` is review state: confirmed | needs_review (pending Keep/Discard).
   """
 
   visit_id: str
@@ -121,6 +160,10 @@ class Visit:
   created_at: str | None = None
   user_id: str = ""
   source: str = "manual"
+  status: str = "confirmed"
+  review_suggestion: str | None = None
+  review_reason: str | None = None
+  travel_kind: str | None = None
 
 
 @dataclass(frozen=True)
@@ -148,8 +191,9 @@ class IngestFailure:
   One row per `(user_id, post_url)` so repeated attempts update in place and
   `attempts` counts retries. Cleared once the same link ingests successfully.
 
-  `stage`: validation | unsupported | post_id | fetch | place_processing
-  `status`: error | unsupported
+  `status`: outcome only — error | unsupported
+  `stage`: step name that failed (from the pipeline runner), or a persona
+  preprocess stage such as validation / post_id / unsupported
   """
 
   failure_id: str

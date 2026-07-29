@@ -1,19 +1,23 @@
 from __future__ import annotations
 
-from fastapi import FastAPI, HTTPException, Query, Response
+import logging
+
+from fastapi import BackgroundTasks, FastAPI, HTTPException, Query, Response
 from fastapi.middleware.cors import CORSMiddleware
 
 from travelplanner.logging_config import configure_logging
 from travelplanner import settings
 from travelplanner.categories import CATEGORIES
+from travelplanner.features import PLACE_FACTS, enabled as feature_enabled
 from travelplanner.library import list_user_places, list_user_posts, user_owns_post
 from travelplanner.models import Place, Platform, SavedPost, Visit, make_post_id, parse_post_id
 from travelplanner.pipeline import unlink_post_from_user
 from travelplanner.place_hints import PlaceMention
 from travelplanner.places import cleanup_all_data, list_places, load_place, place_to_dict, reprocess_all_places
+from travelplanner.places.facts import enrich_place_facts, facts_are_stale
 from travelplanner.db import jobs_repo, place_candidates_repo
 from travelplanner.places.debug import debug_locate
-from travelplanner.sources.instagram_profile import list_recent_post_urls, normalize_instagram_username
+from travelplanner.personas.profile_import import list_recent_post_urls, normalize_instagram_username
 from travelplanner.store import load_post, post_to_dict
 from travelplanner.visits import (
   accept_timeline_review,
@@ -53,6 +57,8 @@ from server.schemas import (
   PlaceCandidateListResponse,
   PlaceCandidateSchema,
   PlaceDetailSchema,
+  PlaceFactsRefreshSchema,
+  PlaceFactsSchema,
   SavedPostSchema,
   TimelineImportStartRequest,
   TimelineUploadUrlResponse,
@@ -66,6 +72,8 @@ from server.schemas import (
 from server.timeline_runner import create_and_start_timeline_job
 
 configure_logging()
+
+logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Travel Post Ingest API", version="0.1.0")
 
@@ -96,6 +104,26 @@ def _post_to_schema(post: SavedPost) -> SavedPostSchema:
 
 def _place_to_schema(place: Place) -> PlaceSchema:
   return PlaceSchema(**place_to_dict(place))
+
+
+def _user_can_view_place(user_id: str, place: Place, user_place_ids: set[str] | None = None) -> bool:
+  ids = user_place_ids if user_place_ids is not None else {
+    p.place_id for p in list_user_places(user_id)
+  }
+  if place.place_id in ids:
+    return True
+  return bool(place.parent_place_id and place.parent_place_id in ids)
+
+
+def _queue_place_facts_refresh(place_id: str) -> None:
+  """Background enrich — never raises into the HTTP worker."""
+  try:
+    place = load_place(place_id)
+    if place is None:
+      return
+    enrich_place_facts(place, force=False)
+  except Exception as exc:
+    logger.warning("place_facts background refresh failed place_id=%s error=%s", place_id, exc)
 
 
 def _visit_to_schema(visit: Visit) -> VisitSchema:
@@ -457,7 +485,12 @@ def list_pending_timeline_reviews(user_id: CurrentUserId) -> list[TimelineReview
   details: list[TimelineReviewDetailSchema] = []
   for visit in list_timeline_reviews(user_id):
     place = load_place(visit.place_id)
-    suggestion, reason = parse_review_suggestion(visit.notes)
+    suggestion = visit.review_suggestion
+    reason = visit.review_reason
+    if suggestion is None:
+      parsed_suggestion, parsed_reason, _ = parse_review_suggestion(visit.notes)
+      suggestion = parsed_suggestion
+      reason = reason or parsed_reason
     details.append(
       TimelineReviewDetailSchema(
         visit=_visit_to_schema(visit),
@@ -617,7 +650,11 @@ def list_all_places(
   response_model=PlaceDetailSchema,
   responses={404: {"model": ErrorResponse}},
 )
-def get_place(place_id: str, user_id: CurrentUserId) -> PlaceDetailSchema:
+def get_place(
+  place_id: str,
+  user_id: CurrentUserId,
+  background_tasks: BackgroundTasks,
+) -> PlaceDetailSchema:
   user_place_ids = set(
     p.place_id
     for p in list_user_places(user_id)
@@ -626,9 +663,7 @@ def get_place(place_id: str, user_id: CurrentUserId) -> PlaceDetailSchema:
   if place is None:
     raise HTTPException(status_code=404, detail="Place not found")
   # Allow detail if the place is in the user's library or is a child of one.
-  if place_id not in user_place_ids and (
-    place.parent_place_id is None or place.parent_place_id not in user_place_ids
-  ):
+  if not _user_can_view_place(user_id, place, user_place_ids):
     raise HTTPException(status_code=404, detail="Place not found")
 
   source_posts: list[SavedPostSchema] = []
@@ -654,9 +689,43 @@ def get_place(place_id: str, user_id: CurrentUserId) -> PlaceDetailSchema:
     for child in list_places(parent_place_id=place.place_id)
   ]
 
+  facts_refresh_queued = False
+  if (
+    feature_enabled(PLACE_FACTS)
+    and place.category
+    and place.location.latitude is not None
+    and place.location.longitude is not None
+    and facts_are_stale(place.facts)
+  ):
+    background_tasks.add_task(_queue_place_facts_refresh, place.place_id)
+    facts_refresh_queued = True
+
   return PlaceDetailSchema(
     place=_place_to_schema(place),
     source_posts=source_posts,
     parent=parent,
     children=children,
+    facts_refresh_queued=facts_refresh_queued,
+  )
+
+
+@app.post(
+  "/api/places/{place_id}/facts/refresh",
+  response_model=PlaceFactsRefreshSchema,
+  responses={404: {"model": ErrorResponse}},
+)
+def refresh_place_facts(place_id: str, user_id: AdminUserId) -> PlaceFactsRefreshSchema:
+  """Force place-facts enrichment (ignores TTL). Admin-only."""
+  from dataclasses import asdict
+
+  place = load_place(place_id)
+  if place is None:
+    raise HTTPException(status_code=404, detail="Place not found")
+  result = enrich_place_facts(place, force=True)
+  facts_schema = PlaceFactsSchema(**asdict(result.facts)) if result.facts else None
+  return PlaceFactsRefreshSchema(
+    place_id=place_id,
+    status=result.status,
+    note=result.note,
+    facts=facts_schema,
   )

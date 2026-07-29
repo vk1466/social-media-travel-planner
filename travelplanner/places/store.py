@@ -8,7 +8,7 @@ from dataclasses import replace
 
 from travelplanner.db import places_repo, user_places_repo, user_posts_repo, visits_repo
 from travelplanner.db.places_repo import place_from_dict, place_to_dict
-from travelplanner.models import Place, PlaceLocation
+from travelplanner.models import Place, PlaceFacts, PlaceLocation
 from travelplanner.store import delete_all_posts
 
 _ADMIN_OSM_TYPES = frozenset({"state", "region", "country", "continent"})
@@ -225,6 +225,10 @@ def place_key(location: PlaceLocation) -> str:
 
 def save_place(place: Place) -> None:
   places_repo.save_place(place)
+
+
+def save_place_facts(place_id: str, facts: PlaceFacts) -> None:
+  places_repo.save_place_facts(place_id, facts)
 
 
 def load_place(place_id: str) -> Place | None:

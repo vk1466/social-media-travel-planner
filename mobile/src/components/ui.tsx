@@ -1,3 +1,4 @@
+import Ionicons from "@expo/vector-icons/Ionicons";
 import {
   ActivityIndicator,
   Pressable,
@@ -8,7 +9,10 @@ import {
   type ViewStyle,
 } from "react-native";
 
-import { colors, spacing } from "../theme";
+import { categoryLabel, categoryTone, CATEGORY_TONE_COLORS } from "../categoryLabels";
+import { colors, radius, shadow, spacing } from "../theme";
+
+type IconName = keyof typeof Ionicons.glyphMap;
 
 interface ButtonProps {
   label: string;
@@ -16,6 +20,7 @@ interface ButtonProps {
   disabled?: boolean;
   loading?: boolean;
   variant?: "primary" | "secondary" | "danger";
+  icon?: IconName;
   style?: StyleProp<ViewStyle>;
 }
 
@@ -25,9 +30,12 @@ export function Button({
   disabled = false,
   loading = false,
   variant = "primary",
+  icon,
   style,
 }: ButtonProps) {
   const busy = disabled || loading;
+  const fg =
+    variant === "primary" ? "#fff" : variant === "danger" ? colors.danger : colors.brand;
   return (
     <Pressable
       accessibilityRole="button"
@@ -44,25 +52,83 @@ export function Button({
       ]}
     >
       {loading ? (
-        <ActivityIndicator color={variant === "secondary" ? colors.brand : "#fff"} />
+        <ActivityIndicator color={variant === "primary" ? "#fff" : colors.brand} />
       ) : (
-        <Text
-          style={[
-            styles.label,
-            variant === "secondary" && styles.secondaryLabel,
-            variant === "danger" && styles.dangerLabel,
-          ]}
-        >
-          {label}
-        </Text>
+        <View style={styles.btnContent}>
+          {icon ? <Ionicons name={icon} size={17} color={fg} /> : null}
+          <Text
+            style={[
+              styles.label,
+              variant === "secondary" && styles.secondaryLabel,
+              variant === "danger" && styles.dangerLabel,
+            ]}
+          >
+            {label}
+          </Text>
+        </View>
       )}
     </Pressable>
   );
 }
 
-export function EmptyState({ title, body }: { title: string; body?: string }) {
+/** Compact circular icon-only button (delete, actions, etc.). */
+export function IconButton({
+  icon,
+  onPress,
+  color = colors.muted,
+  tint,
+  size = 18,
+  accessibilityLabel,
+}: {
+  icon: IconName;
+  onPress: () => void;
+  color?: string;
+  tint?: string;
+  size?: number;
+  accessibilityLabel?: string;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      hitSlop={10}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
+      style={({ pressed }) => [
+        styles.iconButton,
+        tint ? { backgroundColor: tint } : null,
+        pressed && styles.pressed,
+      ]}
+    >
+      <Ionicons name={icon} size={size} color={color} />
+    </Pressable>
+  );
+}
+
+/** Standard elevated surface card. */
+export function Card({
+  children,
+  style,
+}: {
+  children: React.ReactNode;
+  style?: StyleProp<ViewStyle>;
+}) {
+  return <View style={[styles.card, style]}>{children}</View>;
+}
+
+export function EmptyState({
+  title,
+  body,
+  icon = "compass-outline",
+}: {
+  title: string;
+  body?: string;
+  icon?: IconName;
+}) {
   return (
     <View style={styles.empty}>
+      <View style={styles.emptyIcon}>
+        <Ionicons name={icon} size={30} color={colors.brand} />
+      </View>
       <Text style={styles.emptyTitle}>{title}</Text>
       {body ? <Text style={styles.emptyBody}>{body}</Text> : null}
     </View>
@@ -72,6 +138,7 @@ export function EmptyState({ title, body }: { title: string; body?: string }) {
 export function ErrorBanner({ message }: { message: string }) {
   return (
     <View style={styles.errorBanner}>
+      <Ionicons name="alert-circle" size={18} color={colors.danger} />
       <Text style={styles.errorText}>{message}</Text>
     </View>
   );
@@ -80,12 +147,34 @@ export function ErrorBanner({ message }: { message: string }) {
 export function SuccessBanner({ message }: { message: string }) {
   return (
     <View style={styles.successBanner}>
+      <Ionicons name="checkmark-circle" size={18} color={colors.success} />
       <Text style={styles.successText}>{message}</Text>
     </View>
   );
 }
 
-export function TagChip({ label }: { label: string }) {
+export function TagChip({
+  label,
+  category,
+}: {
+  label?: string;
+  /** When set, uses stable category tone + display label. */
+  category?: string | null;
+}) {
+  if (category !== undefined) {
+    const tone = categoryTone(category);
+    const palette = CATEGORY_TONE_COLORS[tone] ?? CATEGORY_TONE_COLORS.muted;
+    return (
+      <View
+        style={[
+          styles.chip,
+          { backgroundColor: palette.bg, borderColor: palette.border, borderWidth: 1 },
+        ]}
+      >
+        <Text style={[styles.chipText, { color: palette.text }]}>{categoryLabel(category)}</Text>
+      </View>
+    );
+  }
   return (
     <View style={styles.chip}>
       <Text style={styles.chipText}>{label}</Text>
@@ -95,12 +184,18 @@ export function TagChip({ label }: { label: string }) {
 
 const styles = StyleSheet.create({
   base: {
-    borderRadius: 10,
+    borderRadius: radius.md,
     paddingHorizontal: spacing.md,
-    paddingVertical: 12,
+    paddingVertical: 13,
     alignItems: "center",
     justifyContent: "center",
-    minHeight: 44,
+    minHeight: 48,
+    marginTop: spacing.sm,
+  },
+  btnContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
   primary: {
     backgroundColor: colors.brand,
@@ -111,7 +206,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   danger: {
-    backgroundColor: "#fef3f2",
+    backgroundColor: colors.dangerSoft,
     borderWidth: 1,
     borderColor: "#fecdca",
   },
@@ -123,7 +218,7 @@ const styles = StyleSheet.create({
   },
   label: {
     color: "#fff",
-    fontWeight: "600",
+    fontWeight: "700",
     fontSize: 15,
   },
   secondaryLabel: {
@@ -132,13 +227,39 @@ const styles = StyleSheet.create({
   dangerLabel: {
     color: colors.danger,
   },
+  iconButton: {
+    height: 36,
+    width: 36,
+    borderRadius: radius.pill,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  card: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    ...shadow(1),
+  },
   empty: {
-    padding: spacing.lg,
+    paddingVertical: spacing.xl,
+    paddingHorizontal: spacing.lg,
     alignItems: "center",
   },
+  emptyIcon: {
+    height: 64,
+    width: 64,
+    borderRadius: radius.pill,
+    backgroundColor: colors.brandSoft,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: spacing.md,
+  },
   emptyTitle: {
-    fontSize: 17,
-    fontWeight: "600",
+    fontSize: 18,
+    fontWeight: "700",
     color: colors.ink,
     textAlign: "center",
   },
@@ -150,40 +271,50 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   errorBanner: {
-    backgroundColor: "#fef3f2",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: colors.dangerSoft,
     borderColor: "#fecdca",
     borderWidth: 1,
-    borderRadius: 10,
+    borderRadius: radius.md,
     padding: spacing.md,
     marginBottom: spacing.md,
   },
   errorText: {
+    flex: 1,
     color: colors.danger,
     fontSize: 14,
+    fontWeight: "500",
   },
   successBanner: {
-    backgroundColor: "#ecfdf3",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: colors.successSoft,
     borderColor: "#abefc6",
     borderWidth: 1,
-    borderRadius: 10,
+    borderRadius: radius.md,
     padding: spacing.md,
     marginBottom: spacing.md,
   },
   successText: {
+    flex: 1,
     color: colors.success,
     fontSize: 14,
+    fontWeight: "500",
   },
   chip: {
     backgroundColor: colors.brandSoft,
-    borderRadius: 999,
+    borderRadius: radius.sm,
     paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingVertical: 5,
     marginRight: 6,
     marginBottom: 6,
   },
   chipText: {
     color: colors.brand,
     fontSize: 12,
-    fontWeight: "500",
+    fontWeight: "600",
   },
 });

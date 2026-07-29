@@ -157,7 +157,8 @@ def haversine_meters(lat1: float, lon1: float, lat2: float, lon2: float) -> floa
   return 2 * earth_radius_meters * math.asin(math.sqrt(a))
 
 
-def _location_from_result(result: GeocodeResult) -> PlaceLocation:
+def location_from_geocode(result: GeocodeResult) -> PlaceLocation:
+  """Build a PlaceLocation from a geocoder result."""
   return PlaceLocation(
     display_name=result.display_name,
     continent=COUNTRY_CODE_TO_CONTINENT.get(result.country_code) if result.country_code else None,
@@ -171,6 +172,10 @@ def _location_from_result(result: GeocodeResult) -> PlaceLocation:
     osm_class=result.osm_class,
     osm_type=result.osm_type,
   )
+
+
+def _location_from_result(result: GeocodeResult) -> PlaceLocation:
+  return location_from_geocode(result)
 
 
 def _countries_match(mention_country: str | None, result: GeocodeResult) -> bool:
