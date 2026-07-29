@@ -9,7 +9,9 @@ import {
   type PlaceDetail as PlaceDetailData,
 } from "../api";
 import { googleMapsUrl } from "../maps";
+import { factsAttribution, factsRows } from "../placeFacts";
 import { DetailModal } from "./DetailModal";
+import { CategoryChip } from "./CategoryChip";
 import { mappablePlaces } from "../placeMapUtils";
 
 const PlaceMap = lazy(() => import("./PlaceMap").then((module) => ({ default: module.PlaceMap })));
@@ -152,21 +154,14 @@ export function PlaceDetail({
                 >
                   {child.display_name}
                 </button>
-                {child.category && (
-                  <span className="place-child-tags">
-                    <span className="tag-chip tag-chip-small">{child.category}</span>
-                    {(child.attributes ?? []).map((attr) => (
-                      <span key={attr} className="tag-chip tag-chip-small">
-                        {attr}
-                      </span>
-                    ))}
-                  </span>
-                )}
-                {!child.category && (
-                  <span className="place-child-tags">
-                    <span className="tag-chip tag-chip-small">Uncategorized</span>
-                  </span>
-                )}
+                <span className="place-child-tags">
+                  <CategoryChip category={child.category} small />
+                  {(child.attributes ?? []).map((attr) => (
+                    <span key={attr} className="tag-chip tag-chip-small">
+                      {attr}
+                    </span>
+                  ))}
+                </span>
               </li>
             ))}
           </ul>
@@ -176,13 +171,51 @@ export function PlaceDetail({
       <section className="detail-section">
         <h3>Category</h3>
         <div className="tag-list">
-          <span className="tag-chip">{place.category ?? "Uncategorized"}</span>
+          <CategoryChip category={place.category} />
           {(place.attributes ?? []).map((attr) => (
             <span key={attr} className="tag-chip">
               {attr}
             </span>
           ))}
         </div>
+      </section>
+
+      <section className="detail-section">
+        <h3>Facts</h3>
+        {detail?.facts_refresh_queued && (
+          <p className="detail-muted">Looking up source-backed facts…</p>
+        )}
+        {place.facts == null && !detail?.facts_refresh_queued && (
+          <p className="detail-muted">No source-backed facts yet.</p>
+        )}
+        {place.facts?.status === "empty" && (
+          <p className="detail-muted">No objective facts found for this place.</p>
+        )}
+        {place.facts && place.facts.status !== "empty" && (
+          <>
+            <dl className="place-facts-list">
+              {factsRows(place.facts).map((row) => (
+                <div key={row.label} className="place-facts-row">
+                  <dt>{row.label}</dt>
+                  <dd>
+                    {row.label === "Website" ? (
+                      <a href={row.value} target="_blank" rel="noreferrer">
+                        {row.value}
+                      </a>
+                    ) : (
+                      row.value
+                    )}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+            {factsAttribution(place.facts) && (
+              <p className="detail-muted place-facts-attribution">
+                {factsAttribution(place.facts)}
+              </p>
+            )}
+          </>
+        )}
       </section>
 
       {place.details.length > 0 && (

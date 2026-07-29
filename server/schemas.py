@@ -61,6 +61,32 @@ class PlaceLocationSchema(BaseModel):
   osm_type: str | None = None
 
 
+class FactEvidenceSchema(BaseModel):
+  field_name: str
+  source_name: str
+  source_ref: str
+
+
+class PlaceFactsSchema(BaseModel):
+  status: str
+  fetched_at: str
+  website_url: str | None = None
+  phone_number: str | None = None
+  opening_hours_text: list[str] = Field(default_factory=list)
+  admission_text: str | None = None
+  famous_for: str | None = None
+  best_time_to_visit: str | None = None
+  typical_duration_minutes: int | None = None
+  cuisines: list[str] = Field(default_factory=list)
+  price_level: int | None = None
+  reservation_required: bool | None = None
+  distance_km: float | None = None
+  elevation_gain_m: int | None = None
+  difficulty: str | None = None
+  evidence: list[FactEvidenceSchema] = Field(default_factory=list)
+  conflicts: list[str] = Field(default_factory=list)
+  notes: list[str] = Field(default_factory=list)
+
 class PlaceSchema(BaseModel):
   place_id: str
   display_name: str
@@ -72,13 +98,21 @@ class PlaceSchema(BaseModel):
   tips: list[str] = Field(default_factory=list)
   source_post_ids: list[str] = Field(default_factory=list)
   parent_place_id: str | None = None
+  facts: PlaceFactsSchema | None = None
 
+
+class PlaceFactsRefreshSchema(BaseModel):
+  place_id: str
+  status: str
+  note: str = ""
+  facts: PlaceFactsSchema | None = None
 
 class PlaceDetailSchema(BaseModel):
   place: PlaceSchema
   source_posts: list[SavedPostSchema] = Field(default_factory=list)
   parent: PlaceSchema | None = None
   children: list[PlaceSchema] = Field(default_factory=list)
+  facts_refresh_queued: bool = False
 
 
 class IngestRequest(BaseModel):
