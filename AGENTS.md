@@ -2,6 +2,28 @@
 
 Ingest social media travel inspiration and build itineraries.
 
+## Pipeline design (agents)
+
+**Source of truth:** [docs/pipeline-framework-design.md](docs/pipeline-framework-design.md).
+
+When changing ingest, Timeline, place resolution, visits, jobs, or workers, follow that
+doc. Pipelines compose reusable steps; persona-specific prep/post stays outside
+pipelines; no field may carry two intents. Cursor rule:
+`.cursor/rules/pipeline-framework.mdc`.
+
+Target layout:
+
+```
+travelplanner/
+  flow/       runner + pipeline compositions
+  steps/      step library (generic + per-platform)
+  personas/   discover / gates / link-or-visit (outside pipelines)
+  places/     geocode / identity internals used by steps
+  clients/    external API wrappers
+  features.py product feature flags (FEATURE_* env, default off)
+  db/         persistence
+```
+
 ## Layout
 
 ```
