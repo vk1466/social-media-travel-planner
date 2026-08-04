@@ -25,6 +25,8 @@ class FeatureFlag:
     "extract_video_analysis": False,
     # Sample reel/video frames and OCR on-screen text via OpenAI vision.
     "extract_reel_frame_text": False,
+    # When Nominatim locate fails, try one cheap Google Geocoding/Places call.
+    "google_geocode_fallback": False,
     "place_facts_ttl_days": 30,
     "place_facts_max_docs": 6,
   }

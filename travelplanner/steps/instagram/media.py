@@ -10,6 +10,7 @@ from travelplanner.place_hints import PlatformPlace
 
 HASHTAG_PATTERN = re.compile(r"#(\w+)")
 TOP_COMMENT_LIMIT = 10
+MAX_SLIDE_IMAGE_URLS = 10
 
 
 def extract_caption(raw: dict[str, Any]) -> str:
@@ -130,6 +131,41 @@ def extract_thumbnail_url(raw: dict[str, Any]) -> str | None:
     if value:
       return str(value)
   return None
+
+
+def extract_slide_image_urls(
+  raw: dict[str, Any],
+  *,
+  max_slides: int = MAX_SLIDE_IMAGE_URLS,
+) -> list[str]:
+  """Ordered image URLs for OCR: carousel children, else cover image."""
+  urls: list[str] = []
+  seen: set[str] = set()
+
+  def _add(url: str | None) -> None:
+    if not url or url in seen or len(urls) >= max_slides:
+      return
+    seen.add(url)
+    urls.append(url)
+
+  edges = (raw.get("edge_sidecar_to_children") or {}).get("edges") or []
+  for edge in edges:
+    if len(urls) >= max_slides:
+      break
+    node = edge.get("node") or {}
+    for key in ("display_url", "thumbnail_src", "thumbnail_url"):
+      value = node.get(key)
+      if value:
+        _add(str(value))
+        break
+
+  if urls:
+    return urls
+
+  cover = extract_thumbnail_url(raw)
+  if cover:
+    return [cover]
+  return []
 
 
 def trim_post_info(raw: dict[str, Any]) -> dict[str, Any]:

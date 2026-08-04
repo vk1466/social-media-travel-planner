@@ -89,6 +89,32 @@ _NON_TRAVEL_SHOPS = frozenset({
   "optician",
 })
 
+# Specialty food / cultural / outdoor shops travelers seek out (not errands).
+# OSM often tags cafés and bakeries as shop=* rather than amenity=cafe.
+_TRAVEL_SHOPS = frozenset({
+  "bakery",
+  "pastry",
+  "confectionery",
+  "chocolate",
+  "coffee",
+  "tea",
+  "deli",
+  "cheese",
+  "wine",
+  "ice_cream",
+  "seafood",
+  "gift",
+  "souvenir",
+  "outdoor",
+  "sports",
+  "bicycle",
+  "books",
+  "art",
+  "antiques",
+  "craft",
+  "music",
+})
+
 _NON_TRAVEL_LEISURE = frozenset({
   "pitch",
   "playground",
@@ -186,9 +212,10 @@ def is_visitable_place(location: PlaceLocation) -> bool:
     return False
   if osm_class == "shop" and osm_type in _NON_TRAVEL_SHOPS:
     return False
-  # Most remaining shops are errands (clothes, tobacco, generic shop=yes).
-  # Keep gift shops and outdoor specialty via LLM gate / allowlist later.
-  if osm_class == "shop" and osm_type not in {"gift", "outdoor", "sports", "bicycle"}:
+  if osm_class == "shop" and osm_type in _TRAVEL_SHOPS:
+    pass  # specialty food / cultural / outdoor destinations
+  elif osm_class == "shop":
+    # Ambiguous (clothes, yes, mall, …). Callers may LLM-gate; default reject.
     return False
   if osm_class == "leisure" and osm_type in _NON_TRAVEL_LEISURE:
     return False
@@ -203,6 +230,17 @@ def is_visitable_place(location: PlaceLocation) -> bool:
   if location.country and display_lower == location.country.strip().lower():
     return False
   if _looks_like_street_address(location):
+    return False
+  return True
+
+
+def is_ambiguous_shop(location: PlaceLocation) -> bool:
+  """True for shop=* that is neither a clear errand nor a clear travel destination."""
+  osm_class = (location.osm_class or "").strip().lower()
+  osm_type = (location.osm_type or "").strip().lower()
+  if osm_class != "shop" or not osm_type:
+    return False
+  if osm_type in _NON_TRAVEL_SHOPS or osm_type in _TRAVEL_SHOPS:
     return False
   return True
 
@@ -318,6 +356,7 @@ def unlink_post_from_places(post_id: str) -> int:
 __all__ = [
   "cleanup_all_data",
   "delete_all_places",
+  "is_ambiguous_shop",
   "is_visitable_place",
   "list_places",
   "load_all_places",

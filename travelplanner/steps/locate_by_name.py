@@ -8,7 +8,8 @@ from travelplanner.flow.outcomes import LocateOutcome
 from travelplanner.flow.step import Step
 from travelplanner.place_hints import PlaceMention
 from travelplanner.places.locate import locate_mention_debug
-from travelplanner.places.store import is_visitable_place
+from travelplanner.places.shop_travel_gate import llm_ambiguous_shop_is_travel
+from travelplanner.places.store import is_ambiguous_shop, is_visitable_place
 
 logger = logging.getLogger(__name__)
 
@@ -38,14 +39,26 @@ def locate_by_name(ctx: TimelineContext) -> TimelineContext:
     )
     return ctx
   if not is_visitable_place(debug.location):
-    ctx.locate_outcome = LocateOutcome(
-      status="rejected",
-      mention=mention,
-      location=debug.location,
-      match_confidence=debug.match_confidence,
-      reason="non-travel OSM match",
-    )
-    return ctx
+    if is_ambiguous_shop(debug.location):
+      keep, gate_reason = llm_ambiguous_shop_is_travel(debug.location, mention)
+      if not keep:
+        ctx.locate_outcome = LocateOutcome(
+          status="rejected",
+          mention=mention,
+          location=debug.location,
+          match_confidence=debug.match_confidence,
+          reason=f"ambiguous shop rejected: {gate_reason}",
+        )
+        return ctx
+    else:
+      ctx.locate_outcome = LocateOutcome(
+        status="rejected",
+        mention=mention,
+        location=debug.location,
+        match_confidence=debug.match_confidence,
+        reason="non-travel OSM match",
+      )
+      return ctx
   if ctx.needs_osm_gate and not _passes_osm_travel_gate(debug.location):
     ctx.locate_outcome = LocateOutcome(
       status="rejected",

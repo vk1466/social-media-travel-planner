@@ -32,6 +32,12 @@ def openai_api_key() -> str | None:
   return value.strip() if value else None
 
 
+def google_maps_api_key() -> str | None:
+  """Optional Google Maps / Places key for locate fallback (1f)."""
+  value = os.getenv("GOOGLE_MAPS_API_KEY")
+  return value.strip() if value else None
+
+
 def openai_model() -> str:
   return os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 

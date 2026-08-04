@@ -2,40 +2,25 @@
 
 from __future__ import annotations
 
-import base64
 import logging
-import ssl
 import subprocess
 import tempfile
-import urllib.request
 from pathlib import Path
 
-import certifi
-
-from travelplanner import settings
 from travelplanner.clients.openai import get_client
+from travelplanner.image_text import download_bytes, merge_ocr_lines, ocr_image_path
 
 logger = logging.getLogger(__name__)
 
 DEFAULT_FRAME_TIMESTAMPS_SECONDS = (0.5, 2.0, 5.0, 8.0, 12.0, 15.0)
-_OCR_SYSTEM = (
-  "Extract ONLY text visibly written on the image (titles, overlays, map labels, "
-  "watermarks). Return verbatim text, one line per distinct text block. "
-  "If there is no readable text, return an empty string. "
-  "Do not describe the scene."
-)
 
 
 def _download_video(video_url: str, dest: Path) -> bool:
-  context = ssl.create_default_context(cafile=certifi.where())
-  req = urllib.request.Request(video_url, headers={"User-Agent": "Mozilla/5.0"})
-  try:
-    with urllib.request.urlopen(req, timeout=90, context=context) as resp:
-      dest.write_bytes(resp.read())
-    return dest.exists() and dest.stat().st_size > 0
-  except Exception:
-    logger.exception("reel frame download failed")
+  data = download_bytes(video_url, timeout=90)
+  if not data:
     return False
+  dest.write_bytes(data)
+  return dest.exists() and dest.stat().st_size > 0
 
 
 def _ffmpeg_exe() -> str | None:
@@ -84,54 +69,6 @@ def _sample_frames(
   return frames
 
 
-def _ocr_frame(image_path: Path, *, timestamp_s: float) -> str:
-  client = get_client()
-  if client is None:
-    return ""
-  b64 = base64.b64encode(image_path.read_bytes()).decode("ascii")
-  try:
-    resp = client.chat.completions.create(
-      model=settings.openai_model(),
-      temperature=0,
-      messages=[
-        {"role": "system", "content": _OCR_SYSTEM},
-        {
-          "role": "user",
-          "content": [
-            {
-              "type": "text",
-              "text": f"Frame at {timestamp_s}s. Verbatim on-image text only.",
-            },
-            {
-              "type": "image_url",
-              "image_url": {"url": f"data:image/jpeg;base64,{b64}"},
-            },
-          ],
-        },
-      ],
-    )
-  except Exception:
-    logger.exception("openai vision OCR failed t=%.1fs", timestamp_s)
-    return ""
-  return (resp.choices[0].message.content or "").strip()
-
-
-def _merge_ocr_lines(per_frame_text: list[str]) -> str | None:
-  seen: set[str] = set()
-  merged: list[str] = []
-  for text in per_frame_text:
-    for line in text.splitlines():
-      cleaned = line.strip().strip("`").strip()
-      if not cleaned:
-        continue
-      key = cleaned.lower()
-      if key in seen:
-        continue
-      seen.add(key)
-      merged.append(cleaned)
-  return "\n".join(merged) if merged else None
-
-
 def read_reel_frame_text(
   video_url: str,
   *,
@@ -154,5 +91,8 @@ def read_reel_frame_text(
     frames = _sample_frames(video_path, work, timestamps)
     if not frames:
       return None
-    texts = [_ocr_frame(path, timestamp_s=ts) for ts, path in frames]
-    return _merge_ocr_lines(texts)
+    texts = [
+      ocr_image_path(path, hint=f"Frame at {timestamp_s}s")
+      for timestamp_s, path in frames
+    ]
+    return merge_ocr_lines(texts)

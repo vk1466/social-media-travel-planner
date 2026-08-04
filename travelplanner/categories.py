@@ -90,9 +90,19 @@ _OSM_WATERFALL_TYPES = frozenset({"waterfall"})
 _OSM_LAKE_TYPES = frozenset({"lake", "water", "reservoir", "pond", "lagoon"})
 _OSM_BEACH_TYPES = frozenset({"beach", "bay"})
 _OSM_MUSEUM_TYPES = frozenset({"museum", "gallery"})
-_OSM_MARKET_TYPES = frozenset({"marketplace", "market"})
 _OSM_RESTAURANT_TYPES = frozenset({"restaurant", "fast_food"})
-_OSM_CAFE_TYPES = frozenset({"cafe"})
+_OSM_CAFE_TYPES = frozenset({
+  "cafe",
+  # Specialty food shops travelers visit — OSM often uses shop=* not amenity=cafe.
+  "bakery",
+  "pastry",
+  "confectionery",
+  "chocolate",
+  "coffee",
+  "tea",
+  "deli",
+  "ice_cream",
+})
 _OSM_BAR_TYPES = frozenset({"bar", "pub", "biergarten"})
 _OSM_HOTEL_TYPES = frozenset({"hotel", "hostel", "motel", "guest_house", "apartment"})
 _OSM_LANDMARK_TYPES = frozenset(
@@ -112,6 +122,8 @@ _OSM_LANDMARK_TYPES = frozenset(
     "lighthouse",
   }
 )
+_OSM_MARKET_TYPES = frozenset({"marketplace", "market", "cheese", "wine", "seafood"})
+_OSM_CULTURAL_SHOP_TYPES = frozenset({"books", "art", "antiques", "craft", "music", "gift", "souvenir"})
 
 
 def category_from_osm(
@@ -165,6 +177,10 @@ def category_from_osm(
   if osm_type in _OSM_HOTEL_TYPES or (osm_class == "tourism" and osm_type in _OSM_HOTEL_TYPES):
     return "hotel"
   if osm_type in _OSM_LANDMARK_TYPES or osm_class in {"historic", "tourism"}:
+    return "landmark"
+  if osm_type in _OSM_CULTURAL_SHOP_TYPES or (
+    osm_class == "shop" and osm_type in _OSM_CULTURAL_SHOP_TYPES
+  ):
     return "landmark"
   if osm_class == "natural":
     # Peaks/volcanoes/gorges used as parent containers → landmark.

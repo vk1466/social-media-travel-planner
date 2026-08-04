@@ -270,6 +270,45 @@ def test_is_visitable_place_rejects_non_travel_offices() -> None:
   assert is_visitable_place(remax) is False
 
 
+def test_is_visitable_allows_specialty_food_shops() -> None:
+  bakery = PlaceLocation(
+    display_name="Panadería Rosetta",
+    city="Mexico City",
+    country="Mexico",
+    osm_class="shop",
+    osm_type="bakery",
+  )
+  deli = PlaceLocation(
+    display_name="Mendl",
+    city="Mexico City",
+    country="Mexico",
+    osm_class="shop",
+    osm_type="deli",
+  )
+  assert is_visitable_place(bakery) is True
+  assert is_visitable_place(deli) is True
+
+
+def test_is_visitable_rejects_errand_and_ambiguous_shops() -> None:
+  from travelplanner.places.store import is_ambiguous_shop
+
+  supermarket = PlaceLocation(
+    display_name="Costco",
+    osm_class="shop",
+    osm_type="wholesale",
+  )
+  clothes = PlaceLocation(
+    display_name="Zara",
+    osm_class="shop",
+    osm_type="clothes",
+  )
+  assert is_visitable_place(supermarket) is False
+  assert is_visitable_place(clothes) is False
+  assert is_ambiguous_shop(clothes) is True
+  assert is_ambiguous_shop(supermarket) is False
+  assert is_ambiguous_shop(PlaceLocation(display_name="X", osm_class="shop", osm_type="bakery")) is False
+
+
 def test_upsert_place_creates_new_place(dynamodb) -> None:
   mention = PlaceMention(
     place_name="Multnomah Falls",

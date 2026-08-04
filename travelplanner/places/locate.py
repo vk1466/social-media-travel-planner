@@ -10,6 +10,8 @@ from difflib import SequenceMatcher
 
 from travelplanner.clients import geocoder
 from travelplanner.clients.geocoder import GeocodeResult, Viewbox
+from travelplanner.clients.google_geocode import geocode_google, google_fallback_query
+from travelplanner.feature_flag import FeatureFlag
 from travelplanner.models import PlaceLocation
 from travelplanner.place_hints import PlaceMention
 from travelplanner.places.constants import COUNTRY_CODE_TO_CONTINENT
@@ -95,9 +97,16 @@ def _name_query_variants(place_name: str) -> tuple[str, ...]:
   """OSM often indexes possessive names without apostrophes (Angels Landing)."""
   variants: list[str] = []
   seen: set[str] = set()
+  stripped_honorific = re.sub(
+    r"^(sr\.?|sra\.?|mr\.?|mrs\.?|ms\.?|dr\.?)\s+",
+    "",
+    place_name.strip(),
+    flags=re.IGNORECASE,
+  )
   for candidate in (
     place_name,
     place_name.replace("\u2019", "'").replace("'", ""),  # curly + straight apostrophe
+    stripped_honorific if stripped_honorific != place_name.strip() else "",
   ):
     cleaned = candidate.strip()
     if cleaned and cleaned not in seen:
@@ -117,7 +126,12 @@ def geocode_queries(mention: PlaceMention) -> tuple[str, ...]:
       seen.add(query)
       queries.append(query)
 
+  category = (mention.category or "").strip().lower()
+  typed_suffix = category if category in {"cafe", "restaurant", "bar", "hotel", "museum"} else None
+
   for name in _name_query_variants(mention.place_name):
+    if typed_suffix:
+      add(f"{name} {typed_suffix}", mention.city, mention.state_province, mention.country)
     add(name, mention.city, mention.state_province, mention.country)
     add(name, mention.state_province, mention.country)
     add(name, mention.country)
@@ -636,6 +650,40 @@ def locate_mention_debug(
     anchor_lon=anchor_lon,
     notes=notes,
   )
+
+  # Cost-minimal Google fallback (1f): only when Nominatim produced no trusted pin.
+  if picked is None and FeatureFlag.get("google_geocode_fallback"):
+    google_query = google_fallback_query(
+      mention.place_name,
+      city=mention.city,
+      country=mention.country,
+      category=mention.category,
+    )
+    queries_tried.append(f"google:{google_query}")
+    try:
+      google_hits = geocode_google(
+        google_query,
+        fallback_name=mention.place_name,
+        limit=CANDIDATE_LIMIT,
+        bias_lat=anchor_lat,
+        bias_lon=anchor_lon,
+      )
+    except Exception as exc:
+      notes.append(f"google fallback error: {exc}")
+      google_hits = []
+    if google_hits:
+      notes.append(f"google fallback {len(google_hits)} candidate(s) for {google_query!r}")
+      candidates.extend(google_hits)
+      picked = _pick_best(
+        mention,
+        google_hits,
+        anchor_lat=anchor_lat,
+        anchor_lon=anchor_lon,
+        notes=notes,
+      )
+    else:
+      notes.append(f"google fallback empty for {google_query!r}")
+
   if picked is None:
     outcome = LocateDebugResult(
       status="unresolved",

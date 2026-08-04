@@ -8,7 +8,12 @@ from travelplanner.flow.step import Step
 from travelplanner.places.locate import locate_mention_debug
 from travelplanner.places.mentions import mentions_from_post
 from travelplanner.places.resolve import upsert_place_record
-from travelplanner.places.store import is_visitable_place, load_all_places
+from travelplanner.places.shop_travel_gate import llm_ambiguous_shop_is_travel
+from travelplanner.places.store import (
+  is_ambiguous_shop,
+  is_visitable_place,
+  load_all_places,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -64,16 +69,36 @@ def process_mentions(ctx: IngestContext) -> IngestContext:
       continue
 
     if not is_visitable_place(debug.location):
-      outcomes.append(
-        LocateOutcome(
-          status="rejected",
-          mention=mention,
-          location=debug.location,
-          match_confidence=debug.match_confidence,
-          reason="non-travel OSM match",
+      if is_ambiguous_shop(debug.location):
+        keep, gate_reason = llm_ambiguous_shop_is_travel(debug.location, mention)
+        if keep:
+          logger.info(
+            "ambiguous shop kept by LLM place_name=%r reason=%s",
+            mention.place_name,
+            gate_reason,
+          )
+        else:
+          outcomes.append(
+            LocateOutcome(
+              status="rejected",
+              mention=mention,
+              location=debug.location,
+              match_confidence=debug.match_confidence,
+              reason=f"ambiguous shop rejected: {gate_reason}",
+            )
+          )
+          continue
+      else:
+        outcomes.append(
+          LocateOutcome(
+            status="rejected",
+            mention=mention,
+            location=debug.location,
+            match_confidence=debug.match_confidence,
+            reason="non-travel OSM match",
+          )
         )
-      )
-      continue
+        continue
 
     saved = upsert_place_record(
       mention,
