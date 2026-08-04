@@ -67,8 +67,9 @@ in [AGENTS.md](../AGENTS.md#feature-flags).
 | Flip with `FeatureFlag.set(...)` in tests/ops | Turn risky paths on by default in prod |
 | Ship incomplete steps (e.g. OCR) behind a flag | |
 
-Examples already in this design: `extract_image_text` (OCR) stays flagged off until
-implemented; place-facts enrichment uses `place_facts`.
+Examples already in this design: `extract_image_text`, `extract_video_analysis`,
+and `extract_reel_frame_text` stay flagged off until validated; place-facts
+enrichment uses `place_facts`.
 
 When adding a pipeline step that is not ready for all environments, register a
 flag and keep the composition able to skip or no-op when the flag is off — do
@@ -111,7 +112,7 @@ catch-all.
 
 Resource type is often known only **after** fetch. Dispatch is two-phase:
 
-1. **Head (by platform):** detect resource type → fetch media.
+1. **Head (by platform):** seed post (platform + shortcode + resource type) → fetch media.
 2. **Tail (by platform + resource type):** transcript and/or image text.
 3. **Shared close:** extract places → locate → dedupe → upsert.
 
@@ -185,18 +186,21 @@ travelplanner/steps/
   dedupe_resolve.py          # generic
   upsert_place.py            # generic — keyed, idempotent
   instagram/
-    detect_resource_type.py
+    seed_instagram_post.py
     fetch_media.py
     fetch_transcript.py
-    extract_image_text.py    # OCR; feature-flagged until implemented
+    analyze_video.py         # Supadata multimodal; flag extract_video_analysis
+    extract_reel_frame_text.py  # frame OCR; flag extract_reel_frame_text
+    extract_image_text.py    # OCR for image/carousel; flag extract_image_text
 ```
 
-### ContentBundle
+### ContentBundle / ContentSnippet
 
-Media-agnostic input to `extract_places`: caption, hashtags, comments,
-location tag, transcript, image text, optional prior summary. Prefer one
-bundle type used by reel, image, and carousel (rename from reel-only naming
-when touching extract).
+Media-agnostic input to `extract_places`: a list of `(source, text)` snippets
+(caption, hashtags, comments, location tag, transcript, video analysis, image
+text, optional prior summary). `ContentBundle` is a convenience shape that
+flattens into snippets. Prefer one extractor used by every platform and
+resource type.
 
 ### Adding a step
 
@@ -209,7 +213,7 @@ when touching extract).
 
 ### Adding a platform
 
-1. Add platform-specific fetch / detect steps under `steps/<platform>/`.
+1. Add platform-specific fetch / seed steps under `steps/<platform>/`.
 2. Register pipeline compositions for each resource type.
 3. Reuse generic extract / locate / dedupe / upsert unchanged.
 4. Persona discovers URLs or other work items; it does not reimplement place

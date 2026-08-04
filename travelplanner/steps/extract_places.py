@@ -3,38 +3,33 @@ from __future__ import annotations
 import logging
 from dataclasses import replace
 
-from travelplanner.extract import ContentBundle, fetch_places_from_content
+from travelplanner.extract import (
+  content_bundle_from_post,
+  fetch_places_from_snippets,
+  snippets_from_bundle,
+)
 from travelplanner.flow.context import IngestContext
 from travelplanner.flow.step import Step
-from travelplanner.steps.instagram.media import location_tag
 
 logger = logging.getLogger(__name__)
 
 
-def _build_bundle(ctx: IngestContext) -> ContentBundle | None:
-  if ctx.content_bundle is not None:
-    return ctx.content_bundle
-  if ctx.post is None:
-    return None
-  post = ctx.post
-  return ContentBundle(
-    caption=post.caption,
-    hashtags=post.hashtags,
-    top_comments=post.top_comments,
-    location_tag=location_tag(post.places),
-    transcript=ctx.transcript,
-    image_text=ctx.image_text,
-    video_summary=post.reel_summary,
-  )
-
-
 def extract_places(ctx: IngestContext) -> IngestContext:
-  bundle = _build_bundle(ctx)
+  """Run generic place extraction over content snippets on the context."""
+  bundle = ctx.content_bundle
   if bundle is None:
-    logger.warning("extract_places skipped: no post on context")
-    return ctx
+    if ctx.post is None:
+      logger.warning("extract_places skipped: no content_bundle or post on context")
+      return ctx
+    bundle = content_bundle_from_post(
+      ctx.post,
+      transcript=ctx.transcript,
+      image_text=ctx.image_text,
+      video_analysis=ctx.video_analysis,
+    )
   ctx.content_bundle = bundle
-  extracted = fetch_places_from_content(bundle)
+  snippets = snippets_from_bundle(bundle)
+  extracted = fetch_places_from_snippets(snippets)
   if ctx.post is not None:
     ctx.post = replace(
       ctx.post,
@@ -42,9 +37,10 @@ def extract_places(ctx: IngestContext) -> IngestContext:
       reel_summary=extracted.reel_summary,
     )
   logger.info(
-    "extract_places done places=%d has_summary=%s",
+    "extract_places done places=%d has_summary=%s sources=%s",
     len(extracted.places),
     bool(extracted.reel_summary),
+    [snippet.source for snippet in snippets],
   )
   return ctx
 

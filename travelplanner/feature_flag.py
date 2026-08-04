@@ -21,6 +21,10 @@ class FeatureFlag:
   _flags: dict[str, Any] = {
     "place_facts": False,
     "extract_image_text": False,
+    # Supadata multimodal video analysis for reel/video (places + overlays).
+    "extract_video_analysis": False,
+    # Sample reel/video frames and OCR on-screen text via OpenAI vision.
+    "extract_reel_frame_text": False,
     "place_facts_ttl_days": 30,
     "place_facts_max_docs": 6,
   }

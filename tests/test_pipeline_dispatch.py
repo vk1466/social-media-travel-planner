@@ -7,14 +7,18 @@ from travelplanner.flow.pipelines.instagram import (
 
 def test_instagram_tail_by_resource_type() -> None:
   assert [step.name for step in INSTAGRAM_HEAD_STEPS] == [
-    "detect_resource_type",
+    "seed_instagram_post",
     "fetch_media",
   ]
   assert [step.name for step in INSTAGRAM_TAIL_BY_RESOURCE_TYPE["reel"]] == [
     "fetch_transcript",
+    "analyze_video",
+    "extract_reel_frame_text",
   ]
   assert [step.name for step in INSTAGRAM_TAIL_BY_RESOURCE_TYPE["video"]] == [
     "fetch_transcript",
+    "analyze_video",
+    "extract_reel_frame_text",
   ]
   assert [step.name for step in INSTAGRAM_TAIL_BY_RESOURCE_TYPE["image"]] == [
     "extract_image_text",

@@ -23,14 +23,14 @@ def _resource_type_from_url(post_url: str) -> str | None:
   return None
 
 
-def detect_resource_type(ctx: IngestContext) -> IngestContext:
+def seed_instagram_post(ctx: IngestContext) -> IngestContext:
   ctx.platform = Platform.INSTAGRAM
   if not ctx.shortcode:
     ctx.shortcode = extract_instagram_shortcode(ctx.post_url)
   if ctx.raw_payload:
     ctx.resource_type = extract_media_kind(ctx.raw_payload)
     logger.info(
-      "detect_resource_type from payload shortcode=%s resource_type=%s",
+      "seed_instagram_post from payload shortcode=%s resource_type=%s",
       ctx.shortcode,
       ctx.resource_type,
     )
@@ -39,14 +39,14 @@ def detect_resource_type(ctx: IngestContext) -> IngestContext:
   if guessed:
     ctx.resource_type = guessed
   logger.info(
-    "detect_resource_type from url shortcode=%s resource_type=%s",
+    "seed_instagram_post from url shortcode=%s resource_type=%s",
     ctx.shortcode,
     ctx.resource_type,
   )
   return ctx
 
 
-DETECT_RESOURCE_TYPE_STEP = Step(
-  name="detect_resource_type",
-  run=detect_resource_type,
+SEED_INSTAGRAM_POST_STEP = Step(
+  name="seed_instagram_post",
+  run=seed_instagram_post,
 )

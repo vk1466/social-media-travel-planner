@@ -177,12 +177,40 @@ def test_format_reel_bundle_orders_caption_summary_transcript() -> None:
 
   assert formatted.index("CAPTION:") < formatted.index("VIDEO SUMMARY:")
   assert formatted.index("VIDEO SUMMARY:") < formatted.index("VIDEO TRANSCRIPT:")
-  assert "IG LOCATION TAG: Alfama, Lisbon, Portugal" in formatted
+  assert "LOCATION TAG: Alfama, Lisbon, Portugal" in formatted
   assert "CAPTION:\nDay 1: Alfama" in formatted
   assert "VIDEO SUMMARY:\nA walking tour through Lisbon's oldest neighborhood." in formatted
   assert "HASHTAGS: #lisbon #portugal" in formatted
   assert "The pastel de nata spot is Manteigaria!" in formatted
   assert "VIDEO TRANSCRIPT:\nWelcome to Alfama" in formatted
+
+
+def test_snippets_from_bundle_are_source_text_pairs() -> None:
+  from travelplanner.extract import ContentSnippet, snippets_from_bundle
+
+  bundle = ReelBundle(
+    caption="Day 1: Alfama",
+    hashtags=("lisbon",),
+    location_tag=PlatformPlace(place_name="Alfama", city="Lisbon", country="Portugal"),
+    transcript="Welcome to Alfama.",
+  )
+  snippets = snippets_from_bundle(bundle)
+  assert snippets == (
+    ContentSnippet(source="caption", text="Day 1: Alfama"),
+    ContentSnippet(source="transcript", text="Welcome to Alfama."),
+    ContentSnippet(source="location_tag", text="Alfama, Lisbon, Portugal"),
+    ContentSnippet(source="hashtags", text="#lisbon"),
+  )
+
+
+def test_fetch_places_from_snippets_empty_without_api_key(monkeypatch) -> None:
+  from travelplanner.extract import ContentSnippet, fetch_places_from_snippets
+
+  monkeypatch.setattr("travelplanner.settings.openai_api_key", lambda: None)
+  result = fetch_places_from_snippets(
+    (ContentSnippet(source="caption", text="Emerald Bay"),)
+  )
+  assert result == ReelExtraction()
 
 
 def test_fetch_places_from_reel_returns_empty_without_api_key(monkeypatch) -> None:

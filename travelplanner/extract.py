@@ -4,7 +4,7 @@ import json
 import logging
 import time
 from dataclasses import dataclass
-from typing import Any
+from typing import TYPE_CHECKING, Any, Sequence
 
 from travelplanner.categories import (
   ALL_ATTRIBUTES,
@@ -14,6 +14,9 @@ from travelplanner.categories import (
   normalize_category,
 )
 from travelplanner.place_hints import ExtractedPlace, PlatformPlace
+
+if TYPE_CHECKING:
+  from travelplanner.models import SavedPost
 
 logger = logging.getLogger(__name__)
 
@@ -132,7 +135,7 @@ REEL_EXTRACT_PROMPT = (
   "Sources for place NAMES (required evidence):\n"
   "- CAPTION (📍 lists, Day N itineraries, bullets, prose)\n"
   "- VIDEO TRANSCRIPT (spoken or on-screen names)\n"
-  "- IG LOCATION TAG, HASHTAGS, and TOP COMMENTS when they name a place\n\n"
+  "- LOCATION TAG, HASHTAGS, and TOP COMMENTS when they name a place\n\n"
   "VIDEO SUMMARY is supporting context only. Never invent or guess a place name "
   "that does not appear explicitly in caption, transcript, location tag, hashtags, "
   "or comments — even if the summary vaguely mentions lakes, hikes, or viewpoints. "
@@ -211,13 +214,24 @@ REEL_EXTRACT_PROMPT = (
 
 
 @dataclass(frozen=True)
+class ContentSnippet:
+  """One piece of source text for place extraction (platform-agnostic)."""
+
+  source: str
+  text: str
+
+
+@dataclass(frozen=True)
 class ContentBundle:
+  """Named content fields; converted to ContentSnippet list before extract."""
+
   caption: str
   hashtags: tuple[str, ...] = ()
   top_comments: tuple[str, ...] = ()
   location_tag: PlatformPlace | None = None
   transcript: str | None = None
   video_summary: str | None = None
+  video_analysis: str | None = None
   image_text: str | None = None
 
 
@@ -231,6 +245,88 @@ class ContentExtraction:
 
 
 ReelExtraction = ContentExtraction
+
+_SOURCE_HEADERS: dict[str, str] = {
+  "caption": "CAPTION",
+  "video_summary": "VIDEO SUMMARY",
+  "transcript": "VIDEO TRANSCRIPT",
+  "video_analysis": "VIDEO ANALYSIS",
+  "image_text": "IMAGE TEXT",
+  "location_tag": "LOCATION TAG",
+  "hashtags": "HASHTAGS",
+  "top_comments": "TOP COMMENTS",
+}
+
+_INLINE_SOURCES = frozenset({"location_tag", "hashtags"})
+
+
+def snippets_from_bundle(bundle: ContentBundle) -> tuple[ContentSnippet, ...]:
+  """Flatten a ContentBundle into ordered (source, text) snippets."""
+  snippets: list[ContentSnippet] = []
+
+  caption = bundle.caption.strip()
+  if caption:
+    snippets.append(ContentSnippet(source="caption", text=caption))
+
+  video_summary = (bundle.video_summary or "").strip()
+  if video_summary:
+    snippets.append(ContentSnippet(source="video_summary", text=video_summary))
+
+  transcript = (bundle.transcript or "").strip()
+  if transcript:
+    snippets.append(ContentSnippet(source="transcript", text=transcript))
+
+  video_analysis = (bundle.video_analysis or "").strip()
+  if video_analysis:
+    snippets.append(ContentSnippet(source="video_analysis", text=video_analysis))
+
+  image_text = (bundle.image_text or "").strip()
+  if image_text:
+    snippets.append(ContentSnippet(source="image_text", text=image_text))
+
+  if bundle.location_tag is not None:
+    location_parts = [bundle.location_tag.place_name]
+    if bundle.location_tag.city:
+      location_parts.append(bundle.location_tag.city)
+    if bundle.location_tag.country:
+      location_parts.append(bundle.location_tag.country)
+    snippets.append(
+      ContentSnippet(source="location_tag", text=", ".join(location_parts))
+    )
+
+  if bundle.hashtags:
+    snippets.append(
+      ContentSnippet(
+        source="hashtags",
+        text=" ".join(f"#{tag}" for tag in bundle.hashtags),
+      )
+    )
+
+  if bundle.top_comments:
+    comment_lines = "\n".join(f"- {comment}" for comment in bundle.top_comments)
+    snippets.append(ContentSnippet(source="top_comments", text=comment_lines))
+
+  return tuple(snippets)
+
+
+def content_bundle_from_post(
+  post: SavedPost,
+  *,
+  transcript: str | None = None,
+  image_text: str | None = None,
+  video_analysis: str | None = None,
+) -> ContentBundle:
+  """Build a ContentBundle from a SavedPost (any platform)."""
+  return ContentBundle(
+    caption=post.caption,
+    hashtags=post.hashtags,
+    top_comments=post.top_comments,
+    location_tag=post.places[0] if post.places else None,
+    transcript=transcript,
+    image_text=image_text,
+    video_analysis=video_analysis,
+    video_summary=post.reel_summary,
+  )
 
 
 def _optional_str(value: Any) -> str | None:
@@ -342,41 +438,26 @@ def _parse_content_extraction(data: dict[str, Any] | None) -> ContentExtraction:
 _parse_reel_extraction = _parse_content_extraction
 
 
-def format_content_bundle(bundle: ContentBundle) -> str:
+def format_content_snippets(snippets: Sequence[ContentSnippet]) -> str:
+  """Render (source, text) snippets into the LLM user prompt."""
   sections: list[str] = []
-
-  caption = bundle.caption.strip()
-  if caption:
-    sections.append(f"CAPTION:\n{caption}")
-
-  video_summary = (bundle.video_summary or "").strip()
-  if video_summary:
-    sections.append(f"VIDEO SUMMARY:\n{video_summary}")
-
-  transcript = (bundle.transcript or "").strip()
-  if transcript:
-    sections.append(f"VIDEO TRANSCRIPT:\n{transcript}")
-
-  image_text = (bundle.image_text or "").strip()
-  if image_text:
-    sections.append(f"IMAGE TEXT:\n{image_text}")
-
-  if bundle.location_tag is not None:
-    location_parts = [bundle.location_tag.place_name]
-    if bundle.location_tag.city:
-      location_parts.append(bundle.location_tag.city)
-    if bundle.location_tag.country:
-      location_parts.append(bundle.location_tag.country)
-    sections.append("IG LOCATION TAG: " + ", ".join(location_parts))
-
-  if bundle.hashtags:
-    sections.append("HASHTAGS: " + " ".join(f"#{tag}" for tag in bundle.hashtags))
-
-  if bundle.top_comments:
-    comment_lines = "\n".join(f"- {comment}" for comment in bundle.top_comments)
-    sections.append(f"TOP COMMENTS:\n{comment_lines}")
-
+  for snippet in snippets:
+    text = snippet.text.strip()
+    if not text:
+      continue
+    label = _SOURCE_HEADERS.get(
+      snippet.source,
+      snippet.source.replace("_", " ").upper(),
+    )
+    if snippet.source in _INLINE_SOURCES:
+      sections.append(f"{label}: {text}")
+    else:
+      sections.append(f"{label}:\n{text}")
   return "\n\n".join(sections)
+
+
+def format_content_bundle(bundle: ContentBundle) -> str:
+  return format_content_snippets(snippets_from_bundle(bundle))
 
 
 format_reel_bundle = format_content_bundle
@@ -429,11 +510,13 @@ def _create_completion(client: Any, content: str) -> Any | None:
       time.sleep(_OPENAI_RETRY_BACKOFF_SECONDS * attempt)
 
 
-def fetch_places_from_content(bundle: ContentBundle) -> ContentExtraction:
-  """Extract summary + places from caption, transcript/image text, and tags."""
-  content = format_content_bundle(bundle).strip()
+def fetch_places_from_snippets(
+  snippets: Sequence[ContentSnippet],
+) -> ContentExtraction:
+  """Extract summary + places from a list of (source, text) snippets."""
+  content = format_content_snippets(snippets).strip()
   if not content:
-    logger.info("extract skipped: empty content bundle")
+    logger.info("extract skipped: empty content snippets")
     return ContentExtraction()
 
   from travelplanner import settings
@@ -444,13 +527,12 @@ def fetch_places_from_content(bundle: ContentBundle) -> ContentExtraction:
     logger.warning("extract skipped: OPENAI_API_KEY not set")
     return ContentExtraction()
 
+  sources = [snippet.source for snippet in snippets if snippet.text.strip()]
   logger.info(
-    "extract start model=%s content_chars=%d has_summary=%s has_transcript=%s has_location_tag=%s",
+    "extract start model=%s content_chars=%d sources=%s",
     settings.openai_model(),
     len(content),
-    bool((bundle.video_summary or "").strip()),
-    bool((bundle.transcript or "").strip()),
-    bundle.location_tag is not None,
+    sources,
   )
   response = _create_completion(client, content)
   if response is None:
@@ -477,9 +559,16 @@ def fetch_places_from_content(bundle: ContentBundle) -> ContentExtraction:
   return result
 
 
+def fetch_places_from_content(bundle: ContentBundle) -> ContentExtraction:
+  """Extract places from a ContentBundle (convenience over snippets)."""
+  return fetch_places_from_snippets(snippets_from_bundle(bundle))
+
+
 fetch_places_from_reel = fetch_places_from_content
 
 
 def fetch_places_from_text(text: str) -> tuple[ExtractedPlace, ...]:
   """Backward-compatible wrapper for caption-only extraction."""
-  return fetch_places_from_content(ContentBundle(caption=text)).places
+  return fetch_places_from_snippets(
+    (ContentSnippet(source="caption", text=text),)
+  ).places

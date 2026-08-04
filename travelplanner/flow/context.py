@@ -23,6 +23,7 @@ class IngestContext:
   raw_payload: dict[str, Any] | None = None
   transcript: str | None = None
   image_text: str | None = None
+  video_analysis: str | None = None
   content_bundle: ContentBundle | None = None
   post: SavedPost | None = None
   place_ids: list[str] = field(default_factory=list)
