@@ -44,7 +44,7 @@ function locationLine(place: Place | null | undefined): string {
   return [city, stateProvince, country].filter(Boolean).join(", ");
 }
 
-function sourceLabel(source: string | undefined): string | null {
+function sourceLabel(source: string | null | undefined): string | null {
   if (source === "timeline") {
     return "Timeline";
   }

@@ -1,4 +1,4 @@
-import type { PlaceFacts } from "../api";
+import type { PlaceFacts } from "./api";
 
 const SOURCE_LABELS: Record<string, string> = {
   osm: "OpenStreetMap",
