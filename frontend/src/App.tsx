@@ -16,6 +16,8 @@ import { AdminPage } from "./components/AdminPage";
 import { DataMaintenance } from "./components/DataMaintenance";
 import { IngestProgress } from "./components/IngestProgress";
 import { LinkSubmitForm } from "./components/LinkSubmitForm";
+import { LivingMapPage } from "./components/LivingMapPage";
+import { MapDemoGallery } from "./components/MapDemoGallery";
 import { PlaceLibrary } from "./components/PlaceLibrary";
 import { PostLibrary } from "./components/PostLibrary";
 import { TravelHistory } from "./components/TravelHistory";
@@ -429,11 +431,30 @@ function AppShell({ authReady }: { authReady: boolean }) {
   );
 }
 
+function AppRoutes({ authReady }: { authReady: boolean }) {
+  return (
+    <Routes>
+      <Route path="/map/demos" element={<MapDemoGallery />} />
+      <Route
+        path="/map/demos/:themeId"
+        element={<LivingMapPage authReady={authReady} demoMode />}
+      />
+      <Route
+        path="/map/demos/:themeId/:placeId"
+        element={<LivingMapPage authReady={authReady} demoMode />}
+      />
+      <Route path="/map" element={<LivingMapPage authReady={authReady} />} />
+      <Route path="/map/:placeId" element={<LivingMapPage authReady={authReady} />} />
+      <Route path="/*" element={<AppShell authReady={authReady} />} />
+    </Routes>
+  );
+}
+
 export default function App() {
   if (clerkEnabled) {
     return <AppWithClerkAuth />;
   }
-  return <AppShell authReady />;
+  return <AppRoutes authReady />;
 }
 
 function AppWithClerkAuth() {
@@ -451,5 +472,5 @@ function AppWithClerkAuth() {
     return () => window.clearTimeout(timer);
   }, [isLoaded, isSignedIn]);
 
-  return <AppShell authReady={authReady} />;
+  return <AppRoutes authReady={authReady} />;
 }
