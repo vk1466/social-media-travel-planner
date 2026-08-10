@@ -1,0 +1,102 @@
+.add-page {
+  max-width: 720px;
+}
+
+.add-page-form-card {
+  padding: 1.5rem;
+  background: var(--wf-chrome-panel);
+  border: 1px solid var(--wf-chrome-border);
+  border-radius: var(--wf-radius-lg);
+  box-shadow: var(--wf-shadow-sm);
+}
+
+.add-page-progress {
+  margin-top: 1.25rem;
+}
+
+.add-page-success {
+  margin-top: 1.25rem;
+  padding: 1.25rem 1.5rem;
+  background: rgb(var(--wf-mint-rgb) / 0.1);
+  border: 1px solid var(--wf-chrome-border);
+  border-radius: var(--wf-radius-lg);
+}
+
+.add-page-success-title {
+  margin: 0 0 0.35rem;
+  font-family: var(--wf-font-serif);
+  font-size: 1.35rem;
+  font-weight: 400;
+  color: var(--wf-copy);
+}
+
+.add-page-success-copy {
+  margin: 0 0 1rem;
+  color: var(--wf-copy-muted);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.add-page-success-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.add-page-success-link {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.55rem 1rem;
+  border-radius: var(--wf-radius-pill);
+  font-size: 0.92rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background var(--wf-ease), color var(--wf-ease), border-color var(--wf-ease);
+}
+
+.add-page-success-link-primary {
+  background: var(--wf-forest);
+  color: var(--wf-cream);
+}
+
+.add-page-success-link-primary:hover {
+  background: var(--wf-forest-hover);
+  color: var(--wf-cream);
+}
+
+.add-page-success-link-secondary {
+  background: transparent;
+  color: var(--wf-copy-accent);
+  border: 1px solid var(--wf-chrome-border);
+}
+
+.add-page-success-link-secondary:hover {
+  border-color: var(--wf-mint);
+  color: var(--wf-mint);
+}
+
+.add-page-aside {
+  margin-top: 2.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--wf-chrome-border);
+}
+
+.add-page-aside-heading {
+  margin: 0 0 0.75rem;
+  font-size: var(--wf-eyebrow-size);
+  font-weight: 600;
+  letter-spacing: var(--wf-eyebrow-tracking);
+  text-transform: uppercase;
+  color: var(--wf-copy-muted);
+}
+
+.add-page-aside .data-maintenance {
+  margin-top: 0;
+  opacity: 0.92;
+}
+
+@media (max-width: 720px) {
+  .add-page-form-card {
+    padding: 1.15rem;
+  }
+}

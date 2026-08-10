@@ -203,6 +203,12 @@ def timeline_imports_bucket() -> str | None:
   return value or None
 
 
+def media_bucket() -> str | None:
+  """S3 bucket for durable post thumbnails (unset = skip persistence)."""
+  value = os.getenv("MEDIA_BUCKET", "").strip()
+  return value or None
+
+
 def timeline_state_machine_arn() -> str | None:
   value = os.getenv("TIMELINE_STATE_MACHINE_ARN", "").strip()
   return value or None

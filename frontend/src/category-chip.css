@@ -1,0 +1,66 @@
+/* Category chips */
+
+.category-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-0);
+  font-weight: var(--font-weight-6);
+  letter-spacing: 0.02em;
+  border: 1px solid transparent;
+  line-height: 1.4;
+}
+
+.category-chip--small {
+  padding: 1px 6px;
+  font-size: 11px;
+}
+
+.category-chip--outdoors {
+  background: var(--wf-cat-outdoors-bg);
+  color: var(--wf-cat-outdoors-ink);
+  border-color: var(--wf-cat-outdoors-border);
+}
+
+.category-chip--water {
+  background: var(--wf-cat-water-bg);
+  color: var(--wf-cat-water-ink);
+  border-color: var(--wf-cat-water-border);
+}
+
+.category-chip--place {
+  background: var(--wf-cat-place-bg);
+  color: var(--wf-cat-place-ink);
+  border-color: var(--wf-cat-place-border);
+}
+
+.category-chip--culture {
+  background: var(--wf-cat-culture-bg);
+  color: var(--wf-cat-culture-ink);
+  border-color: var(--wf-cat-culture-border);
+}
+
+.category-chip--food {
+  background: var(--wf-cat-food-bg);
+  color: var(--wf-cat-food-ink);
+  border-color: var(--wf-cat-food-border);
+}
+
+.category-chip--market {
+  background: var(--wf-cat-market-bg);
+  color: var(--wf-cat-market-ink);
+  border-color: var(--wf-cat-market-border);
+}
+
+.category-chip--stay {
+  background: var(--wf-cat-stay-bg);
+  color: var(--wf-cat-stay-ink);
+  border-color: var(--wf-cat-stay-border);
+}
+
+.category-chip--muted {
+  background: var(--surface-muted);
+  color: var(--text-subtle);
+  border-color: var(--border-subtle);
+}

@@ -11,12 +11,24 @@ import {
 
 import "@fontsource-variable/dm-sans";
 import "@fontsource/instrument-serif/400.css";
+import "@fontsource-variable/source-sans-3";
+import "@fontsource-variable/literata";
+import "@fontsource-variable/newsreader";
 import "open-props/normalize.min.css";
 import "open-props/style";
 
 import App from "./App";
 import { setAuthTokenGetter } from "./api";
+import "./wf-tokens.css";
+import "./tw.css";
 import "./styles.css";
+import "./post-card.css";
+import "./post-flip-modal.css";
+import "./place-browse.css";
+import "./detail-modal.css";
+import "./visit-form.css";
+import "./admin-tools.css";
+import "./category-chip.css";
 
 const clerkPublishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undefined;
 

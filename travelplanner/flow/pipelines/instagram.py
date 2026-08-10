@@ -6,12 +6,14 @@ from travelplanner.steps.instagram.extract_reel_frame_text import (
 )
 from travelplanner.steps.instagram.fetch_media import FETCH_MEDIA_STEP
 from travelplanner.steps.instagram.fetch_transcript import FETCH_TRANSCRIPT_STEP
+from travelplanner.steps.instagram.persist_thumbnail import PERSIST_THUMBNAIL_STEP
 from travelplanner.steps.instagram.seed_instagram_post import SEED_INSTAGRAM_POST_STEP
 from travelplanner.steps.process_mentions import PROCESS_MENTIONS_STEP
 
 INSTAGRAM_HEAD_STEPS = (
   SEED_INSTAGRAM_POST_STEP,
   FETCH_MEDIA_STEP,
+  PERSIST_THUMBNAIL_STEP,
 )
 
 SHARED_CLOSE_STEPS = (

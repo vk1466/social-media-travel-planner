@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>20 · Weather bulletin — Places Page Lab</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600&family=DM+Mono:wght@400;500&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,300;1,9..144,400;1,9..144,500;1,9..144,600&family=Instrument+Serif:ital@0;1&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../sites/shared/places-browse.css" />
+  <link rel="stylesheet" href="../shared/shell.css" />
+  <style>
+
+body { background: #f8f2eb; color: var(--a-ink); font-family: var(--a-sans); }
+.wb-bar {
+  background: #1a1410; color: #f4d99a;
+  border-bottom: 3px double #c85c34;
+  overflow: hidden; position: relative;
+}
+.wb-bar::before {
+  content: ""; position: absolute; left: 0; right: 0; top: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, #c85c34 45%, #f4d99a 50%, #c85c34 55%, transparent);
+  animation: wb-scan 3.2s linear infinite;
+}
+@keyframes wb-scan {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(100%); }
+}
+.wb-bar-inner {
+  max-width: 1440px; margin: 0 auto; padding: 0.7rem 24px;
+  display: flex; align-items: center; gap: 1.25rem; flex-wrap: wrap;
+  font-family: "DM Mono", monospace; font-size: 0.78rem; letter-spacing: 0.14em; text-transform: uppercase;
+}
+.wb-pip {
+  width: 10px; height: 10px; border-radius: 50%; background: #c85c34;
+  box-shadow: 0 0 0 3px rgb(200 92 52 / 0.28); flex-shrink: 0;
+  animation: wb-pulse 1.4s ease-in-out infinite;
+}
+@keyframes wb-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.55; transform: scale(0.82); }
+}
+.wb-bar-inner strong { color: #ffffff; font-weight: 500; letter-spacing: 0.28em; }
+.wb-bar-inner .sep { opacity: 0.5; }
+.wb-bar-inner .status { color: #7fd6a4; letter-spacing: 0.22em; font-weight: 500; }
+.wb-topbar {
+  max-width: 1440px; margin: 0 auto; padding: 1.1rem 24px 0.75rem;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.wb-topbar .brand { font-family: var(--a-serif); font-style: italic; font-size: 1.35rem; }
+.wb-topbar nav a { color: var(--a-muted); text-decoration: none; margin-left: 1.1rem; font-size: 0.85rem; }
+.wb-topbar nav a.is-on { color: var(--a-accent); font-weight: 600; }
+.wb-conditions {
+  max-width: 1440px; margin: 0 auto; padding: 1.5rem 24px 1rem;
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem;
+  border-bottom: 1px solid #ead9c8;
+}
+.wb-condition {
+  background: #fffaf5; border: 1px solid #ead9c8; border-radius: 4px;
+  padding: 1rem 1.15rem; position: relative;
+}
+.wb-condition .label {
+  font-family: "DM Mono", monospace; font-size: 0.62rem;
+  letter-spacing: 0.22em; text-transform: uppercase; color: var(--a-muted); font-weight: 600;
+  margin: 0 0 6px;
+}
+.wb-condition .value {
+  font-family: var(--a-serif); font-style: italic; font-weight: 400;
+  font-size: 1.7rem; line-height: 1; letter-spacing: -0.02em;
+}
+.wb-condition .num {
+  font-family: "DM Mono", monospace; font-weight: 500;
+}
+.wb-condition.accent { background: var(--a-accent); color: #fffaf5; border-color: var(--a-accent); }
+.wb-condition.accent .label { color: rgb(255 250 245 / 0.75); }
+@media (max-width: 720px) { .wb-conditions { grid-template-columns: repeat(2, 1fr); } }
+
+  </style>
+</head>
+<body>
+  <header class="lab-top">
+    <a href="../index.html">← Places Page Lab</a>
+    <nav class="lab-top-nav" aria-label="Structure pager">
+      <a href="19-type-monument.html">← Back</a>
+      <span class="pattern">Structure 20 / 20</span>
+      <a href="#" aria-disabled="true" tabindex="-1">Next →</a>
+    </nav>
+    <a href="../../index.html">Design Lab</a>
+  </header>
+
+  <div class="wb-bar">
+    <div class="wb-bar-inner">
+      <span class="wb-pip"></span>
+      <span><strong>Almanac Advisory</strong></span>
+      <span class="sep">·</span>
+      <span>Section: Places</span>
+      <span class="sep">·</span>
+      <span class="status">◆ Fair · Clear browsing</span>
+      <span class="sep">·</span>
+      <span>Updated Sun 22:59</span>
+      <span class="sep">·</span>
+      <span>Next tick 23:04</span>
+    </div>
+  </div>
+  <div class="wb-topbar">
+    <a class="brand" href="../../sites/02-almanac/index.html">Almanac</a>
+    <nav><a class="" href="../../sites/02-almanac/index.html">Discover</a><a class="" href="../../sites/02-almanac/posts.html">Posts</a><a class=" is-on" href="#">Places</a><a class="" href="../../sites/02-almanac/history.html">Journal</a><a class="" href="../../sites/02-almanac/add.html">Add</a></nav>
+  </div>
+  <div class="wb-conditions">
+    <div class="wb-condition">
+      <p class="label">Section</p>
+      <div class="value">Places</div>
+    </div>
+    <div class="wb-condition">
+      <p class="label">Conditions</p>
+      <div class="value">Fair · scattered</div>
+    </div>
+    <div class="wb-condition">
+      <p class="label">Register</p>
+      <div class="value"><span class="num">248</span> saved</div>
+    </div>
+    <div class="wb-condition accent">
+      <p class="label">Visited so far</p>
+      <div class="value"><span class="num">62</span> marked</div>
+    </div>
+  </div>
+  <div id="wf-places-root" class="wf-places wf-places--almanac wf-places--embedded"><div class="wf-places-loading">Loading atlas…</div></div>
+  <nav class="lab-bottom-nav" aria-label="Structure pager">
+    <a href="19-type-monument.html">← Type monument</a>
+    <span class="hint">← → keys</span>
+    <a href="#" aria-disabled="true" tabindex="-1">Next →</a>
+  </nav>
+  <script>window.WF_SITE = { id: "02-almanac", title: "Almanac", page: "places-structure" };</script>
+  <script src="../../sites/shared/mock.js"></script>
+  <script type="module" src="../shared/mount.js"></script>
+  <script type="module">
+    const prev = "19-type-monument.html";
+    const next = null;
+    window.addEventListener("keydown", (event) => {
+      if (event.defaultPrevented) return;
+      const tag = (event.target && event.target.tagName) || "";
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || event.target?.isContentEditable) return;
+      if (event.key === "ArrowLeft" && prev) location.href = prev;
+      if (event.key === "ArrowRight" && next) location.href = next;
+    });
+  </script>
+</body>
+</html>

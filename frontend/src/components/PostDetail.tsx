@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { fetchPlaceDetail, fetchPost, nativePostId, type ExtractedPlace, type PlatformPlace, type SavedPost } from "../api";
+import { coverArt } from "../coverArt";
 import { googleMapsUrl } from "../maps";
 import {
   formatPostDate,
@@ -11,6 +12,7 @@ import {
 } from "../postDisplayUtils";
 import { DetailModal } from "./DetailModal";
 import { PostReelFace } from "./PostMediaPreview";
+import { RelationRail, type RelationRailItem } from "./RelationRail";
 
 interface PostDetailProps {
   post: SavedPost;
@@ -22,6 +24,8 @@ interface PostDetailProps {
 interface LinkedPlace {
   placeId: string;
   displayName: string;
+  city?: string | null;
+  country?: string | null;
 }
 
 interface PlaceSummary {
@@ -209,7 +213,12 @@ export function PostDetail({
         post.place_ids.map(async (placeId) => {
           try {
             const detail = await fetchPlaceDetail(placeId);
-            return { placeId, displayName: detail.place.display_name };
+            return {
+              placeId,
+              displayName: detail.place.display_name,
+              city: detail.place.location.city,
+              country: detail.place.location.country,
+            };
           } catch {
             return { placeId, displayName: placeId };
           }
@@ -230,6 +239,26 @@ export function PostDetail({
     () => buildPlaceSummaries(post, linkedPlaces),
     [post, linkedPlaces],
   );
+  const placeRailItems = useMemo((): RelationRailItem[] => {
+    if (linkedPlaces.length > 0) {
+      return linkedPlaces.map((linked) => ({
+        key: linked.placeId,
+        to: `/places/${linked.placeId}`,
+        label: linked.displayName,
+        sublabel: [linked.city, linked.country].filter(Boolean).join(", ") || undefined,
+        background: coverArt(linked.displayName),
+        shape: "cover" as const,
+      }));
+    }
+    return placeSummaries.map((place) => ({
+      key: place.key,
+      to: place.placeId ? `/places/${place.placeId}` : "/places",
+      label: place.name,
+      sublabel: place.locationLine,
+      background: coverArt(place.name),
+      shape: "cover" as const,
+    }));
+  }, [linkedPlaces, placeSummaries]);
   const heading = shortHeading(post);
   const llmSummary = post.reel_summary?.trim() ?? "";
   const fallbackSummary = captionFallbackSummary(post);
@@ -367,6 +396,12 @@ export function PostDetail({
                   </ul>
                 )}
               </section>
+
+              <RelationRail
+                heading="Places in this post"
+                emptyText="No places found in this post yet."
+                items={placeRailItems}
+              />
             </div>
 
             <footer className="post-flip-footer">

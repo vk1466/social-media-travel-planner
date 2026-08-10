@@ -1,370 +1,263 @@
-import { useEffect, useMemo, useState, lazy, Suspense } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
 
-import { fetchPlaces, fetchCategories, fetchVisitedPlaceIds, type Place } from "../api";
-import { categoryLabel } from "../categoryLabels";
-import { PlaceCard } from "./PlaceCard";
+import { fetchPlaceDetail, type Place } from "../api";
+import { usePlaceAtlas } from "../hooks/usePlaceAtlas";
+import {
+  atlasTrail,
+  buildAtlas,
+  childLevelLabel,
+  countByCategory,
+  leafPlaces,
+  levelLabel,
+  resolveScopeKey,
+  searchAtlas,
+  type AtlasGrouping,
+  type AtlasNode,
+} from "../placeAtlasModel";
+import { AtlasMapPanel } from "./AtlasMapPanel";
 import { PlaceDetail } from "./PlaceDetail";
 
-const PlaceMap = lazy(() => import("./PlaceMap").then((module) => ({ default: module.PlaceMap })));
-
-type MobilePane = "browse" | "map";
-
-interface DestinationTile {
-  name: string;
-  placeCount: number;
-}
-
-function distinctSorted(values: (string | null | undefined)[]): string[] {
-  return Array.from(new Set(values.filter((value): value is string => Boolean(value)))).sort((a, b) =>
-    a.localeCompare(b),
-  );
-}
-
-function countBy(
-  places: Place[],
-  keyFn: (place: Place) => string | null | undefined,
-): DestinationTile[] {
-  const counts = new Map<string, number>();
-  for (const place of places) {
-    const key = keyFn(place) || "Unknown";
-    counts.set(key, (counts.get(key) ?? 0) + 1);
-  }
-  return Array.from(counts.entries())
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([name, placeCount]) => ({ name, placeCount }));
-}
+import "../place-covers.css";
+import "../wf-browse.css";
 
 interface PlaceLibraryProps {
-  refreshToken?: number;
+  authReady: boolean;
   onNavigateToPost?: (platform: string, postId: string) => void;
-  onChanged?: () => void;
 }
 
-export function PlaceLibrary({
-  refreshToken = 0,
-  onNavigateToPost,
-  onChanged,
-}: PlaceLibraryProps) {
+type StatusFilter = "all" | "visited" | "inspiration";
+type ViewMode = "covers" | "map";
+
+function vars(entries: Record<string, string | number>): CSSProperties {
+  return entries as CSSProperties;
+}
+
+function hashHue(value: string): number {
+  let hash = 0;
+  for (let index = 0; index < value.length; index += 1) {
+    hash = (hash * 33 + value.charCodeAt(index)) % 360;
+  }
+  return hash;
+}
+
+function coverArt(name: string): CSSProperties {
+  const hue = 120 + (hashHue(name) % 120);
+  return {
+    backgroundImage: `linear-gradient(155deg, hsl(${hue} 30% 32%), hsl(${(hue + 45) % 360} 24% 14%))`,
+  };
+}
+
+/**
+ * Production places page — Country Covers atlas.
+ * Region covers with a visited meter; open a cover for city chips, drill
+ * down through the hierarchy, or flip to the scoped map.
+ */
+export function PlaceLibrary({ authReady, onNavigateToPost }: PlaceLibraryProps) {
   const { placeId: routePlaceId } = useParams();
   const navigate = useNavigate();
+  const { places, apiPlaces, visitedIds, loading, refresh } = usePlaceAtlas(authReady, {
+    allowSample: false,
+  });
 
-  const [allPlaces, setAllPlaces] = useState<Place[]>([]);
-  const [visitedPlaceIds, setVisitedPlaceIds] = useState<Set<string>>(new Set());
-  const [categories, setCategories] = useState<string[]>([]);
-  const [continentScope, setContinentScope] = useState<string | null>(null);
-  const [countryScope, setCountryScope] = useState<string | null>(null);
-  const [stateFilter, setStateFilter] = useState("all");
-  const [cityFilter, setCityFilter] = useState("all");
-  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [rawScopeKey, setScopeKey] = useState("world");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [typeFilter, setTypeFilter] = useState<string[]>([]);
+  const [grouping, setGrouping] = useState<AtlasGrouping>("region");
+  const [viewMode, setViewMode] = useState<ViewMode>("covers");
+  const [expandedKeys, setExpandedKeys] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [mobilePane, setMobilePane] = useState<MobilePane>("browse");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
 
-  const hasSearch = searchQuery.trim().length > 0;
-  const hasCategoryFilter = categoryFilter !== "all";
-  const isGallery = Boolean(countryScope) || hasSearch || hasCategoryFilter;
+  const placesById = useMemo(
+    () => Object.fromEntries(apiPlaces.map((place) => [place.place_id, place])),
+    [apiPlaces],
+  );
 
-  useEffect(() => {
-    void fetchCategories().then(setCategories).catch(() => setCategories([]));
-  }, []);
+  const [routedPlace, setRoutedPlace] = useState<Place | null>(null);
 
   useEffect(() => {
+    if (!routePlaceId) {
+      setRoutedPlace(null);
+      return;
+    }
+    const fromList = placesById[routePlaceId];
+    if (fromList) {
+      setRoutedPlace(fromList);
+      return;
+    }
+    if (loading) {
+      return;
+    }
     let cancelled = false;
-    setLoading(true);
-    setError(null);
-    fetchPlaces()
-      .then((result) => {
+    void fetchPlaceDetail(routePlaceId)
+      .then((detail) => {
         if (!cancelled) {
-          setAllPlaces(result);
+          setRoutedPlace(detail.place);
         }
       })
-      .catch((err) => {
+      .catch(() => {
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : "Failed to load places");
-          setAllPlaces([]);
-        }
-      })
-      .finally(() => {
-        if (!cancelled) {
-          setLoading(false);
+          setRoutedPlace(null);
+          navigate("/places", { replace: true });
         }
       });
     return () => {
       cancelled = true;
     };
-  }, [refreshToken]);
+  }, [routePlaceId, placesById, loading, navigate]);
 
-  useEffect(() => {
-    void fetchVisitedPlaceIds()
-      .then((ids) => setVisitedPlaceIds(new Set(ids)))
-      .catch(() => setVisitedPlaceIds(new Set()));
-  }, [refreshToken]);
+  const selectedApiPlace = routedPlace;
 
-  const rootCatalog = useMemo(
-    () => allPlaces.filter((place) => !place.parent_place_id),
-    [allPlaces],
+  const statusPlaces = useMemo(() => {
+    if (statusFilter === "visited") {
+      return places.filter((place) => place.visited);
+    }
+    if (statusFilter === "inspiration") {
+      return places.filter((place) => !place.visited);
+    }
+    return places;
+  }, [places, statusFilter]);
+
+  const filteredPlaces = useMemo(() => {
+    if (typeFilter.length === 0) {
+      return statusPlaces;
+    }
+    return statusPlaces.filter((place) => typeFilter.includes(place.category ?? "other"));
+  }, [statusPlaces, typeFilter]);
+
+  const atlas = useMemo(() => buildAtlas(filteredPlaces, grouping), [filteredPlaces, grouping]);
+  const typeAtlas = useMemo(() => buildAtlas(statusPlaces, grouping), [statusPlaces, grouping]);
+
+  const scopeKey = resolveScopeKey(atlas, rawScopeKey);
+  const scope = atlas.index.get(scopeKey) ?? atlas.root;
+  const trail = useMemo(() => atlasTrail(atlas, scope.key), [atlas, scope.key]);
+
+  const children = useMemo(
+    () => scope.children.filter((child) => child.total > 0),
+    [scope],
   );
 
-  const childrenByParent = useMemo(() => {
-    const map = new Map<string, Place[]>();
-    for (const place of allPlaces) {
-      if (!place.parent_place_id) {
-        continue;
-      }
-      const siblings = map.get(place.parent_place_id) ?? [];
-      siblings.push(place);
-      map.set(place.parent_place_id, siblings);
+  const typeOptions = useMemo(() => {
+    const typeScope = typeAtlas.index.get(resolveScopeKey(typeAtlas, scopeKey)) ?? typeAtlas.root;
+    return countByCategory(leafPlaces(typeScope));
+  }, [typeAtlas, scopeKey]);
+
+  const searchHits = useMemo(() => {
+    const needle = searchQuery.trim();
+    if (!needle) {
+      return [];
     }
-    for (const siblings of map.values()) {
-      siblings.sort((a, b) => a.display_name.localeCompare(b.display_name));
-    }
-    return map;
-  }, [allPlaces]);
+    return searchAtlas(atlas, needle, 40).filter((node) => node.place);
+  }, [atlas, searchQuery]);
 
-  const continentTiles = useMemo(() => countBy(rootCatalog, (place) => place.location.continent), [rootCatalog]);
+  const searching = searchQuery.trim().length > 0;
 
-  const countryTiles = useMemo(() => {
-    const scoped = continentScope
-      ? rootCatalog.filter((place) => place.location.continent === continentScope)
-      : rootCatalog;
-    return countBy(scoped, (place) => place.location.country);
-  }, [rootCatalog, continentScope]);
-
-  useEffect(() => {
-    if (isGallery || continentScope || continentTiles.length !== 1) {
+  function openNode(node: AtlasNode) {
+    if (node.level === "place" && node.place) {
+      navigate(`/places/${node.place.placeId}`);
       return;
     }
-    setContinentScope(continentTiles[0].name);
-  }, [continentTiles, continentScope, isGallery]);
+    setScopeKey(node.key);
+    setExpandedKeys([]);
+  }
 
-  useEffect(() => {
-    setStateFilter("all");
-    setCityFilter("all");
-  }, [countryScope, continentScope]);
+  function toggleExpanded(key: string) {
+    setExpandedKeys((keys) =>
+      keys.includes(key) ? keys.filter((entry) => entry !== key) : [...keys, key],
+    );
+  }
 
-  const scopedRoots = useMemo(() => {
-    return rootCatalog.filter((place) => {
-      if (continentScope && place.location.continent !== continentScope) {
-        return false;
-      }
-      if (countryScope && place.location.country !== countryScope) {
-        return false;
-      }
-      if (categoryFilter === "uncategorized") {
-        return place.category == null;
-      }
-      if (categoryFilter !== "all" && place.category !== categoryFilter) {
-        return false;
-      }
-      return true;
-    });
-  }, [rootCatalog, continentScope, countryScope, categoryFilter]);
+  function toggleType(category: string) {
+    setTypeFilter((types) =>
+      types.includes(category)
+        ? types.filter((entry) => entry !== category)
+        : [...types, category],
+    );
+  }
 
-  const searchedPlaces = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase();
-    if (!query) {
-      return scopedRoots;
-    }
-    return scopedRoots.filter((place) => place.display_name.toLowerCase().includes(query));
-  }, [scopedRoots, searchQuery]);
+  function changeGrouping(nextGrouping: AtlasGrouping) {
+    setGrouping(nextGrouping);
+    setScopeKey("world");
+    setExpandedKeys([]);
+  }
 
-  const stateOptions = useMemo(
-    () => distinctSorted(searchedPlaces.map((place) => place.location.state_province)),
-    [searchedPlaces],
-  );
-
-  const cityOptions = useMemo(
-    () =>
-      distinctSorted(
-        searchedPlaces
-          .filter((place) => stateFilter === "all" || place.location.state_province === stateFilter)
-          .map((place) => place.location.city),
-      ),
-    [searchedPlaces, stateFilter],
-  );
-
-  const places = useMemo(() => {
-    return searchedPlaces.filter((place) => {
-      if (stateFilter !== "all" && place.location.state_province !== stateFilter) {
-        return false;
-      }
-      if (cityFilter !== "all" && place.location.city !== cityFilter) {
-        return false;
-      }
-      return true;
-    });
-  }, [searchedPlaces, stateFilter, cityFilter]);
-
-  useEffect(() => {
-    if (stateFilter !== "all" && !stateOptions.includes(stateFilter)) {
-      setStateFilter("all");
-    }
-  }, [stateOptions, stateFilter]);
-
-  useEffect(() => {
-    if (cityFilter !== "all" && !cityOptions.includes(cityFilter)) {
-      setCityFilter("all");
-    }
-  }, [cityOptions, cityFilter]);
-
-  useEffect(() => {
-    if (!routePlaceId) {
-      setSelectedPlace(null);
-      return;
-    }
-    const fromRoots = rootCatalog.find((place) => place.place_id === routePlaceId);
-    if (fromRoots) {
-      setSelectedPlace(fromRoots);
-      return;
-    }
-    const fromAll = allPlaces.find((place) => place.place_id === routePlaceId);
-    if (fromAll) {
-      setSelectedPlace(fromAll);
-    }
-  }, [routePlaceId, rootCatalog, allPlaces]);
-
-  const openPlace = (place: Place) => {
-    setSelectedPlace(place);
-    navigate(`/places/${place.place_id}`);
-  };
-
-  const closePlace = () => {
-    setSelectedPlace(null);
+  function closePlace() {
     navigate("/places");
-  };
+  }
 
-  const goToAll = () => {
-    setContinentScope(null);
-    setCountryScope(null);
-    setStateFilter("all");
-    setCityFilter("all");
-    setSearchQuery("");
-  };
-
-  const goToContinent = (continent: string) => {
-    setContinentScope(continent);
-    setCountryScope(null);
-    setStateFilter("all");
-    setCityFilter("all");
-  };
-
-  const goToCountry = (country: string, continent?: string) => {
-    if (continent) {
-      setContinentScope(continent);
-    } else if (!continentScope) {
-      const match = rootCatalog.find((place) => place.location.country === country);
-      if (match?.location.continent) {
-        setContinentScope(match.location.continent);
-      }
+  function handleVisitedChange(_placeId: string, visited: boolean) {
+    void refresh();
+    if (!visited && statusFilter === "visited") {
+      navigate("/places");
     }
-    setCountryScope(country);
-    setStateFilter("all");
-    setCityFilter("all");
-  };
+  }
 
-  const galleryHeading = hasSearch
-    ? `Search results${countryScope ? ` in ${countryScope}` : ""}`
-    : hasCategoryFilter && !countryScope
-      ? categoryFilter === "uncategorized"
-        ? "Uncategorized places"
-        : `Places · ${categoryLabel(categoryFilter)}`
-      : countryScope
-        ? countryScope
-        : "Places";
-
-  const showEmptyCatalog = !loading && rootCatalog.length === 0 && !error;
-  const showEmptyGallery = isGallery && !loading && places.length === 0;
+  useEffect(() => {
+    // Drop a deep scope if filters emptied its branch.
+    if (!atlas.index.has(rawScopeKey) && rawScopeKey !== "world") {
+      setScopeKey("world");
+      setExpandedKeys([]);
+    }
+  }, [atlas, rawScopeKey]);
 
   return (
-    <section className="library-section place-library">
-      <div className="library-toolbar place-toolbar-row">
-        <div className="place-toolbar">
-          <input
-            type="search"
-            className="place-search"
-            placeholder="Search places…"
-            value={searchQuery}
-            onChange={(event) => setSearchQuery(event.target.value)}
-            aria-label="Search places by name"
-          />
+    <div className="wf-browse place-library-covers">
+      <div className="wf-container wf-browse-masthead">
+        <div>
+          <p className="wf-browse-eyebrow">Your atlas</p>
+          <h1 className="wf-browse-title">Atlas</h1>
+          <p className="wf-browse-lede">
+            Everywhere your saves point to, from continents down to the single café — with what
+            you've already visited marked off.
+          </p>
+        </div>
+        <div className="wf-browse-count">
+          <span className="wf-browse-count-value">{scope.total}</span>
+          <span className="wf-browse-count-label">places</span>
+        </div>
+      </div>
 
-          <nav className="place-breadcrumb" aria-label="Place geography">
-            <button type="button" className="place-breadcrumb-link" onClick={goToAll}>
-              All
-            </button>
-            {continentScope && (
-              <>
-                <span className="place-breadcrumb-sep" aria-hidden="true">
-                  /
-                </span>
+      <div className="wf-browse-bar">
+        <div className="wf-container wf-browse-bar-inner">
+          <nav className="wf-browse-context" aria-label="Hierarchy">
+            {trail.map((node, index) => (
+              <span key={node.key}>
+                {index > 0 && (
+                  <span className="wf-crumb-sep" aria-hidden="true">
+                    /
+                  </span>
+                )}
                 <button
                   type="button"
-                  className={`place-breadcrumb-link ${!countryScope && !hasSearch ? "place-breadcrumb-current" : ""}`}
-                  onClick={() => goToContinent(continentScope)}
+                  className={node.key === scope.key ? "is-current" : ""}
+                  onClick={() => openNode(node)}
                 >
-                  {continentScope}
+                  {node.name}
                 </button>
-              </>
-            )}
-            {countryScope && (
-              <>
-                <span className="place-breadcrumb-sep" aria-hidden="true">
-                  /
-                </span>
-                <span className="place-breadcrumb-current">{countryScope}</span>
-              </>
+              </span>
+            ))}
+            {trail.length > 1 && (
+              <button
+                type="button"
+                className="wf-crumb-up"
+                onClick={() => openNode(trail[trail.length - 2])}
+              >
+                ↑ Up one level
+              </button>
             )}
           </nav>
-
-          <div className="place-filters">
-            {isGallery && cityOptions.length > 0 && (
-              <select
-                className="platform-filter"
-                value={cityFilter}
-                onChange={(event) => setCityFilter(event.target.value)}
-                aria-label="Filter by city"
-              >
-                <option value="all">all cities</option>
-                {cityOptions.map((city) => (
-                  <option key={city} value={city}>
-                    {city}
-                  </option>
-                ))}
-              </select>
-            )}
-            <select
-              className="platform-filter"
-              value={categoryFilter}
-              onChange={(event) => setCategoryFilter(event.target.value)}
-              aria-label="Filter by category"
-            >
-              <option value="all">all categories</option>
-              {categories.map((category) => (
-                <option key={category} value={category}>
-                  {categoryLabel(category)}
-                </option>
-              ))}
-              <option value="uncategorized">Uncategorized</option>
-            </select>
-          </div>
-
-          <div className="place-view-toggle place-mobile-toggle" role="group" aria-label="Place view mode">
+          <div className="wf-seg" role="group" aria-label="View mode">
             <button
               type="button"
-              className={`place-view-button ${mobilePane === "browse" ? "place-view-button-active" : ""}`}
-              aria-pressed={mobilePane === "browse"}
-              onClick={() => setMobilePane("browse")}
+              className={`wf-seg-btn ${viewMode === "covers" ? "is-active" : ""}`}
+              onClick={() => setViewMode("covers")}
             >
-              Browse
+              Covers
             </button>
             <button
               type="button"
-              className={`place-view-button ${mobilePane === "map" ? "place-view-button-active" : ""}`}
-              aria-pressed={mobilePane === "map"}
-              onClick={() => setMobilePane("map")}
+              className={`wf-seg-btn ${viewMode === "map" ? "is-active" : ""}`}
+              onClick={() => setViewMode("map")}
             >
               Map
             </button>
@@ -372,152 +265,200 @@ export function PlaceLibrary({
         </div>
       </div>
 
-      {error && <p className="banner-error">{error}</p>}
-
-      {showEmptyCatalog ? (
-        <div className="empty-state">
-          <p>
-            No places yet — ingest a post with a location tag, caption stops, or video place
-            extraction and it will show up here.
-          </p>
+      <div className="wf-container wf-facets">
+        <div className="wf-facet-row" role="group" aria-label="Grouping">
+          <span className="wf-facet-label">Group by</span>
+          {(["region", "type"] as AtlasGrouping[]).map((mode) => (
+            <button
+              key={mode}
+              type="button"
+              className={`wf-pill ${grouping === mode ? "is-active" : ""}`}
+              onClick={() => changeGrouping(mode)}
+            >
+              {mode === "region" ? "Region" : "Type"}
+            </button>
+          ))}
         </div>
-      ) : (
-        <div className={`place-split place-split-${mobilePane}`}>
-          <div className="place-browse-pane">
-            {loading ? (
-              <p className="loading-copy">Loading places…</p>
-            ) : isGallery ? (
-              <div className="place-gallery">
-                <div className="place-gallery-header">
-                  <h3 className="place-gallery-heading">{galleryHeading}</h3>
-                  <p className="place-gallery-meta">
-                    {places.length} place{places.length === 1 ? "" : "s"}
-                  </p>
-                </div>
 
-                {stateOptions.length > 1 && (
-                  <div className="place-state-chips" role="group" aria-label="Filter by state or province">
-                    <button
-                      type="button"
-                      className={`place-state-chip ${stateFilter === "all" ? "place-state-chip-active" : ""}`}
-                      onClick={() => setStateFilter("all")}
-                    >
-                      All regions
-                    </button>
-                    {stateOptions.map((stateProvince) => (
-                      <button
-                        key={stateProvince}
-                        type="button"
-                        className={`place-state-chip ${stateFilter === stateProvince ? "place-state-chip-active" : ""}`}
-                        onClick={() => setStateFilter(stateProvince)}
-                      >
-                        {stateProvince}
-                      </button>
-                    ))}
-                  </div>
-                )}
+        <div className="wf-facet-row" role="group" aria-label="Status filter">
+          <span className="wf-facet-label">Status</span>
+          {(["all", "visited", "inspiration"] as StatusFilter[]).map((filter) => (
+            <button
+              key={filter}
+              type="button"
+              className={`wf-pill ${statusFilter === filter ? "is-active" : ""}`}
+              onClick={() => setStatusFilter(filter)}
+            >
+              {filter === "all" ? "Everything" : filter === "visited" ? "Visited" : "Inspiration"}
+            </button>
+          ))}
+        </div>
 
-                {showEmptyGallery ? (
-                  <div className="empty-state">
-                    <p>No places match the current search or filters.</p>
-                  </div>
-                ) : (
-                  <div className="place-gallery-grid">
-                    {places.map((place) => (
-                      <PlaceCard
-                        key={place.place_id}
-                        place={place}
-                        children={childrenByParent.get(place.place_id) ?? []}
-                        visited={visitedPlaceIds.has(place.place_id)}
-                        onSelect={openPlace}
-                      />
-                    ))}
-                  </div>
-                )}
+        <div className="wf-facet-row" role="group" aria-label="Type filter">
+          <span className="wf-facet-label">Type</span>
+          <button
+            type="button"
+            className={`wf-pill ${typeFilter.length === 0 ? "is-active" : ""}`}
+            onClick={() => setTypeFilter([])}
+          >
+            All types
+          </button>
+          {typeOptions.map((option) => (
+            <button
+              key={option.category}
+              type="button"
+              className={`wf-pill ${typeFilter.includes(option.category) ? "is-active" : ""}`}
+              aria-pressed={typeFilter.includes(option.category)}
+              onClick={() => toggleType(option.category)}
+            >
+              {option.label}
+              <span style={{ marginLeft: "0.35rem", opacity: 0.75 }}>{option.count}</span>
+            </button>
+          ))}
+        </div>
+
+        <div className="wf-facet-row">
+          <span className="wf-facet-label">Search</span>
+          <label className="wf-search-field">
+            <input
+              type="search"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder="Find a place…"
+              aria-label="Search places"
+            />
+          </label>
+        </div>
+      </div>
+
+      <div className="wf-container wf-browse-body">
+        <div className="pl2 pl2--dark" data-view="country-covers" data-level={scope.level}>
+          <div className="pl2-shell place-library-covers-shell">
+            <div className="pl2-scopebar">
+              <div>
+                <strong>{scope.name}</strong>
+                <span>
+                  {scope.total} places · {scope.visited} visited · {scope.inspiration} inspiration ·
+                  showing {childLevelLabel(scope).toLowerCase()}
+                </span>
               </div>
+            </div>
+
+            <div className="pl2-legend">
+              <span>
+                <i className="pl2-dot visited" /> Visited
+              </span>
+              <span>
+                <i className="pl2-dot dream" /> Inspiration
+              </span>
+              <span className="pl2-legend-note">
+                {searching
+                  ? "Search results · same filters"
+                  : viewMode === "map"
+                    ? "Map view · same scope and filters"
+                    : "Making the atlas feel aspirational"}
+              </span>
+            </div>
+
+            {loading ? (
+              <p className="pl2-empty">Loading your atlas…</p>
+            ) : places.length === 0 ? (
+              <p className="pl2-empty">No places yet — ingest a post with locations, then come back.</p>
+            ) : filteredPlaces.length === 0 ? (
+              <p className="pl2-empty">Nothing matches these filters — clear a type or status.</p>
+            ) : searching ? (
+              searchHits.length === 0 ? (
+                <p className="pl2-empty">No places match that search.</p>
+              ) : (
+                <div className="wf-search-results">
+                  {searchHits.map((node) => {
+                    const place = node.place!;
+                    return (
+                      <Link
+                        key={place.placeId}
+                        className="wf-search-row"
+                        to={`/places/${place.placeId}`}
+                      >
+                        <i className={`pl2-dot ${place.visited ? "visited" : "dream"}`} />
+                        <span className="wf-search-row-name">{place.name}</span>
+                        <span className="wf-search-row-trail">{place.trail.join(" · ")}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              )
+            ) : viewMode === "map" ? (
+              <AtlasMapPanel scope={scope} onOpenNode={openNode} />
             ) : (
-              <div className="place-hub">
-                {!continentScope ? (
-                  <>
-                    <h3 className="place-hub-heading">Destinations</h3>
-                    <p className="place-hub-copy">Browse by continent, then drill into a country.</p>
-                    <div className="place-hub-grid">
-                      {continentTiles.map((tile) => (
-                        <button
-                          key={tile.name}
-                          type="button"
-                          className="place-hub-tile"
-                          onClick={() => goToContinent(tile.name)}
+              <div className="pl2-covers">
+                {children.map((child) => {
+                  const ratio = child.total ? child.visited / child.total : 0;
+                  const open = expandedKeys.includes(child.key);
+                  const isPlace = child.level === "place";
+                  return (
+                    <article key={child.key} className={`pl2-cover ${open ? "is-open" : ""}`}>
+                      <button
+                        type="button"
+                        className="pl2-cover-art"
+                        style={coverArt(child.name)}
+                        onClick={() => (isPlace ? openNode(child) : toggleExpanded(child.key))}
+                      >
+                        <span className="pl2-cover-kicker">{levelLabel(child.level)}</span>
+                        <h3>{child.name}</h3>
+                        <span
+                          className="pl2-cover-meter"
+                          style={vars({ "--ratio": `${ratio * 100}%` })}
                         >
-                          <span className="place-hub-tile-name">{tile.name}</span>
-                          <span className="place-hub-tile-meta">
-                            {tile.placeCount} place{tile.placeCount === 1 ? "" : "s"}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <h3 className="place-hub-heading">{continentScope}</h3>
-                    <p className="place-hub-copy">Choose a country to explore places.</p>
-                    <div className="place-hub-grid">
-                      {countryTiles.map((tile) => (
-                        <button
-                          key={tile.name}
-                          type="button"
-                          className="place-hub-tile"
-                          onClick={() => goToCountry(tile.name)}
-                        >
-                          <span className="place-hub-tile-name">{tile.name}</span>
-                          <span className="place-hub-tile-meta">
-                            {tile.placeCount} place{tile.placeCount === 1 ? "" : "s"}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  </>
-                )}
+                          <i />
+                        </span>
+                        <span className="pl2-cover-stats">
+                          {isPlace
+                            ? child.place?.visited
+                              ? "Visited"
+                              : "Inspiration"
+                            : `${child.visited} visited · ${child.total} saved`}
+                        </span>
+                      </button>
+                      {open && !isPlace && (
+                        <div className="pl2-cover-chips">
+                          {child.children.slice(0, 16).map((grandchild) => (
+                            <button
+                              key={grandchild.key}
+                              type="button"
+                              onClick={() => openNode(grandchild)}
+                            >
+                              {grandchild.level === "place" && (
+                                <i
+                                  className={`pl2-dot ${
+                                    grandchild.place?.visited ? "visited" : "dream"
+                                  }`}
+                                />
+                              )}
+                              {grandchild.name}
+                              {grandchild.level !== "place" && <span>{grandchild.total}</span>}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </article>
+                  );
+                })}
               </div>
             )}
           </div>
-
-          <div className="place-map-pane">
-            <Suspense fallback={<p className="loading-copy">Loading map…</p>}>
-              <PlaceMap
-                places={places}
-                visitedPlaceIds={visitedPlaceIds}
-                selectedPlaceId={selectedPlace?.place_id}
-                onSelectPlace={openPlace}
-                className="place-map-shell place-map-shell-split"
-                height="100%"
-              />
-            </Suspense>
-          </div>
         </div>
-      )}
+      </div>
 
-      {selectedPlace && (
+      {selectedApiPlace && (
         <PlaceDetail
-          place={selectedPlace}
-          visited={visitedPlaceIds.has(selectedPlace.place_id)}
+          place={selectedApiPlace}
+          visited={visitedIds.has(selectedApiPlace.place_id)}
           onClose={closePlace}
-          onNavigateToPlace={openPlace}
+          onNavigateToPlace={(place) => navigate(`/places/${place.place_id}`)}
           onNavigateToPost={onNavigateToPost}
-          onVisitedChange={(placeId, nextVisited) => {
-            setVisitedPlaceIds((prev) => {
-              const next = new Set(prev);
-              if (nextVisited) {
-                next.add(placeId);
-              } else {
-                next.delete(placeId);
-              }
-              return next;
-            });
-            onChanged?.();
-          }}
+          onVisitedChange={handleVisitedChange}
         />
       )}
-    </section>
+    </div>
   );
 }

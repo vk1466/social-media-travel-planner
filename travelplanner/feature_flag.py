@@ -20,11 +20,11 @@ class FeatureFlag:
 
   _flags: dict[str, Any] = {
     "place_facts": False,
-    "extract_image_text": False,
+    "extract_image_text": True,
     # Supadata multimodal video analysis for reel/video (places + overlays).
-    "extract_video_analysis": False,
+    "extract_video_analysis": True,
     # Sample reel/video frames and OCR on-screen text via OpenAI vision.
-    "extract_reel_frame_text": False,
+    "extract_reel_frame_text": True,
     # When Nominatim locate fails, try one cheap Google Geocoding/Places call.
     "google_geocode_fallback": False,
     "place_facts_ttl_days": 30,

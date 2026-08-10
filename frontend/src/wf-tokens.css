@@ -1,0 +1,137 @@
+:root {
+  /*
+   * Common Wanderfile brand palette — single source for every page.
+   * Change via ThemeColorPicker (or edit these defaults). Prefer these
+   * tokens everywhere: var(--wf-forest), rgb(var(--wf-forest-rgb) / a).
+   * JS consumers: import { BrandCss, BrandHex, P } from "./brandColors".
+   */
+
+  /* Brand greens */
+  --wf-forest: #1f3d31;
+  --wf-forest-mid: #2a4f40;
+  --wf-forest-deep: #142a21;
+  --wf-forest-hover: #173026;
+  --wf-sage: #2f6b52;
+  --wf-mint: #8fd4b0;
+
+  /* Channel forms for translucent overlays */
+  --wf-forest-rgb: 31 61 49;
+  --wf-forest-mid-rgb: 42 79 64;
+  --wf-forest-deep-rgb: 20 42 33;
+  --wf-forest-hover-rgb: 23 48 38;
+  --wf-sage-rgb: 47 107 82;
+  --wf-mint-rgb: 143 212 176;
+  --wf-cream-rgb: 244 247 245;
+  --wf-ink-rgb: 28 36 32;
+  --wf-sand-rgb: 196 168 130;
+  --wf-clay-rgb: 154 115 88;
+  --wf-slate-rgb: 61 107 138;
+  --wf-plum-rgb: 111 95 138;
+
+  /* Neutrals — light surfaces */
+  --wf-cream: #f4f7f5;
+  --wf-soft: #e8f0ec;
+  --wf-bg: #f4f6f4;
+  --wf-surface: #ffffff;
+  --wf-surface-muted: #f0f2f0;
+  --wf-fog: #e8ece9;
+  --wf-border: #dde3de;
+  --wf-border-subtle: #e8ece9;
+
+  /* Text — three shared roles for the whole site */
+  --wf-ink: #1c2420; /* contrast ink for chips / light insets */
+  --wf-quiet: #9eb0a6; /* muted copy on dark ground */
+  --wf-on-brand: #f4f7f5; /* primary page copy on dark ground */
+  /* Page copy — dark site defaults (overridden by .wf-site[data-tone]) */
+  --wf-copy: var(--wf-on-brand);
+  --wf-copy-muted: var(--wf-quiet);
+  --wf-copy-accent: var(--wf-mint);
+  --wf-chrome-bg: var(--wf-forest-deep);
+  --wf-chrome-panel: var(--wf-panel-dark);
+  --wf-chrome-panel-muted: var(--wf-panel-dark-hover);
+  --wf-chrome-border: var(--wf-border-dark);
+  /* Back-compat aliases — same roles, do not invent new text colors */
+  --wf-text: var(--wf-ink);
+  --wf-text-muted: var(--wf-quiet);
+  --wf-text-on-brand: var(--wf-on-brand);
+  --wf-subtle: var(--wf-quiet);
+
+  /* Secondary accents */
+  --wf-sand: #c4a882;
+  --wf-clay: #9a7358;
+  --wf-slate: #3d6b8a;
+  --wf-plum: #6f5f8a;
+
+  /* Status */
+  --wf-success: #2f6b52;
+  --wf-danger: #c45c5c;
+
+  /* Category chip tones — bg / ink / border per family */
+  --wf-cat-outdoors-bg: #e7f3ec;
+  --wf-cat-outdoors-ink: #1f5c3d;
+  --wf-cat-outdoors-border: #c5e0d0;
+  --wf-cat-water-bg: #e6f2f7;
+  --wf-cat-water-ink: #2a5f78;
+  --wf-cat-water-border: #c5dce8;
+  --wf-cat-place-bg: #eef1f3;
+  --wf-cat-place-ink: #3d4f5c;
+  --wf-cat-place-border: #d5dde3;
+  --wf-cat-culture-bg: #f5efe8;
+  --wf-cat-culture-ink: #7a5538;
+  --wf-cat-culture-border: #e4d5c4;
+  --wf-cat-food-bg: #f7efe6;
+  --wf-cat-food-ink: #8a5a2b;
+  --wf-cat-food-border: #ead7c0;
+  --wf-cat-market-bg: #f3ece6;
+  --wf-cat-market-ink: #6e4f3a;
+  --wf-cat-market-border: #e0d0c2;
+  --wf-cat-stay-bg: #e8eef2;
+  --wf-cat-stay-ink: #3a5568;
+  --wf-cat-stay-border: #c9d7e0;
+
+  /* On-dark surfaces — muted variants of on-brand text */
+  --wf-on-dark: var(--wf-quiet);
+  --wf-on-dark-strong: color-mix(in srgb, var(--wf-on-brand) 92%, var(--wf-quiet));
+  --wf-border-dark: rgb(var(--wf-mint-rgb) / 0.22);
+  --wf-panel-dark: rgb(255 255 255 / 0.06);
+  --wf-panel-dark-hover: rgb(255 255 255 / 0.1);
+
+  /* Geometry */
+  --wf-radius-xs: 6px;
+  --wf-radius-sm: 8px;
+  --wf-radius-md: 12px;
+  --wf-radius-lg: 18px;
+  --wf-radius-xl: 24px;
+  --wf-radius-pill: 999px;
+
+  /* Elevation */
+  --wf-shadow-sm: 0 1px 2px rgb(var(--wf-ink-rgb) / 0.04);
+  --wf-shadow-md: 0 8px 24px rgb(var(--wf-ink-rgb) / 0.06);
+  --wf-shadow-lg: 0 16px 40px rgb(var(--wf-ink-rgb) / 0.08);
+  --wf-shadow-dark: 0 22px 48px rgb(0 0 0 / 0.45);
+
+  /* Layout */
+  --wf-header-h: 60px;
+  --wf-max: 1240px;
+  --wf-gutter: 1.5rem;
+  --wf-gutter-sm: 1.1rem;
+
+  /* Motion */
+  --wf-ease: 160ms ease;
+  --wf-ease-slow: 320ms cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* Type — role-specific faces/sizes (picker overrides these) */
+  --wf-font-sans: "DM Sans Variable", system-ui, sans-serif;
+  --wf-font-serif: "Instrument Serif", Georgia, "Times New Roman", serif;
+  --wf-font-mono: ui-monospace, "SF Mono", Menlo, Monaco, Consolas, monospace;
+  --wf-font-body: var(--wf-font-sans);
+  --wf-font-muted: var(--wf-font-sans);
+  --wf-font-headline: var(--wf-font-serif);
+  --wf-font-on-brand: var(--wf-font-sans);
+  --wf-size-body: 1rem;
+  --wf-size-muted: 0.875rem;
+  --wf-size-on-brand: 0.875rem;
+  --wf-size-headline: 1;
+  --wf-eyebrow-size: 0.66rem;
+  --wf-eyebrow-tracking: 0.14em;
+}

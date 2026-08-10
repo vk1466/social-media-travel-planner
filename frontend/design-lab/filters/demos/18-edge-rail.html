@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>18 · Slim edge filter rail — Filter Lab</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../shared/shell.css" />
+  <style>
+.f-row { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+.search-pill {
+  display: flex; align-items: center; gap: 0.4rem;
+  border: 1px solid var(--line); border-radius: 999px; padding: 0.45rem 0.85rem; background: #fbfaf7;
+  flex: 1; min-width: 160px;
+}
+.search-pill input { border: 0; outline: 0; background: transparent; width: 100%; font: inherit; font-size: 0.88rem; }
+.btn {
+  border: 1px solid var(--line); background: #fff; border-radius: 999px;
+  padding: 0.45rem 0.85rem; font: inherit; font-size: 0.8rem; font-weight: 600; cursor: pointer; color: var(--ink);
+}
+.btn.is-on { border-color: var(--accent); background: var(--soft); color: var(--accent); }
+.btn.solid { border: 0; background: var(--accent); color: var(--accent-ink); }
+.btn.ghost { border-style: dashed; color: var(--muted); }
+.btn.sq { border-radius: 10px; }
+.chips { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.7rem; }
+.chip {
+  display: inline-flex; align-items: center; gap: 0.3rem;
+  background: var(--accent); color: var(--accent-ink); border-radius: 999px;
+  padding: 0.25rem 0.45rem 0.25rem 0.7rem; font-size: 0.74rem; font-weight: 600;
+}
+.chip.soft { background: var(--soft); color: var(--accent); }
+.chip button { border: 0; background: transparent; color: inherit; cursor: pointer; font-size: 1rem; line-height: 1; }
+.menu {
+  position: absolute; top: calc(100% + 6px); left: 0; z-index: 40;
+  min-width: 200px; max-height: 280px; overflow: auto;
+  background: #fff; border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow); padding: 0.35rem;
+}
+.menu button, .opt {
+  display: flex; width: 100%; justify-content: space-between; gap: 1rem; align-items: center;
+  border: 0; background: transparent; text-align: left; padding: 0.5rem 0.65rem;
+  border-radius: 8px; font: inherit; font-size: 0.82rem; cursor: pointer; color: var(--ink);
+}
+.menu button:hover, .menu button.is-active, .opt:hover, .opt.is-active { background: var(--soft); color: var(--accent); }
+.wrap { position: relative; }
+.seg {
+  display: inline-flex; padding: 3px; border: 1px solid var(--line); border-radius: 999px; background: #fbfaf7;
+}
+.seg button {
+  border: 0; background: transparent; border-radius: 999px; padding: 0.35rem 0.7rem;
+  font: inherit; font-size: 0.76rem; font-weight: 600; color: var(--muted); cursor: pointer;
+}
+.seg button.is-active { background: var(--accent); color: var(--accent-ink); }
+.overlay { position: fixed; inset: 0; background: rgb(12 15 14 / 0.4); z-index: 70; }
+.overlay[hidden] { display: none; }
+.hint { margin: 0.5rem 0 0; font-size: 0.78rem; color: var(--muted); }
+
+.rail-layout{display:flex;gap:0;min-height:320px;align-items:stretch}
+.rail{display:flex;flex-direction:column;gap:.35rem;padding:.25rem .25rem .25rem 0;border-right:1px solid var(--line);flex:0 0 52px}
+.rail button{width:40px;height:40px;border:1px solid transparent;border-radius:10px;background:transparent;cursor:pointer;font-size:.95rem;color:var(--muted)}
+.rail button.is-on,.rail button:hover{background:var(--soft);color:var(--accent);border-color:var(--line)}
+.rail-panel{border-right:1px solid var(--line);padding:0 1rem 0 .75rem;width:220px;flex:0 0 220px}
+.rail-panel[hidden]{display:none}
+.rail-main{padding-left:1rem;flex:1;min-width:0}
+@media(max-width:700px){.rail-layout{flex-direction:column}.rail{flex-direction:row;flex:none;border:0;border-bottom:1px solid var(--line);padding:0 0 .75rem;margin-bottom:.75rem;width:100%}.rail-panel{width:auto;flex:none;border:0;padding:0 0 .75rem}.rail-main{padding:0}}</style>
+</head>
+<body>
+  <header class="demo-top">
+    <a href="../index.html">← Filter Lab</a>
+    <span class="pattern">Pattern 18</span>
+    <a href="../../index.html">Design Lab</a>
+  </header>
+  <main class="demo-shell">
+    <div class="demo-intro">
+      <h1>Slim edge filter rail</h1>
+      <p>A narrow left icon rail for Group, Status, Type, Search. Panels expand on click, then collapse.</p>
+      <p class="demo-inspired">Inspired by <strong>Figma / design-tool side rails</strong></p>
+    </div>
+    <section class="demo-stage" id="stage">
+
+      <div class="rail-layout">
+        <div class="rail" data-rail>
+          <button type="button" data-panel="search" title="Search" aria-label="Search">⌕</button>
+          <button type="button" data-panel="status" title="Status" aria-label="Status">◎</button>
+          <button type="button" data-panel="type" title="Type" aria-label="Type">◫</button>
+          <button type="button" data-panel="grouping" title="Group" aria-label="Group">☰</button>
+        </div>
+        <div class="rail-panel" hidden data-panel-body></div>
+        <div class="rail-main">
+          <div class="chips" data-chips style="margin-top:0"></div>
+          <div data-main-slot></div>
+        </div>
+      </div>
+      <div class="demo-results">
+        <div class="demo-results-meta" data-results-meta></div>
+        <div class="demo-grid" data-results-grid></div>
+      </div>
+    </section>
+    <nav class="demo-nav">
+      <a href="17-sentence-filters.html">← Previous</a>
+      <a href="19-one-row-dropdowns.html">Next →</a>
+    </nav>
+  </main>
+  <script type="module">
+    import {
+      createState, renderResults, toggleType, TYPES, STATUSES, GROUPINGS,
+      typeLabel, statusLabel, groupingLabel, activeCount, escapeHtml
+    } from "../shared/shell.js";
+    const state = createState();
+    const stage = document.getElementById("stage");
+    const refresh = () => renderResults(stage, state);
+    const closeMenus = () => stage.querySelectorAll("[data-menu]").forEach((m) => (m.hidden = true));
+    function renderActiveChips(el, soft = false) {
+      const chips = [];
+      if (state.grouping !== "region") chips.push({ k: "g", t: "Group · " + groupingLabel(state.grouping) });
+      if (state.status !== "all") chips.push({ k: "s", t: statusLabel(state.status) });
+      state.types.forEach((id) => chips.push({ k: "t:" + id, t: typeLabel(id) }));
+      if (state.query.trim()) chips.push({ k: "q", t: "“" + state.query.trim() + "”" });
+      el.innerHTML = chips.map((c) =>
+        '<span class="chip' + (soft ? " soft" : "") + '">' + escapeHtml(c.t) +
+        '<button type="button" data-x="' + c.k + '" aria-label="Remove">×</button></span>'
+      ).join("");
+    }
+    function handleChipRemove(e) {
+      const x = e.target.closest("[data-x]");
+      if (!x) return false;
+      const k = x.dataset.x;
+      if (k === "g") state.grouping = "region";
+      else if (k === "s") state.status = "all";
+      else if (k === "q") { state.query = ""; const inp = stage.querySelector("[data-search]"); if (inp) inp.value = ""; }
+      else if (k.startsWith("t:")) state.types = state.types.filter((id) => id !== k.slice(2));
+      return true;
+    }
+
+    const panelBody=stage.querySelector("[data-panel-body]");
+    const mainSlot=stage.querySelector("[data-main-slot]");
+    mainSlot.appendChild(stage.querySelector(".demo-results"));
+    let active=null;
+    function paintPanel(){
+      stage.querySelectorAll("[data-rail] button").forEach(b=>b.classList.toggle("is-on", b.dataset.panel===active));
+      if(!active){panelBody.hidden=true;return;}
+      panelBody.hidden=false;
+      if(active==="search"){
+        panelBody.innerHTML='<h3 style="margin:0 0 .5rem;font-size:.75rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)">Search</h3><label class="search-pill"><input type="search" placeholder="Find…" data-search value="'+escapeHtml(state.query)+'" /></label>';
+        panelBody.querySelector("[data-search]").addEventListener("input",(e)=>{state.query=e.target.value;paint();});
+      } else if(active==="status"){
+        panelBody.innerHTML='<h3 style="margin:0 0 .5rem;font-size:.75rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)">Status</h3>'+STATUSES.map(s=>'<button type="button" class="opt '+(state.status===s.id?"is-active":"")+'" data-set-s="'+s.id+'">'+s.label+'</button>').join("");
+      } else if(active==="type"){
+        panelBody.innerHTML='<h3 style="margin:0 0 .5rem;font-size:.75rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)">Type</h3>'+TYPES.map(t=>'<button type="button" class="opt '+(state.types.includes(t.id)?"is-active":"")+'" data-toggle-t="'+t.id+'"><span>'+t.label+'</span><span>'+t.count+'</span></button>').join("");
+      } else {
+        panelBody.innerHTML='<h3 style="margin:0 0 .5rem;font-size:.75rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)">Group by</h3>'+GROUPINGS.map(g=>'<button type="button" class="opt '+(state.grouping===g.id?"is-active":"")+'" data-set-g="'+g.id+'">'+g.label+'</button>').join("");
+      }
+    }
+    function paint(){paintPanel();renderActiveChips(stage.querySelector("[data-chips]"),true);refresh();}
+    stage.addEventListener("click",(e)=>{
+      const tab=e.target.closest("[data-panel]");
+      if(tab && tab.closest("[data-rail]")){ active = active===tab.dataset.panel ? null : tab.dataset.panel; paint(); return; }
+      if(handleChipRemove(e)){paint();return;}
+      const g=e.target.closest("[data-set-g]"); if(g){state.grouping=g.dataset.setG;paint();return;}
+      const s=e.target.closest("[data-set-s]"); if(s){state.status=s.dataset.setS;paint();return;}
+      const t=e.target.closest("[data-toggle-t]"); if(t){toggleType(state,t.dataset.toggleT);paint();}
+    });
+    paint();
+
+  </script>
+</body>
+</html>

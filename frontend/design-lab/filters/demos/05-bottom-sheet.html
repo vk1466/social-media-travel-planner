@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>05 · Bottom sheet refine — Filter Lab</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../shared/shell.css" />
+  <style>
+.f-row { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+.search-pill {
+  display: flex; align-items: center; gap: 0.4rem;
+  border: 1px solid var(--line); border-radius: 999px; padding: 0.45rem 0.85rem; background: #fbfaf7;
+  flex: 1; min-width: 160px;
+}
+.search-pill input { border: 0; outline: 0; background: transparent; width: 100%; font: inherit; font-size: 0.88rem; }
+.btn {
+  border: 1px solid var(--line); background: #fff; border-radius: 999px;
+  padding: 0.45rem 0.85rem; font: inherit; font-size: 0.8rem; font-weight: 600; cursor: pointer; color: var(--ink);
+}
+.btn.is-on { border-color: var(--accent); background: var(--soft); color: var(--accent); }
+.btn.solid { border: 0; background: var(--accent); color: var(--accent-ink); }
+.btn.ghost { border-style: dashed; color: var(--muted); }
+.btn.sq { border-radius: 10px; }
+.chips { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.7rem; }
+.chip {
+  display: inline-flex; align-items: center; gap: 0.3rem;
+  background: var(--accent); color: var(--accent-ink); border-radius: 999px;
+  padding: 0.25rem 0.45rem 0.25rem 0.7rem; font-size: 0.74rem; font-weight: 600;
+}
+.chip.soft { background: var(--soft); color: var(--accent); }
+.chip button { border: 0; background: transparent; color: inherit; cursor: pointer; font-size: 1rem; line-height: 1; }
+.menu {
+  position: absolute; top: calc(100% + 6px); left: 0; z-index: 40;
+  min-width: 200px; max-height: 280px; overflow: auto;
+  background: #fff; border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow); padding: 0.35rem;
+}
+.menu button, .opt {
+  display: flex; width: 100%; justify-content: space-between; gap: 1rem; align-items: center;
+  border: 0; background: transparent; text-align: left; padding: 0.5rem 0.65rem;
+  border-radius: 8px; font: inherit; font-size: 0.82rem; cursor: pointer; color: var(--ink);
+}
+.menu button:hover, .menu button.is-active, .opt:hover, .opt.is-active { background: var(--soft); color: var(--accent); }
+.wrap { position: relative; }
+.seg {
+  display: inline-flex; padding: 3px; border: 1px solid var(--line); border-radius: 999px; background: #fbfaf7;
+}
+.seg button {
+  border: 0; background: transparent; border-radius: 999px; padding: 0.35rem 0.7rem;
+  font: inherit; font-size: 0.76rem; font-weight: 600; color: var(--muted); cursor: pointer;
+}
+.seg button.is-active { background: var(--accent); color: var(--accent-ink); }
+.overlay { position: fixed; inset: 0; background: rgb(12 15 14 / 0.4); z-index: 70; }
+.overlay[hidden] { display: none; }
+.hint { margin: 0.5rem 0 0; font-size: 0.78rem; color: var(--muted); }
+
+.sheet{position:fixed;left:50%;bottom:0;transform:translateX(-50%);width:min(520px,100%);z-index:80;background:#fff;border-radius:20px 20px 0 0;box-shadow:0 -20px 50px rgb(0 0 0/.18);max-height:80vh;display:flex;flex-direction:column}
+.sheet[hidden]{display:none}
+.sheet .grab{width:40px;height:4px;border-radius:999px;background:#ddd;margin:.7rem auto .2rem}
+.sheet header{padding:.5rem 1.1rem .8rem;display:flex;justify-content:space-between;align-items:center}
+.sheet header h2{margin:0;font-size:1.05rem}
+.sheet .body{overflow:auto;padding:0 1.1rem 1rem}
+.sheet footer{padding:.85rem 1.1rem 1.1rem;border-top:1px solid var(--line)}
+.sheet footer button{width:100%;border:0;border-radius:12px;padding:.85rem;background:var(--accent);color:var(--accent-ink);font:inherit;font-weight:700;cursor:pointer}
+.section{margin-bottom:1rem}
+.section h3{margin:0 0 .45rem;font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.opt{border:1px solid var(--line)!important;border-radius:10px;margin-bottom:.35rem}</style>
+</head>
+<body>
+  <header class="demo-top">
+    <a href="../index.html">← Filter Lab</a>
+    <span class="pattern">Pattern 05</span>
+    <a href="../../index.html">Design Lab</a>
+  </header>
+  <main class="demo-shell">
+    <div class="demo-intro">
+      <h1>Bottom sheet refine</h1>
+      <p>A Refine control opens a sheet with Apply and a live count. Same pattern desktop and mobile.</p>
+      <p class="demo-inspired">Inspired by <strong>Airbnb / Maps mobile filters</strong></p>
+    </div>
+    <section class="demo-stage" id="stage">
+
+      <div class="f-row">
+        <label class="search-pill"><input type="search" placeholder="Find a place…" data-search /></label>
+        <button type="button" class="btn solid" data-open>Refine</button>
+      </div>
+      <div class="chips" data-chips></div>
+      <div class="overlay" hidden data-bg></div>
+      <div class="sheet" hidden data-sheet role="dialog" aria-label="Refine">
+        <div class="grab"></div>
+        <header><h2>Refine</h2><button type="button" class="btn ghost" data-clear>Reset</button></header>
+        <div class="body" data-body></div>
+        <footer><button type="button" data-apply>Show results</button></footer>
+      </div>
+      <div class="demo-results">
+        <div class="demo-results-meta" data-results-meta></div>
+        <div class="demo-grid" data-results-grid></div>
+      </div>
+    </section>
+    <nav class="demo-nav">
+      <a href="04-filter-drawer.html">← Previous</a>
+      <a href="06-sidebar-accordion.html">Next →</a>
+    </nav>
+  </main>
+  <script type="module">
+    import {
+      createState, renderResults, toggleType, TYPES, STATUSES, GROUPINGS,
+      typeLabel, statusLabel, groupingLabel, activeCount, escapeHtml
+    } from "../shared/shell.js";
+    const state = createState();
+    const stage = document.getElementById("stage");
+    const refresh = () => renderResults(stage, state);
+    const closeMenus = () => stage.querySelectorAll("[data-menu]").forEach((m) => (m.hidden = true));
+    function renderActiveChips(el, soft = false) {
+      const chips = [];
+      if (state.grouping !== "region") chips.push({ k: "g", t: "Group · " + groupingLabel(state.grouping) });
+      if (state.status !== "all") chips.push({ k: "s", t: statusLabel(state.status) });
+      state.types.forEach((id) => chips.push({ k: "t:" + id, t: typeLabel(id) }));
+      if (state.query.trim()) chips.push({ k: "q", t: "“" + state.query.trim() + "”" });
+      el.innerHTML = chips.map((c) =>
+        '<span class="chip' + (soft ? " soft" : "") + '">' + escapeHtml(c.t) +
+        '<button type="button" data-x="' + c.k + '" aria-label="Remove">×</button></span>'
+      ).join("");
+    }
+    function handleChipRemove(e) {
+      const x = e.target.closest("[data-x]");
+      if (!x) return false;
+      const k = x.dataset.x;
+      if (k === "g") state.grouping = "region";
+      else if (k === "s") state.status = "all";
+      else if (k === "q") { state.query = ""; const inp = stage.querySelector("[data-search]"); if (inp) inp.value = ""; }
+      else if (k.startsWith("t:")) state.types = state.types.filter((id) => id !== k.slice(2));
+      return true;
+    }
+
+    const sheet=stage.querySelector("[data-sheet]"); const bg=stage.querySelector("[data-bg]");
+    const draft=()=>({grouping:state.grouping,status:state.status,types:[...state.types]});
+    let d=draft();
+    function open(){d=draft();sheet.hidden=false;bg.hidden=false;paintSheet();}
+    function close(){sheet.hidden=true;bg.hidden=true;}
+    function paintSheet(){
+      const countPlaceholder = "Apply";
+      stage.querySelector("[data-body]").innerHTML=
+        '<div class="section"><h3>Group by</h3>'+GROUPINGS.map(g=>'<button type="button" class="opt '+(d.grouping===g.id?"is-active":"")+'" data-dg="'+g.id+'">'+g.label+'</button>').join("")+'</div>'+
+        '<div class="section"><h3>Status</h3>'+STATUSES.map(s=>'<button type="button" class="opt '+(d.status===s.id?"is-active":"")+'" data-ds="'+s.id+'">'+s.label+'</button>').join("")+'</div>'+
+        '<div class="section"><h3>Type</h3>'+TYPES.map(t=>'<button type="button" class="opt '+(d.types.includes(t.id)?"is-active":"")+'" data-dt="'+t.id+'"><span>'+t.label+'</span><span>'+t.count+'</span></button>').join("")+'</div>';
+      stage.querySelector("[data-apply]").textContent="Show filtered places";
+    }
+    function paint(){renderActiveChips(stage.querySelector("[data-chips]"),true);refresh();}
+    stage.querySelector("[data-search]").addEventListener("input",(e)=>{state.query=e.target.value;paint();});
+    stage.querySelector("[data-open]").addEventListener("click",open);
+    bg.addEventListener("click",close);
+    stage.addEventListener("click",(e)=>{
+      if(handleChipRemove(e)) paint();
+      if(e.target.closest("[data-clear]")){d={grouping:"region",status:"all",types:[]};paintSheet();}
+      if(e.target.closest("[data-apply]")){state.grouping=d.grouping;state.status=d.status;state.types=[...d.types];close();paint();}
+      const g=e.target.closest("[data-dg]"); if(g){d.grouping=g.dataset.dg;paintSheet();}
+      const s=e.target.closest("[data-ds]"); if(s){d.status=s.dataset.ds;paintSheet();}
+      const t=e.target.closest("[data-dt]"); if(t){ const id=t.dataset.dt; d.types=d.types.includes(id)?d.types.filter(x=>x!==id):[...d.types,id]; paintSheet(); }
+    });
+    paint();
+
+  </script>
+</body>
+</html>

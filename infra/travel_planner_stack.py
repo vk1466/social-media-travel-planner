@@ -46,6 +46,10 @@ class TravelPlannerStack(Stack):
 
     tables = self._create_tables(stage=stage, region=region, removal=removal)
 
+    cors_origin_list = [o.strip() for o in cors_origins.split(",") if o.strip()] or [
+      "http://localhost:5173"
+    ]
+
     timeline_bucket = s3.Bucket(
       self,
       "TimelineImports",
@@ -61,13 +65,45 @@ class TravelPlannerStack(Stack):
       cors=[
         s3.CorsRule(
           allowed_methods=[s3.HttpMethods.PUT, s3.HttpMethods.GET, s3.HttpMethods.HEAD],
-          allowed_origins=[o.strip() for o in cors_origins.split(",") if o.strip()]
-          or ["http://localhost:5173"],
+          allowed_origins=cors_origin_list,
           allowed_headers=["*"],
           exposed_headers=["ETag"],
           max_age=3000,
         )
       ],
+    )
+
+    # Durable post cover images. Listing stays private; GetObject is public on thumbnails/*.
+    media_bucket = s3.Bucket(
+      self,
+      "Media",
+      bucket_name=f"travelplanner-media-{stage}-{region}-{Stack.of(self).account}",
+      block_public_access=s3.BlockPublicAccess(
+        block_public_acls=True,
+        ignore_public_acls=True,
+        block_public_policy=False,
+        restrict_public_buckets=False,
+      ),
+      encryption=s3.BucketEncryption.S3_MANAGED,
+      enforce_ssl=True,
+      removal_policy=removal,
+      auto_delete_objects=stage == "dev",
+      cors=[
+        s3.CorsRule(
+          allowed_methods=[s3.HttpMethods.GET, s3.HttpMethods.HEAD],
+          allowed_origins=cors_origin_list,
+          allowed_headers=["*"],
+          max_age=3000,
+        )
+      ],
+    )
+    media_bucket.add_to_resource_policy(
+      iam.PolicyStatement(
+        sid="PublicReadThumbnails",
+        principals=[iam.AnyPrincipal()],
+        actions=["s3:GetObject"],
+        resources=[media_bucket.arn_for_objects("thumbnails/*")],
+      )
     )
 
     shared_env = {
@@ -79,6 +115,7 @@ class TravelPlannerStack(Stack):
       "OPENAI_API_KEY": openai_api_key,
       "LOG_LEVEL": "INFO",
       "TIMELINE_IMPORTS_BUCKET": timeline_bucket.bucket_name,
+      "MEDIA_BUCKET": media_bucket.bucket_name,
       "TIMELINE_BATCH_SIZE": "100",
       "TIMELINE_HOME_EXCLUDE_KM": "30",
       "TIMELINE_MAX_PLACES_PER_CALL": "100",
@@ -161,6 +198,7 @@ class TravelPlannerStack(Stack):
       table.grant_read_write_data(timeline_finalize_fn)
 
     timeline_bucket.grant_read(timeline_batch_fn)
+    media_bucket.grant_read_write(ingest_fn)
 
     state_machine = self._create_state_machine(ingest_fn, finalize_fn)
     timeline_state_machine = self._create_timeline_state_machine(
@@ -196,6 +234,7 @@ class TravelPlannerStack(Stack):
     timeline_state_machine.grant_start_execution(api_fn)
     timeline_bucket.grant_put(api_fn)
     timeline_bucket.grant_read(api_fn)
+    media_bucket.grant_read_write(api_fn)
     # Presigned PUT from the browser needs the API role to sign PutObject.
     api_fn.add_to_role_policy(
       iam.PolicyStatement(
@@ -230,6 +269,12 @@ class TravelPlannerStack(Stack):
       self,
       "TimelineImportsBucket",
       value=timeline_bucket.bucket_name,
+    )
+    CfnOutput(
+      self,
+      "MediaBucket",
+      description="Durable post thumbnail objects (public GetObject on thumbnails/*)",
+      value=media_bucket.bucket_name,
     )
     CfnOutput(
       self,

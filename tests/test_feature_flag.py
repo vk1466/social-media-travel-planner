@@ -7,10 +7,13 @@ from travelplanner.feature_flag import FeatureFlag
 
 def test_flags_default_off() -> None:
   assert FeatureFlag.get("place_facts") is False
-  assert FeatureFlag.get("extract_image_text") is False
-  assert FeatureFlag.get("extract_video_analysis") is False
-  assert FeatureFlag.get("extract_reel_frame_text") is False
   assert FeatureFlag.get("google_geocode_fallback") is False
+
+
+def test_media_enrichment_flags_default_on() -> None:
+  assert FeatureFlag.get("extract_image_text") is True
+  assert FeatureFlag.get("extract_video_analysis") is True
+  assert FeatureFlag.get("extract_reel_frame_text") is True
 
 
 def test_place_facts_tuning_constants() -> None:

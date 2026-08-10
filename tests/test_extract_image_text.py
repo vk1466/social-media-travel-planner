@@ -62,12 +62,16 @@ def test_extract_image_text_skips_when_flag_off() -> None:
       }
     },
   )
-  with patch(
-    "travelplanner.steps.instagram.extract_image_text.read_image_urls_text"
-  ) as mock_read:
-    result = extract_image_text(ctx)
-  mock_read.assert_not_called()
-  assert result.image_text is None
+  try:
+    FeatureFlag.set("extract_image_text", False)
+    with patch(
+      "travelplanner.steps.instagram.extract_image_text.read_image_urls_text"
+    ) as mock_read:
+      result = extract_image_text(ctx)
+    mock_read.assert_not_called()
+    assert result.image_text is None
+  finally:
+    FeatureFlag.set("extract_image_text", True)
 
 
 def test_extract_image_text_sets_image_text_when_enabled() -> None:
@@ -85,19 +89,16 @@ def test_extract_image_text_sets_image_text_when_enabled() -> None:
       }
     },
   )
-  try:
-    FeatureFlag.set("extract_image_text", True)
-    with patch(
-      "travelplanner.steps.instagram.extract_image_text.read_image_urls_text",
-      return_value="Café Nin\nPanadería Rosetta",
-    ) as mock_read:
-      result = extract_image_text(ctx)
-    mock_read.assert_called_once_with(
-      ["https://cdn.example/a.jpg", "https://cdn.example/b.jpg"]
-    )
-    assert result.image_text == "Café Nin\nPanadería Rosetta"
-  finally:
-    FeatureFlag.set("extract_image_text", False)
+  FeatureFlag.set("extract_image_text", True)
+  with patch(
+    "travelplanner.steps.instagram.extract_image_text.read_image_urls_text",
+    return_value="Café Nin\nPanadería Rosetta",
+  ) as mock_read:
+    result = extract_image_text(ctx)
+  mock_read.assert_called_once_with(
+    ["https://cdn.example/a.jpg", "https://cdn.example/b.jpg"]
+  )
+  assert result.image_text == "Café Nin\nPanadería Rosetta"
 
 
 def test_extract_image_text_skips_non_image_resource() -> None:
@@ -106,13 +107,10 @@ def test_extract_image_text_skips_non_image_resource() -> None:
     user_id="u1",
     resource_type="reel",
   )
-  try:
-    FeatureFlag.set("extract_image_text", True)
-    with patch(
-      "travelplanner.steps.instagram.extract_image_text.read_image_urls_text"
-    ) as mock_read:
-      result = extract_image_text(ctx)
-    mock_read.assert_not_called()
-    assert result.image_text is None
-  finally:
-    FeatureFlag.set("extract_image_text", False)
+  FeatureFlag.set("extract_image_text", True)
+  with patch(
+    "travelplanner.steps.instagram.extract_image_text.read_image_urls_text"
+  ) as mock_read:
+    result = extract_image_text(ctx)
+  mock_read.assert_not_called()
+  assert result.image_text is None

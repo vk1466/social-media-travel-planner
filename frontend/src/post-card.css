@@ -1,0 +1,210 @@
+/* Post card grid & card chrome */
+
+.post-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: var(--size-4);
+}
+
+.post-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-3);
+  padding: var(--size-4) var(--size-4) var(--size-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  transition:
+    border-color var(--wf-ease),
+    box-shadow var(--wf-ease);
+}
+
+.post-card:hover {
+  border-color: rgb(var(--wf-sage-rgb) / 0.35);
+  box-shadow: var(--shadow-md);
+}
+
+.post-card-source {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--size-3);
+  align-items: center;
+}
+
+.post-source-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--size-2);
+  min-width: 0;
+}
+
+.post-favicon {
+  flex-shrink: 0;
+  border-radius: 3px;
+}
+
+.post-domain {
+  font-size: var(--font-size-0);
+  font-weight: var(--font-weight-6);
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.post-platform-badge {
+  flex-shrink: 0;
+  font-size: 0.65rem;
+  font-weight: var(--font-weight-6);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-subtle);
+}
+
+.post-open-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  color: var(--text-muted);
+  font-size: var(--font-size-0);
+  font-weight: var(--font-weight-6);
+  text-decoration: none;
+}
+
+.post-open-link:hover {
+  color: var(--forest);
+}
+
+.post-card-body {
+  padding: 0;
+  border: none;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+
+.post-title {
+  margin: 0 0 var(--size-2);
+  font-size: var(--font-size-2);
+  font-weight: var(--font-weight-7);
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--text);
+}
+
+.post-description {
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  color: var(--text-muted);
+  font-size: var(--font-size-1);
+  line-height: var(--font-lineheight-4);
+}
+
+.post-tag-list {
+  margin-top: var(--size-3);
+}
+
+.post-tag {
+  background: var(--surface-muted);
+  color: var(--text-muted);
+  border-color: var(--border-subtle);
+}
+
+.post-places-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-2);
+  padding-top: var(--size-2);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.post-places-count {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--size-1);
+  color: var(--text-subtle);
+  font-size: var(--font-size-0);
+}
+
+.post-view-places {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--size-2);
+}
+
+.view-place-button {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--forest);
+  font: inherit;
+  font-size: var(--font-size-0);
+  font-weight: var(--font-weight-6);
+  cursor: pointer;
+  text-align: left;
+  text-decoration: underline;
+  text-decoration-color: rgb(var(--wf-sage-rgb) / 0.45);
+  text-underline-offset: 2px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.view-place-button:hover {
+  color: var(--forest-hover);
+}
+
+.post-card-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--size-3);
+  align-items: center;
+  margin-top: auto;
+  padding-top: var(--size-2);
+}
+
+.post-date {
+  color: var(--text-subtle);
+  font-size: var(--font-size-0);
+}
+
+.post-delete-button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--size-1);
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--danger);
+  font: inherit;
+  font-size: var(--font-size-0);
+  font-weight: var(--font-weight-6);
+  cursor: pointer;
+}
+
+.post-delete-button:hover:not(:disabled) {
+  color: color-mix(in srgb, var(--danger) 75%, var(--wf-ink));
+}
+
+.post-delete-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.post-stats,
+.post-extract-hint {
+  color: var(--text-subtle);
+  font-size: var(--font-size-0);
+}
+
+.post-extract-hint {
+  margin: 0;
+}

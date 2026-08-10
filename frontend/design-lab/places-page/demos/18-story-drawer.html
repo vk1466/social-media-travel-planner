@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>18 · Curator drawer — Places Page Lab</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600&family=DM+Mono:wght@400;500&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,300;1,9..144,400;1,9..144,500;1,9..144,600&family=Instrument+Serif:ital@0;1&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../sites/shared/places-browse.css" />
+  <link rel="stylesheet" href="../shared/shell.css" />
+  <style>
+
+body { background: #f8f2eb; color: var(--a-ink); font-family: var(--a-sans); }
+.cd-top {
+  max-width: 1240px; margin: 0 auto; padding: 1.2rem 24px 1rem;
+  display: flex; justify-content: space-between; align-items: center;
+  border-bottom: 1px solid #ead9c8;
+}
+.cd-top .brand { display: flex; align-items: baseline; gap: 0.65rem; font-family: var(--a-serif); font-style: italic; font-size: 1.2rem; }
+.cd-top .brand small { font-family: var(--a-sans); font-style: normal; font-size: 0.7rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--a-muted); font-weight: 600; }
+.cd-top nav a { color: var(--a-muted); text-decoration: none; margin-left: 1.1rem; font-size: 0.85rem; }
+.cd-top nav a.is-on { color: var(--a-accent); font-weight: 600; }
+.cd-tab {
+  position: fixed; top: 40%; right: 0; z-index: 90;
+  background: var(--a-accent); color: #fffaf5;
+  padding: 0.85rem 0.65rem;
+  writing-mode: vertical-rl; transform: rotate(180deg);
+  font-size: 0.75rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase;
+  border-radius: 6px 0 0 6px; cursor: pointer; border: 0;
+  box-shadow: -6px 0 16px -6px rgb(200 92 52 / 0.5);
+}
+.cd-tab:hover { background: #b04a24; }
+.cd-drawer {
+  position: fixed; top: 0; right: 0; bottom: 0; width: min(440px, 92vw); z-index: 200;
+  background: #fffaf5; color: var(--a-ink);
+  padding: 2rem 2rem 2.5rem;
+  transform: translateX(100%); transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: -30px 0 60px -20px rgb(0 0 0 / 0.4);
+  overflow-y: auto;
+  border-left: 1px solid #d9c9b3;
+}
+.cd-drawer.is-open { transform: translateX(0); }
+.cd-drawer .close {
+  position: absolute; top: 14px; right: 16px;
+  border: 0; background: transparent; color: var(--a-muted);
+  font-size: 1.5rem; line-height: 1; cursor: pointer;
+}
+.cd-drawer .kicker {
+  margin: 0; font-family: "DM Mono", monospace; font-size: 0.68rem;
+  letter-spacing: 0.24em; text-transform: uppercase; color: var(--a-accent); font-weight: 600;
+}
+.cd-drawer h2 {
+  margin: 0.55rem 0 1.2rem; font-family: var(--a-serif); font-style: italic; font-weight: 400;
+  font-size: 2rem; letter-spacing: -0.02em;
+}
+.cd-drawer p {
+  margin: 0 0 1rem; font-family: var(--a-serif); font-size: 1rem; line-height: 1.65; color: var(--a-ink-soft, #5a4234);
+}
+.cd-scrim {
+  position: fixed; inset: 0; z-index: 150;
+  background: rgb(26 18 14 / 0.35); backdrop-filter: blur(2px);
+  opacity: 0; pointer-events: none; transition: opacity 0.28s ease;
+}
+.cd-scrim.is-open { opacity: 1; pointer-events: auto; }
+
+  </style>
+</head>
+<body>
+  <header class="lab-top">
+    <a href="../index.html">← Places Page Lab</a>
+    <nav class="lab-top-nav" aria-label="Structure pager">
+      <a href="17-veil-overlay.html">← Back</a>
+      <span class="pattern">Structure 18 / 20</span>
+      <a href="19-type-monument.html">Next →</a>
+    </nav>
+    <a href="../../index.html">Design Lab</a>
+  </header>
+
+  <div class="cd-top">
+    <div class="brand"><small>Wanderfile</small>Almanac · Places</div>
+    <nav><a class="" href="../../sites/02-almanac/index.html">Discover</a><a class="" href="../../sites/02-almanac/posts.html">Posts</a><a class=" is-on" href="#">Places</a><a class="" href="../../sites/02-almanac/history.html">Journal</a><a class="" href="../../sites/02-almanac/add.html">Add</a></nav>
+  </div>
+  <div id="wf-places-root" class="wf-places wf-places--almanac wf-places--embedded"><div class="wf-places-loading">Loading atlas…</div></div>
+  <button class="cd-tab" id="cd-open" aria-controls="cd-drawer">Curator's notes ▸</button>
+  <div class="cd-scrim" id="cd-scrim"></div>
+  <aside class="cd-drawer" id="cd-drawer" aria-hidden="true">
+    <button class="close" id="cd-close" aria-label="Close">×</button>
+    <p class="kicker">Wall text · Spring MMXXVI</p>
+    <h2>On keeping an atlas.</h2>
+    <p>Every reel you save leaves a pin behind. This page collects them into one running document — filed by region, marked when you've been, kept when you haven't.</p>
+    <p>The atlas is intentionally flat. Continents, cities, and single cafés share the same visual weight. What matters is that they exist in your library, not how far away they are.</p>
+    <p>Filters, search, and grouping stay to the right. Nothing here changes them.</p>
+  </aside>
+  <script>
+    const open = document.getElementById("cd-open");
+    const close = document.getElementById("cd-close");
+    const scrim = document.getElementById("cd-scrim");
+    const drawer = document.getElementById("cd-drawer");
+    const toggle = (on) => {
+      drawer.classList.toggle("is-open", on);
+      scrim.classList.toggle("is-open", on);
+      drawer.setAttribute("aria-hidden", String(!on));
+    };
+    open.addEventListener("click", () => toggle(true));
+    close.addEventListener("click", () => toggle(false));
+    scrim.addEventListener("click", () => toggle(false));
+  </script>
+  <nav class="lab-bottom-nav" aria-label="Structure pager">
+    <a href="17-veil-overlay.html">← Night reading room</a>
+    <span class="hint">← → keys</span>
+    <a href="19-type-monument.html">Type monument →</a>
+  </nav>
+  <script>window.WF_SITE = { id: "02-almanac", title: "Almanac", page: "places-structure" };</script>
+  <script src="../../sites/shared/mock.js"></script>
+  <script type="module" src="../shared/mount.js"></script>
+  <script type="module">
+    const prev = "17-veil-overlay.html";
+    const next = "19-type-monument.html";
+    window.addEventListener("keydown", (event) => {
+      if (event.defaultPrevented) return;
+      const tag = (event.target && event.target.tagName) || "";
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || event.target?.isContentEditable) return;
+      if (event.key === "ArrowLeft" && prev) location.href = prev;
+      if (event.key === "ArrowRight" && next) location.href = next;
+    });
+  </script>
+</body>
+</html>

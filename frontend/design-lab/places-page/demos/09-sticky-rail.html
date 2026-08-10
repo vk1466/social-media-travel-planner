@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>09 · Product index rail — Places Page Lab</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600&family=DM+Mono:wght@400;500&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,300;1,9..144,400;1,9..144,500;1,9..144,600&family=Instrument+Serif:ital@0;1&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../sites/shared/places-browse.css" />
+  <link rel="stylesheet" href="../shared/shell.css" />
+  <style>
+
+body { background: #f8f2eb; color: var(--a-ink); font-family: var(--a-sans); }
+.pr-shell { display: grid; grid-template-columns: 260px 1fr; min-height: calc(100vh - 100px); }
+.pr-rail {
+  position: sticky; top: 48px; align-self: start; height: calc(100vh - 48px);
+  padding: 1.75rem 1.5rem; border-right: 1px solid #ead9c8;
+  display: flex; flex-direction: column; gap: 1.5rem;
+  background: rgb(255 250 245 / 0.5);
+}
+.pr-rail .brand {
+  display: flex; align-items: center; gap: 0.55rem;
+  font-family: var(--a-serif); font-style: italic; font-size: 1.15rem;
+}
+.pr-rail .brand .dot { width: 8px; height: 8px; background: var(--a-accent); border-radius: 50%; }
+.pr-rail .manifesto {
+  font-size: 0.88rem; line-height: 1.55; color: var(--a-ink-soft, #6b5346);
+  padding-bottom: 1.2rem; border-bottom: 1px solid #ead9c8;
+}
+.pr-rail .group { display: flex; flex-direction: column; gap: 2px; }
+.pr-rail .group .label {
+  font-family: "DM Mono", monospace; font-size: 0.62rem;
+  letter-spacing: 0.2em; text-transform: uppercase; color: var(--a-muted); font-weight: 600;
+  margin-bottom: 6px;
+}
+.pr-rail .group a {
+  color: var(--a-ink); text-decoration: none; font-size: 0.88rem; font-weight: 500;
+  padding: 6px 10px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center;
+}
+.pr-rail .group a:hover { background: rgb(200 92 52 / 0.08); }
+.pr-rail .group a.is-on { background: var(--a-accent); color: #fffaf5; }
+.pr-rail .group a .num {
+  font-family: "DM Mono", monospace; font-size: 0.72rem; color: var(--a-muted); font-weight: 500;
+}
+.pr-rail .group a.is-on .num { color: rgb(255 250 245 / 0.85); }
+.pr-rail .footer {
+  margin-top: auto; font-family: "DM Mono", monospace; font-size: 0.68rem;
+  letter-spacing: 0.14em; text-transform: uppercase; color: var(--a-muted); line-height: 1.8;
+}
+.pr-main { min-width: 0; }
+.pr-strip {
+  position: sticky; top: 48px; z-index: 4;
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 0.75rem 1.5rem; border-bottom: 1px solid #ead9c8;
+  background: rgb(248 242 235 / 0.94); backdrop-filter: blur(10px);
+  font-size: 0.82rem;
+}
+.pr-strip h1 {
+  margin: 0; font-family: var(--a-serif); font-style: italic; font-weight: 500; font-size: 1.1rem;
+}
+.pr-strip .kbd {
+  font-family: "DM Mono", monospace; font-size: 0.7rem;
+  border: 1px solid #d9c9b3; padding: 2px 6px; border-radius: 4px; color: var(--a-muted);
+}
+@media (max-width: 900px) {
+  .pr-shell { grid-template-columns: 1fr; }
+  .pr-rail { position: relative; top: 0; height: auto; border-right: 0; border-bottom: 1px solid #ead9c8; }
+}
+
+  </style>
+</head>
+<body>
+  <header class="lab-top">
+    <a href="../index.html">← Places Page Lab</a>
+    <nav class="lab-top-nav" aria-label="Structure pager">
+      <a href="08-swiss-modular.html">← Back</a>
+      <span class="pattern">Structure 09 / 20</span>
+      <a href="10-letterbox.html">Next →</a>
+    </nav>
+    <a href="../../index.html">Design Lab</a>
+  </header>
+
+  <div class="pr-shell">
+    <aside class="pr-rail">
+      <div class="brand"><span class="dot"></span>Almanac</div>
+      <p class="manifesto">A working index of your saved places. Filter by region, mood, or whether you've been. The atlas is always live.</p>
+      <div class="group">
+        <span class="label">Views</span>
+        <a class="is-on" href="#">All places <span class="num">248</span></a>
+        <a href="#">Visited <span class="num">62</span></a>
+        <a href="#">Dreamt of <span class="num">186</span></a>
+        <a href="#">Routed <span class="num">14</span></a>
+      </div>
+      <div class="group">
+        <span class="label">Sections</span>
+        <a href="../../sites/02-almanac/index.html">Discover</a>
+        <a href="../../sites/02-almanac/posts.html">Posts</a>
+        <a href="../../sites/02-almanac/history.html">Journal</a>
+        <a href="../../sites/02-almanac/add.html">Add a link</a>
+      </div>
+      <div class="footer">Wanderfile<br/>Almanac · v2.4</div>
+    </aside>
+    <div class="pr-main">
+      <div class="pr-strip">
+        <h1>Places · All</h1>
+        <span><span class="kbd">⌘</span> <span class="kbd">K</span> to jump</span>
+      </div>
+      <div id="wf-places-root" class="wf-places wf-places--almanac wf-places--embedded"><div class="wf-places-loading">Loading atlas…</div></div>
+    </div>
+  </div>
+  <nav class="lab-bottom-nav" aria-label="Structure pager">
+    <a href="08-swiss-modular.html">← Swiss modular</a>
+    <span class="hint">← → keys</span>
+    <a href="10-letterbox.html">Letterbox cinema →</a>
+  </nav>
+  <script>window.WF_SITE = { id: "02-almanac", title: "Almanac", page: "places-structure" };</script>
+  <script src="../../sites/shared/mock.js"></script>
+  <script type="module" src="../shared/mount.js"></script>
+  <script type="module">
+    const prev = "08-swiss-modular.html";
+    const next = "10-letterbox.html";
+    window.addEventListener("keydown", (event) => {
+      if (event.defaultPrevented) return;
+      const tag = (event.target && event.target.tagName) || "";
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || event.target?.isContentEditable) return;
+      if (event.key === "ArrowLeft" && prev) location.href = prev;
+      if (event.key === "ArrowRight" && next) location.href = next;
+    });
+  </script>
+</body>
+</html>

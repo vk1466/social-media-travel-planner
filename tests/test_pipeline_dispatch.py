@@ -9,6 +9,7 @@ def test_instagram_tail_by_resource_type() -> None:
   assert [step.name for step in INSTAGRAM_HEAD_STEPS] == [
     "seed_instagram_post",
     "fetch_media",
+    "persist_thumbnail",
   ]
   assert [step.name for step in INSTAGRAM_TAIL_BY_RESOURCE_TYPE["reel"]] == [
     "fetch_transcript",

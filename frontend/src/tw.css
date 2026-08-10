@@ -1,0 +1,54 @@
+/*
+ * Tailwind v4 — utilities only (no Preflight).
+ * Brand tokens stay in wf-tokens.css; ThemeColorPicker keeps working because
+ * @theme inline references those vars instead of copying hex values.
+ */
+
+@layer theme, base, components, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+
+@theme inline {
+  /* Colors → utilities like bg-forest, text-quiet, border-border */
+  --color-forest: var(--wf-forest);
+  --color-forest-mid: var(--wf-forest-mid);
+  --color-forest-deep: var(--wf-forest-deep);
+  --color-forest-hover: var(--wf-forest-hover);
+  --color-sage: var(--wf-sage);
+  --color-mint: var(--wf-mint);
+  --color-cream: var(--wf-cream);
+  --color-soft: var(--wf-soft);
+  --color-bg: var(--wf-chrome-bg, var(--wf-bg));
+  --color-surface: var(--wf-chrome-panel, var(--wf-surface));
+  --color-surface-muted: var(--wf-chrome-panel-muted, var(--wf-surface-muted));
+  --color-fog: var(--wf-fog);
+  --color-border: var(--wf-chrome-border, var(--wf-border));
+  --color-border-subtle: var(--wf-chrome-border, var(--wf-border-subtle));
+  --color-ink: var(--wf-copy, var(--wf-ink));
+  --color-quiet: var(--wf-copy-muted, var(--wf-quiet));
+  --color-on-brand: var(--wf-on-brand);
+  --color-on-dark: var(--wf-on-dark);
+  --color-sand: var(--wf-sand);
+  --color-clay: var(--wf-clay);
+  --color-slate: var(--wf-slate);
+  --color-plum: var(--wf-plum);
+  --color-success: var(--wf-success);
+  --color-danger: var(--wf-danger);
+
+  /* Type */
+  --font-sans: var(--wf-font-sans);
+  --font-serif: var(--wf-font-serif);
+  --font-mono: var(--wf-font-mono);
+
+  /* Radii → rounded-sm / rounded-md / rounded-lg / rounded-pill */
+  --radius-sm: var(--wf-radius-sm);
+  --radius-md: var(--wf-radius-md);
+  --radius-lg: var(--wf-radius-lg);
+  --radius-xl: var(--wf-radius-xl);
+  --radius-pill: var(--wf-radius-pill);
+
+  /* Shadows */
+  --shadow-sm: var(--wf-shadow-sm);
+  --shadow-md: var(--wf-shadow-md);
+  --shadow-lg: var(--wf-shadow-lg);
+}

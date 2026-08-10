@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>13 · Card catalog — Places Page Lab</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600&family=DM+Mono:wght@400;500&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,300;1,9..144,400;1,9..144,500;1,9..144,600&family=Instrument+Serif:ital@0;1&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../sites/shared/places-browse.css" />
+  <link rel="stylesheet" href="../shared/shell.css" />
+  <style>
+
+body { background: #f0e8d8; color: #2a1f18; font-family: var(--a-sans); font-size: 14px; }
+.cc-shell {
+  display: grid; grid-template-columns: 1fr 220px; max-width: 1320px; margin: 0 auto;
+  gap: 0; padding: 0 24px 2rem;
+}
+.cc-top {
+  grid-column: 1 / -1; padding: 1.5rem 0 1rem; margin-bottom: 1rem;
+  border-bottom: 2px double #6b5346;
+  display: flex; justify-content: space-between; align-items: baseline; gap: 1rem;
+}
+.cc-top .brand {
+  font-family: "DM Mono", monospace; font-size: 0.7rem;
+  letter-spacing: 0.32em; text-transform: uppercase; color: #6b5346; font-weight: 600;
+}
+.cc-top h1 {
+  margin: 0; font-family: var(--a-serif); font-weight: 500; font-size: 1.6rem; letter-spacing: -0.01em;
+}
+.cc-top nav a { color: #6b5346; text-decoration: none; margin-left: 1rem; font-size: 0.82rem; }
+.cc-top nav a.is-on { color: var(--a-accent); font-weight: 600; }
+.cc-catalog {
+  min-width: 0; border-right: 1px solid #d0c2a8; padding-right: 1.5rem;
+}
+.cc-callnos {
+  padding: 1.25rem 0 1.25rem 1.5rem;
+  font-family: "DM Mono", monospace; font-size: 0.75rem; color: #4a3728; line-height: 1.9;
+}
+.cc-callnos h4 {
+  margin: 0 0 0.75rem; font-family: var(--a-sans); font-size: 0.66rem;
+  letter-spacing: 0.24em; text-transform: uppercase; color: #6b5346; font-weight: 700;
+}
+.cc-callnos ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.cc-callnos li {
+  display: grid; grid-template-columns: 62px 1fr; gap: 8px; align-items: baseline;
+  padding: 4px 0; border-bottom: 1px dotted #c8b898;
+}
+.cc-callnos li strong { color: var(--a-accent); font-weight: 500; letter-spacing: 0.08em; }
+.cc-card {
+  background: #fffaf5; border: 1px solid #c8b898; margin-bottom: 1rem;
+  box-shadow: 2px 2px 0 #d9c9b3;
+  padding: 0.75rem 1rem;
+  display: grid; grid-template-columns: 1fr auto; gap: 1rem;
+  font-family: "DM Mono", monospace; font-size: 0.7rem; color: #6b5346;
+  letter-spacing: 0.1em; text-transform: uppercase;
+}
+.cc-card strong { color: #2a1f18; font-weight: 600; }
+@media (max-width: 820px) {
+  .cc-shell { grid-template-columns: 1fr; }
+  .cc-catalog { border-right: 0; padding-right: 0; }
+  .cc-callnos { padding-left: 0; }
+}
+
+  </style>
+</head>
+<body>
+  <header class="lab-top">
+    <a href="../index.html">← Places Page Lab</a>
+    <nav class="lab-top-nav" aria-label="Structure pager">
+      <a href="12-horizon-band.html">← Back</a>
+      <span class="pattern">Structure 13 / 20</span>
+      <a href="14-passport-folio.html">Next →</a>
+    </nav>
+    <a href="../../index.html">Design Lab</a>
+  </header>
+
+  <div class="cc-shell">
+    <div class="cc-top">
+      <span class="brand">Almanac Library · Catalog</span>
+      <h1>913 · Places</h1>
+      <nav><a class="" href="../../sites/02-almanac/index.html">Discover</a><a class="" href="../../sites/02-almanac/posts.html">Posts</a><a class=" is-on" href="#">Places</a><a class="" href="../../sites/02-almanac/history.html">Journal</a><a class="" href="../../sites/02-almanac/add.html">Add</a></nav>
+    </div>
+    <div class="cc-catalog">
+      <div class="cc-card">
+        <span>Class <strong>913.PLA</strong> · Entries <strong>248</strong> · Circ. <strong>62</strong> · Rev. <strong>Today</strong></span>
+        <span>Bearer <strong>YOU</strong></span>
+      </div>
+      <div id="wf-places-root" class="wf-places wf-places--almanac wf-places--embedded"><div class="wf-places-loading">Loading atlas…</div></div>
+    </div>
+    <aside class="cc-callnos">
+      <h4>Call numbers</h4>
+      <ul>
+        <li><strong>910.G</strong>General atlas</li>
+        <li><strong>911.H</strong>Historical</li>
+        <li><strong>912.M</strong>Maps &amp; charts</li>
+        <li><strong>913.A</strong>Ancient world</li>
+        <li><strong>914.E</strong>Europe</li>
+        <li><strong>915.A</strong>Asia</li>
+        <li><strong>916.F</strong>Africa</li>
+        <li><strong>917.N</strong>North America</li>
+        <li><strong>918.S</strong>South America</li>
+        <li><strong>919.O</strong>Oceania</li>
+      </ul>
+    </aside>
+  </div>
+  <nav class="lab-bottom-nav" aria-label="Structure pager">
+    <a href="12-horizon-band.html">← Horizon band</a>
+    <span class="hint">← → keys</span>
+    <a href="14-passport-folio.html">Passport bifolio →</a>
+  </nav>
+  <script>window.WF_SITE = { id: "02-almanac", title: "Almanac", page: "places-structure" };</script>
+  <script src="../../sites/shared/mock.js"></script>
+  <script type="module" src="../shared/mount.js"></script>
+  <script type="module">
+    const prev = "12-horizon-band.html";
+    const next = "14-passport-folio.html";
+    window.addEventListener("keydown", (event) => {
+      if (event.defaultPrevented) return;
+      const tag = (event.target && event.target.tagName) || "";
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || event.target?.isContentEditable) return;
+      if (event.key === "ArrowLeft" && prev) location.href = prev;
+      if (event.key === "ArrowRight" && next) location.href = next;
+    });
+  </script>
+</body>
+</html>

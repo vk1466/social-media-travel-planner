@@ -1,7 +1,11 @@
 import { useMemo, useState } from "react";
 
+import { LinkIcon } from "./PanelIcons";
+import { SectionPanel } from "./SectionPanel";
+
 interface LinkSubmitFormProps {
   disabled?: boolean;
+  initialValue?: string;
   onSubmit: (links: string[], refresh: boolean) => void;
 }
 
@@ -14,8 +18,12 @@ function isLikelyUrl(value: string): boolean {
   }
 }
 
-export function LinkSubmitForm({ disabled = false, onSubmit }: LinkSubmitFormProps) {
-  const [text, setText] = useState("");
+export function LinkSubmitForm({
+  disabled = false,
+  initialValue = "",
+  onSubmit,
+}: LinkSubmitFormProps) {
+  const [text, setText] = useState(initialValue);
   const [refresh, setRefresh] = useState(false);
 
   const parsed = useMemo(() => {
@@ -39,28 +47,12 @@ export function LinkSubmitForm({ disabled = false, onSubmit }: LinkSubmitFormPro
   }, [text]);
 
   return (
-    <section className="ingest-panel panel">
-      <div className="ingest-panel-header">
-        <span className="ingest-panel-icon" aria-hidden="true">
-          <svg width="18" height="18" viewBox="0 0 18 18">
-            <path
-              d="M7.5 10.5 3 6m0 0 4.5-4.5M3 6h8.5a4 4 0 0 1 0 8H11"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.4"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </span>
-        <div>
-          <h2 className="ingest-panel-title">Paste travel links</h2>
-          <p className="ingest-panel-subtitle">
-            One per line. Instagram reels, blogs, magazine articles — anything.
-          </p>
-        </div>
-      </div>
-
+    <SectionPanel
+      frame="bare"
+      icon={<LinkIcon />}
+      title="Paste travel links"
+      subtitle="One per line. Instagram reels, blogs, magazine articles — anything."
+    >
       <textarea
         id="links-input"
         className="links-input"
@@ -106,6 +98,6 @@ export function LinkSubmitForm({ disabled = false, onSubmit }: LinkSubmitFormPro
           Analyze links
         </button>
       </div>
-    </section>
+    </SectionPanel>
   );
 }

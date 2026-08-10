@@ -10,9 +10,12 @@ import {
 } from "../api";
 import { googleMapsUrl } from "../maps";
 import { factsAttribution, factsRows } from "../placeFacts";
+import { getPlatformLabel, getPostTitle } from "../postDisplayUtils";
+import { thumbStyle } from "../postBrowseModel";
 import { DetailModal } from "./DetailModal";
 import { CategoryChip } from "./CategoryChip";
 import { mappablePlaces } from "../placeMapUtils";
+import { RelationRail, type RelationRailItem } from "./RelationRail";
 
 const PlaceMap = lazy(() => import("./PlaceMap").then((module) => ({ default: module.PlaceMap })));
 
@@ -28,6 +31,13 @@ interface PlaceDetailProps {
 function locationBreadcrumb(place: Place): string {
   const { city, state_province: stateProvince, country, continent } = place.location;
   return [city, stateProvince, country, continent].filter(Boolean).join(" · ") || "Location unknown";
+}
+
+const FALLBACK_HUES = [152, 28, 205, 168, 42];
+
+function coverFallback(index: number): string {
+  const hue = FALLBACK_HUES[index % FALLBACK_HUES.length];
+  return `linear-gradient(145deg, hsl(${hue} 28% 42%), hsl(${hue + 30} 18% 22%))`;
 }
 
 export function PlaceDetail({
@@ -81,6 +91,46 @@ export function PlaceDetail({
   const children = detail?.children ?? [];
   const mapUrl = googleMapsUrl(place.location);
   const mapPlaces = useMemo(() => [place, ...children], [place, children]);
+  const savedFromItems = useMemo((): RelationRailItem[] => {
+    return sourcePosts.map((post, index) => {
+      const style = thumbStyle(
+        {
+          key: post.post_id,
+          platform: post.platform,
+          platformLabel: getPlatformLabel(post),
+          title: getPostTitle(post),
+          description: "",
+          placeNames: [],
+          placeCount: 0,
+          tags: [],
+          dateLabel: "",
+          dayKey: "",
+          monthKey: "",
+          monthLabel: "",
+          timestamp: 0,
+          thumbnailUrl: post.thumbnail_url ?? null,
+          author: post.author_handle ?? null,
+          postUrl: post.post_url,
+          aspect: 1,
+        },
+        index,
+      );
+      const background =
+        typeof style.backgroundImage === "string"
+          ? style.backgroundImage
+          : post.thumbnail_url
+            ? `url(${post.thumbnail_url})`
+            : coverFallback(index);
+      return {
+        key: post.post_id,
+        to: `/posts/${post.platform}/${nativePostId(post)}`,
+        label: getPostTitle(post),
+        sublabel: getPlatformLabel(post),
+        background,
+        shape: "tile" as const,
+      };
+    });
+  }, [sourcePosts]);
 
   const handleToggleVisited = async () => {
     setVisitedError(null);
@@ -268,6 +318,12 @@ export function PlaceDetail({
           </ul>
         )}
       </section>
+
+      <RelationRail
+        heading="Saved from"
+        emptyText="No saved posts point here yet."
+        items={savedFromItems}
+      />
 
       {mappablePlaces(mapPlaces).length > 0 && (
         <section className="detail-section">

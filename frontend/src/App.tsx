@@ -1,95 +1,131 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
-import { UserButton, useAuth, useUser } from "@clerk/react";
+import { useCallback, useEffect, useState } from "react";
+import {
+  Link,
+  Navigate,
+  Outlet,
+  Route,
+  Routes,
+  useNavigate,
+  useParams,
+} from "react-router-dom";
+import { useAuth } from "@clerk/react";
 
 import {
   fetchAdminMe,
-  fetchActiveJob,
   fetchPlaces,
   fetchPosts,
   fetchVisits,
-  startIngest,
   postRouteParts,
   type Place,
+  type SavedPost,
 } from "./api";
+import { AddLinksPage } from "./components/AddLinksPage";
 import { AdminPage } from "./components/AdminPage";
-import { DataMaintenance } from "./components/DataMaintenance";
-import { IngestProgress } from "./components/IngestProgress";
-import { LinkSubmitForm } from "./components/LinkSubmitForm";
-import { LivingMapPage } from "./components/LivingMapPage";
-import { MapDemoGallery } from "./components/MapDemoGallery";
+import { HomePage } from "./components/HomePage";
+import { PageHeader } from "./components/PageHeader";
 import { PlaceLibrary } from "./components/PlaceLibrary";
 import { PostLibrary } from "./components/PostLibrary";
+import { SearchPage } from "./components/SearchPage";
+import { SiteLayout } from "./components/SiteLayout";
 import { TravelHistory } from "./components/TravelHistory";
-import { useJob } from "./hooks/useJob";
 
 const clerkEnabled = Boolean(import.meta.env.VITE_CLERK_PUBLISHABLE_KEY);
 
-function BrandMark() {
-  return (
-    <svg className="brand-mark-svg" width="28" height="28" viewBox="0 0 28 28" aria-hidden="true">
-      <circle cx="14" cy="14" r="14" fill="currentColor" />
-      <path
-        d="M14 7.5 16.8 16.8 14 14 11.2 16.8 14 7.5Z"
-        fill="#f8f9f8"
-      />
-      <circle cx="14" cy="14" r="1.1" fill="#f8f9f8" />
-    </svg>
-  );
+function RedirectMapPlaceToPlaces() {
+  const { placeId } = useParams<{ placeId: string }>();
+  return <Navigate to={placeId ? `/places/${placeId}` : "/places"} replace />;
 }
 
-function ClerkUserChip() {
-  const { user } = useUser();
-  const displayName =
-    user?.fullName || user?.primaryEmailAddress?.emailAddress || "Signed in";
-
-  return (
-    <div className="user-chip">
-      <UserButton />
-      <span className="user-name">{displayName}</span>
-    </div>
-  );
-}
-
-function LocalUserChip() {
-  return (
-    <div className="user-chip">
-      <span className="user-avatar" aria-hidden="true">
-        LO
-      </span>
-      <span className="user-name">Local user</span>
-    </div>
-  );
-}
-
-function UserChip() {
-  return clerkEnabled ? <ClerkUserChip /> : <LocalUserChip />;
-}
-
-function AppShell({ authReady }: { authReady: boolean }) {
+function PlacesRoutes({ authReady }: { authReady: boolean }) {
   const navigate = useNavigate();
-  const location = useLocation();
-  const [posts, setPosts] = useState<Awaited<ReturnType<typeof fetchPosts>>>([]);
+  return (
+    <PlaceLibrary
+      authReady={authReady}
+      onNavigateToPost={(platform, postId) => {
+        const { platform: routePlatform, nativeId } = postRouteParts(platform, postId);
+        navigate(`/posts/${routePlatform}/${nativeId}`);
+      }}
+    />
+  );
+}
+
+function NotFoundPage() {
+  return (
+    <div className="wf-container wf-page-pad">
+      <PageHeader
+        eyebrow="404"
+        title="Page not found"
+        lede={
+          <>
+            That route doesn’t exist. <Link to="/">Back to home</Link>
+          </>
+        }
+      />
+    </div>
+  );
+}
+
+interface ChromeOutletProps {
+  isAdmin: boolean;
+  postCount: number;
+  placeCount: number;
+  onOpenSearch: () => void;
+}
+
+function ChromeOutlet({
+  isAdmin,
+  postCount,
+  placeCount,
+  onOpenSearch,
+}: ChromeOutletProps) {
+  return (
+    <SiteLayout
+      isAdmin={isAdmin}
+      postCount={postCount}
+      placeCount={placeCount}
+      onOpenSearch={onOpenSearch}
+    >
+      <Outlet />
+    </SiteLayout>
+  );
+}
+
+function PostsRoute({
+  loadingPosts,
+  posts,
+  places,
+  onDeleted,
+  onNavigateToPlace,
+}: {
+  loadingPosts: boolean;
+  posts: SavedPost[];
+  places: Place[];
+  onDeleted: () => void;
+  onNavigateToPlace: (placeId: string) => void;
+}) {
+  if (loadingPosts) {
+    return <p className="loading-copy">Loading saved posts…</p>;
+  }
+  return (
+    <PostLibrary
+      posts={posts}
+      places={places}
+      onDeleted={onDeleted}
+      onNavigateToPlace={onNavigateToPlace}
+    />
+  );
+}
+
+function AppRoutes({ authReady }: { authReady: boolean }) {
+  const navigate = useNavigate();
+  const [posts, setPosts] = useState<SavedPost[]>([]);
   const [places, setPlaces] = useState<Place[]>([]);
   const [visitCount, setVisitCount] = useState(0);
-  const [jobId, setJobId] = useState<string | null>(null);
-  const [submitError, setSubmitError] = useState<string | null>(null);
   const [loadingPosts, setLoadingPosts] = useState(true);
   const [libraryVersion, setLibraryVersion] = useState(0);
-  const [formResetKey, setFormResetKey] = useState(0);
   const [isAdmin, setIsAdmin] = useState(false);
-  const switchedAfterIngest = useRef(false);
-  const { job, error: jobError } = useJob(jobId);
 
-  const activeTab = location.pathname.startsWith("/places")
-    ? "places"
-    : location.pathname.startsWith("/history")
-      ? "history"
-      : location.pathname.startsWith("/admin")
-        ? "admin"
-        : "posts";
-
-  const refreshPosts = useCallback(async () => {
+  const refresh = useCallback(async () => {
     setLoadingPosts(true);
     try {
       const [nextPosts, nextPlaces, nextVisits] = await Promise.all([
@@ -105,32 +141,17 @@ function AppShell({ authReady }: { authReady: boolean }) {
     }
   }, []);
 
+  const handleLibraryChanged = useCallback(() => {
+    void refresh();
+    setLibraryVersion((version) => version + 1);
+  }, [refresh]);
+
   useEffect(() => {
     if (!authReady) {
       return;
     }
-    void refreshPosts();
-  }, [authReady, refreshPosts]);
-
-  useEffect(() => {
-    if (!authReady || jobId) {
-      return;
-    }
-    let cancelled = false;
-    void (async () => {
-      try {
-        const active = await fetchActiveJob();
-        if (!cancelled && active?.status === "running") {
-          setJobId(active.job_id);
-        }
-      } catch {
-        // ignore — no active job to resume
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [authReady, jobId]);
+    void refresh();
+  }, [authReady, refresh]);
 
   useEffect(() => {
     if (!authReady) {
@@ -155,297 +176,126 @@ function AppShell({ authReady }: { authReady: boolean }) {
   }, [authReady]);
 
   useEffect(() => {
-    if (job?.status === "done") {
-      void refreshPosts();
-      setLibraryVersion((version) => version + 1);
-      if (!switchedAfterIngest.current && (job.counts.saved > 0 || (job.counts.linked ?? 0) > 0)) {
-        switchedAfterIngest.current = true;
-        navigate("/places");
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (!(event.metaKey || event.ctrlKey) || event.key !== "k") {
+        return;
       }
-    }
-    if (job?.status === "running") {
-      switchedAfterIngest.current = false;
-    }
-  }, [job?.status, job?.counts.saved, job?.counts.linked, refreshPosts, navigate]);
-
-  const handleSubmit = async (links: string[], refresh: boolean) => {
-    setSubmitError(null);
-    try {
-      const nextJobId = await startIngest(links, refresh);
-      setJobId(nextJobId);
-      setFormResetKey((key) => key + 1);
-    } catch (error) {
-      setSubmitError(error instanceof Error ? error.message : "Failed to start ingest");
-    }
-  };
-
-  const handleMaintenanceComplete = () => {
-    void refreshPosts();
-    setLibraryVersion((version) => version + 1);
-  };
-
-  const handleVisitsChanged = () => {
-    void fetchVisits()
-      .then((nextVisits) => setVisitCount(nextVisits.length))
-      .catch(() => undefined);
-  };
+      const target = event.target;
+      if (
+        target instanceof HTMLElement &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+      event.preventDefault();
+      navigate("/search");
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [navigate]);
 
   const navigateToPlace = (placeId: string) => {
     navigate(`/places/${placeId}`);
   };
 
-  const navigateToPost = (platform: string, postId: string) => {
-    const { platform: routePlatform, nativeId } = postRouteParts(platform, postId);
-    navigate(`/posts/${routePlatform}/${nativeId}`);
+  const openSearch = () => {
+    navigate("/search");
   };
 
-  const openPostFromProgress = (platform: string, postId: string) => {
-    const { platform: routePlatform, nativeId } = postRouteParts(platform, postId);
-    navigate(`/posts/${routePlatform}/${nativeId}`);
+  const chromeShared = {
+    isAdmin,
+    postCount: posts.length,
+    placeCount: places.length,
+    onOpenSearch: openSearch,
   };
 
-  return (
-    <div className="app-page">
-      <header className="top-bar">
-        <div className="brand">
-          <BrandMark />
-          <span className="brand-name">Wanderfile</span>
-        </div>
-        <UserChip />
-      </header>
-
-      <main className="app-shell">
-        <section className="hero-row">
-          <div className="hero-card">
-            <p className="hero-eyebrow"># TRAVEL INSPIRATION</p>
-            <h1 className="hero-title">Turn scattered links into a curated travel atlas.</h1>
-            <p className="hero-subtitle">
-              Paste Instagram reels, blogs, city guides. We read them, extract named places and
-              categories — you get a searchable map of your dreams.
-            </p>
-          </div>
-          <div className="stats-stack">
-            <div className="stat-card">
-              <span className="stat-icon" aria-hidden="true">
-                <svg width="18" height="18" viewBox="0 0 18 18">
-                  <path
-                    d="M7.5 10.5 3 6m0 0 4.5-4.5M3 6h8.5a4 4 0 0 1 0 8H11"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.4"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </span>
-              <span className="stat-value">{posts.length}</span>
-              <span className="stat-label">Links saved</span>
-            </div>
-            <div className="stat-card">
-              <span className="stat-icon" aria-hidden="true">
-                <svg width="18" height="18" viewBox="0 0 18 18">
-                  <path
-                    d="M9 2.5C6.5 2.5 4.5 4.5 4.5 7c0 4 4.5 8 4.5 8s4.5-4 4.5-8c0-2.5-2-4.5-4.5-4.5Z"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.4"
-                  />
-                  <circle cx="9" cy="7" r="1.5" fill="currentColor" />
-                </svg>
-              </span>
-              <span className="stat-value">{places.length}</span>
-              <span className="stat-label">Places extracted</span>
-            </div>
-            <div className="stat-card">
-              <span className="stat-icon" aria-hidden="true">
-                <svg width="18" height="18" viewBox="0 0 18 18">
-                  <path
-                    d="M3.5 9h11M9 3.5v11"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.4"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              </span>
-              <span className="stat-value">{visitCount}</span>
-              <span className="stat-label">Trips logged</span>
-            </div>
-          </div>
-        </section>
-
-        <LinkSubmitForm
-          key={formResetKey}
-          disabled={job?.status === "running"}
-          onSubmit={handleSubmit}
-        />
-
-        {submitError && <p className="banner-error">{submitError}</p>}
-        {jobError && <p className="banner-error">{jobError}</p>}
-
-        {job && (
-          <IngestProgress
-            links={job.links}
-            running={job.status === "running"}
-            title={
-              job.kind === "instagram_profile_import"
-                ? "Importing Instagram visits"
-                : job.kind === "timeline_import"
-                  ? "Importing Google Maps Timeline"
-                  : "Progress"
-            }
-            subtitle={
-              job.kind === "instagram_profile_import" && job.username
-                ? `@${job.username} · places will be marked visited automatically`
-                : job.kind === "timeline_import"
-                  ? "Resolving places via OpenStreetMap · progress survives refresh"
-                  : null
-            }
-            onOpenPost={openPostFromProgress}
-          />
-        )}
-
-        <DataMaintenance
-          disabled={job?.status === "running"}
-          onComplete={handleMaintenanceComplete}
-        />
-
-        <nav className="view-tabs" role="tablist" aria-label="Library view">
-          <button
-            type="button"
-            role="tab"
-            aria-selected={activeTab === "posts"}
-            className={`view-tab ${activeTab === "posts" ? "view-tab-active" : ""}`}
-            onClick={() => navigate("/posts")}
-          >
-            Saved posts ({posts.length})
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={activeTab === "places"}
-            className={`view-tab ${activeTab === "places" ? "view-tab-active" : ""}`}
-            onClick={() => navigate("/places")}
-          >
-            Places ({places.length})
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={activeTab === "history"}
-            className={`view-tab ${activeTab === "history" ? "view-tab-active" : ""}`}
-            onClick={() => navigate("/history")}
-          >
-            Travel history ({visitCount})
-          </button>
-          {isAdmin && (
-            <button
-              type="button"
-              role="tab"
-              aria-selected={activeTab === "admin"}
-              className={`view-tab ${activeTab === "admin" ? "view-tab-active" : ""}`}
-              onClick={() => navigate("/admin")}
-            >
-              Admin
-            </button>
-          )}
-        </nav>
-
-        <Routes>
-          <Route path="/" element={<Navigate to="/posts" replace />} />
-          <Route
-            path="/posts"
-            element={
-              loadingPosts ? (
-                <p className="loading-copy">Loading saved posts…</p>
-              ) : (
-                <PostLibrary
-                  posts={posts}
-                  places={places}
-                  onDeleted={refreshPosts}
-                  onNavigateToPlace={navigateToPlace}
-                />
-              )
-            }
-          />
-          <Route
-            path="/posts/:platform/:postId"
-            element={
-              loadingPosts ? (
-                <p className="loading-copy">Loading saved posts…</p>
-              ) : (
-                <PostLibrary
-                  posts={posts}
-                  places={places}
-                  onDeleted={refreshPosts}
-                  onNavigateToPlace={navigateToPlace}
-                />
-              )
-            }
-          />
-          <Route
-            path="/places"
-            element={
-              <PlaceLibrary
-                refreshToken={libraryVersion}
-                onNavigateToPost={navigateToPost}
-                onChanged={handleVisitsChanged}
-              />
-            }
-          />
-          <Route
-            path="/places/:placeId"
-            element={
-              <PlaceLibrary
-                refreshToken={libraryVersion}
-                onNavigateToPost={navigateToPost}
-                onChanged={handleVisitsChanged}
-              />
-            }
-          />
-          <Route
-            path="/history"
-            element={
-              <TravelHistory
-                refreshToken={libraryVersion}
-                jobRunning={job?.status === "running"}
-                onChanged={handleMaintenanceComplete}
-                onNavigateToPlace={navigateToPlace}
-                onImportStarted={(nextJobId) => setJobId(nextJobId)}
-              />
-            }
-          />
-          <Route
-            path="/admin"
-            element={
-              isAdmin ? (
-                <AdminPage />
-              ) : (
-                <Navigate to="/posts" replace />
-              )
-            }
-          />
-        </Routes>
-      </main>
-    </div>
-  );
-}
-
-function AppRoutes({ authReady }: { authReady: boolean }) {
   return (
     <Routes>
-      <Route path="/map/demos" element={<MapDemoGallery />} />
-      <Route
-        path="/map/demos/:themeId"
-        element={<LivingMapPage authReady={authReady} demoMode />}
-      />
-      <Route
-        path="/map/demos/:themeId/:placeId"
-        element={<LivingMapPage authReady={authReady} demoMode />}
-      />
-      <Route path="/map" element={<LivingMapPage authReady={authReady} />} />
-      <Route path="/map/:placeId" element={<LivingMapPage authReady={authReady} />} />
-      <Route path="/*" element={<AppShell authReady={authReady} />} />
+      <Route path="/map" element={<Navigate to="/places" replace />} />
+      <Route path="/map/:placeId" element={<RedirectMapPlaceToPlaces />} />
+      <Route path="/places/demos" element={<Navigate to="/places" replace />} />
+      <Route path="/places/demos/:demoId" element={<Navigate to="/places" replace />} />
+      <Route path="/places/demos-v2" element={<Navigate to="/places" replace />} />
+      <Route path="/places/demos-v2/:demoId" element={<Navigate to="/places" replace />} />
+      <Route path="/places/demos-v3" element={<Navigate to="/places" replace />} />
+      <Route path="/places/demos-v3/:demoId" element={<Navigate to="/places" replace />} />
+      <Route path="/posts/demos" element={<Navigate to="/posts" replace />} />
+      <Route path="/posts/demos/:demoId" element={<Navigate to="/posts" replace />} />
+      <Route path="/posts/demos-v2" element={<Navigate to="/posts" replace />} />
+      <Route path="/posts/demos-v2/:demoId" element={<Navigate to="/posts" replace />} />
+      <Route path="/map/demos" element={<Navigate to="/places" replace />} />
+      <Route path="/map/demos/:themeId" element={<Navigate to="/places" replace />} />
+      <Route path="/map/demos/:themeId/:placeId" element={<Navigate to="/places" replace />} />
+      <Route path="/site/demos" element={<Navigate to="/" replace />} />
+      <Route path="/site/demos/:demoId" element={<Navigate to="/" replace />} />
+
+      <Route element={<ChromeOutlet {...chromeShared} />}>
+        <Route
+          path="/"
+          element={
+            <HomePage
+              posts={posts}
+              places={places}
+              visitCount={visitCount}
+              authReady={authReady}
+            />
+          }
+        />
+        <Route
+          path="/posts"
+          element={
+            <PostsRoute
+              loadingPosts={loadingPosts}
+              posts={posts}
+              places={places}
+              onDeleted={refresh}
+              onNavigateToPlace={navigateToPlace}
+            />
+          }
+        />
+        <Route
+          path="/posts/:platform/:postId"
+          element={
+            <PostsRoute
+              loadingPosts={loadingPosts}
+              posts={posts}
+              places={places}
+              onDeleted={refresh}
+              onNavigateToPlace={navigateToPlace}
+            />
+          }
+        />
+        <Route path="/places" element={<PlacesRoutes authReady={authReady} />} />
+        <Route path="/places/:placeId" element={<PlacesRoutes authReady={authReady} />} />
+        <Route path="/search" element={<SearchPage posts={posts} places={places} />} />
+        <Route
+          path="/add"
+          element={
+            <AddLinksPage authReady={authReady} onIngestComplete={handleLibraryChanged} />
+          }
+        />
+        <Route
+          path="/history"
+          element={
+            <TravelHistory
+              refreshToken={libraryVersion}
+              jobRunning={false}
+              onChanged={handleLibraryChanged}
+              onNavigateToPlace={navigateToPlace}
+              onImportStarted={(nextJobId) => {
+                navigate("/add", { state: { resumeJobId: nextJobId } });
+              }}
+            />
+          }
+        />
+        <Route
+          path="/admin"
+          element={isAdmin ? <AdminPage /> : <Navigate to="/posts" replace />}
+        />
+        <Route path="*" element={<NotFoundPage />} />
+      </Route>
     </Routes>
   );
 }

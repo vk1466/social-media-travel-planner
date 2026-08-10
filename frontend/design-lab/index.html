@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Wanderfile Design Lab — Three Sites</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+    <style>
+      *, *::before, *::after { box-sizing: border-box; }
+      html, body { margin: 0; min-height: 100%; }
+      body {
+        font-family: "DM Sans", system-ui, sans-serif;
+        background: #0c0f0e;
+        color: #f2f4f2;
+        -webkit-font-smoothing: antialiased;
+      }
+      .wrap {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 56px 24px 88px;
+      }
+      .kicker {
+        font-size: 12px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: #8fa399;
+        margin: 0 0 14px;
+      }
+      h1 {
+        font-family: "Instrument Serif", Georgia, serif;
+        font-size: clamp(2.4rem, 5vw, 3.6rem);
+        font-weight: 400;
+        font-style: italic;
+        line-height: 1.05;
+        margin: 0 0 16px;
+        letter-spacing: -0.02em;
+      }
+      .lede {
+        margin: 0;
+        color: #b7c2bc;
+        font-size: 1.05rem;
+        line-height: 1.55;
+        max-width: 560px;
+      }
+      .meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px 20px;
+        margin: 22px 0 48px;
+        font-size: 0.85rem;
+        color: #8fa399;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 18px;
+      }
+      .card {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        padding: 22px;
+        border: 1px solid #2a3330;
+        background: #141917;
+        color: inherit;
+        text-decoration: none;
+        min-height: 280px;
+        border-radius: 18px;
+        transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
+      }
+      .card:hover {
+        border-color: #4a6358;
+        background: #1a211e;
+        transform: translateY(-2px);
+      }
+      .swatch-row {
+        display: flex;
+        gap: 4px;
+        height: 10px;
+        border-radius: 999px;
+        overflow: hidden;
+      }
+      .swatch-row i { flex: 1; display: block; }
+      .num {
+        font-size: 11px;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: #6f8579;
+      }
+      .card h2 {
+        margin: 0;
+        font-family: "Instrument Serif", Georgia, serif;
+        font-size: 1.7rem;
+        font-weight: 400;
+        font-style: italic;
+        letter-spacing: -0.01em;
+      }
+      .card p {
+        margin: 0;
+        flex: 1;
+        color: #9aaba2;
+        font-size: 0.95rem;
+        line-height: 1.5;
+      }
+      .tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .tags span {
+        font-size: 11px;
+        padding: 4px 10px;
+        border: 1px solid #2f3b36;
+        border-radius: 999px;
+        color: #a8b8b0;
+      }
+      .cta {
+        font-size: 13px;
+        color: #a8c4b6;
+        font-weight: 500;
+      }
+      .card:hover .cta { color: #d0e6dc; }
+      .note {
+        margin-top: 40px;
+        padding-top: 24px;
+        border-top: 1px solid #2a3330;
+        color: #8fa399;
+        font-size: 0.9rem;
+        line-height: 1.5;
+        max-width: 640px;
+      }
+      @media (max-width: 820px) {
+        .grid { grid-template-columns: 1fr; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <p class="kicker">Design Lab · Round 2</p>
+      <h1>Three complete websites.</h1>
+      <p class="lede">
+        Same product loop — paste links, browse posts, explore places, log visits —
+        rebuilt three times from scratch, each following a different visual language.
+      </p>
+      <div class="meta">
+        <span>3 multi-page sites</span>
+        <span>Home · Posts · Places · Detail · Add · Trips · Search</span>
+        <span>Pick a direction</span>
+      </div>
+
+      <div class="grid">
+        <a class="card" href="sites/01-voyager/index.html">
+          <div class="swatch-row">
+            <i style="background:#f6f5f1"></i>
+            <i style="background:#1a5b45"></i>
+            <i style="background:#0f1613"></i>
+            <i style="background:#f0e6d6"></i>
+          </div>
+          <span class="num">Site 01</span>
+          <h2>Voyager</h2>
+          <p>
+            Bright adventure atlas — generous rounding, forest-green accents, photo-first
+            destination cards. Inspired by clean travel booking UIs.
+          </p>
+          <div class="tags">
+            <span>bright</span>
+            <span>rounded</span>
+            <span>adventure</span>
+          </div>
+          <span class="cta">Open site →</span>
+        </a>
+
+        <a class="card" href="sites/02-almanac/index.html">
+          <div class="swatch-row">
+            <i style="background:#f8f2eb"></i>
+            <i style="background:#c85c34"></i>
+            <i style="background:#3d2b21"></i>
+            <i style="background:#fbe6d4"></i>
+          </div>
+          <span class="num">Site 02</span>
+          <h2>Almanac</h2>
+          <p>
+            Warm editorial magazine — cream paper, terracotta accents, Fraunces serifs,
+            sunset heroes. Inspired by Cappadocia travel sites.
+          </p>
+          <div class="tags">
+            <span>warm</span>
+            <span>editorial</span>
+            <span>magazine</span>
+          </div>
+          <span class="cta">Open site →</span>
+        </a>
+
+        <a class="card" href="sites/03-memo/index.html">
+          <div class="swatch-row">
+            <i style="background:#0f0d0b"></i>
+            <i style="background:#c9a35c"></i>
+            <i style="background:#efe6d6"></i>
+            <i style="background:#1c1815"></i>
+          </div>
+          <span class="num">Site 03</span>
+          <h2>Memo</h2>
+          <p>
+            Dark luxury travel house — espresso ground, gold accents, Instrument Serif
+            italics, cinematic heroes. Inspired by Memo-style editorial brands.
+          </p>
+          <div class="tags">
+            <span>dark</span>
+            <span>luxury</span>
+            <span>editorial</span>
+          </div>
+          <span class="cta">Open site →</span>
+        </a>
+      </div>
+
+      <p class="note">
+        Each site is a full multi-page prototype with shared mock data — not a single-page
+        concept. Open one, click through Posts and Places, and note what should survive
+        into production.
+      </p>
+
+      <div style="margin-top:48px;padding-top:32px;border-top:1px solid #2a3330;display:grid;grid-template-columns:repeat(2,1fr);gap:14px">
+        <div style="grid-column:1/-1"><p class="kicker">Also in this lab</p></div>
+        <a class="card" href="filters/index.html" style="text-decoration:none;color:inherit;min-height:auto">
+          <span class="num">Filter Lab</span>
+          <h2>20 quieter filter patterns</h2>
+          <p>
+            Same places facets (group / status / type / search) explored as toolbars,
+            drawers, command palettes, sentences, and more — without changing the three sites.
+          </p>
+          <span class="cta">Browse filter demos →</span>
+        </a>
+        <a class="card" href="places-page/index.html" style="text-decoration:none;color:inherit;min-height:auto">
+          <span class="num">Places Page Lab</span>
+          <h2>20 Almanac page structures</h2>
+          <p>
+            Same filters and place covers — reframed twenty ways from bare ledger to
+            letterbox, passport, type monument, and garden path.
+          </p>
+          <span class="cta">Browse page structures →</span>
+        </a>
+      </div>
+      <style>
+        @media (max-width: 820px) {
+          .wrap > div[style*="grid-template-columns:repeat(2"] { grid-template-columns: 1fr !important; }
+        }
+      </style>
+    </div>
+  </body>
+</html>

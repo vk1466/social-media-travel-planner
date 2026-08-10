@@ -1,4 +1,5 @@
 import type { JobLink } from "../api";
+import { SectionPanel } from "./SectionPanel";
 
 interface IngestProgressProps {
   links: JobLink[];
@@ -72,14 +73,11 @@ export function IngestProgress({
   }
 
   return (
-    <section className="panel">
-      <div className="section-header">
-        <div>
-          <h2>{title}</h2>
-          {subtitle && <p className="ingest-panel-subtitle">{subtitle}</p>}
-        </div>
-        {running && <span className="badge badge-running">Running</span>}
-      </div>
+    <SectionPanel
+      title={title}
+      subtitle={subtitle}
+      actions={running ? <span className="badge badge-running">Running</span> : null}
+    >
       <ul className="progress-list">
         {links.map((link) => {
           const platform = platformFromUrl(link.post_url);
@@ -111,6 +109,6 @@ export function IngestProgress({
           );
         })}
       </ul>
-    </section>
+    </SectionPanel>
   );
 }

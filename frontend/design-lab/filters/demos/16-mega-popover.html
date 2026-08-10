@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>16 · Refine mega-popover — Filter Lab</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../shared/shell.css" />
+  <style>
+.f-row { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+.search-pill {
+  display: flex; align-items: center; gap: 0.4rem;
+  border: 1px solid var(--line); border-radius: 999px; padding: 0.45rem 0.85rem; background: #fbfaf7;
+  flex: 1; min-width: 160px;
+}
+.search-pill input { border: 0; outline: 0; background: transparent; width: 100%; font: inherit; font-size: 0.88rem; }
+.btn {
+  border: 1px solid var(--line); background: #fff; border-radius: 999px;
+  padding: 0.45rem 0.85rem; font: inherit; font-size: 0.8rem; font-weight: 600; cursor: pointer; color: var(--ink);
+}
+.btn.is-on { border-color: var(--accent); background: var(--soft); color: var(--accent); }
+.btn.solid { border: 0; background: var(--accent); color: var(--accent-ink); }
+.btn.ghost { border-style: dashed; color: var(--muted); }
+.btn.sq { border-radius: 10px; }
+.chips { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.7rem; }
+.chip {
+  display: inline-flex; align-items: center; gap: 0.3rem;
+  background: var(--accent); color: var(--accent-ink); border-radius: 999px;
+  padding: 0.25rem 0.45rem 0.25rem 0.7rem; font-size: 0.74rem; font-weight: 600;
+}
+.chip.soft { background: var(--soft); color: var(--accent); }
+.chip button { border: 0; background: transparent; color: inherit; cursor: pointer; font-size: 1rem; line-height: 1; }
+.menu {
+  position: absolute; top: calc(100% + 6px); left: 0; z-index: 40;
+  min-width: 200px; max-height: 280px; overflow: auto;
+  background: #fff; border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow); padding: 0.35rem;
+}
+.menu button, .opt {
+  display: flex; width: 100%; justify-content: space-between; gap: 1rem; align-items: center;
+  border: 0; background: transparent; text-align: left; padding: 0.5rem 0.65rem;
+  border-radius: 8px; font: inherit; font-size: 0.82rem; cursor: pointer; color: var(--ink);
+}
+.menu button:hover, .menu button.is-active, .opt:hover, .opt.is-active { background: var(--soft); color: var(--accent); }
+.wrap { position: relative; }
+.seg {
+  display: inline-flex; padding: 3px; border: 1px solid var(--line); border-radius: 999px; background: #fbfaf7;
+}
+.seg button {
+  border: 0; background: transparent; border-radius: 999px; padding: 0.35rem 0.7rem;
+  font: inherit; font-size: 0.76rem; font-weight: 600; color: var(--muted); cursor: pointer;
+}
+.seg button.is-active { background: var(--accent); color: var(--accent-ink); }
+.overlay { position: fixed; inset: 0; background: rgb(12 15 14 / 0.4); z-index: 70; }
+.overlay[hidden] { display: none; }
+.hint { margin: 0.5rem 0 0; font-size: 0.78rem; color: var(--muted); }
+
+.mega{position:absolute;top:calc(100% + 8px);right:0;z-index:40;width:min(560px,94vw);background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:1rem;display:grid;grid-template-columns:1fr 1.4fr;gap:1rem}
+.mega[hidden]{display:none}
+@media(max-width:640px){.mega{grid-template-columns:1fr}}
+.mega h3{margin:0 0 .45rem;font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.summary{margin-top:.65rem;font-size:.82rem;color:var(--muted)}
+.summary strong{color:var(--ink);font-weight:600}</style>
+</head>
+<body>
+  <header class="demo-top">
+    <a href="../index.html">← Filter Lab</a>
+    <span class="pattern">Pattern 16</span>
+    <a href="../../index.html">Design Lab</a>
+  </header>
+  <main class="demo-shell">
+    <div class="demo-intro">
+      <h1>Refine mega-popover</h1>
+      <p>A single Refine button opens a multi-column popover. Close it and only a summary remains.</p>
+      <p class="demo-inspired">Inspired by <strong>Airbnb desktop Filters panel</strong></p>
+    </div>
+    <section class="demo-stage" id="stage">
+
+      <div class="f-row">
+        <label class="search-pill"><input type="search" placeholder="Search places…" data-search /></label>
+        <div class="wrap" style="margin-left:auto">
+          <button type="button" class="btn solid" data-open>Refine</button>
+          <div class="mega" hidden data-mega></div>
+        </div>
+      </div>
+      <p class="summary" data-summary></p>
+      <div class="demo-results">
+        <div class="demo-results-meta" data-results-meta></div>
+        <div class="demo-grid" data-results-grid></div>
+      </div>
+    </section>
+    <nav class="demo-nav">
+      <a href="15-token-search.html">← Previous</a>
+      <a href="17-sentence-filters.html">Next →</a>
+    </nav>
+  </main>
+  <script type="module">
+    import {
+      createState, renderResults, toggleType, TYPES, STATUSES, GROUPINGS,
+      typeLabel, statusLabel, groupingLabel, activeCount, escapeHtml
+    } from "../shared/shell.js";
+    const state = createState();
+    const stage = document.getElementById("stage");
+    const refresh = () => renderResults(stage, state);
+    const closeMenus = () => stage.querySelectorAll("[data-menu]").forEach((m) => (m.hidden = true));
+    function renderActiveChips(el, soft = false) {
+      const chips = [];
+      if (state.grouping !== "region") chips.push({ k: "g", t: "Group · " + groupingLabel(state.grouping) });
+      if (state.status !== "all") chips.push({ k: "s", t: statusLabel(state.status) });
+      state.types.forEach((id) => chips.push({ k: "t:" + id, t: typeLabel(id) }));
+      if (state.query.trim()) chips.push({ k: "q", t: "“" + state.query.trim() + "”" });
+      el.innerHTML = chips.map((c) =>
+        '<span class="chip' + (soft ? " soft" : "") + '">' + escapeHtml(c.t) +
+        '<button type="button" data-x="' + c.k + '" aria-label="Remove">×</button></span>'
+      ).join("");
+    }
+    function handleChipRemove(e) {
+      const x = e.target.closest("[data-x]");
+      if (!x) return false;
+      const k = x.dataset.x;
+      if (k === "g") state.grouping = "region";
+      else if (k === "s") state.status = "all";
+      else if (k === "q") { state.query = ""; const inp = stage.querySelector("[data-search]"); if (inp) inp.value = ""; }
+      else if (k.startsWith("t:")) state.types = state.types.filter((id) => id !== k.slice(2));
+      return true;
+    }
+
+    const mega=stage.querySelector("[data-mega]");
+    function paintMega(){
+      mega.innerHTML=
+        '<div><h3>Group by</h3>'+GROUPINGS.map(g=>'<button type="button" class="opt '+(state.grouping===g.id?"is-active":"")+'" data-set-g="'+g.id+'">'+g.label+'</button>').join("")+
+        '<h3 style="margin-top:.85rem">Status</h3>'+STATUSES.map(s=>'<button type="button" class="opt '+(state.status===s.id?"is-active":"")+'" data-set-s="'+s.id+'">'+s.label+'</button>').join("")+'</div>'+
+        '<div><h3>Type</h3><div style="max-height:280px;overflow:auto">'+TYPES.map(t=>'<button type="button" class="opt '+(state.types.includes(t.id)?"is-active":"")+'" data-toggle-t="'+t.id+'"><span>'+t.label+'</span><span>'+t.count+'</span></button>').join("")+'</div></div>';
+    }
+    function paint(){
+      paintMega();
+      const bits=[];
+      bits.push(statusLabel(state.status));
+      bits.push("grouped by "+groupingLabel(state.grouping));
+      bits.push(state.types.length ? state.types.map(typeLabel).join(", ") : "all types");
+      stage.querySelector("[data-summary]").innerHTML="Showing <strong>"+escapeHtml(bits.join(" · "))+"</strong>";
+      stage.querySelector("[data-open]").classList.toggle("is-on", activeCount(state)>0);
+      refresh();
+    }
+    stage.querySelector("[data-search]").addEventListener("input",(e)=>{state.query=e.target.value;paint();});
+    stage.querySelector("[data-open]").addEventListener("click",(e)=>{e.stopPropagation();mega.hidden=!mega.hidden;});
+    stage.addEventListener("click",(e)=>{
+      const g=e.target.closest("[data-set-g]"); if(g){state.grouping=g.dataset.setG;paint();return;}
+      const s=e.target.closest("[data-set-s]"); if(s){state.status=s.dataset.setS;paint();return;}
+      const t=e.target.closest("[data-toggle-t]"); if(t){toggleType(state,t.dataset.toggleT);paint();}
+    });
+    document.addEventListener("click",(e)=>{ if(!e.target.closest(".wrap")) mega.hidden=true; });
+    paint();
+
+  </script>
+</body>
+</html>

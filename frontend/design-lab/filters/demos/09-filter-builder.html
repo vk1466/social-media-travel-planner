@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>09 · Where filter builder — Filter Lab</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../shared/shell.css" />
+  <style>
+.f-row { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+.search-pill {
+  display: flex; align-items: center; gap: 0.4rem;
+  border: 1px solid var(--line); border-radius: 999px; padding: 0.45rem 0.85rem; background: #fbfaf7;
+  flex: 1; min-width: 160px;
+}
+.search-pill input { border: 0; outline: 0; background: transparent; width: 100%; font: inherit; font-size: 0.88rem; }
+.btn {
+  border: 1px solid var(--line); background: #fff; border-radius: 999px;
+  padding: 0.45rem 0.85rem; font: inherit; font-size: 0.8rem; font-weight: 600; cursor: pointer; color: var(--ink);
+}
+.btn.is-on { border-color: var(--accent); background: var(--soft); color: var(--accent); }
+.btn.solid { border: 0; background: var(--accent); color: var(--accent-ink); }
+.btn.ghost { border-style: dashed; color: var(--muted); }
+.btn.sq { border-radius: 10px; }
+.chips { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.7rem; }
+.chip {
+  display: inline-flex; align-items: center; gap: 0.3rem;
+  background: var(--accent); color: var(--accent-ink); border-radius: 999px;
+  padding: 0.25rem 0.45rem 0.25rem 0.7rem; font-size: 0.74rem; font-weight: 600;
+}
+.chip.soft { background: var(--soft); color: var(--accent); }
+.chip button { border: 0; background: transparent; color: inherit; cursor: pointer; font-size: 1rem; line-height: 1; }
+.menu {
+  position: absolute; top: calc(100% + 6px); left: 0; z-index: 40;
+  min-width: 200px; max-height: 280px; overflow: auto;
+  background: #fff; border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow); padding: 0.35rem;
+}
+.menu button, .opt {
+  display: flex; width: 100%; justify-content: space-between; gap: 1rem; align-items: center;
+  border: 0; background: transparent; text-align: left; padding: 0.5rem 0.65rem;
+  border-radius: 8px; font: inherit; font-size: 0.82rem; cursor: pointer; color: var(--ink);
+}
+.menu button:hover, .menu button.is-active, .opt:hover, .opt.is-active { background: var(--soft); color: var(--accent); }
+.wrap { position: relative; }
+.seg {
+  display: inline-flex; padding: 3px; border: 1px solid var(--line); border-radius: 999px; background: #fbfaf7;
+}
+.seg button {
+  border: 0; background: transparent; border-radius: 999px; padding: 0.35rem 0.7rem;
+  font: inherit; font-size: 0.76rem; font-weight: 600; color: var(--muted); cursor: pointer;
+}
+.seg button.is-active { background: var(--accent); color: var(--accent-ink); }
+.overlay { position: fixed; inset: 0; background: rgb(12 15 14 / 0.4); z-index: 70; }
+.overlay[hidden] { display: none; }
+.hint { margin: 0.5rem 0 0; font-size: 0.78rem; color: var(--muted); }
+
+.rules{display:flex;flex-direction:column;gap:.45rem}
+.rule{display:flex;flex-wrap:wrap;gap:.4rem;align-items:center;padding:.55rem .65rem;border:1px dashed var(--line);border-radius:10px;background:#fbfaf7}
+.rule select,.rule input{border:1px solid var(--line);border-radius:8px;padding:.4rem .55rem;font:inherit;font-size:.8rem;background:#fff}
+.rule .is{color:var(--muted);font-size:.78rem}
+.rule button.x{border:0;background:transparent;color:var(--muted);cursor:pointer;font-size:1rem}</style>
+</head>
+<body>
+  <header class="demo-top">
+    <a href="../index.html">← Filter Lab</a>
+    <span class="pattern">Pattern 09</span>
+    <a href="../../index.html">Design Lab</a>
+  </header>
+  <main class="demo-shell">
+    <div class="demo-intro">
+      <h1>Where filter builder</h1>
+      <p>Add rules as Field · is · Value. Structured property filters instead of pill sprawl.</p>
+      <p class="demo-inspired">Inspired by <strong>Notion / Airtable filters</strong></p>
+    </div>
+    <section class="demo-stage" id="stage">
+
+      <div class="f-row" style="margin-bottom:.75rem">
+        <label class="search-pill"><input type="search" placeholder="Search places…" data-search /></label>
+        <button type="button" class="btn ghost" data-add>+ Add filter</button>
+      </div>
+      <div class="rules" data-rules></div>
+      <div class="demo-results">
+        <div class="demo-results-meta" data-results-meta></div>
+        <div class="demo-grid" data-results-grid></div>
+      </div>
+    </section>
+    <nav class="demo-nav">
+      <a href="08-scroll-chips.html">← Previous</a>
+      <a href="10-add-filter.html">Next →</a>
+    </nav>
+  </main>
+  <script type="module">
+    import {
+      createState, renderResults, toggleType, TYPES, STATUSES, GROUPINGS,
+      typeLabel, statusLabel, groupingLabel, activeCount, escapeHtml
+    } from "../shared/shell.js";
+    const state = createState();
+    const stage = document.getElementById("stage");
+    const refresh = () => renderResults(stage, state);
+    const closeMenus = () => stage.querySelectorAll("[data-menu]").forEach((m) => (m.hidden = true));
+    function renderActiveChips(el, soft = false) {
+      const chips = [];
+      if (state.grouping !== "region") chips.push({ k: "g", t: "Group · " + groupingLabel(state.grouping) });
+      if (state.status !== "all") chips.push({ k: "s", t: statusLabel(state.status) });
+      state.types.forEach((id) => chips.push({ k: "t:" + id, t: typeLabel(id) }));
+      if (state.query.trim()) chips.push({ k: "q", t: "“" + state.query.trim() + "”" });
+      el.innerHTML = chips.map((c) =>
+        '<span class="chip' + (soft ? " soft" : "") + '">' + escapeHtml(c.t) +
+        '<button type="button" data-x="' + c.k + '" aria-label="Remove">×</button></span>'
+      ).join("");
+    }
+    function handleChipRemove(e) {
+      const x = e.target.closest("[data-x]");
+      if (!x) return false;
+      const k = x.dataset.x;
+      if (k === "g") state.grouping = "region";
+      else if (k === "s") state.status = "all";
+      else if (k === "q") { state.query = ""; const inp = stage.querySelector("[data-search]"); if (inp) inp.value = ""; }
+      else if (k.startsWith("t:")) state.types = state.types.filter((id) => id !== k.slice(2));
+      return true;
+    }
+
+    // Represent filters as rule rows; sync to state
+    let rules = [];
+    function syncFromRules(){
+      state.status="all"; state.types=[]; state.grouping="region";
+      rules.forEach(r=>{
+        if(r.field==="status") state.status=r.value||"all";
+        if(r.field==="type" && r.value) { if(!state.types.includes(r.value)) state.types.push(r.value); }
+        if(r.field==="grouping") state.grouping=r.value||"region";
+      });
+    }
+    function paint(){
+      syncFromRules();
+      stage.querySelector("[data-rules]").innerHTML = rules.length ? rules.map((r,i)=>`
+        <div class="rule" data-i="${i}">
+          <select data-field>
+            <option value="status" ${r.field==="status"?"selected":""}>Status</option>
+            <option value="type" ${r.field==="type"?"selected":""}>Type</option>
+            <option value="grouping" ${r.field==="grouping"?"selected":""}>Group by</option>
+          </select>
+          <span class="is">is</span>
+          <select data-value>${valueOptions(r)}</select>
+          <button type="button" class="x" data-del aria-label="Remove">×</button>
+        </div>`).join("") : '<p class="hint" style="margin:0">No filters yet — add a rule to narrow the atlas.</p>';
+      refresh();
+    }
+    function valueOptions(r){
+      const list = r.field==="status" ? STATUSES : r.field==="grouping" ? GROUPINGS : TYPES.map(t=>({id:t.id,label:t.label}));
+      return list.map(x=>'<option value="'+x.id+'" '+(r.value===x.id?"selected":"")+'>'+x.label+'</option>').join("");
+    }
+    stage.querySelector("[data-search]").addEventListener("input",(e)=>{state.query=e.target.value;refresh();});
+    stage.querySelector("[data-add]").addEventListener("click",()=>{ rules.push({field:"status",value:"visited"}); paint(); });
+    stage.addEventListener("change",(e)=>{
+      const rule=e.target.closest(".rule"); if(!rule) return;
+      const i=+rule.dataset.i;
+      if(e.target.matches("[data-field]")){ rules[i].field=e.target.value; rules[i].value = rules[i].field==="status"?"visited":rules[i].field==="grouping"?"type":TYPES[0].id; }
+      if(e.target.matches("[data-value]")) rules[i].value=e.target.value;
+      paint();
+    });
+    stage.addEventListener("click",(e)=>{
+      const del=e.target.closest("[data-del]"); if(!del) return;
+      const i=+del.closest(".rule").dataset.i; rules.splice(i,1); paint();
+    });
+    paint();
+
+  </script>
+</body>
+</html>

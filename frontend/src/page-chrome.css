@@ -1,0 +1,266 @@
+/* Shared page primitives for /add, /search, /history, /admin.
+   Uses --wf-copy* / --wf-chrome-* so light and dark site tones stay consistent
+   with home / browse. */
+
+/* ── Page header ────────────────────────────────────────── */
+
+.wf-page-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1.25rem 2rem;
+  margin: 0 0 2rem;
+}
+
+.wf-page-header-copy {
+  min-width: 0;
+}
+
+.wf-page-eyebrow {
+  margin: 0 0 0.7rem;
+  font-family: var(--wf-font-muted);
+  font-size: var(--wf-eyebrow-size);
+  font-weight: 700;
+  letter-spacing: var(--wf-eyebrow-tracking);
+  text-transform: uppercase;
+  color: var(--wf-copy-accent);
+}
+
+.wf-page-title {
+  margin: 0;
+  font-family: var(--wf-font-headline);
+  font-size: calc(clamp(1.95rem, 4vw, 2.6rem) * var(--wf-size-headline));
+  font-weight: 400;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  color: var(--wf-copy);
+  text-wrap: balance;
+}
+
+.wf-page-lede {
+  margin: 0.7rem 0 0;
+  max-width: 54ch;
+  font-family: var(--wf-font-muted);
+  font-size: var(--wf-size-muted);
+  line-height: 1.55;
+  color: var(--wf-copy-muted);
+}
+
+.wf-page-lede a {
+  color: var(--wf-copy-accent);
+}
+
+.wf-page-header-aside {
+  display: flex;
+  align-items: flex-end;
+  gap: 2rem;
+  flex-shrink: 0;
+}
+
+.wf-metric {
+  text-align: right;
+}
+
+.wf-metric-value {
+  display: block;
+  font-family: var(--wf-font-headline);
+  font-size: calc(2rem * var(--wf-size-headline));
+  line-height: 1.1;
+  color: var(--wf-copy);
+  font-variant-numeric: tabular-nums;
+}
+
+.wf-metric-label {
+  display: block;
+  margin-top: 0.2rem;
+  font-family: var(--wf-font-muted);
+  font-size: 0.66rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--wf-copy-muted);
+}
+
+/* ── Panel ──────────────────────────────────────────────── */
+
+.wf-panel {
+  padding: 1.4rem 1.5rem;
+  background: var(--wf-chrome-panel);
+  border: 1px solid var(--wf-chrome-border);
+  border-radius: var(--wf-radius-lg);
+  box-shadow: var(--wf-shadow-sm);
+}
+
+.wf-panel--notice {
+  background: rgb(var(--wf-mint-rgb) / 0.1);
+  border-color: rgb(var(--wf-mint-rgb) / 0.28);
+}
+
+/* For hosts that supply their own card frame (e.g. the add-page form card). */
+.wf-panel--bare {
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.wf-panel-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  margin-bottom: 1.15rem;
+}
+
+.wf-panel-icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--wf-radius-md);
+  background: rgb(var(--wf-mint-rgb) / 0.14);
+  color: var(--wf-copy-accent);
+}
+
+.wf-panel-head-copy {
+  min-width: 0;
+}
+
+.wf-panel-title {
+  margin: 0 0 0.2rem;
+  font-size: 1.05rem;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  color: var(--wf-copy);
+  /* Open Props normalize caps headings at 25ch. */
+  max-inline-size: none;
+}
+
+.wf-panel-sub {
+  margin: 0;
+  font-size: 0.86rem;
+  line-height: 1.5;
+  color: var(--wf-copy-muted);
+}
+
+.wf-panel-actions {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+/* ── Section head ───────────────────────────────────────── */
+
+.wf-section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 0 0 0.9rem;
+}
+
+.wf-section-title {
+  margin: 0;
+  font-family: var(--wf-font-headline);
+  font-size: calc(1.55rem * var(--wf-size-headline));
+  font-weight: 400;
+  color: var(--wf-copy);
+  max-inline-size: none;
+}
+
+.wf-section-count {
+  margin: 0;
+  font-family: var(--wf-font-muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--wf-copy-muted);
+  white-space: nowrap;
+}
+
+/* ── Filter chips ───────────────────────────────────────── */
+
+.wf-chipbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.wf-chipbar-label {
+  min-width: 68px;
+  font-size: 0.63rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--wf-copy-muted);
+}
+
+.wf-chip-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.34rem 0.8rem;
+  border: 1px solid var(--wf-chrome-border);
+  border-radius: var(--wf-radius-pill);
+  background: var(--wf-chrome-panel);
+  color: var(--wf-copy-muted);
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--wf-ease), border-color var(--wf-ease), color var(--wf-ease);
+}
+
+.wf-chip-btn:hover {
+  border-color: var(--wf-copy-accent);
+  color: var(--wf-copy);
+}
+
+.wf-chip-btn.is-active {
+  background: var(--wf-mint);
+  border-color: var(--wf-mint);
+  color: var(--wf-forest-deep);
+  font-weight: 700;
+}
+
+.wf-chip-count {
+  font-size: 0.66rem;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.7;
+}
+
+/* ── Inline notes (loading / empty / hints) ─────────────── */
+
+.wf-note {
+  margin: 1.25rem 0 0;
+  font-size: 0.95rem;
+  color: var(--wf-copy-muted);
+  font-style: italic;
+}
+
+@media (max-width: 760px) {
+  .wf-page-header {
+    gap: 1rem;
+  }
+
+  .wf-page-header-aside {
+    gap: 1.5rem;
+  }
+
+  .wf-metric-value {
+    font-size: 1.6rem;
+  }
+
+  .wf-chipbar-label {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wf-chip-btn {
+    transition: none;
+  }
+}

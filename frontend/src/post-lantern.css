@@ -1,0 +1,1179 @@
+/* Post library — Lantern Deck (production).
+   Tone-dependent surface tokens (--p3-panel/border/quiet) flip under .p3--dark;
+   everything else uses --wf-* brand tokens directly. */
+
+.p3 {
+  --p3-panel: var(--wf-surface);
+  --p3-border: var(--wf-border);
+  --p3-quiet: var(--wf-quiet);
+
+  min-height: 100vh;
+  font-family: var(--wf-font-sans);
+  background:
+    radial-gradient(ellipse 80% 50% at 8% -12%, rgb(var(--wf-sage-rgb) / 0.13), transparent 55%),
+    radial-gradient(ellipse 55% 40% at 100% 0%, rgb(var(--wf-sand-rgb) / 0.15), transparent 50%),
+    var(--wf-bg);
+  color: var(--wf-ink);
+}
+
+.p3--dark {
+  --p3-border: var(--wf-border-dark);
+  --p3-quiet: var(--wf-quiet);
+  --p3-panel: var(--wf-panel-dark);
+  background:
+    radial-gradient(ellipse 70% 45% at 50% -10%, rgb(var(--wf-mint-rgb) / 0.14), transparent 60%),
+    var(--wf-forest-deep);
+  color: var(--wf-cream);
+}
+
+.p3-shell {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 1.25rem 1.1rem 4rem;
+}
+
+/* —— Chrome —— */
+.p3-top {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.p3-family,
+.p3-inspire,
+.p3-wiring,
+.p3-count,
+.p3-detail-kicker {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.p3-family {
+  margin: 0 0 0.2rem;
+  color: var(--wf-sage);
+}
+
+.p3-top h1 {
+  margin: 0;
+  font-family: var(--wf-font-serif);
+  font-size: clamp(1.65rem, 3vw, 2.2rem);
+  font-weight: 400;
+  color: var(--wf-forest);
+}
+
+.p3--dark .p3-top h1 {
+  color: var(--wf-on-brand);
+}
+
+.p3-thesis {
+  margin: 0.3rem 0 0;
+  max-width: 62ch;
+  color: var(--p3-quiet);
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.p3-top-side {
+  max-width: 24ch;
+  text-align: right;
+}
+
+.p3-inspire {
+  margin: 0;
+  color: var(--wf-sage);
+}
+
+.p3-wiring {
+  margin: 0.35rem 0 0;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  color: var(--p3-quiet);
+}
+
+.p3--dark .p3-family,
+.p3--dark .p3-inspire {
+  color: var(--wf-mint);
+}
+
+.p3-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.55rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.p3-links a {
+  color: var(--wf-sage);
+  text-decoration: none;
+}
+
+.p3--dark .p3-links a {
+  color: var(--wf-mint);
+}
+
+.p3-links a:hover {
+  text-decoration: underline;
+}
+
+.p3-reject {
+  border: 1px solid #b45a4a;
+  border-radius: 999px;
+  background: transparent;
+  color: #9a4034;
+  font: inherit;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 0.18rem 0.65rem;
+  cursor: pointer;
+}
+
+.p3--dark .p3-reject {
+  border-color: #e08a7a;
+  color: #e08a7a;
+}
+
+.p3-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.p3-arrow {
+  display: grid;
+  place-items: center;
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 999px;
+  background: var(--p3-panel);
+  border: 1px solid var(--p3-border);
+  color: var(--wf-forest);
+  text-decoration: none;
+  font-size: 1.1rem;
+}
+
+.p3--dark .p3-arrow {
+  color: var(--wf-on-brand);
+}
+
+.p3-count {
+  color: var(--p3-quiet);
+  text-align: center;
+}
+
+.p3-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 1.2rem;
+}
+
+.p3-filters button {
+  border: 1px solid var(--p3-border);
+  background: var(--p3-panel);
+  color: var(--p3-quiet);
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 0.4rem 0.7rem;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.p3-filters button.is-active {
+  background: var(--wf-forest);
+  border-color: var(--wf-forest);
+  color: var(--wf-cream);
+}
+
+.p3--dark .p3-filters button.is-active {
+  background: var(--wf-mint);
+  border-color: var(--wf-mint);
+  color: var(--wf-forest-deep);
+}
+
+.p3-empty {
+  padding: 2.5rem 1rem;
+  text-align: center;
+  color: var(--p3-quiet);
+}
+
+.p3-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+/* —— Ring filter (Story Rail) —— */
+.p3-rings {
+  display: flex;
+  gap: 0.9rem;
+  overflow-x: auto;
+  padding: 0.25rem 0.15rem 1rem;
+  border-bottom: 1px solid var(--p3-border);
+}
+
+.p3-ring {
+  flex: 0 0 auto;
+  width: 82px;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-align: center;
+  cursor: pointer;
+}
+
+.p3-ring-halo {
+  display: grid;
+  place-items: center;
+  width: 72px;
+  height: 72px;
+  margin: 0 auto;
+  border-radius: 50%;
+  padding: 3px;
+  background: conic-gradient(
+    var(--wf-sage) calc(var(--share, 1) * 360deg),
+    rgb(120 140 130 / 0.2) 0
+  );
+  transition: transform 0.18s ease;
+}
+
+.p3-ring:hover .p3-ring-halo {
+  transform: scale(1.06);
+}
+
+.p3-ring.is-active .p3-ring-halo {
+  background: conic-gradient(var(--wf-mint), var(--wf-forest), var(--wf-mint));
+}
+
+.p3-ring-thumb {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background-size: cover;
+  background-position: center;
+  background-color: var(--wf-soft);
+  border: 2px solid var(--wf-bg);
+}
+
+.p3--dark .p3-ring-thumb {
+  border-color: var(--wf-forest-deep);
+}
+
+.p3-ring-label {
+  display: block;
+  margin-top: 0.4rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--p3-quiet);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.p3-ring.is-active .p3-ring-label {
+  color: var(--wf-sage);
+}
+
+.p3-ring-count {
+  display: block;
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: var(--p3-quiet);
+}
+
+/* Ring rail variants */
+.p3-rings--column {
+  flex-direction: column;
+  overflow: visible;
+  border-bottom: 0;
+  border-right: 1px solid var(--p3-border);
+  padding: 0 1rem 0 0;
+}
+
+.p3-rings--arc {
+  border-bottom: 0;
+  padding-bottom: 1.6rem;
+  justify-content: center;
+}
+
+/* Squared offset from centre bends the rail into an arc without abs(). */
+.p3-rings--arc .p3-ring {
+  --offset: calc(var(--i) - (var(--slots) - 1) / 2);
+  transform: translateY(calc(var(--offset) * var(--offset) * 1.6px))
+    rotate(calc(var(--offset) * 4deg));
+}
+
+.p3-rings--halo .p3-ring-halo {
+  width: 88px;
+  height: 88px;
+}
+
+.p3-rings--glow .p3-ring.is-active .p3-ring-halo {
+  box-shadow: 0 0 18px rgb(var(--wf-mint-rgb) / 0.55);
+}
+
+.p3-rings--cluster {
+  flex-wrap: wrap;
+  overflow: visible;
+  border-bottom: 0;
+  gap: 0.5rem;
+}
+
+.p3-rings--cluster .p3-ring {
+  width: 62px;
+}
+
+.p3-rings--cluster .p3-ring-halo {
+  width: 54px;
+  height: 54px;
+}
+
+/* —— Timeline eras (Trail Chronology) —— */
+.p3-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.p3-era {
+  position: relative;
+  padding-left: 1.35rem;
+}
+
+.p3-era::before {
+  content: "";
+  position: absolute;
+  left: 5px;
+  top: 1.4rem;
+  bottom: 0;
+  width: 2px;
+  background: rgb(var(--wf-sage-rgb) / 0.22);
+}
+
+.p3-era:last-child::before {
+  display: none;
+}
+
+.p3-era-head {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.65rem 0.8rem;
+  border: 1px solid var(--p3-border);
+  border-radius: 12px;
+  background: var(--p3-panel);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.p3-era.is-open .p3-era-head {
+  border-color: rgb(var(--wf-sage-rgb) / 0.45);
+}
+
+.p3-era-pin {
+  position: absolute;
+  left: 0;
+  width: 12px;
+  height: 12px;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  background: var(--wf-sand);
+  border: 2px solid var(--wf-bg);
+  box-shadow: 0 1px 4px rgb(var(--wf-ink-rgb) / 0.25);
+}
+
+.p3-era.is-open .p3-era-pin {
+  background: var(--wf-sage);
+}
+
+.p3-ledger-row .p3-era-pin {
+  position: static;
+  flex-shrink: 0;
+}
+
+.p3-era-label {
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.p3-era-count {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--p3-quiet);
+}
+
+.p3-era-chevron {
+  margin-left: auto;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-right: 2px solid var(--p3-quiet);
+  border-bottom: 2px solid var(--p3-quiet);
+  transform: rotate(45deg);
+  transition: transform 0.18s ease;
+}
+
+.p3-era.is-open .p3-era-chevron {
+  transform: rotate(-135deg);
+}
+
+/* Collapsed preview frames — only some patterns show them. */
+.p3-era-strip {
+  display: none;
+  gap: 2px;
+  margin-left: auto;
+}
+
+.p3-era-frame {
+  width: 26px;
+  height: 34px;
+  border-radius: 3px;
+  background-size: cover;
+  background-position: center;
+  background-color: var(--wf-soft);
+}
+
+.p3-era .p3-lattice {
+  margin: 0.5rem 0 1rem;
+}
+
+/* —— Reel lattice + hover expansion —— */
+.p3-lattice {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+  gap: 0.55rem;
+  min-width: 0;
+}
+
+.p3-tile {
+  position: relative;
+  display: block;
+  aspect-ratio: 3 / 4;
+  padding: 0;
+  border: 1px solid var(--p3-border);
+  border-radius: 12px;
+  background: var(--p3-panel);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  overflow: hidden;
+  cursor: pointer;
+  animation: p3-rise 0.4s ease both;
+  animation-delay: calc(var(--i, 0) * 16ms);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+@keyframes p3-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.p3-tile:hover,
+.p3-tile:focus-visible {
+  transform: scale(1.14);
+  z-index: 4;
+  box-shadow: 0 18px 40px rgb(var(--wf-forest-deep-rgb) / 0.28);
+}
+
+.p3-tile.is-selected {
+  outline: 2px solid var(--wf-sage);
+  outline-offset: 1px;
+}
+
+.p3-tile-thumb,
+.p3-tile-veil,
+.p3-tile-copy {
+  position: absolute;
+  inset: 0;
+}
+
+.p3-tile-thumb {
+  background-size: cover;
+  background-position: center;
+  background-color: var(--wf-soft);
+}
+
+.p3-tile-veil {
+  background: linear-gradient(to top, rgb(var(--wf-forest-deep-rgb) / 0.86) 8%, rgb(var(--wf-forest-deep-rgb) / 0) 62%);
+}
+
+.p3-tile-copy {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 0.25rem;
+  padding: 0.55rem;
+  color: #fff;
+}
+
+.p3-tile-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1.25;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* The expansion: caption and meta only unfold on hover. */
+.p3-tile-reveal {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition:
+    grid-template-rows 0.22s ease,
+    opacity 0.22s ease;
+}
+
+.p3-tile:hover .p3-tile-reveal,
+.p3-tile:focus-visible .p3-tile-reveal {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+.p3-tile-reveal > * {
+  overflow: hidden;
+}
+
+.p3-tile-desc {
+  display: -webkit-box;
+  font-size: 0.66rem;
+  line-height: 1.35;
+  color: rgb(255 255 255 / 0.86);
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+
+.p3-tile-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.15rem 0.4rem;
+  margin-top: 0.3rem;
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--wf-mint);
+}
+
+/* —— Detail pane (Split Meridian) —— */
+.p3-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 0.62fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.p3-detail {
+  position: sticky;
+  top: 1rem;
+  padding: 1rem;
+  border-radius: 16px;
+  background: var(--p3-panel);
+  border: 1px solid var(--p3-border);
+  box-shadow: 0 12px 32px rgb(var(--wf-forest-rgb) / 0.06);
+}
+
+.p3-detail--empty {
+  color: var(--p3-quiet);
+  font-size: 0.85rem;
+}
+
+.p3-detail-thumb {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  margin-bottom: 0.85rem;
+  border-radius: 10px;
+  background-size: cover;
+  background-position: center;
+  background-color: var(--wf-soft);
+}
+
+.p3-detail-kicker {
+  margin: 0;
+  color: var(--wf-sage);
+}
+
+.p3--dark .p3-detail-kicker {
+  color: var(--wf-mint);
+}
+
+.p3-detail-copy h2 {
+  margin: 0.25rem 0 0;
+  font-family: var(--wf-font-serif);
+  font-size: 1.4rem;
+  font-weight: 400;
+  color: var(--wf-forest);
+}
+
+.p3--dark .p3-detail-copy h2 {
+  color: var(--wf-on-brand);
+}
+
+.p3-detail-body {
+  margin: 0.45rem 0 0;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: var(--p3-quiet);
+}
+
+.p3-detail-author {
+  margin: 0.4rem 0 0;
+  font-size: 0.8rem;
+  color: var(--p3-quiet);
+}
+
+.p3-detail-places,
+.p3-detail-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-top: 0.6rem;
+}
+
+.p3-detail-places span,
+.p3-detail-tags span {
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  background: var(--wf-soft);
+  color: var(--wf-forest);
+}
+
+.p3-detail-tags span {
+  background: transparent;
+  border: 1px solid var(--p3-border);
+  color: var(--p3-quiet);
+}
+
+.p3-detail-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  margin-top: 1rem;
+}
+
+.p3-open {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--wf-sage);
+  text-decoration: none;
+}
+
+.p3--dark .p3-open {
+  color: var(--wf-mint);
+}
+
+.p3-close {
+  border: 1px solid var(--p3-border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--p3-quiet);
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 0.2rem 0.7rem;
+  cursor: pointer;
+}
+
+/* —— 04 Filmstrip Chronology —— */
+.p3[data-view="filmstrip-chronology"] .p3-era-strip {
+  display: flex;
+  padding: 3px;
+  border-radius: 4px;
+  background: repeating-linear-gradient(
+    to right,
+    rgb(var(--wf-ink-rgb) / 0.85) 0 4px,
+    rgb(var(--wf-ink-rgb) / 0.85) 4px,
+    transparent 4px 8px
+  );
+  background-clip: padding-box;
+  border-top: 4px dotted rgb(var(--wf-ink-rgb) / 0.5);
+  border-bottom: 4px dotted rgb(var(--wf-ink-rgb) / 0.5);
+}
+
+.p3[data-view="filmstrip-chronology"] .p3-era.is-open .p3-era-strip {
+  display: none;
+}
+
+/* —— 02 Meridian Drawer —— */
+.p3-body--drawer .p3-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(380px, 92vw);
+  padding: 1.1rem;
+  overflow-y: auto;
+  background: var(--wf-bg);
+  border-left: 1px solid var(--p3-border);
+  box-shadow: -18px 0 44px rgb(var(--wf-forest-deep-rgb) / 0.16);
+  animation: p3-slide-in 0.24s ease both;
+  z-index: 20;
+}
+
+.p3--dark .p3-body--drawer .p3-drawer {
+  background: var(--wf-forest-deep);
+}
+
+@keyframes p3-slide-in {
+  from {
+    transform: translateX(24px);
+    opacity: 0;
+  }
+}
+
+.p3-body--drawer .p3-detail {
+  position: static;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+}
+
+/* The lattice gives up columns instead of the page reserving a pane. */
+.p3-body--drawer.is-open {
+  padding-right: min(380px, 92vw);
+}
+
+.p3-body--drawer.is-open .p3-lattice {
+  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+}
+
+/* —— 03 Compass Dial —— */
+.p3-compass {
+  padding: 0.5rem 0 0;
+  border-bottom: 1px solid var(--p3-border);
+}
+
+.p3-scrubber {
+  display: flex;
+  gap: 0.15rem;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0.4rem 0 0.9rem;
+}
+
+.p3-bearing {
+  border: 0;
+  background: transparent;
+  padding: 0 0.4rem;
+  font: inherit;
+  color: var(--p3-quiet);
+  cursor: pointer;
+  text-align: center;
+}
+
+.p3-bearing-tick {
+  display: block;
+  width: 2px;
+  height: calc(10px + var(--weight, 1) * 4px);
+  max-height: 40px;
+  margin: 0 auto 0.3rem;
+  background: rgb(var(--wf-sage-rgb) / 0.4);
+}
+
+.p3-bearing.is-active .p3-bearing-tick {
+  width: 4px;
+  background: var(--wf-sage);
+}
+
+.p3-bearing-label {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.p3-bearing.is-active .p3-bearing-label {
+  color: var(--wf-sage);
+}
+
+/* —— 06 Inline Aperture —— */
+.p3-body--inline {
+  flex-direction: row;
+  align-items: start;
+  gap: 1.2rem;
+}
+
+.p3-body--inline .p3-timeline {
+  flex: 1;
+}
+
+.p3-inline-detail {
+  grid-column: span 2;
+  grid-row: span 2;
+  display: flex;
+  flex-direction: column;
+  padding: 0.8rem;
+  border-radius: 12px;
+  border: 1px solid rgb(var(--wf-sage-rgb) / 0.4);
+  background: var(--p3-panel);
+  overflow: auto;
+  animation: p3-rise 0.24s ease both;
+}
+
+.p3-inline-detail .p3-detail-thumb {
+  aspect-ratio: 16 / 7;
+}
+
+/* —— 07 Stacked Chapters —— */
+.p3[data-view="stacked-chapters"] .p3-era-strip {
+  display: flex;
+  gap: 0;
+  padding-right: 1.2rem;
+}
+
+.p3[data-view="stacked-chapters"] .p3-era-frame {
+  margin-right: -18px;
+  border: 2px solid var(--p3-panel);
+  border-radius: 4px;
+  box-shadow: 0 2px 6px rgb(var(--wf-forest-deep-rgb) / 0.18);
+  transform: rotate(calc((var(--i, 0)) * 0deg - 4deg));
+}
+
+.p3[data-view="stacked-chapters"] .p3-era-frame:nth-child(even) {
+  transform: rotate(5deg);
+}
+
+.p3[data-view="stacked-chapters"] .p3-era.is-open .p3-era-strip {
+  display: none;
+}
+
+.p3-banner {
+  display: grid;
+  grid-template-columns: minmax(0, 240px) minmax(0, 1fr);
+  gap: 1rem;
+  padding: 0.9rem;
+  border-radius: 16px;
+  background: var(--p3-panel);
+  border: 1px solid var(--p3-border);
+}
+
+.p3-banner .p3-detail-thumb {
+  margin-bottom: 0;
+  aspect-ratio: 4 / 3;
+}
+
+/* —— 08 Pin Vault —— */
+.p3-vault {
+  display: grid;
+  grid-template-columns: minmax(150px, 190px) minmax(0, 1fr);
+  gap: 1.1rem;
+  align-items: start;
+}
+
+.p3-pin-rail {
+  position: sticky;
+  top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding-left: 0.75rem;
+  border-left: 2px solid rgb(var(--wf-sage-rgb) / 0.22);
+}
+
+.p3-pin {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.5rem;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--p3-quiet);
+  font: inherit;
+  font-size: 0.8rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.p3-pin.is-open {
+  background: var(--p3-panel);
+  color: var(--wf-forest);
+  font-weight: 700;
+}
+
+.p3--dark .p3-pin.is-open {
+  color: var(--wf-on-brand);
+}
+
+.p3-pin-dot {
+  width: 10px;
+  height: 10px;
+  margin-left: -1.3rem;
+  border-radius: 50%;
+  background: var(--wf-sand);
+  border: 2px solid var(--wf-bg);
+  flex-shrink: 0;
+}
+
+.p3-pin.is-open .p3-pin-dot {
+  background: var(--wf-sage);
+}
+
+.p3-pin-label {
+  flex: 1;
+}
+
+.p3-pin-count {
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.p3-sheet {
+  position: fixed;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  display: grid;
+  grid-template-columns: minmax(0, 220px) minmax(0, 1fr);
+  gap: 1rem;
+  width: min(1000px, 96vw);
+  max-height: 52vh;
+  overflow: auto;
+  padding: 1rem;
+  border-radius: 18px 18px 0 0;
+  background: var(--wf-bg);
+  border: 1px solid var(--p3-border);
+  box-shadow: 0 -18px 44px rgb(var(--wf-forest-deep-rgb) / 0.2);
+  animation: p3-sheet-up 0.24s ease both;
+  z-index: 20;
+}
+
+.p3--dark .p3-sheet {
+  background: var(--wf-forest-deep);
+}
+
+@keyframes p3-sheet-up {
+  from {
+    transform: translate(-50%, 30px);
+    opacity: 0;
+  }
+}
+
+.p3-sheet .p3-detail-thumb {
+  margin-bottom: 0;
+}
+
+/* —— 09 Lantern Deck —— */
+/* Single-row reel: overflows into a horizontal snap carousel. */
+.p3-body--lantern .p3-lattice {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.4rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: 0.25rem;
+  padding: 0.15rem 0.25rem 0.55rem;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgb(var(--wf-mint-rgb) / 0.35) transparent;
+}
+
+.p3-body--lantern .p3-lattice::-webkit-scrollbar {
+  height: 6px;
+}
+
+.p3-body--lantern .p3-lattice::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgb(var(--wf-mint-rgb) / 0.35);
+}
+
+.p3-body--lantern .p3-lattice:hover .p3-tile:not(:hover) {
+  opacity: 0.45;
+  filter: saturate(0.7);
+}
+
+.p3-body--lantern .p3-tile {
+  flex: 0 0 clamp(110px, 18vw, 148px);
+  width: clamp(110px, 18vw, 148px);
+  scroll-snap-align: start;
+  transition:
+    transform 0.2s ease,
+    opacity 0.2s ease,
+    filter 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.p3-body--lantern .p3-tile:hover {
+  box-shadow: 0 0 0 1px var(--wf-mint), 0 22px 48px rgb(0 0 0 / 0.55);
+}
+
+.p3-body--lantern .p3-era-head {
+  border: 0;
+  border-bottom: 1px solid var(--p3-border);
+  border-radius: 0;
+  background: transparent;
+  opacity: 0.6;
+}
+
+.p3-body--lantern .p3-era.is-open .p3-era-head {
+  opacity: 1;
+}
+
+.p3-overlay {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  z-index: 30;
+}
+
+.p3-overlay-scrim {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  padding: 0;
+  background: rgb(8 16 12 / 0.72);
+  backdrop-filter: blur(3px);
+  cursor: pointer;
+}
+
+.p3-overlay-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 320px) minmax(0, 1fr);
+  gap: 1.2rem;
+  width: min(820px, 100%);
+  max-height: 84vh;
+  overflow: auto;
+  padding: 1.1rem;
+  border-radius: 18px;
+  background: var(--wf-forest-hover);
+  border: 1px solid rgb(var(--wf-mint-rgb) / 0.3);
+  box-shadow: 0 30px 80px rgb(0 0 0 / 0.6);
+  animation: p3-rise 0.24s ease both;
+}
+
+.p3-overlay-card .p3-detail-thumb {
+  margin-bottom: 0;
+  aspect-ratio: 3 / 4;
+}
+
+/* —— 10 Dossier Console —— */
+.p3-body--console {
+  display: grid;
+  grid-template-columns: minmax(160px, 210px) minmax(0, 1fr) minmax(260px, 0.55fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.p3-console-side {
+  position: sticky;
+  top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.p3-ledger {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.p3-ledger-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.5rem;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--p3-quiet);
+  font: inherit;
+  font-size: 0.78rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.p3-ledger-row.is-active {
+  background: var(--p3-panel);
+  color: var(--wf-forest);
+  font-weight: 700;
+}
+
+.p3--dark .p3-ledger-row.is-active {
+  color: var(--wf-on-brand);
+}
+
+.p3-ledger-count {
+  margin-left: auto;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.p3-body--console .p3-lattice {
+  grid-template-columns: repeat(auto-fill, minmax(126px, 1fr));
+}
+
+/* —— Narrow screens —— */
+@media (max-width: 900px) {
+  .p3-split,
+  .p3-vault,
+  .p3-body--console,
+  .p3-banner,
+  .p3-overlay-card,
+  .p3-sheet {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .p3-body--inline {
+    flex-direction: column;
+  }
+
+  .p3-rings--column {
+    flex-direction: row;
+    border-right: 0;
+    border-bottom: 1px solid var(--p3-border);
+    padding: 0 0 1rem;
+  }
+
+  .p3-detail,
+  .p3-pin-rail,
+  .p3-console-side {
+    position: static;
+  }
+
+  .p3-body--drawer.is-open {
+    padding-right: 0;
+  }
+}

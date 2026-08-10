@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>14 · Passport bifolio — Places Page Lab</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600&family=DM+Mono:wght@400;500&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,300;1,9..144,400;1,9..144,500;1,9..144,600&family=Instrument+Serif:ital@0;1&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../sites/shared/places-browse.css" />
+  <link rel="stylesheet" href="../shared/shell.css" />
+  <style>
+
+body {
+  background: #6d5340;
+  background-image:
+    radial-gradient(circle at 20% 20%, #7d604b 0 40%, transparent 60%),
+    radial-gradient(circle at 90% 10%, #5a4232 0 40%, transparent 60%),
+    linear-gradient(180deg, #6d5340 0%, #4a3626 100%);
+  color: var(--a-ink); font-family: var(--a-sans); min-height: 100vh;
+}
+.pp-frame {
+  max-width: 1120px; margin: 0 auto; padding: 1.5rem 16px 3rem; color: #f0e0c8;
+}
+.pp-topbar {
+  display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;
+}
+.pp-topbar .brand { font-family: var(--a-serif); font-style: italic; font-size: 1.35rem; }
+.pp-topbar nav a { color: rgb(240 224 200 / 0.85); text-decoration: none; margin-left: 1.1rem; font-size: 0.85rem; }
+.pp-book {
+  background: #f0e2ce; color: var(--a-ink); position: relative;
+  padding: 2rem 2.25rem 1rem;
+  border-radius: 4px;
+  box-shadow: 0 30px 70px -20px rgb(0 0 0 / 0.55);
+  background-image:
+    radial-gradient(circle at 50% 50%, transparent 0 4px, rgb(107 83 70 / 0.4) 4.5px, transparent 5px);
+  background-size: 14px 100%;
+  background-repeat: repeat-y;
+  background-position: 50% 0;
+}
+.pp-book::before {
+  content: ""; position: absolute; left: 0; right: 0; top: 0; height: 14px;
+  background-image: radial-gradient(circle, #6d5340 0 4px, transparent 4.5px);
+  background-size: 22px 14px;
+}
+.pp-book::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 14px;
+  background-image: radial-gradient(circle, #6d5340 0 4px, transparent 4.5px);
+  background-size: 22px 14px;
+}
+.pp-authority {
+  display: grid; grid-template-columns: 72px 1fr; gap: 1.25rem; align-items: center;
+  padding: 1.5rem 260px 1rem 0; border-bottom: 2px solid var(--a-ink); position: relative;
+}
+.pp-authority .meta {
+  grid-column: 1 / -1; padding-top: 0.75rem; margin-top: 0.5rem;
+  border-top: 1px dashed #c8b499;
+  display: flex; gap: 1.75rem; flex-wrap: wrap;
+}
+.pp-authority .meta span { display: inline-block; }
+.pp-crest {
+  width: 72px; height: 72px; border: 2px solid var(--a-ink); border-radius: 50%;
+  display: grid; place-items: center;
+  font-family: var(--a-serif); font-style: italic; font-weight: 500; font-size: 2rem; color: var(--a-accent);
+  background:
+    radial-gradient(circle at 50% 50%, transparent 20px, rgb(200 92 52 / 0.08) 21px 22px, transparent 23px),
+    #fffaf5;
+}
+.pp-authority h1 {
+  margin: 0; font-family: var(--a-serif); font-weight: 500; font-size: 1.6rem; letter-spacing: -0.01em;
+}
+.pp-authority h1 small {
+  display: block; font-family: "DM Mono", monospace; font-style: normal; font-weight: 500;
+  font-size: 0.62rem; letter-spacing: 0.28em; text-transform: uppercase; color: var(--a-accent); margin-bottom: 4px;
+}
+.pp-authority .pp-meta {
+  font-family: "DM Mono", monospace; font-size: 0.7rem; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--a-muted); line-height: 1.7;
+}
+.pp-stamps {
+  position: absolute; top: 26px; right: 28px;
+  display: flex; gap: 0.4rem; z-index: 2;
+}
+.pp-stamp {
+  width: 74px; height: 74px; border: 2px dashed var(--a-accent); border-radius: 50%;
+  display: grid; place-items: center; text-align: center;
+  font-family: "DM Mono", monospace; font-size: 0.58rem; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--a-accent); font-weight: 700; transform: rotate(-8deg); opacity: 0.85;
+  line-height: 1.15;
+}
+.pp-stamp:nth-child(2) {
+  transform: rotate(7deg); border-color: #5c3a5e; color: #5c3a5e;
+}
+.pp-stamp:nth-child(3) {
+  transform: rotate(-3deg) translateY(6px); border-color: #7a5a2a; color: #7a5a2a;
+}
+@media (max-width: 640px) {
+  .pp-stamps { position: static; margin: 1rem 0; }
+  .pp-authority { grid-template-columns: 56px 1fr; padding-right: 0; }
+}
+
+  </style>
+</head>
+<body>
+  <header class="lab-top">
+    <a href="../index.html">← Places Page Lab</a>
+    <nav class="lab-top-nav" aria-label="Structure pager">
+      <a href="13-library-carrel.html">← Back</a>
+      <span class="pattern">Structure 14 / 20</span>
+      <a href="15-constellation.html">Next →</a>
+    </nav>
+    <a href="../../index.html">Design Lab</a>
+  </header>
+
+  <div class="pp-frame">
+    <div class="pp-topbar">
+      <a class="brand" href="../../sites/02-almanac/index.html">Almanac</a>
+      <nav><a class="" href="../../sites/02-almanac/index.html">Discover</a><a class="" href="../../sites/02-almanac/posts.html">Posts</a><a class=" is-on" href="#">Places</a><a class="" href="../../sites/02-almanac/history.html">Journal</a><a class="" href="../../sites/02-almanac/add.html">Add</a></nav>
+    </div>
+    <div class="pp-book">
+      <div class="pp-authority">
+        <div class="pp-crest">A</div>
+        <div>
+          <h1><small>Wanderfile / Authority</small>Almanac Passport — Places</h1>
+        </div>
+        <div class="meta pp-meta">
+          <span>Bearer <strong>You</strong></span>
+          <span>Issued <strong>MMXXVI</strong></span>
+          <span>Valid <strong>Everywhere</strong></span>
+        </div>
+      </div>
+      <div class="pp-stamps" aria-hidden="true">
+        <div class="pp-stamp">Visited<br/>62</div>
+        <div class="pp-stamp">Atlas<br/>MMXXVI</div>
+        <div class="pp-stamp">Fair<br/>weather</div>
+      </div>
+      <div id="wf-places-root" class="wf-places wf-places--almanac wf-places--embedded"><div class="wf-places-loading">Loading atlas…</div></div>
+    </div>
+  </div>
+  <nav class="lab-bottom-nav" aria-label="Structure pager">
+    <a href="13-library-carrel.html">← Card catalog</a>
+    <span class="hint">← → keys</span>
+    <a href="15-constellation.html">Constellation veil →</a>
+  </nav>
+  <script>window.WF_SITE = { id: "02-almanac", title: "Almanac", page: "places-structure" };</script>
+  <script src="../../sites/shared/mock.js"></script>
+  <script type="module" src="../shared/mount.js"></script>
+  <script type="module">
+    const prev = "13-library-carrel.html";
+    const next = "15-constellation.html";
+    window.addEventListener("keydown", (event) => {
+      if (event.defaultPrevented) return;
+      const tag = (event.target && event.target.tagName) || "";
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || event.target?.isContentEditable) return;
+      if (event.key === "ArrowLeft" && prev) location.href = prev;
+      if (event.key === "ArrowRight" && next) location.href = next;
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>08 · Swiss modular — Places Page Lab</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600&family=DM+Mono:wght@400;500&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,300;1,9..144,400;1,9..144,500;1,9..144,600&family=Instrument+Serif:ital@0;1&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../sites/shared/places-browse.css" />
+  <link rel="stylesheet" href="../shared/shell.css" />
+  <style>
+
+body {
+  background: #f2ede4; color: #14100c; font-family: "Space Grotesk", var(--a-sans);
+}
+.sw-frame {
+  max-width: 1240px; margin: 0 auto; padding: 0.5rem 24px 3rem; position: relative;
+}
+.sw-frame::before {
+  content: ""; position: absolute; inset: 0 24px;
+  background-image: repeating-linear-gradient(90deg, transparent 0, transparent calc(8.3333% - 1px), rgb(20 16 12 / 0.06) calc(8.3333% - 1px), rgb(20 16 12 / 0.06) 8.3333%);
+  pointer-events: none;
+}
+.sw-cols {
+  display: grid; grid-template-columns: repeat(12, 1fr); font-family: "DM Mono", monospace;
+  font-size: 0.6rem; letter-spacing: 0.14em; color: rgb(20 16 12 / 0.4); padding: 0.4rem 0 0.75rem;
+}
+.sw-cols span { text-align: center; }
+.sw-head {
+  display: grid; grid-template-columns: repeat(12, 1fr); gap: 24px;
+  padding: 1.5rem 0 2rem; border-top: 2px solid #14100c; border-bottom: 1px solid #14100c;
+  position: relative;
+}
+.sw-head .kicker {
+  grid-column: 1 / span 4; margin: 0; font-family: "DM Mono", monospace;
+  font-size: 0.72rem; letter-spacing: 0.24em; text-transform: uppercase;
+}
+.sw-head h1 {
+  grid-column: 1 / span 8; margin: 1rem 0 0;
+  font-family: var(--a-serif); font-weight: 500; font-style: italic;
+  font-size: clamp(3rem, 8vw, 6rem); line-height: 0.9; letter-spacing: -0.035em;
+}
+.sw-head .accent {
+  grid-column: 12 / span 1; align-self: end; justify-self: end;
+  width: 44px; height: 44px; background: var(--a-accent);
+}
+.sw-head .deck {
+  grid-column: 9 / span 4; align-self: end; margin: 0;
+  font-size: 0.9rem; line-height: 1.55; color: rgb(20 16 12 / 0.7);
+}
+.sw-meta {
+  display: grid; grid-template-columns: repeat(12, 1fr); gap: 24px;
+  padding: 0.85rem 0; font-family: "DM Mono", monospace; font-size: 0.72rem;
+  letter-spacing: 0.14em; text-transform: uppercase; color: rgb(20 16 12 / 0.7);
+  border-bottom: 1px solid rgb(20 16 12 / 0.15);
+}
+.sw-meta span:nth-child(1) { grid-column: 1 / span 3; }
+.sw-meta span:nth-child(2) { grid-column: 4 / span 3; }
+.sw-meta span:nth-child(3) { grid-column: 7 / span 3; }
+.sw-meta span:nth-child(4) { grid-column: 10 / span 3; text-align: right; }
+.sw-meta strong { color: #14100c; font-weight: 500; }
+
+  </style>
+</head>
+<body>
+  <header class="lab-top">
+    <a href="../index.html">← Places Page Lab</a>
+    <nav class="lab-top-nav" aria-label="Structure pager">
+      <a href="07-spine-shelf.html">← Back</a>
+      <span class="pattern">Structure 08 / 20</span>
+      <a href="09-sticky-rail.html">Next →</a>
+    </nav>
+    <a href="../../index.html">Design Lab</a>
+  </header>
+
+  <div class="sw-frame">
+    <div class="sw-cols"><span>01</span><span>02</span><span>03</span><span>04</span><span>05</span><span>06</span><span>07</span><span>08</span><span>09</span><span>10</span><span>11</span><span>12</span></div>
+    <header class="sw-head">
+      <p class="kicker">Section IV / Places</p>
+      <h1><em>Places</em></h1>
+      <div class="accent"></div>
+      <p class="deck">A modular index of every destination in your library — filed, filtered, and cross-referenced against your visits.</p>
+    </header>
+    <div class="sw-meta">
+      <span>Curator <strong>YOU</strong></span>
+      <span>Updated <strong>Today</strong></span>
+      <span>System <strong>12-col</strong></span>
+      <span>Filters <strong>Unchanged</strong></span>
+    </div>
+    <div id="wf-places-root" class="wf-places wf-places--almanac wf-places--embedded"><div class="wf-places-loading">Loading atlas…</div></div>
+  </div>
+  <nav class="lab-bottom-nav" aria-label="Structure pager">
+    <a href="07-spine-shelf.html">← Book spine</a>
+    <span class="hint">← → keys</span>
+    <a href="09-sticky-rail.html">Product index rail →</a>
+  </nav>
+  <script>window.WF_SITE = { id: "02-almanac", title: "Almanac", page: "places-structure" };</script>
+  <script src="../../sites/shared/mock.js"></script>
+  <script type="module" src="../shared/mount.js"></script>
+  <script type="module">
+    const prev = "07-spine-shelf.html";
+    const next = "09-sticky-rail.html";
+    window.addEventListener("keydown", (event) => {
+      if (event.defaultPrevented) return;
+      const tag = (event.target && event.target.tagName) || "";
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || event.target?.isContentEditable) return;
+      if (event.key === "ArrowLeft" && prev) location.href = prev;
+      if (event.key === "ArrowRight" && next) location.href = next;
+    });
+  </script>
+</body>
+</html>

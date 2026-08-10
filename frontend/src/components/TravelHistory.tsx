@@ -13,10 +13,17 @@ import {
   startInstagramImport,
   type Place,
   type TimelineReviewDetail,
+  type Visit,
   type VisitDetail,
 } from "../api";
 import { categoryLabel } from "../categoryLabels";
+import "../history-page.css";
 import { CategoryChip } from "./CategoryChip";
+import { FilterChipRow, type FilterChipOption } from "./FilterChipRow";
+import { PageHeader } from "./PageHeader";
+import { PageMetric } from "./PageMetric";
+import { ApertureIcon, FileIcon, PinIcon, ReviewIcon } from "./PanelIcons";
+import { SectionPanel } from "./SectionPanel";
 
 interface TravelHistoryProps {
   refreshToken?: number;
@@ -26,14 +33,63 @@ interface TravelHistoryProps {
   onImportStarted?: (jobId: string) => void;
 }
 
-function formatVisitDates(visitedFrom?: string | null, visitedTo?: string | null): string {
-  if (!visitedFrom) {
-    return "Visited · date unknown";
+const MONTH_ABBREVIATIONS = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
+
+const UNDATED_GROUP_KEY = "undated";
+
+interface CalendarDay {
+  year: number;
+  month: number;
+  day: number;
+}
+
+function parseCalendarDay(value: string | null | undefined): CalendarDay | null {
+  if (!value) {
+    return null;
   }
-  if (!visitedTo || visitedTo === visitedFrom) {
-    return visitedFrom;
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
+  if (!match) {
+    return null;
   }
-  return `${visitedFrom} → ${visitedTo}`;
+  return { year: Number(match[1]), month: Number(match[2]), day: Number(match[3]) };
+}
+
+function monthDayLabel(day: CalendarDay): string {
+  return `${MONTH_ABBREVIATIONS[day.month - 1] ?? ""} ${day.day}`.trim();
+}
+
+/** Compact rail label: "Mar 3", "Mar 3–9", or "Mar 28 – Apr 2". */
+function visitDateLabel(visitedFrom?: string | null, visitedTo?: string | null): string {
+  const from = parseCalendarDay(visitedFrom);
+  if (!from) {
+    return "Undated";
+  }
+  const to = parseCalendarDay(visitedTo);
+  if (!to || (to.year === from.year && to.month === from.month && to.day === from.day)) {
+    return monthDayLabel(from);
+  }
+  if (to.year === from.year && to.month === from.month) {
+    return `${monthDayLabel(from)}–${to.day}`;
+  }
+  return `${monthDayLabel(from)} – ${monthDayLabel(to)}`;
+}
+
+function visitYearLabel(visitedFrom?: string | null): string {
+  const from = parseCalendarDay(visitedFrom);
+  return from ? String(from.year) : "Undated";
 }
 
 function locationLine(place: Place | null | undefined): string {
@@ -55,6 +111,43 @@ function sourceLabel(source: string | null | undefined): string | null {
     return "Manual";
   }
   return null;
+}
+
+/** Newest first; undated visits sink to the bottom. */
+function compareVisitsNewestFirst(left: VisitDetail, right: VisitDetail): number {
+  const leftFrom = left.visit.visited_from ?? "";
+  const rightFrom = right.visit.visited_from ?? "";
+  if (leftFrom && rightFrom) {
+    return rightFrom.localeCompare(leftFrom);
+  }
+  if (leftFrom) {
+    return -1;
+  }
+  if (rightFrom) {
+    return 1;
+  }
+  return left.visit.place_name.localeCompare(right.visit.place_name);
+}
+
+interface VisitYearGroup {
+  key: string;
+  label: string;
+  entries: VisitDetail[];
+}
+
+function groupVisitsByYear(visits: VisitDetail[]): VisitYearGroup[] {
+  const groups: VisitYearGroup[] = [];
+  for (const entry of visits) {
+    const label = visitYearLabel(entry.visit.visited_from);
+    const key = label === "Undated" ? UNDATED_GROUP_KEY : label;
+    const current = groups[groups.length - 1];
+    if (current && current.key === key) {
+      current.entries.push(entry);
+    } else {
+      groups.push({ key, label, entries: [entry] });
+    }
+  }
+  return groups;
 }
 
 export function TravelHistory({
@@ -121,13 +214,30 @@ export function TravelHistory({
       .slice(0, 8);
   }, [destinationQuery, places]);
 
-  const categoryCounts = useMemo(() => {
+  const sortedVisits = useMemo(() => [...visits].sort(compareVisitsNewestFirst), [visits]);
+
+  const placeCount = useMemo(
+    () => new Set(visits.map(({ visit }) => visit.place_id)).size,
+    [visits],
+  );
+
+  const countryCount = useMemo(
+    () =>
+      new Set(
+        visits
+          .map(({ place }) => place?.location.country)
+          .filter((country): country is string => Boolean(country)),
+      ).size,
+    [visits],
+  );
+
+  const categoryOptions = useMemo<FilterChipOption[]>(() => {
     const counts = new Map<string, number>();
     for (const { place } of visits) {
       const key = place?.category ?? "uncategorized";
       counts.set(key, (counts.get(key) ?? 0) + 1);
     }
-    return Array.from(counts.entries()).sort(([a], [b]) => {
+    const sorted = Array.from(counts.entries()).sort(([a], [b]) => {
       if (a === "uncategorized") {
         return 1;
       }
@@ -136,17 +246,27 @@ export function TravelHistory({
       }
       return categoryLabel(a).localeCompare(categoryLabel(b));
     });
+    return [
+      { key: "all", label: "All", count: visits.length },
+      ...sorted.map(([key, count]) => ({
+        key,
+        label: key === "uncategorized" ? "Uncategorized" : categoryLabel(key),
+        count,
+      })),
+    ];
   }, [visits]);
 
   const filteredVisits = useMemo(() => {
     if (categoryFilter === "all") {
-      return visits;
+      return sortedVisits;
     }
-    return visits.filter(({ place }) => {
+    return sortedVisits.filter(({ place }) => {
       const key = place?.category ?? "uncategorized";
       return key === categoryFilter;
     });
-  }, [visits, categoryFilter]);
+  }, [sortedVisits, categoryFilter]);
+
+  const visitGroups = useMemo(() => groupVisitsByYear(filteredVisits), [filteredVisits]);
 
   const resetForm = () => {
     setDestinationQuery("");
@@ -197,7 +317,7 @@ export function TravelHistory({
     setTimelineImporting(true);
     try {
       const jobId = await importTimelineFile(file);
-      setTimelineSummary("Timeline import started — watch progress above. You can refresh anytime.");
+      setTimelineSummary("Timeline import started — progress opens on the add page and survives a refresh.");
       if (input) {
         input.value = "";
       }
@@ -298,14 +418,14 @@ export function TravelHistory({
     }
   };
 
-  const handleDelete = async (visitId: string) => {
-    const confirmed = window.confirm("Remove this trip from your history?");
+  const handleDelete = async (visit: Visit) => {
+    const confirmed = window.confirm(`Remove ${visit.place_name} from your history?`);
     if (!confirmed) {
       return;
     }
     setError(null);
     try {
-      await deleteVisit(visitId);
+      await deleteVisit(visit.visit_id);
       await refresh();
       onChanged?.();
     } catch (err) {
@@ -314,155 +434,69 @@ export function TravelHistory({
   };
 
   return (
-    <section className="library-section">
-      <section className="panel visit-form-panel">
-        <div className="ingest-panel-header">
-          <span className="ingest-panel-icon" aria-hidden="true">
-            <svg width="18" height="18" viewBox="0 0 18 18">
-              <circle cx="9" cy="9" r="6.5" fill="none" stroke="currentColor" strokeWidth="1.4" />
-              <circle cx="9" cy="9" r="2.2" fill="currentColor" />
-            </svg>
-          </span>
-          <div>
-            <h2 className="ingest-panel-title">Import from Instagram</h2>
-            <p className="ingest-panel-subtitle">
-              Pull your latest public posts, run the full place pipeline, and mark places as
-              visited. Progress stays visible if you refresh.
-            </p>
-          </div>
-        </div>
-        <form className="visit-form" onSubmit={(event) => void handleImportInstagram(event)}>
-          <label className="visit-field visit-field-destination">
-            <span className="field-label">Instagram username</span>
-            <input
-              type="text"
-              className="place-search visit-destination-input"
-              placeholder="@yourusername"
-              value={instagramUsername}
-              onChange={(event) => setInstagramUsername(event.target.value)}
-              autoComplete="off"
-              disabled={importing || jobRunning}
-            />
-          </label>
-          <div className="form-actions">
-            <button
-              type="submit"
-              className="primary-button"
-              disabled={importing || jobRunning}
-            >
-              {importing ? "Starting…" : jobRunning ? "Import running…" : "Import visits"}
-            </button>
-          </div>
-        </form>
-      </section>
+    <div className="wf-container wf-page-pad history-page">
+      <PageHeader
+        eyebrow="Where you've been"
+        title="Travel history"
+        lede="Every place you've marked as visited — logged by hand, pulled from your Instagram posts, or imported from Google Maps Timeline."
+        aside={
+          <>
+            <PageMetric value={visits.length} label="visits" />
+            <PageMetric value={placeCount} label="places" />
+            <PageMetric value={countryCount} label="countries" />
+          </>
+        }
+      />
 
-      <section className="panel visit-form-panel">
-        <div className="ingest-panel-header">
-          <span className="ingest-panel-icon" aria-hidden="true">
-            <svg width="18" height="18" viewBox="0 0 18 18">
-              <path
-                d="M3 14.5V3.5h7.2L15 8.3v6.2H3z"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.4"
-                strokeLinejoin="round"
-              />
-              <path d="M10 3.5V8h4.8" fill="none" stroke="currentColor" strokeWidth="1.4" />
-            </svg>
-          </span>
-          <div>
-            <h2 className="ingest-panel-title">Import from Google Maps Timeline</h2>
-            <p className="ingest-panel-subtitle">
-              Upload a phone Timeline .json or Takeout .zip. Parsed in your browser; clusters upload
-              to staging and process in the background (survives refresh). Home-area and errand
-              places are filtered; TYPE_UNKNOWN places are gated via OpenStreetMap.
-            </p>
-          </div>
-        </div>
-        <form className="visit-form" onSubmit={(event) => void handleImportTimeline(event)}>
-          <label className="visit-field visit-field-destination">
-            <span className="field-label">Timeline file</span>
-            <input
-              ref={timelineInputRef}
-              type="file"
-              accept=".json,.zip,application/json,application/zip"
-              className="visit-file-input"
-              disabled={timelineImporting || jobRunning}
-            />
-          </label>
-          <div className="form-actions">
-            <button
-              type="submit"
-              className="primary-button"
-              disabled={timelineImporting || jobRunning}
-            >
-              {timelineImporting
-                ? "Uploading…"
-                : jobRunning
-                  ? "Import running…"
-                  : "Import Timeline"}
-            </button>
-            <button
-              type="button"
-              className="danger-button"
-              disabled={timelineImporting || jobRunning}
-              onClick={() => void handleCleanupVisits("timeline")}
-            >
-              Clear Timeline visits
-            </button>
-            <button
-              type="button"
-              className="danger-button"
-              disabled={timelineImporting || jobRunning}
-              onClick={() => void handleCleanupVisits("all")}
-            >
-              Clear all visit history
-            </button>
-          </div>
-        </form>
-        {timelineSummary ? <p className="banner-success">{timelineSummary}</p> : null}
-      </section>
+      {error ? <p className="banner-error">{error}</p> : null}
+      {timelineSummary ? <p className="banner-success">{timelineSummary}</p> : null}
 
       {reviews.length > 0 ? (
-        <section className="panel visit-form-panel">
-          <div className="ingest-panel-header">
-            <div>
-              <h2 className="ingest-panel-title">Review Timeline places</h2>
-              <p className="ingest-panel-subtitle">
-                Ambiguous imports — keep trip memories, discard everyday stops. AI suggestions are
-                hints only.
-              </p>
-            </div>
-          </div>
-          <ul className="visit-list">
-            {reviews.map((item) => {
-              const { visit, place, suggestion, suggestion_reason: suggestionReason } = item;
+        <SectionPanel
+          className="history-panel"
+          tone="notice"
+          icon={<ReviewIcon />}
+          title="Review Timeline places"
+          subtitle="Ambiguous imports — keep the trip memories, discard the everyday stops. Suggestions are hints only."
+          actions={
+            <span className="history-review-badge">
+              {reviews.length} waiting
+            </span>
+          }
+        >
+          <ul className="history-review-list">
+            {reviews.map(({ visit, place, suggestion, suggestion_reason: suggestionReason }) => {
               const busy = reviewBusyId === visit.visit_id;
               const where = locationLine(place);
               return (
-                <li key={visit.visit_id} className="visit-row">
-                  <div className="visit-row-main">
-                    <div className="visit-card-meta-row">
+                <li key={visit.visit_id} className="history-review-item">
+                  <div className="history-review-copy">
+                    {place && onNavigateToPlace ? (
+                      <button
+                        type="button"
+                        className="history-entry-link"
+                        onClick={() => onNavigateToPlace(place.place_id)}
+                      >
+                        {visit.place_name}
+                      </button>
+                    ) : (
+                      <span className="history-entry-name">{visit.place_name}</span>
+                    )}
+                    <div className="history-entry-meta">
                       <CategoryChip category={place?.category} small />
+                      <span className="history-entry-date-inline">
+                        {visitDateLabel(visit.visited_from, visit.visited_to)}
+                      </span>
+                      {where ? <span className="history-entry-where">{where}</span> : null}
                     </div>
-                    <button
-                      type="button"
-                      className="visit-place-link"
-                      onClick={() => place && onNavigateToPlace?.(place.place_id)}
-                      disabled={!place}
-                    >
-                      {visit.place_name}
-                    </button>
-                    {where ? <p className="visit-meta">{where}</p> : null}
-                    <p className="visit-meta">{formatVisitDates(visit.visited_from, visit.visited_to)}</p>
                     {suggestion ? (
-                      <p className="visit-meta">
+                      <p className="history-review-suggestion">
                         Suggested: {suggestion}
                         {suggestionReason ? ` — ${suggestionReason}` : ""}
                       </p>
                     ) : null}
                   </div>
-                  <div className="form-actions">
+                  <div className="history-actions history-review-actions">
                     <button
                       type="button"
                       className="primary-button"
@@ -484,35 +518,18 @@ export function TravelHistory({
               );
             })}
           </ul>
-        </section>
+        </SectionPanel>
       ) : null}
 
-      {error && <p className="banner-error">{error}</p>}
-
-      <section className="panel visit-form-panel">
-        <div className="ingest-panel-header">
-          <span className="ingest-panel-icon" aria-hidden="true">
-            <svg width="18" height="18" viewBox="0 0 18 18">
-              <path
-                d="M9 2.5C6.5 2.5 4.5 4.5 4.5 7c0 4 4.5 8 4.5 8s4.5-4 4.5-8c0-2.5-2-4.5-4.5-4.5Z"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.4"
-              />
-              <circle cx="9" cy="7" r="1.5" fill="currentColor" />
-            </svg>
-          </span>
-          <div>
-            <h2 className="ingest-panel-title">Add a place you’ve visited</h2>
-            <p className="ingest-panel-subtitle">
-              Pick a place from your library or type a new destination. Dates are optional.
-            </p>
-          </div>
-        </div>
-
-        <form className="visit-form" onSubmit={(event) => void handleSubmit(event)}>
-          <div className="visit-form-grid">
-            <label className="visit-field visit-field-destination">
+      <SectionPanel
+        className="history-panel"
+        icon={<PinIcon />}
+        title="Log a visit"
+        subtitle="Pick a place from your atlas or type a new destination. Dates are optional."
+      >
+        <form className="history-form" onSubmit={(event) => void handleSubmit(event)}>
+          <div className="history-form-grid">
+            <label className="history-field history-field-destination">
               <span className="field-label">Destination</span>
               <div className="visit-destination-wrap">
                 <input
@@ -559,17 +576,17 @@ export function TravelHistory({
                 )}
               </div>
               {selectedPlace ? (
-                <p className="visit-resolve-hint">
-                  Using {categoryLabel(selectedPlace.category).toLowerCase()} from your library
+                <p className="history-hint">
+                  Using {categoryLabel(selectedPlace.category).toLowerCase()} from your atlas
                 </p>
               ) : destinationQuery.trim().length >= 2 ? (
-                <p className="visit-resolve-hint">
+                <p className="history-hint">
                   Will look up “{destinationQuery.trim()}” and add it if it’s new
                 </p>
               ) : null}
             </label>
 
-            <label className="visit-field">
+            <label className="history-field">
               <span className="field-label">From (optional)</span>
               <input
                 type="date"
@@ -580,7 +597,7 @@ export function TravelHistory({
               />
             </label>
 
-            <label className="visit-field">
+            <label className="history-field">
               <span className="field-label">To (optional)</span>
               <input
                 type="date"
@@ -592,10 +609,10 @@ export function TravelHistory({
             </label>
           </div>
 
-          <label className="visit-field">
+          <label className="history-field">
             <span className="field-label">Notes (optional)</span>
             <textarea
-              className="links-input visit-notes"
+              className="links-input history-notes"
               rows={2}
               placeholder="Who you went with, season, highlights…"
               value={notes}
@@ -604,104 +621,194 @@ export function TravelHistory({
             />
           </label>
 
-          <div className="form-actions">
+          <div className="history-actions">
             <button type="submit" className="primary-button" disabled={saving}>
               {saving ? "Saving…" : "Mark as visited"}
             </button>
           </div>
         </form>
-      </section>
+      </SectionPanel>
 
-      {loading ? (
-        <p className="loading-copy">Loading travel history…</p>
-      ) : visits.length === 0 ? (
-        <p className="empty-copy">No visits yet. Mark places as visited from here or from a place page.</p>
-      ) : (
-        <section>
-          <div className="visit-list-header">
-            <h2>Your visits</h2>
-            <p className="visit-list-count">
-              {filteredVisits.length}
-              {categoryFilter !== "all"
-                ? ` · ${categoryLabel(categoryFilter === "uncategorized" ? null : categoryFilter)}`
-                : ""}
-              {" of "}
-              {visits.length}
-            </p>
-          </div>
-          {categoryCounts.length > 1 ? (
-            <div className="category-filter-row" role="group" aria-label="Filter visits by category">
-              <button
-                type="button"
-                className={`category-filter-chip${categoryFilter === "all" ? " is-active" : ""}`}
-                onClick={() => setCategoryFilter("all")}
-              >
-                All
-                <span className="category-filter-count">{visits.length}</span>
+      <div className="history-import-grid">
+        <SectionPanel
+          className="history-panel"
+          icon={<ApertureIcon />}
+          title="Import from Instagram"
+          subtitle="Pull your latest public posts, run the full place pipeline, and mark those places as visited."
+        >
+          <form
+            className="history-form"
+            onSubmit={(event) => void handleImportInstagram(event)}
+          >
+            <label className="history-field">
+              <span className="field-label">Instagram username</span>
+              <input
+                type="text"
+                className="place-search visit-destination-input"
+                placeholder="@yourusername"
+                value={instagramUsername}
+                onChange={(event) => setInstagramUsername(event.target.value)}
+                autoComplete="off"
+                disabled={importing || jobRunning}
+              />
+            </label>
+            <div className="history-actions">
+              <button type="submit" className="primary-button" disabled={importing || jobRunning}>
+                {importing ? "Starting…" : jobRunning ? "Import running…" : "Import visits"}
               </button>
-              {categoryCounts.map(([key, count]) => (
-                <button
-                  key={key}
-                  type="button"
-                  className={`category-filter-chip${categoryFilter === key ? " is-active" : ""}`}
-                  onClick={() => setCategoryFilter(key)}
-                >
-                  {key === "uncategorized" ? "Uncategorized" : categoryLabel(key)}
-                  <span className="category-filter-count">{count}</span>
-                </button>
-              ))}
             </div>
+          </form>
+        </SectionPanel>
+
+        <SectionPanel
+          className="history-panel"
+          icon={<FileIcon />}
+          title="Import from Google Maps Timeline"
+          subtitle="Upload a phone Timeline .json or a Takeout .zip. Parsing happens in your browser; clusters process in the background. Home-area and errand stops are filtered out."
+        >
+          <form
+            className="history-form"
+            onSubmit={(event) => void handleImportTimeline(event)}
+          >
+            <label className="history-field">
+              <span className="field-label">Timeline file</span>
+              <input
+                ref={timelineInputRef}
+                type="file"
+                accept=".json,.zip,application/json,application/zip"
+                className="history-file-input"
+                disabled={timelineImporting || jobRunning}
+              />
+            </label>
+            <div className="history-actions">
+              <button
+                type="submit"
+                className="primary-button"
+                disabled={timelineImporting || jobRunning}
+              >
+                {timelineImporting
+                  ? "Uploading…"
+                  : jobRunning
+                    ? "Import running…"
+                    : "Import Timeline"}
+              </button>
+            </div>
+          </form>
+        </SectionPanel>
+      </div>
+
+      <div className="history-reset">
+        <span className="history-reset-label">Reset</span>
+        <button
+          type="button"
+          className="history-reset-button"
+          disabled={timelineImporting || jobRunning}
+          onClick={() => void handleCleanupVisits("timeline")}
+        >
+          Clear Timeline visits
+        </button>
+        <button
+          type="button"
+          className="history-reset-button"
+          disabled={timelineImporting || jobRunning}
+          onClick={() => void handleCleanupVisits("all")}
+        >
+          Clear all visit history
+        </button>
+      </div>
+
+      <section className="history-visits">
+        <div className="wf-section-head">
+          <h2 className="wf-section-title">Your visits</h2>
+          {visits.length > 0 ? (
+            <p className="wf-section-count">
+              {filteredVisits.length === visits.length
+                ? `${visits.length} logged`
+                : `${filteredVisits.length} of ${visits.length}`}
+            </p>
           ) : null}
-          {filteredVisits.length === 0 ? (
-            <p className="empty-copy">No visits in this category.</p>
-          ) : (
-            <ul className="visit-list">
-              {filteredVisits.map(({ visit, place }) => {
-                const source = sourceLabel(visit.source);
-                return (
-                  <li key={visit.visit_id} className="visit-card panel">
-                    <div className="visit-card-main">
-                      <div>
-                        <div className="visit-card-meta-row">
-                          <CategoryChip category={place?.category} />
-                          {source ? <span className="visit-source-pill">{source}</span> : null}
-                        </div>
-                        <h3 className="visit-card-title">
+        </div>
+
+        {categoryOptions.length > 2 ? (
+          <FilterChipRow
+            label="Category"
+            options={categoryOptions}
+            activeKey={categoryFilter}
+            onSelect={setCategoryFilter}
+            ariaLabel="Filter visits by category"
+          />
+        ) : null}
+
+        {loading ? (
+          <p className="wf-note">Loading travel history…</p>
+        ) : visits.length === 0 ? (
+          <p className="wf-note">
+            No visits yet. Log one above, import from Instagram or Timeline, or mark a place as
+            visited from its page in the atlas.
+          </p>
+        ) : filteredVisits.length === 0 ? (
+          <p className="wf-note">No visits in this category.</p>
+        ) : (
+          visitGroups.map((group) => (
+            <section key={group.key} className="history-group">
+              <h3 className="history-group-heading">
+                <span className="history-group-year">{group.label}</span>
+                <span className="history-group-count">
+                  {group.entries.length} visit{group.entries.length === 1 ? "" : "s"}
+                </span>
+              </h3>
+              <ol className="history-timeline">
+                {group.entries.map(({ visit, place }) => {
+                  const source = sourceLabel(visit.source);
+                  const where = locationLine(place);
+                  return (
+                    <li key={visit.visit_id} className="history-entry">
+                      <div className="history-entry-rail">
+                        <span className="history-entry-dot" aria-hidden="true" />
+                        <span className="history-entry-date">
+                          {visitDateLabel(visit.visited_from, visit.visited_to)}
+                        </span>
+                      </div>
+                      <div className="history-entry-body">
+                        <div className="history-entry-top">
                           {onNavigateToPlace ? (
                             <button
                               type="button"
-                              className="inline-link-button"
+                              className="history-entry-link"
                               onClick={() => onNavigateToPlace(visit.place_id)}
                             >
                               {visit.place_name}
                             </button>
                           ) : (
-                            visit.place_name
+                            <span className="history-entry-name">{visit.place_name}</span>
                           )}
-                        </h3>
-                        {locationLine(place) && (
-                          <p className="visit-card-location">{locationLine(place)}</p>
-                        )}
-                        <p className="visit-card-dates">
-                          {formatVisitDates(visit.visited_from, visit.visited_to)}
-                        </p>
-                        {visit.notes && <p className="visit-card-notes">{visit.notes}</p>}
+                          <button
+                            type="button"
+                            className="history-entry-remove"
+                            onClick={() => void handleDelete(visit)}
+                          >
+                            Remove
+                          </button>
+                        </div>
+                        <div className="history-entry-meta">
+                          <CategoryChip category={place?.category} small />
+                          {where ? <span className="history-entry-where">{where}</span> : null}
+                          {source ? (
+                            <span className="history-entry-source">{source}</span>
+                          ) : null}
+                        </div>
+                        {visit.notes ? (
+                          <p className="history-entry-notes">{visit.notes}</p>
+                        ) : null}
                       </div>
-                      <button
-                        type="button"
-                        className="text-button"
-                        onClick={() => void handleDelete(visit.visit_id)}
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </section>
-      )}
-    </section>
+                    </li>
+                  );
+                })}
+              </ol>
+            </section>
+          ))
+        )}
+      </section>
+    </div>
   );
 }
