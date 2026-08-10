@@ -220,10 +220,14 @@
 }
 
 .wf-chip-btn.is-active {
-  background: var(--wf-mint);
-  border-color: var(--wf-mint);
-  color: var(--wf-forest-deep);
+  background: var(--wf-copy-accent);
+  border-color: var(--wf-copy-accent);
+  color: var(--wf-on-brand);
   font-weight: 700;
+}
+
+.wf-site[data-tone="dark"] .wf-chip-btn.is-active {
+  color: var(--wf-forest-deep);
 }
 
 .wf-chip-count {

@@ -249,7 +249,7 @@ html[data-bento-motion="card-shuffle"] .home-tile--media.is-in .home-tile-layer-
 }
 
 .home-tile-val em {
-  color: #ff5733;
+  color: #fff;
   font-style: italic;
 }
 
@@ -302,8 +302,8 @@ html[data-bento-motion="card-shuffle"] .home-tile--media.is-in .home-tile-layer-
   letter-spacing: 0.18em;
   text-transform: uppercase;
   font-weight: 700;
-  /* Volume coral — icy mint is too light on paper */
-  color: #ff5733;
+  /* Forest — icy mint washes out on paper grounds */
+  color: var(--wf-forest);
 }
 
 .home-library-head h2 {
@@ -472,7 +472,7 @@ html[data-bento-motion="card-shuffle"] .home-tile--media.is-in .home-tile-layer-
   padding: 0.75rem 1.4rem;
   border-radius: var(--wf-radius-pill);
   background: var(--wf-mint);
-  color: #fff;
+  color: var(--wf-forest-deep);
   font-weight: 700;
   font-size: 0.9rem;
   transition: transform 0.15s ease, filter 0.15s ease;

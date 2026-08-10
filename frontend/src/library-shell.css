@@ -34,7 +34,8 @@
   letter-spacing: 0.18em;
   text-transform: uppercase;
   font-weight: 700;
-  color: var(--wf-mint);
+  /* Forest — mint washes out on paper grounds */
+  color: var(--wf-forest);
 }
 
 .lib-shell-masthead h3 {
@@ -113,8 +114,8 @@
   border: 0;
   border-radius: 999px;
   padding: 0.45rem 0.95rem;
-  background: var(--wf-mint);
-  color: var(--wf-on-brand, #fff);
+  background: var(--wf-forest);
+  color: var(--wf-on-brand);
   font: inherit;
   font-size: 0.78rem;
   font-weight: 700;
@@ -259,9 +260,9 @@
 }
 
 .lib-shell-pill.is-active {
-  background: var(--wf-mint);
-  color: var(--wf-on-brand, #fff);
-  border-color: var(--wf-mint);
+  background: var(--wf-forest);
+  color: var(--wf-on-brand);
+  border-color: var(--wf-forest);
 }
 
 .lib-shell-pill.is-soft:not(.is-active) {
@@ -425,6 +426,6 @@
 
 .lib-shell-crumbs .wf-crumb-up {
   margin-left: 0.5rem;
-  color: var(--wf-mint);
+  color: var(--wf-forest);
   font-weight: 700;
 }

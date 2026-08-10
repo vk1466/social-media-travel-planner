@@ -71,8 +71,8 @@
 }
 
 .add-page-success-link-secondary:hover {
-  border-color: var(--wf-mint);
-  color: var(--wf-mint);
+  border-color: var(--wf-copy-accent);
+  color: var(--wf-copy-accent);
 }
 
 .add-page-aside {

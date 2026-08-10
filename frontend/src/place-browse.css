@@ -741,6 +741,11 @@
 }
 
 .post-library-lantern .library-demo-link {
+  color: var(--wf-sage);
+}
+
+.p3--dark .post-library-lantern .library-demo-link,
+.post-library-lantern .p3--dark .library-demo-link {
   color: var(--wf-mint);
 }
 
@@ -764,9 +769,17 @@
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--pl2-mint, var(--wf-mint));
+  color: var(--wf-forest);
 }
 
 .place-library-covers-top .pl2-links a {
+  color: var(--wf-sage);
+}
+
+.pl2--dark .place-library-covers-eyebrow {
+  color: var(--wf-mint);
+}
+
+.pl2--dark .place-library-covers-top .pl2-links a {
   color: var(--wf-mint);
 }

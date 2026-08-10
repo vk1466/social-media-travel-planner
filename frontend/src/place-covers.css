@@ -890,6 +890,10 @@
   font-size: 0.72rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  color: var(--wf-forest);
+}
+
+.pl2--dark .pl2-sunburst-side h3 {
   color: var(--wf-mint);
 }
 
@@ -1081,10 +1085,14 @@
 .pl2-command-prompt {
   font-size: 0.7rem;
   font-weight: 700;
-  color: var(--wf-mint);
+  color: var(--wf-forest);
   border: 1px solid var(--pl2-border);
   border-radius: 5px;
   padding: 0.1rem 0.35rem;
+}
+
+.pl2--dark .pl2-command-prompt {
+  color: var(--wf-mint);
 }
 
 .pl2-command-box input {
@@ -1138,6 +1146,10 @@
   font-size: 0.62rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  color: var(--wf-forest);
+}
+
+.pl2--dark .pl2-command-kind {
   color: var(--wf-mint);
 }
 
@@ -2006,6 +2018,10 @@
 .pl2-cover-chips button span {
   font-size: 0.64rem;
   font-weight: 700;
+  color: var(--wf-forest);
+}
+
+.pl2--dark .pl2-cover-chips button span {
   color: var(--wf-mint);
 }
 

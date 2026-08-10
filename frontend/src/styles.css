@@ -2,22 +2,22 @@
 /* Global aliases, resets, and shared primitives */
 
   :root {
-  color-scheme: dark;
+  color-scheme: light;
 
   /* Short aliases → wf tokens (single source: wf-tokens.css) */
   --font-sans: var(--wf-font-sans);
   --font-serif: var(--wf-font-serif);
   --font-mono: var(--wf-font-mono);
 
-  --text: var(--wf-on-brand);
+  --text: var(--wf-ink);
   --text-muted: var(--wf-quiet);
   --text-subtle: var(--wf-quiet);
 
-  --bg: var(--wf-forest-deep);
-  --surface: var(--wf-panel-dark);
-  --surface-muted: var(--wf-panel-dark-hover);
-  --border: var(--wf-border-dark);
-  --border-subtle: rgb(var(--wf-mint-rgb) / 0.14);
+  --bg: var(--wf-bg);
+  --surface: var(--wf-surface);
+  --surface-muted: var(--wf-surface-muted);
+  --border: var(--wf-border);
+  --border-subtle: var(--wf-border-subtle);
 
   --forest: var(--wf-forest);
   --forest-hover: var(--wf-forest-hover);

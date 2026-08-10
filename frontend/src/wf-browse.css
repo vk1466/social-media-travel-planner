@@ -22,7 +22,8 @@
   text-transform: uppercase;
   letter-spacing: var(--wf-eyebrow-tracking);
   font-weight: 700;
-  color: var(--wf-mint);
+  /* Forest — mint washes out on paper grounds */
+  color: var(--wf-forest);
 }
 
 .wf-browse-title {
@@ -114,7 +115,7 @@
 
 .wf-browse-context .wf-crumb-up {
   margin-left: 0.75rem;
-  color: var(--wf-mint);
+  color: var(--wf-forest);
 }
 
 .wf-seg {
@@ -141,8 +142,8 @@
 }
 
 .wf-seg-btn.is-active {
-  background: var(--wf-mint);
-  color: #fff;
+  background: var(--wf-forest);
+  color: var(--wf-on-brand);
 }
 
 .wf-facets {
@@ -188,9 +189,9 @@
 }
 
 .wf-pill.is-active {
-  background: var(--wf-mint);
-  color: #fff;
-  border-color: var(--wf-mint);
+  background: var(--wf-forest);
+  color: var(--wf-on-brand);
+  border-color: var(--wf-forest);
   font-weight: 700;
 }
 
@@ -238,8 +239,8 @@
 
 .wf-chip {
   display: inline-block;
-  background: rgb(var(--wf-mint-rgb) / 0.14);
-  color: var(--wf-mint);
+  background: rgb(var(--wf-forest-rgb) / 0.12);
+  color: var(--wf-forest);
   border-radius: var(--wf-radius-pill);
   padding: 0.12rem 0.5rem;
   font-size: 0.62rem;
@@ -249,7 +250,7 @@
 }
 
 .wf-chip:hover {
-  background: rgb(var(--wf-mint-rgb) / 0.28);
+  background: rgb(var(--wf-forest-rgb) / 0.2);
   color: var(--wf-ink);
 }
 
@@ -259,7 +260,7 @@
 }
 
 .wf-browse a.p3-ring-label:hover {
-  color: var(--wf-mint);
+  color: var(--wf-forest);
   text-decoration: underline;
 }
 

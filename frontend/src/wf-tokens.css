@@ -43,14 +43,14 @@
   --wf-ink: #1c2623; /* contrast ink for chips / light insets */
   --wf-quiet: #5c564e; /* muted copy on light paper (Aurora default) */
   --wf-on-brand: #ecfaf4; /* labels on brand fills / dark-ground copy */
-  /* Page copy — dark site defaults (overridden by .wf-site[data-tone]) */
-  --wf-copy: var(--wf-on-brand);
+  /* Page copy — light site defaults (overridden by .wf-site[data-tone]) */
+  --wf-copy: var(--wf-ink);
   --wf-copy-muted: var(--wf-quiet);
-  --wf-copy-accent: var(--wf-mint);
-  --wf-chrome-bg: var(--wf-forest-deep);
-  --wf-chrome-panel: var(--wf-panel-dark);
-  --wf-chrome-panel-muted: var(--wf-panel-dark-hover);
-  --wf-chrome-border: var(--wf-border-dark);
+  --wf-copy-accent: var(--wf-forest);
+  --wf-chrome-bg: var(--wf-bg);
+  --wf-chrome-panel: var(--wf-surface);
+  --wf-chrome-panel-muted: var(--wf-surface-muted);
+  --wf-chrome-border: var(--wf-border);
   /* Back-compat aliases — same roles, do not invent new text colors */
   --wf-text: var(--wf-ink);
   --wf-text-muted: var(--wf-quiet);
