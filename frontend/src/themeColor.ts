@@ -3,10 +3,10 @@ import {
   syncBrandHexFromTokens,
 } from "./brandColors";
 
-/** Default Wanderfile forest green — source of truth for reset. */
-export const DEFAULT_BRAND_COLOR = "#1f3a2c";
+/** Default Wanderfile brand — Aurora Mint from the color picker. */
+export const DEFAULT_BRAND_COLOR = "#1f9c72";
 
-export const DEFAULT_BRAND_SHIFT = 1;
+export const DEFAULT_BRAND_SHIFT = 1.1;
 
 export const BRAND_COLOR_STORAGE_KEY = "wf-brand-color";
 export const BRAND_LAB_STORAGE_KEY = "wf-brand-lab";
@@ -130,7 +130,7 @@ export const TEXT_ROLES = [
 export const DEFAULT_TEXT_STYLES: TextRoleStyles = {
   body: { face: "dm-sans", size: "md" },
   muted: { face: "dm-sans", size: "sm" },
-  headline: { face: "instrument", size: "md" },
+  headline: { face: "newsreader", size: "md" },
   onBrand: { face: "dm-sans", size: "sm" },
 };
 
@@ -209,6 +209,16 @@ export const EDITABLE_BRAND_SWATCHES = [
 
 export type EditableBrandKey = (typeof EDITABLE_BRAND_SWATCHES)[number]["key"];
 export type EditableSwatchGroup = (typeof EDITABLE_BRAND_SWATCHES)[number]["group"];
+
+/** Hand-tuned swatches — Aurora Mint on light paper (Volume default). */
+export const DEFAULT_BRAND_OVERRIDES: Partial<Record<EditableBrandKey, string>> = {
+  forestDeep: "#0b241d",
+  sage: "#3fc79a",
+  mint: "#a2f0d0",
+  /* Dark muted for light grounds — not the dark-site mint gray */
+  quiet: "#5c564e",
+  onBrand: "#ecfaf4",
+};
 
 export type BrandMode = "dark" | "light";
 
@@ -443,12 +453,12 @@ const SWATCH_TOKEN: Record<EditableBrandKey, string> = {
 
 const DEFAULT_SWATCH_HEX: BrandSwatchMap = {
   forest: DEFAULT_BRAND_COLOR,
-  forestDeep: "#142a21",
-  sage: "#2f6b52",
-  mint: "#8fd4b0",
-  ink: "#1c2420",
-  quiet: "#9eb0a6",
-  onBrand: "#f4f7f5",
+  forestDeep: "#0b241d",
+  sage: "#3fc79a",
+  mint: "#a2f0d0",
+  ink: "#1c2623",
+  quiet: "#5c564e",
+  onBrand: "#ecfaf4",
 };
 
 /** Derive the Wanderfile token set from a brand hex + shift amount. */
@@ -624,8 +634,14 @@ function applyOverridesToDom(overrides: BrandLabState["overrides"]): void {
     }
   } else {
     const onBrand = hexToRgb(overrides.onBrand);
+    const onBrandL = rgbToHsl(onBrand).l;
     root.style.setProperty("--wf-text-on-brand", overrides.onBrand);
-    root.style.setProperty("--wf-text", overrides.onBrand);
+    // Light on-brand is button/label-on-fill; page copy stays ink.
+    const pageText =
+      onBrandL > 0.55
+        ? getComputedStyle(root).getPropertyValue("--wf-ink").trim() || "#1c2623"
+        : overrides.onBrand;
+    root.style.setProperty("--wf-text", pageText);
     if (!overrides.quiet) {
       const quiet = fromHsl(
         rgbToHsl(onBrand).h,
@@ -681,7 +697,7 @@ export function defaultBrandLabState(): BrandLabState {
   return {
     base: DEFAULT_BRAND_COLOR,
     shift: DEFAULT_BRAND_SHIFT,
-    overrides: {},
+    overrides: { ...DEFAULT_BRAND_OVERRIDES },
     textStyles: {
       body: { ...DEFAULT_TEXT_STYLES.body },
       muted: { ...DEFAULT_TEXT_STYLES.muted },
@@ -810,10 +826,20 @@ export function isDefaultBrandLab(state: BrandLabState): boolean {
       styles[role.id].face === defaults[role.id].face &&
       styles[role.id].size === defaults[role.id].size,
   );
+  const defaultOverrides = DEFAULT_BRAND_OVERRIDES;
+  const overrideKeys = new Set([
+    ...Object.keys(state.overrides),
+    ...Object.keys(defaultOverrides),
+  ]);
+  const overridesMatch = [...overrideKeys].every(
+    (key) =>
+      state.overrides[key as EditableBrandKey] ===
+      defaultOverrides[key as EditableBrandKey],
+  );
   return (
     state.base === DEFAULT_BRAND_COLOR &&
     state.shift === DEFAULT_BRAND_SHIFT &&
-    Object.keys(state.overrides).length === 0 &&
+    overridesMatch &&
     stylesMatch &&
     state.mode === DEFAULT_BRAND_MODE
   );
@@ -832,6 +858,7 @@ export type SavedBrandPalette = {
 function normalizeLabState(raw: Partial<BrandLabState> | undefined): BrandLabState {
   const base = normalizeHex(raw?.base ?? "") ?? DEFAULT_BRAND_COLOR;
   const shift = typeof raw?.shift === "number" ? clamp(raw.shift, 0, 2) : DEFAULT_BRAND_SHIFT;
+  const mode: BrandMode = raw?.mode === "light" ? "light" : "dark";
   const overrides: BrandLabState["overrides"] = {};
   if (raw?.overrides && typeof raw.overrides === "object") {
     for (const swatch of EDITABLE_BRAND_SWATCHES) {
@@ -840,7 +867,19 @@ function normalizeLabState(raw: Partial<BrandLabState> | undefined): BrandLabSta
         continue;
       }
       // Legacy light-page muted/ink overrides are too dark for the dark site.
-      if (swatch.key === "quiet" && rgbToHsl(hexToRgb(hex)).l < 0.45) {
+      if (
+        swatch.key === "quiet" &&
+        mode === "dark" &&
+        rgbToHsl(hexToRgb(hex)).l < 0.45
+      ) {
+        continue;
+      }
+      // Dark-site mint-gray muted is too light for paper grounds.
+      if (
+        swatch.key === "quiet" &&
+        mode === "light" &&
+        rgbToHsl(hexToRgb(hex)).l > 0.5
+      ) {
         continue;
       }
       if (swatch.key === "ink") {
@@ -854,8 +893,10 @@ function normalizeLabState(raw: Partial<BrandLabState> | undefined): BrandLabSta
       overrides.onBrand = legacyInk;
     }
   }
+  if (mode === "light" && !overrides.quiet) {
+    overrides.quiet = DEFAULT_BRAND_OVERRIDES.quiet ?? "#5c564e";
+  }
   const textStyles = migrateLegacyType((raw ?? {}) as Record<string, unknown>);
-  const mode: BrandMode = raw?.mode === "light" ? "light" : "dark";
   return { base, shift, overrides, textStyles, mode };
 }
 
@@ -956,7 +997,7 @@ export function deleteSavedBrandPalette(id: string): SavedBrandPalette[] {
 export const BRAND_THEME_SEED_KEY = "wf-brand-theme-seed";
 
 /** Bump to re-seed shipped themes after editing the list below. */
-const BRAND_THEME_SEED_VERSION = "themes-v2";
+const BRAND_THEME_SEED_VERSION = "themes-v5";
 
 /** Fixed savedAt base so shipped themes keep their order under user saves. */
 const BRAND_THEME_SEED_EPOCH = Date.UTC(2026, 0, 1);
@@ -970,6 +1011,8 @@ type BrandThemeSpec = {
   shift: number;
   overrides: Partial<Record<EditableBrandKey, string>>;
   textStyles: TextRoleStyles;
+  /** Chrome mode when applying the theme. Defaults to dark. */
+  mode?: BrandMode;
 };
 
 function typeSet(spec: {
@@ -997,7 +1040,7 @@ const BRAND_THEME_SPECS: BrandThemeSpec[] = [
   {
     id: "theme-trail-pine",
     name: "Trail Pine",
-    note: "House forest green — hiking, outdoors, the default travel voice.",
+    note: "Deep forest green — hiking, outdoors, classic trail voice.",
     base: "#1f3d31",
     shift: 1,
     overrides: {
@@ -1332,11 +1375,12 @@ const BRAND_THEME_SPECS: BrandThemeSpec[] = [
     note: "Jewel green with icy mint — snorkeling, jungles, spa retreats.",
     base: "#1f9c72",
     shift: 1.1,
+    mode: "light",
     overrides: {
       forestDeep: "#0b241d",
       sage: "#3fc79a",
       mint: "#a2f0d0",
-      quiet: "#9bc4b3",
+      quiet: "#5c564e",
       onBrand: "#ecfaf4",
     },
     textStyles: typeSet({
@@ -1440,7 +1484,7 @@ const BRAND_THEME_SPECS: BrandThemeSpec[] = [
 
 /** Shipped themes in saved-palette shape, ready to drop into the saved list. */
 export const BRAND_THEMES: SavedBrandPalette[] = BRAND_THEME_SPECS.map((spec, index) => {
-  const lab = normalizeLabState(spec);
+  const lab = normalizeLabState({ ...spec, mode: spec.mode ?? "dark" });
   const swatches = swatchesFromLab(lab);
   return {
     id: spec.id,
@@ -1459,8 +1503,8 @@ export const BRAND_THEMES: SavedBrandPalette[] = BRAND_THEME_SPECS.map((spec, in
 });
 
 /**
- * Add the shipped themes to the saved list once. Later deletes stick, because
- * seeding only runs when the stored seed version is behind.
+ * Add / refresh shipped themes when the seed version bumps. Deletes stick —
+ * removed ids are not re-added. Existing shipped ids get the latest spec.
  */
 export function seedBrandThemes(): SavedBrandPalette[] {
   const existing = readSavedBrandPalettes();
@@ -1471,12 +1515,25 @@ export function seedBrandThemes(): SavedBrandPalette[] {
   } catch {
     return existing;
   }
-  const takenIds = new Set(existing.map((entry) => entry.id));
-  const takenNames = new Set(existing.map((entry) => entry.name.toLowerCase()));
-  const additions = BRAND_THEMES.filter(
-    (theme) => !takenIds.has(theme.id) && !takenNames.has(theme.name.toLowerCase()),
+  const shippedById = new Map(BRAND_THEMES.map((theme) => [theme.id, theme]));
+  const existingIds = new Set(existing.map((entry) => entry.id));
+  const takenNames = new Set(
+    existing
+      .filter((entry) => !shippedById.has(entry.id))
+      .map((entry) => entry.name.toLowerCase()),
   );
-  const next = [...existing, ...additions].sort((a, b) => b.savedAt - a.savedAt);
+
+  const next = existing.map((entry) => shippedById.get(entry.id) ?? entry);
+  for (const theme of BRAND_THEMES) {
+    if (existingIds.has(theme.id)) {
+      continue;
+    }
+    if (takenNames.has(theme.name.toLowerCase())) {
+      continue;
+    }
+    next.push(theme);
+  }
+  next.sort((a, b) => b.savedAt - a.savedAt);
   writeSavedBrandPalettes(next);
   try {
     localStorage.setItem(BRAND_THEME_SEED_KEY, BRAND_THEME_SEED_VERSION);

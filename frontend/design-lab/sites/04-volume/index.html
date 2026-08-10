@@ -29,19 +29,49 @@
         <span class="k">Volume · IV</span>
         <h1>Places<br />you keep<br /><em>coming back to.</em></h1>
       </div>
-      <div class="vol-tile" data-slot="0"><img alt="" /><span class="caption">—</span></div>
-      <div class="vol-tile" data-slot="1"><img alt="" /><span class="caption">—</span></div>
+      <div class="vol-tile" data-slot="0">
+        <div class="vol-tile-stack">
+          <img class="vol-tile-layer vol-tile-layer--base" alt="" />
+          <img class="vol-tile-layer vol-tile-layer--next" alt="" />
+        </div>
+        <span class="caption">—</span>
+      </div>
+      <div class="vol-tile" data-slot="1">
+        <div class="vol-tile-stack">
+          <img class="vol-tile-layer vol-tile-layer--base" alt="" />
+          <img class="vol-tile-layer vol-tile-layer--next" alt="" />
+        </div>
+        <span class="caption">—</span>
+      </div>
       <div class="vol-tile data">
         <span class="lbl">Saved</span>
         <span class="val" data-stat="saved">—</span>
       </div>
-      <div class="vol-tile" data-slot="2"><img alt="" /><span class="caption">—</span></div>
-      <div class="vol-tile" data-slot="3"><img alt="" /><span class="caption">—</span></div>
+      <div class="vol-tile" data-slot="2">
+        <div class="vol-tile-stack">
+          <img class="vol-tile-layer vol-tile-layer--base" alt="" />
+          <img class="vol-tile-layer vol-tile-layer--next" alt="" />
+        </div>
+        <span class="caption">—</span>
+      </div>
+      <div class="vol-tile" data-slot="3">
+        <div class="vol-tile-stack">
+          <img class="vol-tile-layer vol-tile-layer--base" alt="" />
+          <img class="vol-tile-layer vol-tile-layer--next" alt="" />
+        </div>
+        <span class="caption">—</span>
+      </div>
       <div class="vol-tile data">
         <span class="lbl">Visited so far</span>
         <span class="val"><em data-stat="visited">—</em></span>
       </div>
-      <div class="vol-tile wide" data-slot="4"><img alt="" /><span class="caption">—</span></div>
+      <div class="vol-tile wide" data-slot="4">
+        <div class="vol-tile-stack">
+          <img class="vol-tile-layer vol-tile-layer--base" alt="" />
+          <img class="vol-tile-layer vol-tile-layer--next" alt="" />
+        </div>
+        <span class="caption">—</span>
+      </div>
     </section>
 
     <section class="vol-library" aria-labelledby="vol-library-title">
@@ -96,6 +126,18 @@
       <span>© 2026 Wanderfile · Volume</span>
       <a href="add.html">Paste a reel →</a>
     </footer>
+  </div>
+
+  <div class="vol-motion" data-motion-picker data-open="false">
+    <button type="button" class="vol-motion-toggle" data-motion-toggle>
+      <span class="vol-motion-swatch" data-motion-swatch aria-hidden="true"></span>
+      <span>Motion</span>
+    </button>
+    <div class="vol-motion-panel" data-motion-panel hidden>
+      <p class="vol-motion-title">Photo motion</p>
+      <p class="vol-motion-sub">Rotate profile stills across the bento — one photo per tile.</p>
+      <div class="vol-motion-list" data-motion-list></div>
+    </div>
   </div>
 
   <script>

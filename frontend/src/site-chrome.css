@@ -9,14 +9,26 @@
 .wf-site[data-tone="light"] {
   background: var(--wf-bg);
   color: var(--wf-ink);
+  color-scheme: light;
   /* Semantic page copy — light ground */
   --wf-copy: var(--wf-ink);
   --wf-copy-muted: var(--wf-quiet);
-  --wf-copy-accent: var(--wf-mint);
+  /* Mint is a light highlight; use brand fill for accents on paper */
+  --wf-copy-accent: var(--wf-forest);
   --wf-chrome-bg: var(--wf-bg);
   --wf-chrome-panel: var(--wf-surface);
   --wf-chrome-panel-muted: var(--wf-surface-muted);
   --wf-chrome-border: var(--wf-border);
+  /* Shared form/button aliases — root defaults assume dark chrome */
+  --text: var(--wf-ink);
+  --text-muted: var(--wf-quiet);
+  --text-subtle: var(--wf-quiet);
+  --bg: var(--wf-bg);
+  --surface: var(--wf-surface);
+  --surface-muted: var(--wf-surface-muted);
+  --border: var(--wf-border);
+  --border-subtle: var(--wf-border-subtle);
+  --sage-accent: var(--wf-sage);
 }
 
 .wf-site[data-tone="dark"] {
@@ -276,42 +288,6 @@
   color: var(--wf-on-brand);
 }
 
-.wf-user {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.wf-user-name {
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: inherit;
-  max-width: 10rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.wf-header[data-tone="dark"] .wf-user-name {
-  color: var(--wf-on-dark-strong);
-}
-
-.wf-header[data-tone="light"] .wf-user-name {
-  color: var(--wf-ink);
-}
-
-.wf-user-avatar {
-  display: grid;
-  place-items: center;
-  width: 2rem;
-  height: 2rem;
-  border-radius: var(--wf-radius-pill);
-  background: var(--wf-sand);
-  color: #fff;
-  font-size: 0.68rem;
-  font-weight: 700;
-}
-
 /* ── Footer ─────────────────────────────────────────────── */
 
 .wf-footer {
@@ -443,10 +419,6 @@
   .wf-footer-base {
     flex-direction: column;
     align-items: flex-start;
-  }
-
-  .wf-user-name {
-    display: none;
   }
 }
 

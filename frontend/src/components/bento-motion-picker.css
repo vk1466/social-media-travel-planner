@@ -1,0 +1,178 @@
+/* Bento motion lab — sits beside the color picker. */
+.wf-bento-motion {
+  --lab-ink: #f4f7f5;
+  --lab-quiet: #9eb0a6;
+  --lab-border: rgb(143 212 176 / 0.22);
+  --lab-surface: #142a21;
+  --lab-muted: rgb(255 255 255 / 0.06);
+  --lab-accent: #8fd4b0;
+  --lab-shadow-lg: 0 16px 40px rgb(0 0 0 / 0.35);
+  --lab-radius: 12px;
+  --lab-radius-sm: 6px;
+  --lab-radius-pill: 999px;
+  --lab-ease: 160ms ease;
+
+  position: fixed;
+  right: 6.75rem;
+  bottom: 1rem;
+  z-index: 120;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.55rem;
+  font-family: "DM Sans Variable", system-ui, sans-serif;
+  color: var(--lab-ink);
+}
+
+.wf-bento-motion-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.7rem 0.45rem 0.45rem;
+  border: 1px solid var(--lab-border);
+  border-radius: var(--lab-radius-pill);
+  background: var(--lab-surface);
+  color: var(--lab-ink);
+  box-shadow: var(--lab-shadow-lg);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 650;
+}
+
+.wf-bento-motion-toggle:hover {
+  border-color: var(--lab-accent);
+}
+
+.wf-bento-motion-toggle:focus-visible {
+  outline: 2px solid var(--lab-accent);
+  outline-offset: 2px;
+}
+
+.wf-bento-motion-swatch {
+  width: 1.35rem;
+  height: 1.35rem;
+  border-radius: 999px;
+  border: 1px solid rgb(255 255 255 / 0.2);
+  flex-shrink: 0;
+}
+
+.wf-bento-motion-toggle-label {
+  letter-spacing: 0.02em;
+}
+
+.wf-bento-motion-panel {
+  width: min(20rem, calc(100vw - 2rem));
+  padding: 0.9rem;
+  border: 1px solid var(--lab-border);
+  border-radius: var(--lab-radius);
+  background: var(--lab-surface);
+  box-shadow: var(--lab-shadow-lg);
+  animation: wf-bento-motion-in 180ms var(--lab-ease) both;
+}
+
+@keyframes wf-bento-motion-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.wf-bento-motion-head {
+  margin-bottom: 0.75rem;
+}
+
+.wf-bento-motion-title {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.wf-bento-motion-sub {
+  margin: 0.25rem 0 0;
+  font-size: 0.72rem;
+  line-height: 1.4;
+  color: var(--lab-quiet);
+}
+
+.wf-bento-motion-presets {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  max-height: min(22rem, 55vh);
+  overflow: auto;
+}
+
+.wf-bento-motion-preset {
+  display: grid;
+  grid-template-columns: 2.4rem 1fr;
+  gap: 0.65rem;
+  align-items: center;
+  width: 100%;
+  padding: 0.45rem;
+  border: 1px solid transparent;
+  border-radius: var(--lab-radius-sm);
+  background: var(--lab-muted);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+
+.wf-bento-motion-preset:hover {
+  border-color: rgb(143 212 176 / 0.35);
+}
+
+.wf-bento-motion-preset[aria-pressed="true"] {
+  border-color: var(--lab-accent);
+  outline: 1px solid var(--lab-accent);
+}
+
+.wf-bento-motion-preset:focus-visible {
+  outline: 2px solid var(--lab-accent);
+  outline-offset: 1px;
+}
+
+.wf-bento-motion-preset-swatch {
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: var(--lab-radius-sm);
+  border: 1px solid rgb(255 255 255 / 0.14);
+}
+
+.wf-bento-motion-preset-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.12rem;
+  min-width: 0;
+}
+
+.wf-bento-motion-preset-label {
+  font-size: 0.78rem;
+  font-weight: 650;
+}
+
+.wf-bento-motion-preset-note {
+  font-size: 0.68rem;
+  line-height: 1.35;
+  color: var(--lab-quiet);
+}
+
+@media (max-width: 640px) {
+  .wf-bento-motion {
+    right: 3.4rem;
+    bottom: 0.75rem;
+  }
+
+  .wf-bento-motion-toggle-label {
+    display: none;
+  }
+
+  .wf-bento-motion-toggle {
+    padding: 0.4rem;
+  }
+}

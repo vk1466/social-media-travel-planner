@@ -14,11 +14,8 @@ import {
   applyBrandLab,
   defaultBrandLabState,
   deleteSavedBrandPalette,
-  isDefaultBrandLab,
   normalizeHex,
   readBrandLabState,
-  readLiveSwatches,
-  resetBrandPalette,
   saveBrandPalette,
   seedBrandThemes,
   storeBrandLabState,
@@ -132,16 +129,6 @@ export function ThemeColorPicker() {
   useEffect(() => {
     const stored = readBrandLabState();
     setSaved(seedBrandThemes());
-    if (isDefaultBrandLab(stored)) {
-      resetBrandPalette();
-      setLab(stored);
-      setHexDraft(stored.base);
-      setSwatches(emptySwatches(stored.base));
-      requestAnimationFrame(() => {
-        setSwatches(readLiveSwatches());
-      });
-      return;
-    }
     const nextSwatches = applyBrandLab(stored);
     setLab(stored);
     setHexDraft(stored.base);
@@ -217,14 +204,12 @@ export function ThemeColorPicker() {
   };
 
   const handleReset = () => {
-    resetBrandPalette();
     const defaults = defaultBrandLabState();
+    const nextSwatches = applyBrandLab(defaults);
     setLab(defaults);
     setHexDraft(defaults.base);
+    setSwatches(nextSwatches);
     storeBrandLabState(defaults);
-    requestAnimationFrame(() => {
-      setSwatches(readLiveSwatches());
-    });
   };
 
   const handleSave = () => {

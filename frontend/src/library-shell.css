@@ -1,0 +1,430 @@
+/* Shared Places/Posts library shell — Volume layout, app brand tokens. */
+
+.lib-shell {
+  padding-bottom: 0;
+  min-height: 100%;
+}
+
+.lib-shell[data-mode="places"],
+.lib-shell[data-mode="posts"] {
+  /* Library ground fills the whole panel, not only the core. */
+  background:
+    radial-gradient(ellipse 80% 50% at 8% -12%, rgb(var(--wf-sage-rgb) / 0.12), transparent 55%),
+    radial-gradient(ellipse 55% 40% at 100% 0%, rgb(var(--wf-sand-rgb) / 0.14), transparent 50%),
+    var(--wf-bg);
+}
+
+.home-panel:has(.lib-shell[data-mode="places"]),
+.home-panel:has(.lib-shell[data-mode="posts"]) {
+  background: var(--wf-bg);
+}
+
+.lib-shell-masthead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  padding: 1rem 48px 1rem 24px;
+}
+
+.lib-shell-eyebrow {
+  margin: 0;
+  font-size: 0.68rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--wf-mint);
+}
+
+.lib-shell-masthead h3 {
+  margin: 0.3rem 0 0;
+  font-family: var(--wf-font-serif);
+  font-style: italic;
+  font-weight: 400;
+  font-size: clamp(1.8rem, 3vw, 2.4rem);
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+  color: var(--wf-ink);
+}
+
+.lib-shell-lede {
+  margin: 0.4rem 0 0;
+  color: var(--wf-quiet);
+  font-size: 0.92rem;
+  line-height: 1.5;
+  max-width: 48ch;
+}
+
+.lib-shell-count {
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.lib-shell-aside {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1.15rem;
+  flex-shrink: 0;
+  margin-left: auto;
+  align-self: flex-start;
+}
+
+.lib-shell-count-value {
+  display: block;
+  font-family: var(--wf-font-serif);
+  font-style: italic;
+  font-size: clamp(2.75rem, 5vw, 3.4rem);
+  line-height: 0.95;
+  letter-spacing: -0.04em;
+  font-weight: 400;
+  color: var(--wf-forest);
+}
+
+.lib-shell-count-label {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--wf-ink);
+  font-weight: 700;
+  opacity: 0.72;
+}
+
+.lib-shell-banner {
+  margin: 0 24px 0.85rem;
+  padding: 0.75rem 1rem;
+  border-radius: 14px;
+  border: 1px solid var(--wf-border);
+  background: var(--wf-surface);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  font-size: 0.84rem;
+  color: var(--wf-quiet);
+}
+
+.lib-shell-banner button {
+  appearance: none;
+  border: 0;
+  border-radius: 999px;
+  padding: 0.45rem 0.95rem;
+  background: var(--wf-mint);
+  color: var(--wf-on-brand, #fff);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.lib-shell-seg {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  padding: 0.2rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--wf-surface) 88%, var(--wf-bg));
+  border: 1px solid var(--wf-border);
+}
+
+.lib-shell-seg--view {
+  margin-left: 0;
+  margin-top: -0.15rem;
+  /* Sit nearer the panel edge without shifting the count. */
+  margin-right: -30px;
+  padding: 0.08rem;
+  gap: 0.15rem;
+  background: transparent;
+  border-color: color-mix(in srgb, var(--wf-border) 70%, transparent);
+  opacity: 0.72;
+}
+
+.lib-shell-seg--view:hover,
+.lib-shell-seg--view:focus-within {
+  opacity: 1;
+}
+
+.lib-shell-seg--view button {
+  padding: 0.18rem 0.5rem;
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--wf-quiet);
+}
+
+.lib-shell-seg--view button.is-active {
+  background: color-mix(in srgb, var(--wf-ink) 8%, transparent);
+  color: var(--wf-ink);
+}
+
+.lib-shell-seg button {
+  appearance: none;
+  border: 0;
+  border-radius: 999px;
+  padding: 0.4rem 0.9rem;
+  background: transparent;
+  color: var(--wf-quiet);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.lib-shell-seg button:hover {
+  color: var(--wf-ink);
+}
+
+.lib-shell-seg button.is-active {
+  background: var(--wf-ink);
+  color: var(--wf-cream, #faf8f4);
+}
+
+.lib-shell-facets {
+  margin: 1rem 24px 0;
+  padding: 0.95rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  background: var(--wf-surface);
+  border: 1px solid var(--wf-border);
+  border-radius: 18px;
+}
+
+.lib-shell-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.55rem 0.65rem;
+}
+
+.lib-shell-search {
+  flex: 1 1 220px;
+  min-width: 180px;
+  display: flex;
+  align-items: center;
+  background: color-mix(in srgb, var(--wf-surface) 88%, var(--wf-bg));
+  border: 1px solid var(--wf-border);
+  border-radius: 999px;
+  padding: 0.45rem 1rem;
+}
+
+.lib-shell-search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--wf-ink);
+  font-size: 0.84rem;
+  font-family: inherit;
+}
+
+.lib-shell-search input::placeholder {
+  color: var(--wf-quiet);
+}
+
+.lib-shell-seg--primary,
+.lib-shell-seg--secondary {
+  background: color-mix(in srgb, var(--wf-surface) 88%, var(--wf-bg));
+}
+
+.lib-shell-pills {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.lib-shell-pill {
+  appearance: none;
+  background: color-mix(in srgb, var(--wf-surface) 88%, var(--wf-bg));
+  border: 1px solid var(--wf-border);
+  color: var(--wf-quiet);
+  border-radius: 999px;
+  padding: 0.38rem 0.85rem;
+  font-size: 0.74rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.lib-shell-pill:hover {
+  color: var(--wf-ink);
+}
+
+.lib-shell-pill.is-active {
+  background: var(--wf-mint);
+  color: var(--wf-on-brand, #fff);
+  border-color: var(--wf-mint);
+}
+
+.lib-shell-pill.is-soft:not(.is-active) {
+  border-style: dashed;
+}
+
+.lib-shell-pill-more {
+  border-style: dashed;
+  background: transparent;
+  color: var(--wf-quiet);
+}
+
+.lib-shell-pill-more:hover {
+  color: var(--wf-ink);
+  border-color: color-mix(in srgb, var(--wf-ink) 28%, var(--wf-border));
+}
+
+.lib-shell-pill .count {
+  margin-left: 0.35rem;
+  opacity: 0.75;
+}
+
+.lib-shell-core {
+  margin-top: 0;
+  padding-top: 0.75rem;
+  padding-bottom: 1.5rem;
+}
+
+.lib-shell[data-mode="places"] .lib-shell-core,
+.lib-shell[data-mode="posts"] .lib-shell-core {
+  background: transparent;
+}
+
+.lib-shell-core .wf-browse {
+  min-height: 0;
+  background: transparent;
+}
+
+.lib-shell-core .wf-browse-body {
+  padding-block: 0.75rem 0;
+  padding-inline: 0;
+  max-width: none;
+  width: 100%;
+  margin: 0;
+}
+
+.lib-shell-core .place-library-covers .pl2 {
+  min-height: 0;
+  width: 100%;
+  background: transparent;
+}
+
+.lib-shell-core .place-library-covers-shell {
+  max-width: none;
+  width: 100%;
+  margin: 0;
+  padding-top: 0.25rem;
+  padding-inline: 24px;
+  padding-bottom: 0;
+}
+
+.lib-shell-core .pl2-covers {
+  /* Fixed card width — leftover space stays as background, not stretched cards. */
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 240px));
+  justify-content: start;
+  width: 100%;
+}
+
+/* Map view — edge-to-edge, no card chrome */
+.lib-shell-core:has(.pl2[data-mode="map"]) {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.lib-shell-core .pl2[data-mode="map"] .place-library-covers-shell {
+  padding: 0;
+}
+
+.lib-shell-core .pl2[data-mode="map"] .pl2-map {
+  margin: 0;
+}
+
+.lib-shell-core .pl2[data-mode="map"] .pl2-map-canvas {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  height: clamp(520px, 68vh, 820px);
+  background: transparent;
+}
+
+.lib-shell-core:has(.pl2[data-mode="map"]) .wf-browse-body {
+  padding-block: 0;
+}
+
+.lib-shell-core .pl2[data-mode="map"] .pl2-hint {
+  margin: 0;
+  padding: 0.65rem 24px 1rem;
+}
+
+.lib-shell-core .post-library-lantern .p3 {
+  min-height: 0;
+  background: transparent;
+  border-radius: 0;
+  overflow: visible;
+}
+
+.lib-shell-core .post-library-lantern-shell {
+  max-width: none;
+  width: 100%;
+  margin: 0;
+  padding: 0.25rem 24px 1.5rem;
+}
+
+.lib-shell-core .post-library-lantern .p3-timeline,
+.lib-shell-core .post-library-lantern .p3-body--lantern,
+.lib-shell-core .post-library-lantern .empty-state {
+  width: 100%;
+  max-width: none;
+}
+
+.lib-shell-core .wf-browse[data-mode="grid"] .p3-body--lantern .p3-lattice,
+.lib-shell-core [data-mode="grid"] .p3-body--lantern .p3-lattice {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr));
+  width: 100%;
+}
+
+.lib-shell-crumbs {
+  margin: 0 0 0.75rem;
+  padding: 0 24px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.15rem 0;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.lib-shell-crumbs button {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--wf-quiet);
+  font: inherit;
+  font-size: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+  padding: 0.2rem 0.35rem;
+}
+
+.lib-shell-crumbs button.is-current,
+.lib-shell-crumbs button:hover {
+  color: var(--wf-ink);
+}
+
+.lib-shell-crumbs .wf-crumb-sep {
+  color: var(--wf-border);
+  margin: 0 0.15rem;
+}
+
+.lib-shell-crumbs .wf-crumb-up {
+  margin-left: 0.5rem;
+  color: var(--wf-mint);
+  font-weight: 700;
+}

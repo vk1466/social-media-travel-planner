@@ -1,14 +1,11 @@
-import { UserButton, useUser } from "@clerk/react";
-import { Link, NavLink } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 import { useBrandVersion } from "../hooks/useBrandVersion";
 import { readBrandMode } from "../themeColor";
-
-const clerkEnabled = Boolean(import.meta.env.VITE_CLERK_PUBLISHABLE_KEY);
+import { ProfileMenu } from "./ProfileMenu";
 
 export interface SiteHeaderProps {
   isAdmin?: boolean;
-  onOpenSearch?: () => void;
 }
 
 function BrandMark() {
@@ -30,42 +27,7 @@ function BrandMark() {
   );
 }
 
-function ClerkUserChip() {
-  const { user } = useUser();
-  const displayName =
-    user?.fullName || user?.primaryEmailAddress?.emailAddress || "Signed in";
-
-  return (
-    <div className="wf-user">
-      <UserButton />
-      <span className="wf-user-name">{displayName}</span>
-    </div>
-  );
-}
-
-function LocalUserChip() {
-  return (
-    <div className="wf-user">
-      <span className="wf-user-avatar" aria-hidden="true">
-        LO
-      </span>
-      <span className="wf-user-name">Local user</span>
-    </div>
-  );
-}
-
-function UserChip() {
-  return clerkEnabled ? <ClerkUserChip /> : <LocalUserChip />;
-}
-
-function navClassName({ isActive }: { isActive: boolean }): string {
-  return isActive ? "wf-nav-link active" : "wf-nav-link";
-}
-
-export function SiteHeader({
-  isAdmin = false,
-  onOpenSearch,
-}: SiteHeaderProps) {
+export function SiteHeader({ isAdmin = false }: SiteHeaderProps) {
   useBrandVersion();
   const tone = readBrandMode();
   return (
@@ -76,61 +38,12 @@ export function SiteHeader({
           <span className="wf-brand-name">Wanderfile</span>
         </Link>
 
-        <nav className="wf-nav" aria-label="Main">
-          <NavLink to="/" end className={navClassName}>
-            Home
-          </NavLink>
-          <NavLink to="/posts" className={navClassName}>
-            Saves
-          </NavLink>
-          <NavLink to="/places" className={navClassName}>
-            Atlas
-          </NavLink>
-          <NavLink to="/history" className={navClassName}>
-            History
-          </NavLink>
-          {isAdmin ? (
-            <NavLink to="/admin" className={navClassName}>
-              Admin
-            </NavLink>
-          ) : null}
-        </nav>
-
         <div className="wf-header-actions">
-          <button
-            type="button"
-            className="wf-search-btn"
-            onClick={onOpenSearch}
-            aria-label="Search"
-          >
-            <svg width="15" height="15" viewBox="0 0 15 15" aria-hidden="true">
-              <circle
-                cx="6.5"
-                cy="6.5"
-                r="4.75"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.4"
-              />
-              <path
-                d="M10.2 10.2 13 13"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.4"
-                strokeLinecap="round"
-              />
-            </svg>
-            <span className="wf-search-label">Search</span>
-            <kbd className="wf-kbd" aria-hidden="true">
-              ⌘K
-            </kbd>
-          </button>
-
           <Link to="/add" className="wf-cta">
             Add links
           </Link>
 
-          <UserChip />
+          <ProfileMenu isAdmin={isAdmin} />
         </div>
       </div>
     </header>

@@ -6,43 +6,43 @@
    * JS consumers: import { BrandCss, BrandHex, P } from "./brandColors".
    */
 
-  /* Brand greens — Volume forest cards */
-  --wf-forest: #1f3a2c;
-  --wf-forest-mid: #2a4538;
-  --wf-forest-deep: #0d1510;
-  --wf-forest-hover: #173026;
-  --wf-sage: #2f6b52;
-  /* Accent — Volume coral (replaces mint on CTAs / pills / meters) */
-  --wf-mint: #ff5733;
+  /* Brand greens — Aurora Mint (color picker theme) */
+  --wf-forest: #1f9c72;
+  --wf-forest-mid: #29b485;
+  --wf-forest-deep: #0b241d;
+  --wf-forest-hover: #198b65;
+  --wf-sage: #3fc79a;
+  /* Highlight — icy mint */
+  --wf-mint: #a2f0d0;
 
   /* Channel forms for translucent overlays */
-  --wf-forest-rgb: 31 58 44;
-  --wf-forest-mid-rgb: 42 69 56;
-  --wf-forest-deep-rgb: 13 21 16;
-  --wf-forest-hover-rgb: 23 48 38;
-  --wf-sage-rgb: 47 107 82;
-  --wf-mint-rgb: 255 87 51;
-  --wf-cream-rgb: 250 248 244;
-  --wf-ink-rgb: 26 22 18;
+  --wf-forest-rgb: 31 156 114;
+  --wf-forest-mid-rgb: 41 180 133;
+  --wf-forest-deep-rgb: 11 36 29;
+  --wf-forest-hover-rgb: 25 139 101;
+  --wf-sage-rgb: 63 199 154;
+  --wf-mint-rgb: 162 240 208;
+  --wf-cream-rgb: 245 248 247;
+  --wf-ink-rgb: 28 38 35;
   --wf-sand-rgb: 196 168 130;
   --wf-clay-rgb: 154 115 88;
   --wf-slate-rgb: 61 107 138;
   --wf-plum-rgb: 111 95 138;
 
-  /* Neutrals — Volume paper surfaces */
-  --wf-cream: #faf8f4;
-  --wf-soft: #f3efe8;
-  --wf-bg: #faf8f4;
+  /* Neutrals — derived Aurora paper */
+  --wf-cream: #f5f8f7;
+  --wf-soft: #e0ebe7;
+  --wf-bg: #f4f6f5;
   --wf-surface: #ffffff;
-  --wf-surface-muted: #f3efe8;
-  --wf-fog: #ebe6df;
-  --wf-border: #e4ddd4;
-  --wf-border-subtle: #ebe6df;
+  --wf-surface-muted: #f0f2f1;
+  --wf-fog: #e8edeb;
+  --wf-border: #dde4e2;
+  --wf-border-subtle: #e8edeb;
 
   /* Text — three shared roles for the whole site */
-  --wf-ink: #1a1612; /* contrast ink for chips / light insets */
-  --wf-quiet: #5c564e; /* muted copy */
-  --wf-on-brand: #faf8f4; /* primary page copy on dark ground */
+  --wf-ink: #1c2623; /* contrast ink for chips / light insets */
+  --wf-quiet: #5c564e; /* muted copy on light paper (Aurora default) */
+  --wf-on-brand: #ecfaf4; /* labels on brand fills / dark-ground copy */
   /* Page copy — dark site defaults (overridden by .wf-site[data-tone]) */
   --wf-copy: var(--wf-on-brand);
   --wf-copy-muted: var(--wf-quiet);
@@ -64,7 +64,7 @@
   --wf-plum: #6f5f8a;
 
   /* Status */
-  --wf-success: #2f6b52;
+  --wf-success: #3fc79a;
   --wf-danger: #c45c5c;
 
   /* Category chip tones — bg / ink / border per family */

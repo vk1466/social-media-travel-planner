@@ -3,6 +3,12 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 
 import { fetchPlaceDetail, type Place } from "../api";
 import { usePlaceAtlas } from "../hooks/usePlaceAtlas";
+import type {
+  LibraryShellMeta,
+  PlacesShellFilters,
+  PlacesStatusFilter,
+  PlacesViewMode,
+} from "../libraryShellModel";
 import {
   atlasTrail,
   buildAtlas,
@@ -24,10 +30,14 @@ import "../wf-browse.css";
 interface PlaceLibraryProps {
   authReady: boolean;
   onNavigateToPost?: (platform: string, postId: string) => void;
+  /** Hide page chrome — parent LibraryShell owns filters/title. */
+  omitChrome?: boolean;
+  filters?: PlacesShellFilters;
+  onMeta?: (meta: LibraryShellMeta) => void;
 }
 
-type StatusFilter = "all" | "visited" | "inspiration";
-type ViewMode = "covers" | "map";
+type StatusFilter = PlacesStatusFilter;
+type ViewMode = PlacesViewMode;
 
 function vars(entries: Record<string, string | number>): CSSProperties {
   return entries as CSSProperties;
@@ -59,20 +69,47 @@ function coverArt(name: string): CSSProperties {
  * Region covers with a visited meter; open a cover for city chips, drill
  * down through the hierarchy, or flip to the scoped map.
  */
-export function PlaceLibrary({ authReady, onNavigateToPost }: PlaceLibraryProps) {
+export function PlaceLibrary({
+  authReady,
+  onNavigateToPost,
+  omitChrome = false,
+  filters,
+  onMeta,
+}: PlaceLibraryProps) {
   const { placeId: routePlaceId } = useParams();
   const navigate = useNavigate();
   const { places, apiPlaces, visitedIds, loading, refresh } = usePlaceAtlas(authReady, {
     allowSample: false,
   });
 
+  const controlled = Boolean(filters);
   const [rawScopeKey, setScopeKey] = useState("world");
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
-  const [typeFilter, setTypeFilter] = useState<string[]>([]);
-  const [grouping, setGrouping] = useState<AtlasGrouping>("region");
-  const [viewMode, setViewMode] = useState<ViewMode>("covers");
+  const [localStatusFilter, setLocalStatusFilter] = useState<StatusFilter>("all");
+  const [localTypeFilter, setLocalTypeFilter] = useState<string[]>([]);
+  const [localGrouping, setLocalGrouping] = useState<AtlasGrouping>("region");
+  const [localViewMode, setLocalViewMode] = useState<ViewMode>("covers");
   const [expandedKeys, setExpandedKeys] = useState<string[]>([]);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [localSearchQuery, setLocalSearchQuery] = useState("");
+
+  const statusFilter = filters?.statusFilter ?? localStatusFilter;
+  const typeFilter = filters?.typeFilter ?? localTypeFilter;
+  const grouping = filters?.grouping ?? localGrouping;
+  const viewMode = filters?.viewMode ?? localViewMode;
+  const searchQuery = filters?.query ?? localSearchQuery;
+
+  const setStatusFilter = (value: StatusFilter) => {
+    if (!controlled) setLocalStatusFilter(value);
+  };
+  const setTypeFilter = (value: string[] | ((prev: string[]) => string[])) => {
+    if (controlled) return;
+    setLocalTypeFilter(value);
+  };
+  const setViewMode = (value: ViewMode) => {
+    if (!controlled) setLocalViewMode(value);
+  };
+  const setSearchQuery = (value: string) => {
+    if (!controlled) setLocalSearchQuery(value);
+  };
 
   const placesById = useMemo(
     () => Object.fromEntries(apiPlaces.map((place) => [place.place_id, place])),
@@ -104,13 +141,13 @@ export function PlaceLibrary({ authReady, onNavigateToPost }: PlaceLibraryProps)
       .catch(() => {
         if (!cancelled) {
           setRoutedPlace(null);
-          navigate("/places", { replace: true });
+          navigate(omitChrome ? "/?open=places" : "/places", { replace: true });
         }
       });
     return () => {
       cancelled = true;
     };
-  }, [routePlaceId, placesById, loading, navigate]);
+  }, [routePlaceId, placesById, loading, navigate, omitChrome]);
 
   const selectedApiPlace = routedPlace;
 
@@ -182,19 +219,27 @@ export function PlaceLibrary({ authReady, onNavigateToPost }: PlaceLibraryProps)
   }
 
   function changeGrouping(nextGrouping: AtlasGrouping) {
-    setGrouping(nextGrouping);
+    if (!controlled) {
+      setLocalGrouping(nextGrouping);
+    }
     setScopeKey("world");
     setExpandedKeys([]);
   }
 
+  useEffect(() => {
+    if (!controlled) return;
+    setScopeKey("world");
+    setExpandedKeys([]);
+  }, [controlled, grouping]);
+
   function closePlace() {
-    navigate("/places");
+    navigate(omitChrome ? "/?open=places" : "/places");
   }
 
   function handleVisitedChange(_placeId: string, visited: boolean) {
     void refresh();
     if (!visited && statusFilter === "visited") {
-      navigate("/places");
+      navigate(omitChrome ? "/?open=places" : "/places");
     }
   }
 
@@ -206,165 +251,199 @@ export function PlaceLibrary({ authReady, onNavigateToPost }: PlaceLibraryProps)
     }
   }, [atlas, rawScopeKey]);
 
-  return (
-    <div className="wf-browse place-library-covers">
-      <div className="wf-container wf-browse-masthead">
-        <div>
-          <p className="wf-browse-eyebrow">Your atlas</p>
-          <h1 className="wf-browse-title">Atlas</h1>
-          <p className="wf-browse-lede">
-            Everywhere your saves point to, from continents down to the single café — with what
-            you've already visited marked off.
-          </p>
-        </div>
-        <div className="wf-browse-count">
-          <span className="wf-browse-count-value">{scope.total}</span>
-          <span className="wf-browse-count-label">places</span>
-        </div>
-      </div>
+  useEffect(() => {
+    if (!onMeta) return;
+    onMeta({
+      count: scope.total,
+      countLabel: "places",
+      context: searching
+        ? `Search · ${searchHits.length}`
+        : trail.map((node) => node.name).join(" / ") || "World",
+      pills: typeOptions.map((option) => ({
+        key: option.category,
+        label: option.label,
+        count: option.count,
+      })),
+    });
+  }, [onMeta, scope.total, searching, searchHits.length, trail, typeOptions]);
 
-      <div className="wf-browse-bar">
-        <div className="wf-container wf-browse-bar-inner">
-          <nav className="wf-browse-context" aria-label="Hierarchy">
-            {trail.map((node, index) => (
-              <span key={node.key}>
-                {index > 0 && (
-                  <span className="wf-crumb-sep" aria-hidden="true">
-                    /
-                  </span>
-                )}
-                <button
-                  type="button"
-                  className={node.key === scope.key ? "is-current" : ""}
-                  onClick={() => openNode(node)}
-                >
-                  {node.name}
-                </button>
-              </span>
-            ))}
-            {trail.length > 1 && (
-              <button
-                type="button"
-                className="wf-crumb-up"
-                onClick={() => openNode(trail[trail.length - 2])}
-              >
-                ↑ Up one level
-              </button>
-            )}
-          </nav>
-          <div className="wf-seg" role="group" aria-label="View mode">
-            <button
-              type="button"
-              className={`wf-seg-btn ${viewMode === "covers" ? "is-active" : ""}`}
-              onClick={() => setViewMode("covers")}
-            >
-              Covers
-            </button>
-            <button
-              type="button"
-              className={`wf-seg-btn ${viewMode === "map" ? "is-active" : ""}`}
-              onClick={() => setViewMode("map")}
-            >
-              Map
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div className="wf-container wf-facets">
-        <div className="wf-facet-row" role="group" aria-label="Grouping">
-          <span className="wf-facet-label">Group by</span>
-          {(["region", "type"] as AtlasGrouping[]).map((mode) => (
-            <button
-              key={mode}
-              type="button"
-              className={`wf-pill ${grouping === mode ? "is-active" : ""}`}
-              onClick={() => changeGrouping(mode)}
-            >
-              {mode === "region" ? "Region" : "Type"}
-            </button>
-          ))}
-        </div>
-
-        <div className="wf-facet-row" role="group" aria-label="Status filter">
-          <span className="wf-facet-label">Status</span>
-          {(["all", "visited", "inspiration"] as StatusFilter[]).map((filter) => (
-            <button
-              key={filter}
-              type="button"
-              className={`wf-pill ${statusFilter === filter ? "is-active" : ""}`}
-              onClick={() => setStatusFilter(filter)}
-            >
-              {filter === "all" ? "Everything" : filter === "visited" ? "Visited" : "Inspiration"}
-            </button>
-          ))}
-        </div>
-
-        <div className="wf-facet-row" role="group" aria-label="Type filter">
-          <span className="wf-facet-label">Type</span>
+  const hierarchyCrumbs = (
+    <nav className={omitChrome ? "lib-shell-crumbs" : "wf-browse-context"} aria-label="Hierarchy">
+      {trail.map((node, index) => (
+        <span key={node.key}>
+          {index > 0 && (
+            <span className="wf-crumb-sep" aria-hidden="true">
+              /
+            </span>
+          )}
           <button
             type="button"
-            className={`wf-pill ${typeFilter.length === 0 ? "is-active" : ""}`}
-            onClick={() => setTypeFilter([])}
+            className={node.key === scope.key ? "is-current" : ""}
+            onClick={() => openNode(node)}
           >
-            All types
+            {node.name}
           </button>
-          {typeOptions.map((option) => (
-            <button
-              key={option.category}
-              type="button"
-              className={`wf-pill ${typeFilter.includes(option.category) ? "is-active" : ""}`}
-              aria-pressed={typeFilter.includes(option.category)}
-              onClick={() => toggleType(option.category)}
-            >
-              {option.label}
-              <span style={{ marginLeft: "0.35rem", opacity: 0.75 }}>{option.count}</span>
-            </button>
-          ))}
-        </div>
+        </span>
+      ))}
+      {trail.length > 1 && (
+        <button
+          type="button"
+          className="wf-crumb-up"
+          onClick={() => openNode(trail[trail.length - 2])}
+        >
+          ↑ Up one level
+        </button>
+      )}
+    </nav>
+  );
 
-        <div className="wf-facet-row">
-          <span className="wf-facet-label">Search</span>
-          <label className="wf-search-field">
-            <input
-              type="search"
-              value={searchQuery}
-              onChange={(event) => setSearchQuery(event.target.value)}
-              placeholder="Find a place…"
-              aria-label="Search places"
-            />
-          </label>
-        </div>
-      </div>
+  return (
+    <div className={`wf-browse place-library-covers${omitChrome ? " wf-browse--core" : ""}`}>
+      {!omitChrome ? (
+        <>
+          <div className="wf-container wf-browse-masthead">
+            <div>
+              <p className="wf-browse-eyebrow">Your atlas</p>
+              <h1 className="wf-browse-title">Atlas</h1>
+              <p className="wf-browse-lede">
+                Everywhere your saves point to, from continents down to the single café — with what
+                you've already visited marked off.
+              </p>
+            </div>
+            <div className="wf-browse-count">
+              <span className="wf-browse-count-value">{scope.total}</span>
+              <span className="wf-browse-count-label">places</span>
+            </div>
+          </div>
 
-      <div className="wf-container wf-browse-body">
-        <div className="pl2" data-view="country-covers" data-level={scope.level}>
-          <div className="pl2-shell place-library-covers-shell">
-            <div className="pl2-scopebar">
-              <div>
-                <strong>{scope.name}</strong>
-                <span>
-                  {scope.total} places · {scope.visited} visited · {scope.inspiration} inspiration ·
-                  showing {childLevelLabel(scope).toLowerCase()}
-                </span>
+          <div className="wf-browse-bar">
+            <div className="wf-container wf-browse-bar-inner">
+              {hierarchyCrumbs}
+              <div className="wf-seg" role="group" aria-label="View mode">
+                <button
+                  type="button"
+                  className={`wf-seg-btn ${viewMode === "covers" ? "is-active" : ""}`}
+                  onClick={() => setViewMode("covers")}
+                >
+                  Covers
+                </button>
+                <button
+                  type="button"
+                  className={`wf-seg-btn ${viewMode === "map" ? "is-active" : ""}`}
+                  onClick={() => setViewMode("map")}
+                >
+                  Map
+                </button>
               </div>
             </div>
+          </div>
 
-            <div className="pl2-legend">
-              <span>
-                <i className="pl2-dot visited" /> Visited
-              </span>
-              <span>
-                <i className="pl2-dot dream" /> Inspiration
-              </span>
-              <span className="pl2-legend-note">
-                {searching
-                  ? "Search results · same filters"
-                  : viewMode === "map"
-                    ? "Map view · same scope and filters"
-                    : "Making the atlas feel aspirational"}
-              </span>
+          <div className="wf-container wf-facets">
+            <div className="wf-facet-row" role="group" aria-label="Grouping">
+              <span className="wf-facet-label">Group by</span>
+              {(["region", "type"] as AtlasGrouping[]).map((mode) => (
+                <button
+                  key={mode}
+                  type="button"
+                  className={`wf-pill ${grouping === mode ? "is-active" : ""}`}
+                  onClick={() => changeGrouping(mode)}
+                >
+                  {mode === "region" ? "Region" : "Type"}
+                </button>
+              ))}
             </div>
+
+            <div className="wf-facet-row" role="group" aria-label="Status filter">
+              <span className="wf-facet-label">Status</span>
+              {(["all", "visited", "inspiration"] as StatusFilter[]).map((filter) => (
+                <button
+                  key={filter}
+                  type="button"
+                  className={`wf-pill ${statusFilter === filter ? "is-active" : ""}`}
+                  onClick={() => setStatusFilter(filter)}
+                >
+                  {filter === "all"
+                    ? "Everything"
+                    : filter === "visited"
+                      ? "Visited"
+                      : "Inspiration"}
+                </button>
+              ))}
+            </div>
+
+            <div className="wf-facet-row" role="group" aria-label="Type filter">
+              <span className="wf-facet-label">Type</span>
+              <button
+                type="button"
+                className={`wf-pill ${typeFilter.length === 0 ? "is-active" : ""}`}
+                onClick={() => setTypeFilter([])}
+              >
+                All types
+              </button>
+              {typeOptions.map((option) => (
+                <button
+                  key={option.category}
+                  type="button"
+                  className={`wf-pill ${typeFilter.includes(option.category) ? "is-active" : ""}`}
+                  aria-pressed={typeFilter.includes(option.category)}
+                  onClick={() => toggleType(option.category)}
+                >
+                  {option.label}
+                  <span style={{ marginLeft: "0.35rem", opacity: 0.75 }}>{option.count}</span>
+                </button>
+              ))}
+            </div>
+
+            <div className="wf-facet-row">
+              <span className="wf-facet-label">Search</span>
+              <label className="wf-search-field">
+                <input
+                  type="search"
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  placeholder="Find a place…"
+                  aria-label="Search places"
+                />
+              </label>
+            </div>
+          </div>
+        </>
+      ) : trail.length > 1 ? (
+        hierarchyCrumbs
+      ) : null}
+
+      <div className="wf-container wf-browse-body">
+        <div className="pl2" data-view="country-covers" data-mode={viewMode} data-level={scope.level}>
+          <div className="pl2-shell place-library-covers-shell">
+            {!omitChrome ? (
+              <>
+                <div className="pl2-scopebar">
+                  <div>
+                    <strong>{scope.name}</strong>
+                    <span>
+                      {scope.total} places · {scope.visited} visited · {scope.inspiration}{" "}
+                      inspiration · showing {childLevelLabel(scope).toLowerCase()}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="pl2-legend">
+                  <span>
+                    <i className="pl2-dot visited" /> Visited
+                  </span>
+                  <span>
+                    <i className="pl2-dot dream" /> Inspiration
+                  </span>
+                  <span className="pl2-legend-note">
+                    {searching
+                      ? "Search results · same filters"
+                      : viewMode === "map"
+                        ? "Map view · same scope and filters"
+                        : "Making the atlas feel aspirational"}
+                  </span>
+                </div>
+              </>
+            ) : null}
 
             {loading ? (
               <p className="pl2-empty">Loading your atlas…</p>

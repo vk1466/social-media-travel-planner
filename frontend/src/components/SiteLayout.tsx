@@ -5,13 +5,13 @@ import { readBrandMode } from "../themeColor";
 import "../site-chrome.css";
 import { SiteFooter } from "./SiteFooter";
 import { SiteHeader } from "./SiteHeader";
+import { BentoMotionPicker } from "./BentoMotionPicker";
 import { ThemeColorPicker } from "./ThemeColorPicker";
 
 export interface SiteLayoutProps {
   isAdmin?: boolean;
   postCount?: number;
   placeCount?: number;
-  onOpenSearch?: () => void;
   hideFooter?: boolean;
   children: ReactNode;
 }
@@ -21,7 +21,6 @@ export function SiteLayout({
   isAdmin = false,
   postCount,
   placeCount,
-  onOpenSearch,
   hideFooter = false,
   children,
 }: SiteLayoutProps) {
@@ -29,11 +28,12 @@ export function SiteLayout({
   const tone = readBrandMode();
   return (
     <div className="wf-site" data-tone={tone}>
-      <SiteHeader isAdmin={isAdmin} onOpenSearch={onOpenSearch} />
+      <SiteHeader isAdmin={isAdmin} />
       <main className="wf-main">{children}</main>
       {hideFooter ? null : (
         <SiteFooter isAdmin={isAdmin} postCount={postCount} placeCount={placeCount} />
       )}
+      <BentoMotionPicker />
       <ThemeColorPicker />
     </div>
   );

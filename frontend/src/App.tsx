@@ -69,21 +69,18 @@ interface ChromeOutletProps {
   isAdmin: boolean;
   postCount: number;
   placeCount: number;
-  onOpenSearch: () => void;
 }
 
 function ChromeOutlet({
   isAdmin,
   postCount,
   placeCount,
-  onOpenSearch,
 }: ChromeOutletProps) {
   return (
     <SiteLayout
       isAdmin={isAdmin}
       postCount={postCount}
       placeCount={placeCount}
-      onOpenSearch={onOpenSearch}
     >
       <Outlet />
     </SiteLayout>
@@ -200,15 +197,10 @@ function AppRoutes({ authReady }: { authReady: boolean }) {
     navigate(`/places/${placeId}`);
   };
 
-  const openSearch = () => {
-    navigate("/search");
-  };
-
   const chromeShared = {
     isAdmin,
     postCount: posts.length,
     placeCount: places.length,
-    onOpenSearch: openSearch,
   };
 
   return (
@@ -240,21 +232,17 @@ function AppRoutes({ authReady }: { authReady: boolean }) {
               places={places}
               visitCount={visitCount}
               authReady={authReady}
-            />
-          }
-        />
-        <Route
-          path="/posts"
-          element={
-            <PostsRoute
               loadingPosts={loadingPosts}
-              posts={posts}
-              places={places}
               onDeleted={refresh}
               onNavigateToPlace={navigateToPlace}
+              onNavigateToPost={(platform, postId) => {
+                const { platform: routePlatform, nativeId } = postRouteParts(platform, postId);
+                navigate(`/posts/${routePlatform}/${nativeId}`);
+              }}
             />
           }
         />
+        <Route path="/posts" element={<Navigate to="/?open=posts" replace />} />
         <Route
           path="/posts/:platform/:postId"
           element={
@@ -267,7 +255,7 @@ function AppRoutes({ authReady }: { authReady: boolean }) {
             />
           }
         />
-        <Route path="/places" element={<PlacesRoutes authReady={authReady} />} />
+        <Route path="/places" element={<Navigate to="/?open=places" replace />} />
         <Route path="/places/:placeId" element={<PlacesRoutes authReady={authReady} />} />
         <Route path="/search" element={<SearchPage posts={posts} places={places} />} />
         <Route

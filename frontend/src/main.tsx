@@ -1,4 +1,4 @@
-import { StrictMode, useEffect } from "react";
+import { StrictMode, useEffect, useMemo } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import {
@@ -20,6 +20,14 @@ import "open-props/style";
 
 import App from "./App";
 import { setAuthTokenGetter } from "./api";
+import { wanderfileClerkAppearance } from "./clerkAppearance";
+import { useBrandVersion } from "./hooks/useBrandVersion";
+import {
+  applyBrandLab,
+  readBrandLabState,
+  readBrandMode,
+  seedBrandThemes,
+} from "./themeColor";
 import "./wf-tokens.css";
 import "./tw.css";
 import "./styles.css";
@@ -30,6 +38,11 @@ import "./detail-modal.css";
 import "./visit-form.css";
 import "./admin-tools.css";
 import "./category-chip.css";
+import "./site-chrome.css";
+
+// Seed shipped themes, then apply stored/default brand before first paint.
+seedBrandThemes();
+applyBrandLab(readBrandLabState());
 
 const clerkPublishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undefined;
 
@@ -66,8 +79,9 @@ function DevAuthBridge({ children }: { children: React.ReactNode }) {
 }
 
 function SignedOutGate() {
+  const tone = readBrandMode();
   return (
-    <div className="app-page">
+    <div className="wf-site app-page" data-tone={tone}>
       <main className="app-shell" style={{ maxWidth: 480, margin: "4rem auto", textAlign: "center" }}>
         <h1 className="hero-title">Wanderfile</h1>
         <p className="hero-subtitle">Sign in to save posts, places, and trips to your library.</p>
@@ -88,6 +102,24 @@ function SignedOutGate() {
   );
 }
 
+function ThemedClerkProvider({ children }: { children: React.ReactNode }) {
+  const brandVersion = useBrandVersion();
+  const appearance = useMemo(
+    () => wanderfileClerkAppearance(readBrandMode()),
+    [brandVersion],
+  );
+
+  return (
+    <ClerkProvider
+      publishableKey={clerkPublishableKey!}
+      afterSignOutUrl="/"
+      appearance={appearance}
+    >
+      {children}
+    </ClerkProvider>
+  );
+}
+
 function Root() {
   if (!clerkPublishableKey) {
     return (
@@ -100,7 +132,7 @@ function Root() {
   }
 
   return (
-    <ClerkProvider publishableKey={clerkPublishableKey} afterSignOutUrl="/">
+    <ThemedClerkProvider>
       <AuthTokenBridge>
         <BrowserRouter>
           <Show when="signed-out">
@@ -111,7 +143,7 @@ function Root() {
           </Show>
         </BrowserRouter>
       </AuthTokenBridge>
-    </ClerkProvider>
+    </ThemedClerkProvider>
   );
 }
 

@@ -2,6 +2,11 @@ import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
 import { deletePost, nativePostId, type Place, type SavedPost } from "../api";
+import type {
+  LibraryShellMeta,
+  PostsDeckMode,
+  PostsShellFilters,
+} from "../libraryShellModel";
 import {
   BROWSE_PLATFORMS,
   groupByMonth,
@@ -19,6 +24,10 @@ interface PostLibraryProps {
   places: Place[];
   onDeleted: () => void;
   onNavigateToPlace?: (placeId: string) => void;
+  /** Hide page chrome — parent LibraryShell owns filters/title. */
+  omitChrome?: boolean;
+  filters?: PostsShellFilters;
+  onMeta?: (meta: LibraryShellMeta) => void;
 }
 
 interface PlaceRing {
@@ -30,7 +39,7 @@ interface PlaceRing {
   share: number;
 }
 
-type DeckMode = "deck" | "grid";
+type DeckMode = PostsDeckMode;
 
 const MAX_PLACE_RINGS = 9;
 const ERA_PREVIEW_FRAMES = 8;
@@ -40,15 +49,42 @@ function vars(entries: Record<string, string | number>): CSSProperties {
   return entries as CSSProperties;
 }
 
-export function PostLibrary({ posts, places, onDeleted, onNavigateToPlace }: PostLibraryProps) {
+export function PostLibrary({
+  posts,
+  places,
+  onDeleted,
+  onNavigateToPlace,
+  omitChrome = false,
+  filters,
+  onMeta,
+}: PostLibraryProps) {
   const { platform: routePlatform, postId: routePostId } = useParams();
   const navigate = useNavigate();
-  const [platformFilter, setPlatformFilter] = useState("all");
-  const [ringKey, setRingKey] = useState("all");
+  const controlled = Boolean(filters);
+  const [localPlatformFilter, setLocalPlatformFilter] = useState("all");
+  const [localRingKey, setLocalRingKey] = useState("all");
   const [openEraKey, setOpenEraKey] = useState<string | null>(null);
   const [selectedPost, setSelectedPost] = useState<SavedPost | null>(null);
-  const [deckMode, setDeckMode] = useState<DeckMode>("deck");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [localDeckMode, setLocalDeckMode] = useState<DeckMode>("deck");
+  const [localSearchQuery, setLocalSearchQuery] = useState("");
+
+  const platformFilter = filters?.platform ?? localPlatformFilter;
+  const ringKey = filters?.ringKey ?? localRingKey;
+  const deckMode = filters?.deckMode ?? localDeckMode;
+  const searchQuery = filters?.query ?? localSearchQuery;
+
+  const setPlatformFilter = (value: string) => {
+    if (!controlled) setLocalPlatformFilter(value);
+  };
+  const setRingKey = (value: string) => {
+    if (!controlled) setLocalRingKey(value);
+  };
+  const setDeckMode = (value: DeckMode) => {
+    if (!controlled) setLocalDeckMode(value);
+  };
+  const setSearchQuery = (value: string) => {
+    if (!controlled) setLocalSearchQuery(value);
+  };
 
   const placeNamesById = useMemo(
     () => Object.fromEntries(places.map((place) => [place.place_id, place.display_name])),
@@ -243,8 +279,22 @@ export function PostLibrary({ posts, places, onDeleted, onNavigateToPlace }: Pos
 
   const closePost = () => {
     setSelectedPost(null);
-    navigate("/posts");
+    navigate(omitChrome ? "/?open=posts" : "/posts");
   };
+
+  useEffect(() => {
+    if (!onMeta) return;
+    onMeta({
+      count: filtered.length,
+      countLabel: "saves",
+      context: openEraLabel,
+      pills: placeRings.map((ring) => ({
+        key: ring.key,
+        label: ring.label,
+        count: ring.count,
+      })),
+    });
+  }, [onMeta, filtered.length, openEraLabel, placeRings]);
 
   function toggleEra(key: string) {
     setOpenEraKey((current) => (current === key ? NO_ERA : key));
@@ -269,73 +319,81 @@ export function PostLibrary({ posts, places, onDeleted, onNavigateToPlace }: Pos
   }
 
   return (
-    <section className="wf-browse library-section post-library-lantern">
-      <div className="wf-container wf-browse-masthead">
-        <div>
-          <p className="wf-browse-eyebrow">Your library</p>
-          <h1 className="wf-browse-title">Saves</h1>
-          <p className="wf-browse-lede">
-            Every reel, short, and post you've kept — grouped by the month you saved it and the
-            places inside it.
-          </p>
-        </div>
-        <div className="wf-browse-count">
-          <span className="wf-browse-count-value">{filtered.length}</span>
-          <span className="wf-browse-count-label">saves</span>
-        </div>
-      </div>
-
-      <div className="wf-browse-bar">
-        <div className="wf-container wf-browse-bar-inner">
-          <p className="wf-browse-context">{openEraLabel}</p>
-          <div className="wf-seg" role="group" aria-label="Layout">
-            <button
-              type="button"
-              className={`wf-seg-btn ${deckMode === "deck" ? "is-active" : ""}`}
-              onClick={() => setDeckMode("deck")}
-            >
-              Deck
-            </button>
-            <button
-              type="button"
-              className={`wf-seg-btn ${deckMode === "grid" ? "is-active" : ""}`}
-              onClick={() => setDeckMode("grid")}
-            >
-              Grid
-            </button>
+    <section
+      className={`wf-browse library-section post-library-lantern${
+        omitChrome ? " wf-browse--core" : ""
+      }`}
+    >
+      {!omitChrome ? (
+        <>
+          <div className="wf-container wf-browse-masthead">
+            <div>
+              <p className="wf-browse-eyebrow">Your library</p>
+              <h1 className="wf-browse-title">Saves</h1>
+              <p className="wf-browse-lede">
+                Every reel, short, and post you've kept — grouped by the month you saved it and the
+                places inside it.
+              </p>
+            </div>
+            <div className="wf-browse-count">
+              <span className="wf-browse-count-value">{filtered.length}</span>
+              <span className="wf-browse-count-label">saves</span>
+            </div>
           </div>
-        </div>
-      </div>
 
-      <div className="wf-container wf-facets">
-        <div className="wf-facet-row" role="tablist" aria-label="Platform filter">
-          <span className="wf-facet-label">Platform</span>
-          {BROWSE_PLATFORMS.map((platform) => (
-            <button
-              key={platform}
-              type="button"
-              role="tab"
-              aria-selected={platformFilter === platform}
-              className={`wf-pill ${platformFilter === platform ? "is-active" : ""}`}
-              onClick={() => setPlatformFilter(platform)}
-            >
-              {platform}
-            </button>
-          ))}
-        </div>
-        <div className="wf-facet-row">
-          <span className="wf-facet-label">Search</span>
-          <label className="wf-search-field">
-            <input
-              type="search"
-              value={searchQuery}
-              onChange={(event) => setSearchQuery(event.target.value)}
-              placeholder="Title, place, tag…"
-              aria-label="Search saves"
-            />
-          </label>
-        </div>
-      </div>
+          <div className="wf-browse-bar">
+            <div className="wf-container wf-browse-bar-inner">
+              <p className="wf-browse-context">{openEraLabel}</p>
+              <div className="wf-seg" role="group" aria-label="Layout">
+                <button
+                  type="button"
+                  className={`wf-seg-btn ${deckMode === "deck" ? "is-active" : ""}`}
+                  onClick={() => setDeckMode("deck")}
+                >
+                  Deck
+                </button>
+                <button
+                  type="button"
+                  className={`wf-seg-btn ${deckMode === "grid" ? "is-active" : ""}`}
+                  onClick={() => setDeckMode("grid")}
+                >
+                  Grid
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="wf-container wf-facets">
+            <div className="wf-facet-row" role="tablist" aria-label="Platform filter">
+              <span className="wf-facet-label">Platform</span>
+              {BROWSE_PLATFORMS.map((platform) => (
+                <button
+                  key={platform}
+                  type="button"
+                  role="tab"
+                  aria-selected={platformFilter === platform}
+                  className={`wf-pill ${platformFilter === platform ? "is-active" : ""}`}
+                  onClick={() => setPlatformFilter(platform)}
+                >
+                  {platform}
+                </button>
+              ))}
+            </div>
+            <div className="wf-facet-row">
+              <span className="wf-facet-label">Search</span>
+              <label className="wf-search-field">
+                <input
+                  type="search"
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  placeholder="Title, place, tag…"
+                  aria-label="Search saves"
+                />
+              </label>
+            </div>
+          </div>
+        </>
+      ) : null}
 
       <div className="wf-container wf-browse-body">
         <div className="p3" data-view="lantern-deck" data-mode={deckMode}>
@@ -346,43 +404,45 @@ export function PostLibrary({ posts, places, onDeleted, onNavigateToPlace }: Pos
               </div>
             ) : (
               <div className="p3-body p3-body--lantern">
-                <div
-                  className="wf-rail p3-rings p3-rings--glow"
-                  style={vars({ "--slots": placeRings.length })}
-                  role="tablist"
-                  aria-label="Place filter"
-                >
-                  {placeRings.map((ring, index) => (
-                    <button
-                      key={ring.key}
-                      type="button"
-                      role="tab"
-                      aria-selected={ringKey === ring.key}
-                      className={`p3-ring ${ringKey === ring.key ? "is-active" : ""}`}
-                      style={vars({ "--i": index, "--share": ring.share })}
-                      onClick={() => setRingKey(ring.key)}
-                    >
-                      <span className="p3-ring-halo">
-                        <span
-                          className="p3-ring-thumb"
-                          style={ring.cover ? thumbStyle(ring.cover, index) : undefined}
-                        />
-                      </span>
-                      {ring.placeId ? (
-                        <Link
-                          className="p3-ring-label"
-                          to={`/places/${ring.placeId}`}
-                          onClick={(event) => event.stopPropagation()}
-                        >
-                          {ring.label}
-                        </Link>
-                      ) : (
-                        <span className="p3-ring-label">{ring.label}</span>
-                      )}
-                      <span className="p3-ring-count">{ring.count}</span>
-                    </button>
-                  ))}
-                </div>
+                {!omitChrome ? (
+                  <div
+                    className="wf-rail p3-rings p3-rings--glow"
+                    style={vars({ "--slots": placeRings.length })}
+                    role="tablist"
+                    aria-label="Place filter"
+                  >
+                    {placeRings.map((ring, index) => (
+                      <button
+                        key={ring.key}
+                        type="button"
+                        role="tab"
+                        aria-selected={ringKey === ring.key}
+                        className={`p3-ring ${ringKey === ring.key ? "is-active" : ""}`}
+                        style={vars({ "--i": index, "--share": ring.share })}
+                        onClick={() => setRingKey(ring.key)}
+                      >
+                        <span className="p3-ring-halo">
+                          <span
+                            className="p3-ring-thumb"
+                            style={ring.cover ? thumbStyle(ring.cover, index) : undefined}
+                          />
+                        </span>
+                        {ring.placeId ? (
+                          <Link
+                            className="p3-ring-label"
+                            to={`/places/${ring.placeId}`}
+                            onClick={(event) => event.stopPropagation()}
+                          >
+                            {ring.label}
+                          </Link>
+                        ) : (
+                          <span className="p3-ring-label">{ring.label}</span>
+                        )}
+                        <span className="p3-ring-count">{ring.count}</span>
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
 
                 {filtered.length === 0 ? (
                   <p className="p3-empty">No posts in this filter.</p>

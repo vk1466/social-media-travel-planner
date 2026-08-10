@@ -100,7 +100,7 @@ a {
 .hero-subtitle {
   margin: 0;
   max-width: 52ch;
-  color: rgb(var(--wf-cream-rgb) / 0.82);
+  color: var(--text-muted);
   font-size: var(--font-size-1);
   line-height: var(--font-lineheight-4);
 }
