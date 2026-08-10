@@ -1,8 +1,8 @@
-import { useMemo, useState, type CSSProperties, type FormEvent, type JSX } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useMemo, type JSX } from "react";
+import { Link } from "react-router-dom";
 
-import { nativePostId, type Place, type SavedPost } from "../api";
-import { mapSavedPosts, thumbStyle } from "../postBrowseModel";
+import { type Place, type SavedPost } from "../api";
+import { mapSavedPosts } from "../postBrowseModel";
 
 import "../home-page.css";
 
@@ -13,25 +13,33 @@ export interface HomePageProps {
   authReady: boolean;
 }
 
-interface CountryCover {
-  name: string;
-  total: number;
+interface BentoTile {
+  src: string;
+  caption: string;
 }
 
-function hashHue(value: string): number {
-  let hash = 0;
-  for (let index = 0; index < value.length; index += 1) {
-    hash = (hash * 33 + value.charCodeAt(index)) % 360;
-  }
-  return hash;
-}
-
-function coverArt(name: string): CSSProperties {
-  const hue = 120 + (hashHue(name) % 120);
-  return {
-    backgroundImage: `linear-gradient(155deg, hsl(${hue} 30% 32%), hsl(${(hue + 45) % 360} 24% 14%))`,
-  };
-}
+const FALLBACK_TILES: BentoTile[] = [
+  {
+    src: "https://images.unsplash.com/photo-1523592121529-f6dde35f079e?w=2000&h=1200&fit=crop&auto=format&q=80",
+    caption: "Cappadocia",
+  },
+  {
+    src: "https://images.unsplash.com/photo-1533106497176-45ae19e68ba2?w=1200&h=1600&fit=crop&auto=format&q=80",
+    caption: "Positano",
+  },
+  {
+    src: "https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=1600&h=1000&fit=crop&auto=format&q=80",
+    caption: "Kyoto",
+  },
+  {
+    src: "https://images.unsplash.com/photo-1533105079780-92b9be482077?w=1800&h=1100&fit=crop&auto=format&q=80",
+    caption: "Santorini",
+  },
+  {
+    src: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=2000&h=1200&fit=crop&auto=format&q=80",
+    caption: "Nærøyfjord",
+  },
+];
 
 function pluralize(count: number, singular: string, plural: string): string {
   return count === 1 ? singular : plural;
@@ -41,204 +49,118 @@ function statValue(authReady: boolean, count: number): string {
   return authReady ? String(count) : "—";
 }
 
-export function HomePage({ posts, places, visitCount, authReady }: HomePageProps): JSX.Element {
-  const navigate = useNavigate();
-  const [pasteValue, setPasteValue] = useState("");
-
-  const recentPosts = useMemo(() => mapSavedPosts(posts).slice(0, 12), [posts]);
-
-  const countryCovers = useMemo(() => {
-    const totals = new Map<string, number>();
-    for (const place of places) {
-      const name =
-        place.location.country?.trim() ||
-        place.location.continent?.trim() ||
-        "Unmapped";
-      totals.set(name, (totals.get(name) ?? 0) + 1);
-    }
-    return Array.from(totals.entries())
-      .map(([name, total]): CountryCover => ({ name, total }))
-      .sort((a, b) => b.total - a.total || a.name.localeCompare(b.name))
-      .slice(0, 6);
-  }, [places]);
-
-  function onPasteSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const value = pasteValue.trim();
-    if (value) {
-      navigate("/add", { state: { prefill: value } });
-      return;
-    }
-    navigate("/add");
+function pickBentoTiles(posts: ReturnType<typeof mapSavedPosts>): BentoTile[] {
+  const seenCaptions = new Set<string>();
+  const fromReels: BentoTile[] = [];
+  for (const post of posts) {
+    if (!post.thumbnailUrl) continue;
+    const caption =
+      (post.placeNames && post.placeNames[0]) ||
+      post.author ||
+      post.title?.slice(0, 28) ||
+      "Saved";
+    const captionKey = String(caption).toLowerCase();
+    if (seenCaptions.has(captionKey)) continue;
+    seenCaptions.add(captionKey);
+    fromReels.push({ src: post.thumbnailUrl, caption });
+    if (fromReels.length >= 5) break;
   }
+  const tiles = [...fromReels];
+  for (const fallback of FALLBACK_TILES) {
+    if (tiles.length >= 5) break;
+    if (tiles.some((t) => t.caption === fallback.caption)) continue;
+    tiles.push(fallback);
+  }
+  while (tiles.length < 5) {
+    tiles.push(FALLBACK_TILES[tiles.length % FALLBACK_TILES.length]);
+  }
+  return tiles.slice(0, 5);
+}
+
+export function HomePage({ posts, places, visitCount, authReady }: HomePageProps): JSX.Element {
+  const browsePosts = useMemo(() => mapSavedPosts(posts), [posts]);
+  const tiles = useMemo(() => pickBentoTiles(browsePosts), [browsePosts]);
+
+  const placesMeta = authReady
+    ? `${places.length} ${pluralize(places.length, "place", "places")} · ${visitCount} visited`
+    : "Sign in to open your atlas";
+  const postsMeta = authReady
+    ? `${posts.length} ${pluralize(posts.length, "save", "saves")}`
+    : "Sign in to open your saves";
 
   return (
     <div className="home">
-      <section className="home-hero" aria-labelledby="home-hero-title">
-        <div className="home-hero-map" aria-hidden="true" />
-        <div className="wf-container home-hero-inner">
-          <p className="home-eyebrow">Wanderfile</p>
-          <h1 id="home-hero-title">The places you keep saving, finally on a map.</h1>
-          <p className="home-lede">
-            Paste Instagram reels, TikToks, and YouTube links. Wanderfile reads the caption,
-            on-screen text, and audio for the actual places worth going — then puts them on
-            your map.
-          </p>
-          <form className="home-paste" onSubmit={onPasteSubmit}>
-            <input
-              type="text"
-              name="link"
-              value={pasteValue}
-              onChange={(event) => setPasteValue(event.target.value)}
-              placeholder="Paste an Instagram, TikTok, or YouTube link"
-              aria-label="Paste an Instagram, TikTok, or YouTube link"
-              autoComplete="off"
-            />
-            <button type="submit">Add</button>
-          </form>
-          <ul className="home-stats" aria-label="Library summary">
-            <li>
-              <span className="home-stats-value">{statValue(authReady, posts.length)}</span>
-              <span className="home-stats-label">
-                {pluralize(posts.length, "save", "saves")}
-              </span>
-            </li>
-            <li>
-              <span className="home-stats-value">{statValue(authReady, places.length)}</span>
-              <span className="home-stats-label">
-                {pluralize(places.length, "place", "places")}
-              </span>
-            </li>
-            <li>
-              <span className="home-stats-value">{statValue(authReady, visitCount)}</span>
-              <span className="home-stats-label">
-                {pluralize(visitCount, "visit", "visits")}
-              </span>
-            </li>
-          </ul>
+      <section className="home-bento" aria-label="Library highlight">
+        <div className="home-tile home-tile--title home-tile--wide home-tile--tall">
+          <span className="home-tile-kicker">Wanderfile</span>
+          <h1>
+            Places
+            <br />
+            you keep
+            <br />
+            <em>coming back to.</em>
+          </h1>
+        </div>
+
+        {tiles.slice(0, 2).map((tile) => (
+          <div key={`a-${tile.caption}`} className="home-tile home-tile--media">
+            <img src={tile.src} alt="" />
+            <span className="home-tile-caption">{tile.caption}</span>
+          </div>
+        ))}
+
+        <div className="home-tile home-tile--data">
+          <span className="home-tile-lbl">Saved</span>
+          <span className="home-tile-val">{statValue(authReady, places.length)}</span>
+        </div>
+
+        {tiles.slice(2, 4).map((tile) => (
+          <div key={`b-${tile.caption}`} className="home-tile home-tile--media">
+            <img src={tile.src} alt="" />
+            <span className="home-tile-caption">{tile.caption}</span>
+          </div>
+        ))}
+
+        <div className="home-tile home-tile--data">
+          <span className="home-tile-lbl">Visited so far</span>
+          <span className="home-tile-val">
+            <em>{statValue(authReady, visitCount)}</em>
+          </span>
+        </div>
+
+        <div className="home-tile home-tile--media home-tile--wide">
+          <img src={tiles[4].src} alt="" />
+          <span className="home-tile-caption">{tiles[4].caption}</span>
         </div>
       </section>
 
-      <section className="home-section" aria-labelledby="home-recent-title">
-        <div className="wf-container">
-          <div className="home-section-head">
-            <div>
-              <p className="home-eyebrow">Recently saved</p>
-              <h2 id="home-recent-title">Fresh from your feed</h2>
-            </div>
-            <Link className="home-section-link" to="/posts">
-              All saves →
-            </Link>
-          </div>
-          {recentPosts.length === 0 ? (
-            <div className="home-empty">
-              <p>Nothing saved yet</p>
-              <p>
-                <Link to="/add">Add your first link</Link>
-              </p>
-            </div>
-          ) : (
-            <div className="home-reel" role="list">
-              {recentPosts.map((post, index) => {
-                const nativeId = nativePostId({
-                  post_id: post.key,
-                  platform: post.platform,
-                });
-                return (
-                  <Link
-                    key={post.key}
-                    className="home-tile"
-                    to={`/posts/${post.platform}/${nativeId}`}
-                    style={thumbStyle(post, index)}
-                    role="listitem"
-                  >
-                    <span className="home-tile-scrim">
-                      <span className="home-tile-title">{post.title}</span>
-                      <span className="home-tile-meta">
-                        {post.platformLabel} · {post.dateLabel}
-                      </span>
-                    </span>
-                  </Link>
-                );
-              })}
-            </div>
-          )}
+      <section className="home-library" aria-labelledby="home-library-title">
+        <div className="home-library-head">
+          <p className="home-library-eyebrow">Your library</p>
+          <h2 id="home-library-title">Open a shelf</h2>
+          <p>Browse places on the atlas or saves in the lantern — same paper ground, coral accents.</p>
         </div>
-      </section>
 
-      <section className="home-section" aria-labelledby="home-atlas-title">
-        <div className="wf-container">
-          <div className="home-section-head">
-            <div>
-              <p className="home-eyebrow">Your atlas</p>
-              <h2 id="home-atlas-title">Where you&apos;re headed</h2>
-            </div>
-            <Link className="home-section-link" to="/places">
-              Open the atlas →
-            </Link>
-          </div>
-          {countryCovers.length === 0 ? (
-            <div className="home-empty">
-              <p>Your atlas fills in as you save</p>
-              <p>
-                <Link to="/add">Add a link</Link>
-              </p>
-            </div>
-          ) : (
-            <div className="home-covers">
-              {countryCovers.map((cover) => (
-                <Link key={cover.name} className="home-cover" to="/places">
-                  <span className="home-cover-art" style={coverArt(cover.name)} aria-hidden="true" />
-                  <span className="home-cover-scrim">
-                    <span className="home-cover-name">{cover.name}</span>
-                    <span className="home-cover-count">
-                      {cover.total} {pluralize(cover.total, "place", "places")}
-                    </span>
-                  </span>
-                </Link>
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
-
-      <section className="home-section" aria-labelledby="home-steps-title">
-        <div className="wf-container">
-          <h2 id="home-steps-title" className="home-steps-heading">
-            How it works
-          </h2>
-          <div className="home-steps">
-            <div className="home-step">
-              <span className="home-step-num">01</span>
-              <h3 className="home-step-title">Paste</h3>
-              <p className="home-step-body">
-                Drop any reel, TikTok, or video link into Wanderfile.
-              </p>
-            </div>
-            <div className="home-step">
-              <span className="home-step-num">02</span>
-              <h3 className="home-step-title">We read it</h3>
-              <p className="home-step-body">
-                Captions, on-screen text, and audio get scanned for real place names, then
-                geocoded.
-              </p>
-            </div>
-            <div className="home-step">
-              <span className="home-step-num">03</span>
-              <h3 className="home-step-title">Go</h3>
-              <p className="home-step-body">
-                Everything lands in your atlas, grouped by country, with what you&apos;ve
-                already visited marked off.
-              </p>
-            </div>
-          </div>
+        <div className="home-tabs">
+          <Link className="home-tab home-tab--places" to="/places">
+            <span className="home-tab-kicker">Atlas</span>
+            <span className="home-tab-title">Places</span>
+            <span className="home-tab-meta">{placesMeta}</span>
+            <span className="home-tab-cta">Open atlas →</span>
+          </Link>
+          <Link className="home-tab home-tab--posts" to="/posts">
+            <span className="home-tab-kicker">Lantern</span>
+            <span className="home-tab-title">Posts</span>
+            <span className="home-tab-meta">{postsMeta}</span>
+            <span className="home-tab-cta">Open saves →</span>
+          </Link>
         </div>
       </section>
 
       <section className="home-cta" aria-labelledby="home-cta-title">
-        <div className="wf-container">
+        <div className="home-cta-inner">
           <h2 id="home-cta-title">Start with one link.</h2>
-          <p>One save is enough to start filling your atlas.</p>
+          <p>Paste a reel and fill the atlas from what you already save.</p>
           <Link className="home-cta-btn" to="/add">
             Add links
           </Link>

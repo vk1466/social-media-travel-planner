@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>06 · Product dashboard — Places Page Lab</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,300;1,9..144,400;1,9..144,500&family=Inter:wght@400;500;600;700;800&family=Instrument+Serif:ital@0;1&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../sites/shared/places-browse.css" />
+  <link rel="stylesheet" href="../shared/shell.css" />
+  <style>
+
+body { background: #0b0d10; color: #e8ebf0; font-family: "Inter", var(--a-sans); }
+.db-shell { display: grid; grid-template-columns: 240px 1fr; min-height: calc(100vh - 100px); }
+.db-side {
+  padding: 20px 16px; border-right: 1px solid rgba(255,255,255,0.06);
+  display: flex; flex-direction: column; gap: 24px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent);
+}
+.db-brand {
+  display: flex; align-items: center; gap: 10px;
+  font-weight: 700; font-size: 0.92rem; letter-spacing: -0.01em; color: #fff;
+  padding: 0 6px;
+}
+.db-brand .mark {
+  width: 26px; height: 26px; border-radius: 8px;
+  background: linear-gradient(135deg, #7a5cff, #4a2ce8);
+  display: grid; place-items: center; font-family: var(--a-serif); font-style: italic; font-size: 1rem; color: white;
+}
+.db-group { display: flex; flex-direction: column; gap: 2px; }
+.db-group .lbl {
+  padding: 0 8px 8px; font-size: 0.62rem; letter-spacing: 0.18em; text-transform: uppercase;
+  color: rgba(255,255,255,0.35); font-weight: 700;
+}
+.db-group a {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 7px 10px; border-radius: 8px;
+  color: rgba(255,255,255,0.7); text-decoration: none; font-size: 0.86rem; font-weight: 500;
+}
+.db-group a:hover { background: rgba(255,255,255,0.05); color: white; }
+.db-group a.is-on { background: rgba(122,92,255,0.15); color: #b8a5ff; }
+.db-group a .n {
+  font-family: "JetBrains Mono", monospace; font-size: 0.7rem;
+  padding: 2px 7px; background: rgba(255,255,255,0.06); border-radius: 5px;
+  color: rgba(255,255,255,0.55);
+}
+.db-group a.is-on .n { background: rgba(122,92,255,0.2); color: #b8a5ff; }
+.db-main { min-width: 0; padding: 20px 28px 40px; }
+.db-topbar {
+  display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;
+}
+.db-topbar h1 { margin: 0; font-family: "Inter"; font-weight: 700; font-size: 1.4rem; letter-spacing: -0.02em; color: #fff; }
+.db-topbar h1 span { color: rgba(255,255,255,0.45); font-weight: 500; }
+.db-topbar .pill {
+  display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px;
+  background: rgba(122,92,255,0.15); color: #b8a5ff; border-radius: 999px;
+  font-size: 0.72rem; font-weight: 600;
+}
+.db-topbar .pill::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: #b8a5ff; }
+.db-kpi { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+.db-kpi .card {
+  padding: 16px 18px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 14px;
+}
+.db-kpi .card .lbl { font-size: 0.66rem; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255,255,255,0.45); font-weight: 700; }
+.db-kpi .card .val {
+  margin-top: 8px; font-family: "Inter"; font-weight: 700; font-size: 2rem; letter-spacing: -0.03em; color: #fff;
+}
+.db-kpi .card .val small { font-size: 0.9rem; font-weight: 500; color: rgba(255,255,255,0.45); margin-left: 4px; letter-spacing: 0; }
+.db-kpi .card .delta { margin-top: 4px; font-size: 0.75rem; color: #6ee7b7; font-weight: 600; }
+.db-widget {
+  background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 16px; overflow: hidden;
+}
+.db-widget-top {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 14px 18px; border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.db-widget-top h2 { margin: 0; font-family: "Inter"; font-weight: 600; font-size: 0.95rem; letter-spacing: -0.01em; color: #fff; }
+.db-widget-top .keys { font-family: "JetBrains Mono", monospace; font-size: 0.7rem; color: rgba(255,255,255,0.45); }
+.db-widget-top .keys kbd {
+  padding: 2px 6px; margin: 0 2px; border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 4px; background: rgba(255,255,255,0.03);
+}
+.wf-places--embedded {
+  --pb-bg: transparent; --pb-ink: #e8ebf0; --pb-muted: rgba(255,255,255,0.5);
+  --pb-panel: rgba(255,255,255,0.03); --pb-border: rgba(255,255,255,0.08);
+  --pb-accent: #7a5cff; --pb-accent-ink: #fff;
+}
+.wf-places--almanac.wf-places--embedded .wf-places-bar { background: color-mix(in srgb, #0b0d10 90%, transparent); }
+@media (max-width: 900px) {
+  .db-shell { grid-template-columns: 1fr; }
+  .db-side { border-right: 0; border-bottom: 1px solid rgba(255,255,255,0.06); }
+  .db-kpi { grid-template-columns: repeat(2, 1fr); }
+}
+
+  </style>
+</head>
+<body>
+  <header class="lab-top">
+    <a href="../index.html">← Places Page Lab</a>
+    <nav class="lab-top-nav" aria-label="Structure pager">
+      <a href="05-glass-mesh.html">← Back</a>
+      <span class="pattern">Structure 06 / 20</span>
+      <a href="07-diagonal-split.html">Next →</a>
+    </nav>
+    <a href="../../index.html">Design Lab</a>
+  </header>
+
+  <div class="db-shell">
+    <aside class="db-side">
+      <div class="db-brand"><span class="mark">A</span>Almanac</div>
+      <div class="db-group">
+        <span class="lbl">Workspace</span>
+        <a href="../../sites/02-almanac/index.html">Discover <span class="n">·</span></a>
+        <a href="../../sites/02-almanac/posts.html">Posts <span class="n">86</span></a>
+        <a class="is-on" href="#">Places <span class="n">248</span></a>
+        <a href="../../sites/02-almanac/history.html">Journal <span class="n">62</span></a>
+      </div>
+      <div class="db-group">
+        <span class="lbl">Views</span>
+        <a href="#">All places <span class="n">248</span></a>
+        <a href="#">Visited <span class="n">62</span></a>
+        <a href="#">Dreamt of <span class="n">186</span></a>
+        <a href="#">Routed <span class="n">14</span></a>
+      </div>
+      <div class="db-group">
+        <span class="lbl">Actions</span>
+        <a href="../../sites/02-almanac/add.html">Add a link</a>
+      </div>
+    </aside>
+    <div class="db-main">
+      <div class="db-topbar">
+        <h1>Places <span>· atlas</span></h1>
+        <span class="pill">Live · synced 2m ago</span>
+      </div>
+      <div class="db-kpi">
+        <div class="card"><div class="lbl">Total saved</div><div class="val">248</div><div class="delta">+12 this week</div></div>
+        <div class="card"><div class="lbl">Visited</div><div class="val">62 <small>/ 248</small></div><div class="delta">+3 this month</div></div>
+        <div class="card"><div class="lbl">Continents</div><div class="val">6 <small>/ 7</small></div><div class="delta">Antarctica pending</div></div>
+        <div class="card"><div class="lbl">On the route</div><div class="val">14</div><div class="delta" style="color:#f8b4b4">2 conflicts</div></div>
+      </div>
+      <div class="db-widget">
+        <div class="db-widget-top">
+          <h2>Atlas · everywhere</h2>
+          <span class="keys">Filter · <kbd>F</kbd> · Jump <kbd>⌘</kbd><kbd>K</kbd></span>
+        </div>
+        <div id="wf-places-root" class="wf-places wf-places--almanac wf-places--embedded"><div class="wf-places-loading">Loading atlas…</div></div>
+      </div>
+    </div>
+  </div>
+  <nav class="lab-bottom-nav" aria-label="Structure pager">
+    <a href="05-glass-mesh.html">← Glass on mesh</a>
+    <span class="hint">← → keys</span>
+    <a href="07-diagonal-split.html">Diagonal split →</a>
+  </nav>
+  <script>window.WF_SITE = { id: "02-almanac", title: "Almanac", page: "places-structure" };</script>
+  <script src="../../sites/shared/mock.js"></script>
+  <script type="module" src="../shared/mount.js"></script>
+  <script type="module">
+    const prev = "05-glass-mesh.html";
+    const next = "07-diagonal-split.html";
+    window.addEventListener("keydown", (event) => {
+      if (event.defaultPrevented) return;
+      const tag = (event.target && event.target.tagName) || "";
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || event.target?.isContentEditable) return;
+      if (event.key === "ArrowLeft" && prev) location.href = prev;
+      if (event.key === "ArrowRight" && next) location.href = next;
+    });
+  </script>
+</body>
+</html>

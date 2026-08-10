@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>15 · Marketing bold — Places Page Lab</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,300;1,9..144,400;1,9..144,500&family=Inter:wght@400;500;600;700;800&family=Instrument+Serif:ital@0;1&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../sites/shared/places-browse.css" />
+  <link rel="stylesheet" href="../shared/shell.css" />
+  <style>
+
+body { background: #fefaf5; color: #1a1612; font-family: "Inter", var(--a-sans); overflow-x: hidden; }
+.mb-topbar {
+  max-width: 1400px; margin: 0 auto; padding: 20px 28px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.mb-topbar .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 1rem; letter-spacing: -0.02em; }
+.mb-topbar .brand .mark { width: 26px; height: 26px; border-radius: 8px; background: #1a1612; color: white; display: grid; place-items: center; font-family: var(--a-serif); font-style: italic; font-size: 1rem; }
+.mb-hero {
+  position: relative; max-width: 1400px; margin: 40px auto 32px; padding: 0 28px;
+  text-align: center; overflow: hidden;
+}
+.mb-hero .badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 8px 6px 14px; border-radius: 999px; background: #1a1612; color: white;
+  font-size: 0.78rem; font-weight: 600;
+}
+.mb-hero .badge .pill {
+  background: #ff5533; color: white; padding: 3px 10px; border-radius: 999px;
+  font-size: 0.66rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+}
+.mb-hero h1 {
+  margin: 24px auto 0; font-family: "Inter", sans-serif; font-weight: 800;
+  font-size: clamp(3rem, 10vw, 8rem); line-height: 0.92; letter-spacing: -0.055em;
+  max-width: 14ch;
+}
+.mb-hero h1 em {
+  font-family: var(--a-serif); font-weight: 400; font-style: italic;
+  background: linear-gradient(135deg, #ff8b4d 0%, #ff3d9a 60%, #7a3dff 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.mb-hero p { margin: 26px auto 0; max-width: 46ch; color: #4a413a; font-size: 1.1rem; line-height: 1.55; }
+.mb-hero .ctas { margin-top: 30px; display: inline-flex; gap: 10px; }
+.mb-hero .ctas a {
+  padding: 12px 24px; border-radius: 999px; font-weight: 600; text-decoration: none; font-size: 0.9rem;
+}
+.mb-hero .ctas .primary { background: #1a1612; color: white; }
+.mb-hero .ctas .ghost { background: rgba(26,22,18,0.06); color: #1a1612; }
+.mb-hero .float {
+  position: absolute; width: 160px; height: 160px; border-radius: 24px; overflow: hidden;
+  box-shadow: 0 20px 60px -20px rgba(0,0,0,0.25);
+  animation: mb-float 6s ease-in-out infinite alternate;
+}
+.mb-hero .float img { width: 100%; height: 100%; object-fit: cover; }
+.mb-hero .float.f1 { left: -20px; top: 40px; transform: rotate(-8deg); }
+.mb-hero .float.f2 { right: -20px; top: 80px; transform: rotate(6deg); animation-delay: 1s; }
+.mb-hero .float.f3 { left: 10%; bottom: -60px; transform: rotate(4deg); animation-delay: 2s; }
+.mb-hero .float.f4 { right: 12%; bottom: -40px; transform: rotate(-5deg); animation-delay: 3s; }
+@keyframes mb-float {
+  0% { transform: translateY(0) rotate(var(--r, 0deg)); }
+  100% { transform: translateY(-12px) rotate(var(--r, 0deg)); }
+}
+.mb-atlas {
+  max-width: 1400px; margin: 32px auto 0; padding: 0 28px 20px;
+}
+.mb-atlas .frame {
+  background: white; border-radius: 24px; overflow: hidden;
+  box-shadow: 0 20px 60px -30px rgba(0,0,0,0.15);
+}
+.wf-places--embedded { --pb-panel: #fff; --pb-border: #eee; }
+@media (max-width: 720px) { .mb-hero .float { display: none; } }
+
+  </style>
+</head>
+<body>
+  <header class="lab-top">
+    <a href="../index.html">← Places Page Lab</a>
+    <nav class="lab-top-nav" aria-label="Structure pager">
+      <a href="14-kpi-hero.html">← Back</a>
+      <span class="pattern">Structure 15 / 20</span>
+      <a href="16-card-stack.html">Next →</a>
+    </nav>
+    <a href="../../index.html">Design Lab</a>
+  </header>
+
+  <div class="mb-topbar">
+    <a class="brand" href="../../sites/02-almanac/index.html"><span class="mark">A</span>Almanac</a>
+    
+  <nav class="modern-nav" aria-label="Primary">
+    <a href="../../sites/02-almanac/index.html">Discover</a>
+    <a href="../../sites/02-almanac/posts.html">Posts</a>
+    <a class="is-on" href="#">Places</a>
+    <a href="../../sites/02-almanac/history.html">Journal</a>
+    <a href="../../sites/02-almanac/add.html">Add</a>
+  </nav>
+  </div>
+  <section class="mb-hero">
+    <div class="float f1" style="--r:-8deg"><img src="https://images.unsplash.com/photo-1523592121529-f6dde35f079e?w=2000&h=1200&fit=crop&auto=format&q=80" alt=""/></div>
+    <div class="float f2" style="--r:6deg"><img src="https://images.unsplash.com/photo-1533106497176-45ae19e68ba2?w=1200&h=1600&fit=crop&auto=format&q=80" alt=""/></div>
+    <div class="float f3" style="--r:4deg"><img src="https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=1600&h=1000&fit=crop&auto=format&q=80" alt=""/></div>
+    <div class="float f4" style="--r:-5deg"><img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=2000&h=1200&fit=crop&auto=format&q=80" alt=""/></div>
+    <div class="badge"><span>Almanac · new</span><span class="pill">Places</span></div>
+    <h1>Save it once.<br/><em>Find it forever.</em></h1>
+    <p>Paste any travel link. We turn saves into a live atlas — every place tagged, mapped, and one filter away.</p>
+    <div class="ctas">
+      <a class="primary" href="../../sites/02-almanac/add.html">Add a link →</a>
+      <a class="ghost" href="#atlas">Explore atlas</a>
+    </div>
+  </section>
+  <div class="mb-atlas" id="atlas"><div class="frame"><div id="wf-places-root" class="wf-places wf-places--almanac wf-places--embedded"><div class="wf-places-loading">Loading atlas…</div></div></div></div>
+  <nav class="lab-bottom-nav" aria-label="Structure pager">
+    <a href="14-kpi-hero.html">← KPI hero</a>
+    <span class="hint">← → keys</span>
+    <a href="16-card-stack.html">Card stack →</a>
+  </nav>
+  <script>window.WF_SITE = { id: "02-almanac", title: "Almanac", page: "places-structure" };</script>
+  <script src="../../sites/shared/mock.js"></script>
+  <script type="module" src="../shared/mount.js"></script>
+  <script type="module">
+    const prev = "14-kpi-hero.html";
+    const next = "16-card-stack.html";
+    window.addEventListener("keydown", (event) => {
+      if (event.defaultPrevented) return;
+      const tag = (event.target && event.target.tagName) || "";
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || event.target?.isContentEditable) return;
+      if (event.key === "ArrowLeft" && prev) location.href = prev;
+      if (event.key === "ArrowRight" && next) location.href = next;
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Wanderfile · Volume — Post</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../shared/site-nav.css" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <header class="vol-topbar">
+    <a class="vol-brand" href="index.html"><span class="dot">V</span>Volume</a>
+    <nav class="vol-nav" aria-label="Primary">
+      <a href="index.html">Discover</a>
+      <a href="index.html?open=places">Places</a>
+      <a href="index.html?open=posts">Posts</a>
+      <a href="add.html">Add</a>
+    </nav>
+  </header>
+
+  <main class="vol-page" id="detail"></main>
+
+  <footer class="vol-footer">
+    <span>© 2026 Wanderfile · Volume</span>
+    <a href="index.html?open=posts">Open saves →</a>
+  </footer>
+
+  <script>
+    window.WF_SITE = {
+      id: "04-volume",
+      title: "Volume",
+      thesis: "Bento hero — shared filter shell, Places & Posts cores swap.",
+      page: "post",
+    };
+  </script>
+  <script src="../shared/mock.js"></script>
+  <script src="../shared/site-nav.js"></script>
+  <script type="module">
+    import { loadLibrary } from "../shared/api.js";
+
+    const root = document.getElementById("detail");
+    const id = new URLSearchParams(location.search).get("id") || "";
+
+    function render(post) {
+      if (!post) {
+        root.innerHTML = `
+          <a class="vol-back" href="index.html?open=posts">← Posts</a>
+          <h1>Post not found</h1>
+          <p class="lede">That save isn’t in the sample library.</p>`;
+        return;
+      }
+      const cover = post.cover || post.thumbnailUrl;
+      const title = post.title || "Untitled post";
+      const places = (post.placeNames || [])
+        .map((n) => n)
+        .concat(
+          (post.places || [])
+            .map((pid) => window.WF_MOCK?.placeById?.(pid)?.name)
+            .filter(Boolean),
+        );
+      const uniquePlaces = [...new Set(places)];
+      root.innerHTML = `
+        <a class="vol-back" href="index.html?open=posts">← Posts</a>
+        ${cover ? `<div class="vol-detail-hero"><img src="${cover}" alt="" /></div>` : ""}
+        <p class="vol-muted" style="font-size:0.75rem;letter-spacing:0.14em;text-transform:uppercase;font-weight:700;margin:0 0 0.5rem">${post.platformLabel || post.platform || "Post"}</p>
+        <h1>${title}</h1>
+        <p class="lede">${post.description || post.excerpt || ""}</p>
+        ${
+          uniquePlaces.length
+            ? `<p class="vol-muted">Places · ${uniquePlaces.join(", ")}</p>`
+            : ""
+        }
+        ${
+          post.postUrl?.startsWith("http")
+            ? `<p style="margin-top:1.25rem"><a href="${post.postUrl}" target="_blank" rel="noopener">Open original →</a></p>`
+            : ""
+        }
+      `;
+      document.title = `Wanderfile · Volume — ${title.slice(0, 48)}`;
+    }
+
+    const mockPost = window.WF_MOCK?.postById?.(id);
+    if (mockPost) {
+      render(mockPost);
+    } else {
+      root.innerHTML = `<p class="vol-muted">Loading…</p>`;
+      loadLibrary(window.WF_MOCK)
+        .then((lib) => {
+          const post = lib.posts.find((p) => p.key === id);
+          render(post || null);
+        })
+        .catch(() => render(null));
+    }
+  </script>
+</body>
+</html>

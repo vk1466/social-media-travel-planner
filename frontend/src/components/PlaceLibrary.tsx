@@ -42,9 +42,15 @@ function hashHue(value: string): number {
 }
 
 function coverArt(name: string): CSSProperties {
-  const hue = 120 + (hashHue(name) % 120);
+  const forests = [
+    "linear-gradient(145deg, #243d32 0%, #0f1a14 100%)",
+    "linear-gradient(155deg, #1f3a2c 0%, #0d1510 100%)",
+    "linear-gradient(160deg, #2a4538 0%, #101c16 100%)",
+    "linear-gradient(150deg, #1a3328 0%, #0a1210 100%)",
+    "linear-gradient(148deg, #274438 0%, #0e1813 100%)",
+  ];
   return {
-    backgroundImage: `linear-gradient(155deg, hsl(${hue} 30% 32%), hsl(${(hue + 45) % 360} 24% 14%))`,
+    backgroundImage: forests[hashHue(name) % forests.length],
   };
 }
 
@@ -332,7 +338,7 @@ export function PlaceLibrary({ authReady, onNavigateToPost }: PlaceLibraryProps)
       </div>
 
       <div className="wf-container wf-browse-body">
-        <div className="pl2 pl2--dark" data-view="country-covers" data-level={scope.level}>
+        <div className="pl2" data-view="country-covers" data-level={scope.level}>
           <div className="pl2-shell place-library-covers-shell">
             <div className="pl2-scopebar">
               <div>

@@ -73,6 +73,38 @@
   background: transparent;
 }
 
+.wf-posts--volume {
+  --pb-bg: transparent;
+  --pb-ink: #1a1612;
+  --pb-muted: #5c564e;
+  --pb-accent: #ff5733;
+  --pb-accent-ink: #fffaf5;
+  --pb-panel: #ffffff;
+  --pb-border: rgba(26, 22, 18, 0.1);
+  --pb-pin: #ff5733;
+  --pb-serif: "Fraunces", Georgia, serif;
+  --pb-sans: "Inter", "DM Sans", system-ui, sans-serif;
+  --pb-veil: rgb(26 22 18 / 0.82);
+  background: transparent;
+}
+
+.wf-posts--volume .wf-posts-tile {
+  border-radius: 18px;
+  overflow: hidden;
+}
+
+.wf-posts--volume .wf-posts-tile-thumb {
+  border-radius: 18px;
+}
+
+.wf-posts--volume .wf-posts-era-head {
+  border-radius: 12px;
+}
+
+.wf-posts--volume .wf-posts-era.is-open .wf-posts-era-head {
+  background: color-mix(in srgb, var(--pb-accent) 8%, transparent);
+}
+
 .wf-posts-wrap {
   max-width: 1240px;
   margin: 0 auto;
@@ -253,10 +285,69 @@
 }
 
 .wf-posts-facets {
-  padding: 1.15rem 0 0;
+  padding: 0.95rem 1rem;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.7rem;
+  background: var(--pb-panel);
+  border: 1px solid var(--pb-border);
+  border-radius: 18px;
+}
+
+.wf-posts-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.55rem 0.65rem;
+}
+
+.wf-posts-toolbar .wf-posts-search {
+  flex: 1 1 220px;
+  min-width: 180px;
+  padding: 0.45rem 1rem;
+}
+
+.wf-posts-toolbar .wf-posts-search input {
+  font-size: 0.84rem;
+}
+
+.wf-posts-seg--primary {
+  background: color-mix(in srgb, var(--pb-panel) 88%, var(--pb-bg));
+  border: 1px solid var(--pb-border);
+  padding: 3px;
+  gap: 0;
+  flex-wrap: wrap;
+}
+
+.wf-posts-seg--primary button {
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.42rem 0.85rem;
+  color: var(--pb-muted);
+}
+
+.wf-posts-seg--primary button:hover {
+  color: var(--pb-ink);
+}
+
+.wf-posts-seg--primary button.is-active {
+  background: var(--pb-accent);
+  color: var(--pb-accent-ink);
+}
+
+.wf-posts-types {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.wf-posts-types .wf-posts-pill .count,
+.wf-posts-pill .count {
+  margin-left: 0.35rem;
+  opacity: 0.75;
 }
 
 .wf-posts-facet-row {

@@ -31,9 +31,19 @@ function hashHue(value) {
   return hash;
 }
 
-function coverArt(name, hero) {
+function coverArt(name, hero, theme = "voyager") {
   if (hero) {
     return `background-image:linear-gradient(to top, rgb(15 22 19 / 0.72), transparent 55%), url('${String(hero).replace(/'/g, "%27")}')`;
+  }
+  if (theme === "volume") {
+    const forests = [
+      "linear-gradient(145deg, #243d32 0%, #0f1a14 100%)",
+      "linear-gradient(155deg, #1f3a2c 0%, #0d1510 100%)",
+      "linear-gradient(160deg, #2a4538 0%, #101c16 100%)",
+      "linear-gradient(150deg, #1a3328 0%, #0a1210 100%)",
+      "linear-gradient(148deg, #274438 0%, #0e1813 100%)",
+    ];
+    return `background-image:${forests[hashHue(name) % forests.length]}`;
   }
   const hue = 120 + (hashHue(name) % 120);
   return `background-image:linear-gradient(155deg, hsl(${hue} 30% 32%), hsl(${(hue + 45) % 360} 24% 14%))`;
@@ -62,14 +72,18 @@ function ensureLeaflet() {
 /**
  * @param {HTMLElement} root
  * @param {{
- *   theme: 'voyager' | 'almanac' | 'memo',
+ *   theme: 'voyager' | 'almanac' | 'memo' | 'volume',
  *   places: object[],
  *   usingLiveData: boolean,
  *   authState?: string,
  *   placeHref?: (placeId: string) => string,
  *   omitMasthead?: boolean,
  *   omitBanner?: boolean,
+ *   omitChrome?: boolean,
+ *   initialState?: object,
+ *   onMeta?: (meta: object) => void,
  * }} options
+ * @returns {{ setFilters: (patch: object) => void, getState: () => object, destroy: () => void }}
  */
 export function mountPlacesBrowse(root, options) {
   const {
@@ -80,9 +94,13 @@ export function mountPlacesBrowse(root, options) {
     placeHref = (placeId) => `place.html?id=${encodeURIComponent(placeId)}`,
     omitMasthead = false,
     omitBanner = false,
+    omitChrome = false,
+    initialState = {},
+    onMeta = null,
   } = options;
 
   const TYPE_PREVIEW_COUNT = 5;
+  const hideChrome = omitChrome || omitMasthead;
 
   const state = {
     scopeKey: "world",
@@ -93,6 +111,7 @@ export function mountPlacesBrowse(root, options) {
     expandedKeys: [],
     typesExpanded: false,
     query: "",
+    ...initialState,
   };
 
   let mapInstance = null;
@@ -144,7 +163,14 @@ export function mountPlacesBrowse(root, options) {
           const marker = L.circleMarker([child.lat, child.lng], {
             radius: Math.min(18, 8 + Math.sqrt(child.total)),
             color: "#1a5b45",
-            fillColor: theme === "memo" ? "#c9a35c" : theme === "almanac" ? "#c85c34" : "#1a5b45",
+            fillColor:
+              theme === "memo"
+                ? "#c9a35c"
+                : theme === "almanac"
+                  ? "#c85c34"
+                  : theme === "volume"
+                    ? "#ff5733"
+                    : "#1a5b45",
             fillOpacity: 0.55,
             weight: 1,
           });
@@ -238,9 +264,10 @@ export function mountPlacesBrowse(root, options) {
       destroyMap();
     }
 
-    const classicLink =
-      `<p class="wf-places-classic-link">Also see the <a href="places-classic.html">original grid demo</a></p>`;
-    const banner = omitBanner
+    const classicLink = omitMasthead || omitChrome
+      ? ""
+      : `<p class="wf-places-classic-link">Also see the <a href="places-classic.html">original grid demo</a></p>`;
+    const banner = omitBanner || omitChrome
       ? ""
       : usingLiveData
         ? `<div class="wf-places-banner"><span><strong>Live atlas</strong> · TravelPlanner-dev</span></div>${classicLink}`
@@ -253,7 +280,7 @@ export function mountPlacesBrowse(root, options) {
           <button type="button" data-action="sign-in">Sign in</button>
         </div>${classicLink}`;
 
-    const masthead = omitMasthead
+    const masthead = omitMasthead || omitChrome
       ? banner
         ? `<div class="wf-places-wrap">${banner}</div>`
         : ""
@@ -275,10 +302,10 @@ export function mountPlacesBrowse(root, options) {
         ${banner}
       </div>`;
 
-    root.className = `wf-places wf-places--${theme}${omitMasthead ? " wf-places--embedded" : ""}`;
-    root.innerHTML = `
-      ${masthead}
-
+    root.className = `wf-places wf-places--${theme}${omitMasthead || omitChrome ? " wf-places--embedded" : ""}${omitChrome ? " wf-places--core" : ""}`;
+    const chrome = omitChrome
+      ? ""
+      : `
       <div class="wf-places-bar">
         <div class="wf-places-wrap wf-places-bar-inner">
           <nav class="wf-places-crumbs" aria-label="Hierarchy">
@@ -304,9 +331,11 @@ export function mountPlacesBrowse(root, options) {
             <button type="button" data-view="map" class="${state.viewMode === "map" ? "is-active" : ""}">Map</button>
           </div>
         </div>
-      </div>
+      </div>`;
 
-      <div class="wf-places-wrap">
+    const facets = omitChrome
+      ? ""
+      : `
         <div class="wf-places-facets">
           <div class="wf-places-toolbar">
             <label class="wf-places-search">
@@ -339,9 +368,52 @@ export function mountPlacesBrowse(root, options) {
               .join("")}
             ${typeOverflowControl(typeOptions)}
           </div>
-        </div>
+        </div>`;
+
+    const coreCrumbs = omitChrome
+      ? `<nav class="wf-places-crumbs wf-places-crumbs--core" aria-label="Hierarchy">
+            ${trail
+              .map(
+                (node, index) => `
+              <span>
+                ${index > 0 ? `<span class="wf-places-crumb-sep" aria-hidden="true">/</span>` : ""}
+                <button type="button" class="${node.key === scope.key ? "is-current" : ""}" data-scope="${escapeHtml(node.key)}">
+                  ${escapeHtml(node.name)}
+                </button>
+              </span>`,
+              )
+              .join("")}
+            ${
+              trail.length > 1
+                ? `<button type="button" class="wf-places-crumb-up" data-scope="${escapeHtml(trail[trail.length - 2].key)}">↑ Up one level</button>`
+                : ""
+            }
+          </nav>`
+      : "";
+
+    if (typeof onMeta === "function") {
+      onMeta({
+        mode: "places",
+        count: scope.total,
+        countLabel: "places",
+        context: trail.map((n) => n.name).join(" / "),
+        pills: typeOptions.map((option) => ({
+          key: option.category,
+          label: option.label,
+          count: option.count,
+        })),
+      });
+    }
+
+    root.innerHTML = `
+      ${masthead}
+      ${chrome}
+
+      <div class="wf-places-wrap">
+        ${facets}
 
         <div class="wf-places-body">
+          ${coreCrumbs}
           <div class="wf-places-scopebar">
             <div>
               <strong>${escapeHtml(scope.name)}</strong>
@@ -397,7 +469,7 @@ export function mountPlacesBrowse(root, options) {
                             const hero = child.place?.hero || null;
                             return `
                             <article class="wf-places-cover ${open ? "is-open" : ""}">
-                              <button type="button" class="wf-places-cover-art" style="${coverArt(child.name, hero)}"
+                              <button type="button" class="wf-places-cover-art" style="${coverArt(child.name, hero, theme)}"
                                 data-cover="${escapeHtml(child.key)}" data-place-level="${isPlace}">
                                 <span class="wf-places-cover-kicker">${escapeHtml(levelLabel(child.level))}</span>
                                 <h3>${escapeHtml(child.name)}</h3>
@@ -558,4 +630,25 @@ export function mountPlacesBrowse(root, options) {
   }
 
   render();
+
+  return {
+    setFilters(patch = {}) {
+      Object.assign(state, patch);
+      if (patch.grouping) {
+        state.scopeKey = "world";
+        state.expandedKeys = [];
+      }
+      if (patch.statusFilter || patch.typeFilter || patch.query != null) {
+        /* keep scope */
+      }
+      render();
+    },
+    getState() {
+      return { ...state, typeFilter: [...state.typeFilter], expandedKeys: [...state.expandedKeys] };
+    },
+    destroy() {
+      destroyMap();
+      root.innerHTML = "";
+    },
+  };
 }

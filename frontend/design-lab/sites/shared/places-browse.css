@@ -72,6 +72,127 @@
   background: transparent;
 }
 
+.wf-places--volume {
+  --pb-bg: transparent;
+  --pb-ink: #1a1612;
+  --pb-muted: #5c564e;
+  --pb-accent: #ff5733;
+  --pb-accent-ink: #fffaf5;
+  --pb-panel: #ffffff;
+  --pb-border: rgba(26, 22, 18, 0.1);
+  --pb-serif: "Fraunces", Georgia, serif;
+  --pb-sans: "Inter", "DM Sans", system-ui, sans-serif;
+  --pb-visited: #ff5733;
+  --pb-dream: #1a1612;
+  --pb-cover-radius: 22px;
+  background: transparent;
+}
+
+.wf-places--volume .wf-places-scopebar {
+  align-items: flex-end;
+  margin-bottom: 0.35rem;
+}
+
+.wf-places--volume .wf-places-scopebar strong {
+  display: block;
+  font-family: var(--pb-serif);
+  font-size: clamp(1.7rem, 3vw, 2.15rem);
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+  color: var(--pb-ink);
+}
+
+.wf-places--volume .wf-places-scopebar span {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.88rem;
+  color: var(--pb-muted);
+}
+
+.wf-places--volume .wf-places-legend {
+  margin-bottom: 1rem;
+  font-size: 0.82rem;
+}
+
+.wf-places--volume .wf-places-legend-note {
+  display: none;
+}
+
+.wf-places--volume .wf-places-covers {
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 0.95rem;
+}
+
+.wf-places--volume .wf-places-cover {
+  border: 0;
+  border-radius: var(--pb-cover-radius);
+  background: transparent;
+  box-shadow: none;
+  overflow: hidden;
+}
+
+.wf-places--volume .wf-places-cover-art {
+  min-height: 248px;
+  padding: 1.25rem 1.2rem 1.2rem;
+  border-radius: var(--pb-cover-radius);
+  color: #f7faf7;
+  gap: 0.45rem;
+  transition: transform 0.2s ease, filter 0.2s ease;
+}
+
+.wf-places--volume .wf-places-cover-art:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.05);
+}
+
+.wf-places--volume .wf-places-cover-kicker {
+  font-size: 0.64rem;
+  letter-spacing: 0.16em;
+  font-weight: 600;
+  opacity: 0.72;
+}
+
+.wf-places--volume .wf-places-cover-art h3 {
+  font-size: clamp(1.45rem, 2.4vw, 1.75rem);
+  letter-spacing: -0.02em;
+  line-height: 1.08;
+}
+
+.wf-places--volume .wf-places-cover-meter {
+  height: 4px;
+  margin-top: 0.2rem;
+  background: rgb(255 255 255 / 0.18);
+}
+
+.wf-places--volume .wf-places-cover-meter i {
+  background: linear-gradient(90deg, #ff8b4d, #ff5733);
+}
+
+.wf-places--volume .wf-places-cover-stats {
+  font-size: 0.74rem;
+  opacity: 0.82;
+  letter-spacing: 0.01em;
+}
+
+.wf-places--volume .wf-places-cover-chips {
+  padding: 0.75rem 0.15rem 0.15rem;
+}
+
+.wf-places--volume .wf-places-cover-chips button {
+  background: #fff;
+  border-color: rgba(26, 22, 18, 0.1);
+  color: var(--pb-ink);
+}
+
+.wf-places--volume .wf-places-dot.dream {
+  background: #1a1612;
+}
+
+.wf-places--volume .wf-places-crumbs--core {
+  margin-bottom: 1rem;
+}
+
 .wf-places--embedded {
   min-height: 0;
   padding-bottom: 2rem;

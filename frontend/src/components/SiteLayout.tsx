@@ -16,7 +16,7 @@ export interface SiteLayoutProps {
   children: ReactNode;
 }
 
-/** Single dark chrome shell — every route shares home’s ground and copy colors. */
+/** Site chrome shell — tone follows brand mode (Volume defaults to light). */
 export function SiteLayout({
   isAdmin = false,
   postCount,

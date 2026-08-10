@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Wanderfile Design Lab — Three Sites</title>
+    <title>Wanderfile Design Lab — Four Sites</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
@@ -54,7 +54,7 @@
       }
       .grid {
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(2, 1fr);
         gap: 18px;
       }
       .card {
@@ -134,19 +134,25 @@
       @media (max-width: 820px) {
         .grid { grid-template-columns: 1fr; }
       }
+      @media (min-width: 821px) {
+        .grid { grid-template-columns: repeat(2, 1fr); }
+      }
+      @media (min-width: 1100px) {
+        .grid { grid-template-columns: repeat(4, 1fr); }
+      }
     </style>
   </head>
   <body>
     <div class="wrap">
       <p class="kicker">Design Lab · Round 2</p>
-      <h1>Three complete websites.</h1>
+      <h1>Four complete websites.</h1>
       <p class="lede">
         Same product loop — paste links, browse posts, explore places, log visits —
-        rebuilt three times from scratch, each following a different visual language.
+        rebuilt from scratch, each following a different visual language.
       </p>
       <div class="meta">
-        <span>3 multi-page sites</span>
-        <span>Home · Posts · Places · Detail · Add · Trips · Search</span>
+        <span>4 multi-page sites</span>
+        <span>Home · Posts · Places · Detail · Add</span>
         <span>Pick a direction</span>
       </div>
 
@@ -213,12 +219,33 @@
           </div>
           <span class="cta">Open site →</span>
         </a>
+
+        <a class="card" href="sites/04-volume/index.html">
+          <div class="swatch-row">
+            <i style="background:#faf8f4"></i>
+            <i style="background:#ff5733"></i>
+            <i style="background:#1f3a2c"></i>
+            <i style="background:#0d1510"></i>
+          </div>
+          <span class="num">Site 04</span>
+          <h2>Volume</h2>
+          <p>
+            Bento-hero product home — orange gradient title tile, live reel photos + stats,
+            then Places and Posts expand as library panels below the bento.
+          </p>
+          <div class="tags">
+            <span>bento</span>
+            <span>product</span>
+            <span>panels</span>
+          </div>
+          <span class="cta">Open site →</span>
+        </a>
       </div>
 
       <p class="note">
-        Each site is a full multi-page prototype with shared mock data — not a single-page
-        concept. Open one, click through Posts and Places, and note what should survive
-        into production.
+        Each site is a full prototype with shared mock data — not a single-page concept.
+        Open one, click through Posts and Places, and note what should survive into production.
+        Volume expands Places and Posts as panels under a permanent bento hero.
       </p>
 
       <div style="margin-top:48px;padding-top:32px;border-top:1px solid #2a3330;display:grid;grid-template-columns:repeat(2,1fr);gap:14px">
@@ -228,7 +255,7 @@
           <h2>20 quieter filter patterns</h2>
           <p>
             Same places facets (group / status / type / search) explored as toolbars,
-            drawers, command palettes, sentences, and more — without changing the three sites.
+            drawers, command palettes, sentences, and more — without changing the complete sites.
           </p>
           <span class="cta">Browse filter demos →</span>
         </a>

@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>05 · Glass on mesh — Places Page Lab</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,300;1,9..144,400;1,9..144,500&family=Inter:wght@400;500;600;700;800&family=Instrument+Serif:ital@0;1&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../sites/shared/places-browse.css" />
+  <link rel="stylesheet" href="../shared/shell.css" />
+  <style>
+
+body {
+  color: #1a1612; font-family: "Inter", var(--a-sans);
+  background: #f0eae0;
+  min-height: 100vh; overflow-x: hidden;
+}
+body::before {
+  content: ""; position: fixed; inset: -20%; z-index: 0; pointer-events: none;
+  background:
+    radial-gradient(circle at 20% 30%, #ff9060 0%, transparent 30%),
+    radial-gradient(circle at 80% 20%, #f7d066 0%, transparent 35%),
+    radial-gradient(circle at 70% 80%, #d94a1f 0%, transparent 35%),
+    radial-gradient(circle at 30% 90%, #5d6b8a 0%, transparent 30%),
+    radial-gradient(circle at 50% 50%, #ffb388 0%, transparent 40%);
+  filter: blur(80px) saturate(1.2);
+  animation: gm-drift 24s ease-in-out infinite alternate;
+}
+@keyframes gm-drift {
+  0%   { transform: translate(0, 0) rotate(0); }
+  50%  { transform: translate(-4%, 3%) rotate(3deg); }
+  100% { transform: translate(3%, -2%) rotate(-2deg); }
+}
+.gm-content { position: relative; z-index: 1; }
+.gm-topbar {
+  max-width: 1400px; margin: 0 auto; padding: 24px 28px; display: flex; justify-content: space-between; align-items: center;
+}
+.gm-topbar .brand {
+  display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 0.9rem;
+  padding: 8px 14px; background: rgba(255,255,255,0.55); backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.6); border-radius: 999px;
+}
+.gm-topbar .brand .mark {
+  width: 20px; height: 20px; border-radius: 6px; background: #d94a1f; color: white;
+  display: grid; place-items: center; font-family: var(--a-serif); font-style: italic; font-size: 0.85rem;
+}
+.gm-topbar nav { display: flex; gap: 4px; padding: 4px; background: rgba(255,255,255,0.55); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.6); border-radius: 999px; }
+.gm-topbar nav a { padding: 7px 14px; font-size: 0.78rem; color: #4a413a; text-decoration: none; border-radius: 999px; font-weight: 500; }
+.gm-topbar nav a.is-on { background: #1a1612; color: white; }
+.gm-hero {
+  max-width: 1400px; margin: 40px auto 24px; padding: 0 28px; text-align: center;
+}
+.gm-hero .k {
+  display: inline-block; padding: 6px 14px; background: rgba(255,255,255,0.55); backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.6); border-radius: 999px;
+  font-size: 0.68rem; letter-spacing: 0.2em; text-transform: uppercase; color: #4a413a; font-weight: 700;
+}
+.gm-hero h1 {
+  margin: 20px 0 0; font-family: var(--a-serif); font-weight: 300; font-style: italic;
+  font-size: clamp(3rem, 8vw, 6rem); line-height: 0.95; letter-spacing: -0.03em; color: #1a1612;
+}
+.gm-hero p { margin: 20px auto 0; max-width: 42ch; color: #4a413a; font-size: 1.02rem; line-height: 1.55; }
+.gm-glass {
+  max-width: 1300px; margin: 40px auto 60px; padding: 20px;
+  background: rgba(255,255,255,0.6); backdrop-filter: blur(28px) saturate(1.2);
+  border: 1px solid rgba(255,255,255,0.7); border-radius: 28px;
+  box-shadow: 0 30px 80px -20px rgba(150,80,40,0.25), inset 0 1px 0 rgba(255,255,255,0.8);
+}
+.wf-places--embedded {
+  --pb-bg: transparent;
+  --pb-panel: rgba(255,255,255,0.75); --pb-border: rgba(255,255,255,0.55);
+}
+.wf-places--almanac.wf-places--embedded .wf-places-bar { background: color-mix(in srgb, #fff9f2 65%, transparent); backdrop-filter: blur(20px); }
+
+  </style>
+</head>
+<body>
+  <header class="lab-top">
+    <a href="../index.html">← Places Page Lab</a>
+    <nav class="lab-top-nav" aria-label="Structure pager">
+      <a href="04-marquee-ribbon.html">← Back</a>
+      <span class="pattern">Structure 05 / 20</span>
+      <a href="06-dashboard.html">Next →</a>
+    </nav>
+    <a href="../../index.html">Design Lab</a>
+  </header>
+
+  <div class="gm-content">
+    <div class="gm-topbar">
+      <a class="brand" href="../../sites/02-almanac/index.html"><span class="mark">A</span>Almanac</a>
+      
+  <nav class="modern-nav" aria-label="Primary">
+    <a href="../../sites/02-almanac/index.html">Discover</a>
+    <a href="../../sites/02-almanac/posts.html">Posts</a>
+    <a class="is-on" href="#">Places</a>
+    <a href="../../sites/02-almanac/history.html">Journal</a>
+    <a href="../../sites/02-almanac/add.html">Add</a>
+  </nav>
+    </div>
+    <section class="gm-hero">
+      <span class="k">Places · atlas</span>
+      <h1>The atlas, floating in warmth.</h1>
+      <p>Filter, group, and browse everywhere your library has ever pointed — the panel below is fully live.</p>
+    </section>
+    <div class="gm-glass"><div id="wf-places-root" class="wf-places wf-places--almanac wf-places--embedded"><div class="wf-places-loading">Loading atlas…</div></div></div>
+  </div>
+  <nav class="lab-bottom-nav" aria-label="Structure pager">
+    <a href="04-marquee-ribbon.html">← Marquee ribbon</a>
+    <span class="hint">← → keys</span>
+    <a href="06-dashboard.html">Product dashboard →</a>
+  </nav>
+  <script>window.WF_SITE = { id: "02-almanac", title: "Almanac", page: "places-structure" };</script>
+  <script src="../../sites/shared/mock.js"></script>
+  <script type="module" src="../shared/mount.js"></script>
+  <script type="module">
+    const prev = "04-marquee-ribbon.html";
+    const next = "06-dashboard.html";
+    window.addEventListener("keydown", (event) => {
+      if (event.defaultPrevented) return;
+      const tag = (event.target && event.target.tagName) || "";
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || event.target?.isContentEditable) return;
+      if (event.key === "ArrowLeft" && prev) location.href = prev;
+      if (event.key === "ArrowRight" && next) location.href = next;
+    });
+  </script>
+</body>
+</html>

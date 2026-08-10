@@ -127,13 +127,19 @@ function filterPosts(posts, { platform, ringKey, query }) {
 /**
  * @param {HTMLElement} root
  * @param {{
- *   theme: 'voyager' | 'almanac' | 'memo',
+ *   theme: 'voyager' | 'almanac' | 'memo' | 'volume',
  *   posts: object[],
  *   usingLiveData: boolean,
  *   authState?: string,
  *   postHref?: (post) => string,
  *   placeHref?: (placeId: string) => string,
+ *   omitMasthead?: boolean,
+ *   omitBanner?: boolean,
+ *   omitChrome?: boolean,
+ *   initialState?: object,
+ *   onMeta?: (meta: object) => void,
  * }} options
+ * @returns {{ setFilters: (patch: object) => void, getState: () => object, destroy: () => void }}
  */
 export function mountPostsBrowse(root, options) {
   const {
@@ -143,6 +149,11 @@ export function mountPostsBrowse(root, options) {
     authState = usingLiveData ? "signed-in" : "signed-out",
     postHref = (post) => `post.html?id=${encodeURIComponent(post.key)}`,
     placeHref = (placeId) => `place.html?id=${encodeURIComponent(placeId)}`,
+    omitMasthead = false,
+    omitBanner = false,
+    omitChrome = false,
+    initialState = {},
+    onMeta = null,
   } = options;
 
   const state = {
@@ -151,6 +162,7 @@ export function mountPostsBrowse(root, options) {
     query: "",
     deckMode: "deck",
     openEraKey: null,
+    ...initialState,
   };
 
   function platformPosts() {
@@ -179,10 +191,12 @@ export function mountPostsBrowse(root, options) {
     const openLabel =
       eras.find((e) => e.key === state.openEraKey)?.label || "All months";
 
-    const classicLink =
-      `<p class="wf-posts-classic-link">Also see the <a href="posts-classic.html">original grid demo</a></p>`;
-    const banner =
-      usingLiveData
+    const classicLink = omitMasthead || omitChrome
+      ? ""
+      : `<p class="wf-posts-classic-link">Also see the <a href="posts-classic.html">original grid demo</a></p>`;
+    const banner = omitBanner || omitChrome
+      ? ""
+      : usingLiveData
         ? `<div class="wf-posts-banner"><span><strong>Live library</strong> · TravelPlanner-dev</span></div>${classicLink}`
         : `<div class="wf-posts-banner">
             <span><strong>Sample data</strong> · ${
@@ -193,10 +207,11 @@ export function mountPostsBrowse(root, options) {
             <button type="button" data-action="sign-in">Sign in</button>
           </div>${classicLink}`;
 
-    root.className = `wf-posts wf-posts--${theme}`;
-    root.dataset.mode = state.deckMode;
-    root.innerHTML = `
-      <div class="wf-posts-wrap">
+    const masthead = omitMasthead || omitChrome
+      ? banner
+        ? `<div class="wf-posts-wrap">${banner}</div>`
+        : ""
+      : `<div class="wf-posts-wrap">
         <div class="wf-posts-masthead">
           <div>
             <p class="wf-posts-eyebrow">Your library</p>
@@ -211,8 +226,11 @@ export function mountPostsBrowse(root, options) {
           </div>
         </div>
         ${banner}
-      </div>
+      </div>`;
 
+    const chrome = omitChrome
+      ? ""
+      : `
       <div class="wf-posts-bar">
         <div class="wf-posts-wrap wf-posts-bar-inner">
           <p class="wf-posts-context">${escapeHtml(openLabel)}</p>
@@ -221,32 +239,54 @@ export function mountPostsBrowse(root, options) {
             <button type="button" data-mode="grid" class="${state.deckMode === "grid" ? "is-active" : ""}">Grid</button>
           </div>
         </div>
-      </div>
+      </div>`;
 
-      <div class="wf-posts-wrap">
+    const facets = omitChrome
+      ? ""
+      : `
         <div class="wf-posts-facets">
-          <div class="wf-posts-facet-row" role="tablist" aria-label="Platform filter">
-            <span class="wf-posts-facet-label">Platform</span>
-            ${PLATFORMS.map(
-              (p) => `
-              <button type="button" role="tab" class="wf-posts-pill ${state.platform === p ? "is-active" : ""}" data-platform="${p}" aria-selected="${state.platform === p}">
-                ${p}
-              </button>`,
-            ).join("")}
-          </div>
-          <div class="wf-posts-facet-row">
-            <span class="wf-posts-facet-label">Search</span>
+          <div class="wf-posts-toolbar">
             <label class="wf-posts-search">
               <input type="search" value="${escapeHtml(state.query)}" placeholder="Title, place, tag…" aria-label="Search saves" data-search />
             </label>
+            <div class="wf-posts-seg wf-posts-seg--primary" role="group" aria-label="Platform filter">
+              ${PLATFORMS.map(
+                (p) => `
+              <button type="button" class="${state.platform === p ? "is-active" : ""}" data-platform="${p}">
+                ${p === "all" ? "Everything" : p}
+              </button>`,
+              ).join("")}
+            </div>
           </div>
-        </div>
+          <div class="wf-posts-types" role="group" aria-label="Place filter">
+            ${rings
+              .map(
+                (ring) => `
+              <button type="button" class="wf-posts-pill ${state.ringKey === ring.key ? "is-active" : ""} ${ring.key === "all" ? "is-soft" : ""}" data-ring="${escapeHtml(ring.key)}">
+                ${escapeHtml(ring.label)}<span class="count">${ring.count}</span>
+              </button>`,
+              )
+              .join("")}
+          </div>
+        </div>`;
 
-        <div class="wf-posts-body">
-          ${
-            allPosts.length === 0
-              ? `<div class="wf-posts-empty"><p>No saves yet. Paste a link from Add.</p></div>`
-              : `
+    if (typeof onMeta === "function") {
+      onMeta({
+        mode: "posts",
+        count: filtered.length,
+        countLabel: "saves",
+        context: openLabel,
+        pills: rings.map((ring) => ({
+          key: ring.key,
+          label: ring.label,
+          count: ring.count,
+        })),
+      });
+    }
+
+    const ringsBlock = omitChrome
+      ? ""
+      : `
             <div class="wf-posts-rings" role="tablist" aria-label="Place filter">
               ${rings
                 .map(
@@ -265,7 +305,23 @@ export function mountPostsBrowse(root, options) {
                 </button>`,
                 )
                 .join("")}
-            </div>
+            </div>`;
+
+    root.className = `wf-posts wf-posts--${theme}${omitMasthead || omitChrome ? " wf-posts--embedded" : ""}${omitChrome ? " wf-posts--core" : ""}`;
+    root.dataset.mode = state.deckMode;
+    root.innerHTML = `
+      ${masthead}
+      ${chrome}
+
+      <div class="wf-posts-wrap">
+        ${facets}
+
+        <div class="wf-posts-body">
+          ${
+            allPosts.length === 0
+              ? `<div class="wf-posts-empty"><p>No saves yet. Paste a link from Add.</p></div>`
+              : `
+            ${ringsBlock}
             ${
               filtered.length === 0
                 ? `<p class="wf-posts-empty">No posts in this filter.</p>`
@@ -402,4 +458,20 @@ export function mountPostsBrowse(root, options) {
   }
 
   render();
+
+  return {
+    setFilters(patch = {}) {
+      Object.assign(state, patch);
+      if (patch.platform || patch.ringKey || patch.query != null) {
+        state.openEraKey = null;
+      }
+      render();
+    },
+    getState() {
+      return { ...state };
+    },
+    destroy() {
+      root.innerHTML = "";
+    },
+  };
 }

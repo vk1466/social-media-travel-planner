@@ -12,7 +12,7 @@
   /* Semantic page copy — light ground */
   --wf-copy: var(--wf-ink);
   --wf-copy-muted: var(--wf-quiet);
-  --wf-copy-accent: var(--wf-sage);
+  --wf-copy-accent: var(--wf-mint);
   --wf-chrome-bg: var(--wf-bg);
   --wf-chrome-panel: var(--wf-surface);
   --wf-chrome-panel-muted: var(--wf-surface-muted);

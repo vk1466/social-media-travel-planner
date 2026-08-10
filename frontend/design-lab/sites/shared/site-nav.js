@@ -10,6 +10,7 @@
     { id: "01-voyager", label: "01 · Voyager" },
     { id: "02-almanac", label: "02 · Almanac" },
     { id: "03-memo", label: "03 · Memo" },
+    { id: "04-volume", label: "04 · Volume" },
   ];
 
   function ready(fn) {

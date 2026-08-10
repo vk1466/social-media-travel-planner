@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>01 · Bento hero — Places Page Lab</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,300;1,9..144,400;1,9..144,500&family=Inter:wght@400;500;600;700;800&family=Instrument+Serif:ital@0;1&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../sites/shared/places-browse.css" />
+  <link rel="stylesheet" href="../shared/shell.css" />
+  <style>
+
+body { background: #f5f2ec; color: #1a1612; font-family: "Inter", var(--a-sans); }
+.bt-topbar {
+  max-width: 1400px; margin: 0 auto; padding: 1.25rem 24px 1rem;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.bt-topbar .brand {
+  display: flex; align-items: center; gap: 8px;
+  font-family: "Inter", sans-serif; font-weight: 700; font-size: 1rem; letter-spacing: -0.01em;
+}
+.bt-topbar .brand .dot {
+  width: 22px; height: 22px; border-radius: 8px;
+  background: linear-gradient(135deg, #ff6b3d, #d94a1f);
+  display: grid; place-items: center; color: white; font-family: var(--a-serif); font-style: italic; font-size: 0.9rem;
+}
+.modern-nav {
+  display: flex; align-items: center; gap: 4px;
+  padding: 4px; background: rgba(255,255,255,0.7); backdrop-filter: blur(20px);
+  border: 1px solid rgba(26,22,18,0.08); border-radius: 999px;
+}
+.modern-nav a {
+  padding: 8px 14px; font-size: 0.82rem; font-weight: 500;
+  color: #4a413a; text-decoration: none; border-radius: 999px;
+}
+.modern-nav a.is-on { background: #1a1612; color: white; }
+.bt-grid {
+  max-width: 1400px; margin: 0 auto; padding: 0 24px 1.5rem;
+  display: grid; grid-template-columns: repeat(4, 1fr); grid-auto-rows: 200px; gap: 12px;
+}
+.bt-tile {
+  border-radius: 20px; overflow: hidden; position: relative;
+  background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  transition: transform 0.2s ease;
+}
+.bt-tile:hover { transform: translateY(-2px); }
+.bt-tile img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.bt-tile.wide { grid-column: span 2; }
+.bt-tile.tall { grid-row: span 2; }
+.bt-tile.data {
+  background: #1a1612; color: #fff;
+  padding: 24px; display: flex; flex-direction: column; justify-content: space-between;
+}
+.bt-tile.data .val {
+  font-family: var(--a-serif); font-style: italic; font-weight: 400;
+  font-size: 4rem; line-height: 0.9; letter-spacing: -0.03em;
+}
+.bt-tile.data .val em { color: #ff6b3d; }
+.bt-tile.data .lbl {
+  font-size: 0.68rem; letter-spacing: 0.18em; text-transform: uppercase; color: rgba(255,255,255,0.6); font-weight: 600;
+}
+.bt-tile.title {
+  background: linear-gradient(135deg, #ff8b4d 0%, #ff6b3d 50%, #d94a1f 100%);
+  color: #fff; padding: 28px;
+  display: flex; flex-direction: column; justify-content: space-between;
+}
+.bt-tile.title h1 {
+  margin: 0; font-family: var(--a-serif); font-style: italic; font-weight: 400;
+  font-size: clamp(2.4rem, 4vw, 3.4rem); line-height: 0.95; letter-spacing: -0.03em;
+}
+.bt-tile.title .k { font-size: 0.7rem; letter-spacing: 0.2em; text-transform: uppercase; font-weight: 700; opacity: 0.85; }
+.bt-tile .caption {
+  position: absolute; left: 14px; bottom: 14px;
+  background: rgba(0,0,0,0.55); backdrop-filter: blur(10px);
+  color: #fff; font-size: 0.72rem; font-weight: 600; padding: 5px 10px; border-radius: 8px;
+  letter-spacing: 0.02em;
+}
+.wf-places--embedded {
+  --pb-panel: #ffffff; --pb-border: rgba(26,22,18,0.08);
+}
+@media (max-width: 900px) { .bt-grid { grid-template-columns: repeat(2, 1fr); } .bt-tile.wide { grid-column: span 2; } }
+
+  </style>
+</head>
+<body>
+  <header class="lab-top">
+    <a href="../index.html">← Places Page Lab</a>
+    <nav class="lab-top-nav" aria-label="Structure pager">
+      <a href="#" aria-disabled="true" tabindex="-1">← Back</a>
+      <span class="pattern">Structure 01 / 20</span>
+      <a href="02-cinema-poster.html">Next →</a>
+    </nav>
+    <a href="../../index.html">Design Lab</a>
+  </header>
+
+  <div class="bt-topbar">
+    <a class="brand" href="../../sites/02-almanac/index.html"><span class="dot">A</span>Almanac</a>
+    
+  <nav class="modern-nav" aria-label="Primary">
+    <a href="../../sites/02-almanac/index.html">Discover</a>
+    <a href="../../sites/02-almanac/posts.html">Posts</a>
+    <a class="is-on" href="#">Places</a>
+    <a href="../../sites/02-almanac/history.html">Journal</a>
+    <a href="../../sites/02-almanac/add.html">Add</a>
+  </nav>
+  </div>
+  <div class="bt-grid">
+    <div class="bt-tile title wide tall">
+      <span class="k">Volume · IV</span>
+      <h1>Places<br/>you keep<br/><em>coming back to.</em></h1>
+    </div>
+    <div class="bt-tile"><img src="https://images.unsplash.com/photo-1523592121529-f6dde35f079e?w=2000&h=1200&fit=crop&auto=format&q=80" alt=""/><span class="caption">Cappadocia</span></div>
+    <div class="bt-tile"><img src="https://images.unsplash.com/photo-1533106497176-45ae19e68ba2?w=1200&h=1600&fit=crop&auto=format&q=80" alt=""/><span class="caption">Positano</span></div>
+    <div class="bt-tile data">
+      <span class="lbl">Saved</span>
+      <span class="val">248</span>
+    </div>
+    <div class="bt-tile"><img src="https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=1600&h=1000&fit=crop&auto=format&q=80" alt=""/><span class="caption">Kyoto</span></div>
+    <div class="bt-tile"><img src="https://images.unsplash.com/photo-1533105079780-92b9be482077?w=1800&h=1100&fit=crop&auto=format&q=80" alt=""/><span class="caption">Santorini</span></div>
+    <div class="bt-tile data">
+      <span class="lbl">Visited so far</span>
+      <span class="val"><em>62</em></span>
+    </div>
+    <div class="bt-tile wide"><img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=2000&h=1200&fit=crop&auto=format&q=80" alt=""/><span class="caption">Nærøyfjord</span></div>
+  </div>
+  <div id="wf-places-root" class="wf-places wf-places--almanac wf-places--embedded"><div class="wf-places-loading">Loading atlas…</div></div>
+  <nav class="lab-bottom-nav" aria-label="Structure pager">
+    <a href="#" aria-disabled="true" tabindex="-1">← Back</a>
+    <span class="hint">← → keys</span>
+    <a href="02-cinema-poster.html">Cinema poster →</a>
+  </nav>
+  <script>window.WF_SITE = { id: "02-almanac", title: "Almanac", page: "places-structure" };</script>
+  <script src="../../sites/shared/mock.js"></script>
+  <script type="module" src="../shared/mount.js"></script>
+  <script type="module">
+    const prev = null;
+    const next = "02-cinema-poster.html";
+    window.addEventListener("keydown", (event) => {
+      if (event.defaultPrevented) return;
+      const tag = (event.target && event.target.tagName) || "";
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || event.target?.isContentEditable) return;
+      if (event.key === "ArrowLeft" && prev) location.href = prev;
+      if (event.key === "ArrowRight" && next) location.href = next;
+    });
+  </script>
+</body>
+</html>

@@ -1928,7 +1928,7 @@
 }
 
 .pl2-cover {
-  border-radius: 16px;
+  border-radius: 20px;
   overflow: hidden;
   border: 1px solid var(--pl2-border);
   background: var(--pl2-panel);

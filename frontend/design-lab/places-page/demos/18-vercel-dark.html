@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>18 · Vercel dark — Places Page Lab</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,300;1,9..144,400;1,9..144,500&family=Inter:wght@400;500;600;700;800&family=Instrument+Serif:ital@0;1&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../sites/shared/places-browse.css" />
+  <link rel="stylesheet" href="../shared/shell.css" />
+  <style>
+
+body {
+  background: #000; color: #fafafa; font-family: "Inter", var(--a-sans); overflow-x: hidden;
+}
+.vd-glow {
+  position: absolute; top: 0; left: 0; right: 0; height: 700px; pointer-events: none; overflow: hidden;
+}
+.vd-glow::before {
+  content: ""; position: absolute; top: -300px; left: 50%; transform: translateX(-50%);
+  width: 900px; height: 900px; border-radius: 50%;
+  background: radial-gradient(circle, #a855f7 0%, transparent 70%);
+  filter: blur(80px); opacity: 0.45;
+}
+.vd-glow::after {
+  content: ""; position: absolute; top: -100px; right: -100px;
+  width: 500px; height: 500px; border-radius: 50%;
+  background: radial-gradient(circle, #06b6d4 0%, transparent 70%);
+  filter: blur(70px); opacity: 0.4;
+}
+.vd-topbar {
+  position: relative; z-index: 3;
+  max-width: 1400px; margin: 0 auto; padding: 20px 28px;
+  display: flex; justify-content: space-between; align-items: center;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.vd-topbar .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 0.9rem; letter-spacing: -0.01em; }
+.vd-topbar .brand .mark {
+  width: 22px; height: 22px; border-radius: 6px;
+  background: linear-gradient(135deg, #a855f7, #06b6d4);
+  display: grid; place-items: center; font-family: var(--a-serif); font-style: italic; font-size: 0.9rem; color: white;
+}
+.vd-topbar nav { display: flex; gap: 4px; padding: 3px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 999px; }
+.vd-topbar nav a { padding: 6px 12px; font-size: 0.78rem; color: rgba(255,255,255,0.6); text-decoration: none; border-radius: 999px; font-weight: 500; }
+.vd-topbar nav a.is-on { background: rgba(255,255,255,0.1); color: #fff; }
+.vd-hero {
+  position: relative; z-index: 2;
+  max-width: 1200px; margin: 80px auto 40px; padding: 0 28px; text-align: center;
+}
+.vd-hero .badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 5px 12px 5px 5px; border-radius: 999px;
+  background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+  font-size: 0.76rem; color: rgba(255,255,255,0.75); font-weight: 500;
+}
+.vd-hero .badge .pill {
+  background: linear-gradient(135deg, #a855f7, #06b6d4); color: white;
+  padding: 3px 10px; border-radius: 999px; font-size: 0.68rem; font-weight: 700;
+}
+.vd-hero h1 {
+  margin: 24px auto 0; font-family: "Inter"; font-weight: 700;
+  font-size: clamp(3rem, 8vw, 6rem); line-height: 1.02; letter-spacing: -0.045em;
+  background: linear-gradient(180deg, #fff 30%, rgba(255,255,255,0.55) 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  max-width: 16ch;
+}
+.vd-hero p { margin: 24px auto 0; max-width: 46ch; color: rgba(255,255,255,0.55); font-size: 1.02rem; line-height: 1.55; }
+.vd-hero .ctas { margin-top: 30px; display: inline-flex; gap: 10px; }
+.vd-hero .ctas a {
+  padding: 10px 20px; border-radius: 999px; font-size: 0.85rem; font-weight: 600; text-decoration: none;
+}
+.vd-hero .ctas .primary {
+  background: white; color: #000;
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.1);
+}
+.vd-hero .ctas .ghost { background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.85); border: 1px solid rgba(255,255,255,0.1); }
+.vd-frame {
+  position: relative; z-index: 2;
+  max-width: 1400px; margin: 40px auto 40px; padding: 0 28px;
+}
+.vd-frame .inner {
+  background: rgba(10,10,12,0.6); backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; overflow: hidden;
+  box-shadow: 0 40px 100px -20px rgba(168,85,247,0.15);
+}
+.wf-places--embedded {
+  --pb-bg: transparent; --pb-ink: #fafafa; --pb-muted: rgba(255,255,255,0.55);
+  --pb-panel: rgba(255,255,255,0.04); --pb-border: rgba(255,255,255,0.1);
+  --pb-accent: #a855f7; --pb-accent-ink: #fff;
+}
+.wf-places--almanac.wf-places--embedded .wf-places-bar { background: color-mix(in srgb, #000 88%, transparent); }
+
+  </style>
+</head>
+<body>
+  <header class="lab-top">
+    <a href="../index.html">← Places Page Lab</a>
+    <nav class="lab-top-nav" aria-label="Structure pager">
+      <a href="17-rich-editorial.html">← Back</a>
+      <span class="pattern">Structure 18 / 20</span>
+      <a href="19-poster-wall.html">Next →</a>
+    </nav>
+    <a href="../../index.html">Design Lab</a>
+  </header>
+
+  <div class="vd-glow"></div>
+  <div class="vd-topbar">
+    <a class="brand" href="../../sites/02-almanac/index.html"><span class="mark">A</span>Almanac</a>
+    
+  <nav class="modern-nav" aria-label="Primary">
+    <a href="../../sites/02-almanac/index.html">Discover</a>
+    <a href="../../sites/02-almanac/posts.html">Posts</a>
+    <a class="is-on" href="#">Places</a>
+    <a href="../../sites/02-almanac/history.html">Journal</a>
+    <a href="../../sites/02-almanac/add.html">Add</a>
+  </nav>
+  </div>
+  <section class="vd-hero">
+    <div class="badge"><span class="pill">Live</span><span>248 places · synced from your library</span></div>
+    <h1>The travel atlas, engineered.</h1>
+    <p>A precise, filterable index of every destination you've saved. Fast, dark, and one keystroke away.</p>
+    <div class="ctas">
+      <a class="primary" href="#atlas">Open atlas →</a>
+      <a class="ghost" href="../../sites/02-almanac/add.html">Add a link</a>
+    </div>
+  </section>
+  <div class="vd-frame" id="atlas"><div class="inner"><div id="wf-places-root" class="wf-places wf-places--almanac wf-places--embedded"><div class="wf-places-loading">Loading atlas…</div></div></div></div>
+  <nav class="lab-bottom-nav" aria-label="Structure pager">
+    <a href="17-rich-editorial.html">← Rich editorial</a>
+    <span class="hint">← → keys</span>
+    <a href="19-poster-wall.html">Poster wall →</a>
+  </nav>
+  <script>window.WF_SITE = { id: "02-almanac", title: "Almanac", page: "places-structure" };</script>
+  <script src="../../sites/shared/mock.js"></script>
+  <script type="module" src="../shared/mount.js"></script>
+  <script type="module">
+    const prev = "17-rich-editorial.html";
+    const next = "19-poster-wall.html";
+    window.addEventListener("keydown", (event) => {
+      if (event.defaultPrevented) return;
+      const tag = (event.target && event.target.tagName) || "";
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || event.target?.isContentEditable) return;
+      if (event.key === "ArrowLeft" && prev) location.href = prev;
+      if (event.key === "ArrowRight" && next) location.href = next;
+    });
+  </script>
+</body>
+</html>

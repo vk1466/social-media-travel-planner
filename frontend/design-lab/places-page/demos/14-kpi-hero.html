@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>14 · KPI hero — Places Page Lab</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,300;1,9..144,400;1,9..144,500&family=Inter:wght@400;500;600;700;800&family=Instrument+Serif:ital@0;1&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../sites/shared/places-browse.css" />
+  <link rel="stylesheet" href="../shared/shell.css" />
+  <style>
+
+body { background: #f5f2ec; color: #1a1612; font-family: "Inter", var(--a-sans); }
+.kh-topbar {
+  max-width: 1400px; margin: 0 auto; padding: 20px 28px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.kh-topbar .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 0.92rem; }
+.kh-topbar .brand .mark { width: 24px; height: 24px; border-radius: 8px; background: #1a1612; color: white; display: grid; place-items: center; font-family: var(--a-serif); font-style: italic; font-size: 0.95rem; }
+.kh-hero {
+  max-width: 1400px; margin: 20px auto 24px; padding: 0 28px;
+}
+.kh-hero-top {
+  display: grid; grid-template-columns: 1.4fr 1fr; gap: 32px; align-items: end; margin-bottom: 32px;
+}
+.kh-hero-top .k { font-size: 0.7rem; letter-spacing: 0.22em; text-transform: uppercase; color: #8a7d6f; font-weight: 700; }
+.kh-hero-top h1 {
+  margin: 12px 0 0; font-family: var(--a-serif); font-weight: 300; font-style: italic;
+  font-size: clamp(3rem, 7vw, 5.5rem); line-height: 0.95; letter-spacing: -0.03em;
+}
+.kh-hero-top p { margin: 0; color: #4a413a; font-size: 1.02rem; line-height: 1.55; max-width: 42ch; }
+.kh-kpi { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.kh-kpi .card {
+  padding: 22px; background: white; border-radius: 20px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  position: relative; overflow: hidden;
+  transition: transform 0.2s ease;
+}
+.kh-kpi .card:hover { transform: translateY(-2px); }
+.kh-kpi .card .lbl { font-size: 0.66rem; letter-spacing: 0.16em; text-transform: uppercase; color: #8a7d6f; font-weight: 700; }
+.kh-kpi .card .val {
+  margin-top: 8px; font-family: var(--a-serif); font-weight: 300; font-style: italic;
+  font-size: 3.6rem; line-height: 0.9; letter-spacing: -0.03em; color: #1a1612;
+}
+.kh-kpi .card .val small { font-family: "Inter"; font-style: normal; font-weight: 500; font-size: 1rem; color: #8a7d6f; letter-spacing: 0; }
+.kh-kpi .card .foot { margin-top: 14px; display: flex; justify-content: space-between; align-items: center; font-size: 0.78rem; color: #4a413a; }
+.kh-kpi .card .foot .delta { color: #16a34a; font-weight: 600; }
+.kh-kpi .card .foot .delta.warn { color: #d94a1f; }
+.kh-kpi .card.hero {
+  background: linear-gradient(135deg, #ff8b4d 0%, #d94a1f 100%);
+  color: white; grid-column: span 2;
+  padding: 22px 26px;
+}
+.kh-kpi .card.hero .lbl, .kh-kpi .card.hero .foot { color: rgba(255,255,255,0.75); }
+.kh-kpi .card.hero .val { color: white; }
+.kh-kpi .card.hero .val small { color: rgba(255,255,255,0.75); }
+.kh-kpi .card.hero .foot .delta { color: white; }
+.kh-kpi .card .spark {
+  position: absolute; right: -10px; bottom: -10px; width: 120px; height: 60px; opacity: 0.3;
+}
+.kh-atlas {
+  max-width: 1400px; margin: 32px auto 0; padding: 0 28px 20px;
+}
+.kh-atlas .frame {
+  background: white; border-radius: 20px; overflow: hidden;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+}
+.wf-places--embedded { --pb-panel: #fff; --pb-border: #eee; }
+@media (max-width: 900px) {
+  .kh-hero-top { grid-template-columns: 1fr; }
+  .kh-kpi { grid-template-columns: repeat(2, 1fr); }
+  .kh-kpi .card.hero { grid-column: span 2; }
+}
+
+  </style>
+</head>
+<body>
+  <header class="lab-top">
+    <a href="../index.html">← Places Page Lab</a>
+    <nav class="lab-top-nav" aria-label="Structure pager">
+      <a href="13-cinematic-bleed.html">← Back</a>
+      <span class="pattern">Structure 14 / 20</span>
+      <a href="15-marketing-bold.html">Next →</a>
+    </nav>
+    <a href="../../index.html">Design Lab</a>
+  </header>
+
+  <div class="kh-topbar">
+    <a class="brand" href="../../sites/02-almanac/index.html"><span class="mark">A</span>Almanac</a>
+    
+  <nav class="modern-nav" aria-label="Primary">
+    <a href="../../sites/02-almanac/index.html">Discover</a>
+    <a href="../../sites/02-almanac/posts.html">Posts</a>
+    <a class="is-on" href="#">Places</a>
+    <a href="../../sites/02-almanac/history.html">Journal</a>
+    <a href="../../sites/02-almanac/add.html">Add</a>
+  </nav>
+  </div>
+  <div class="kh-hero">
+    <div class="kh-hero-top">
+      <div>
+        <span class="k">Places · atlas</span>
+        <h1>Your library, by the numbers.</h1>
+      </div>
+      <p>Every save totalled, every visit tracked, every continent charted. Filter the full atlas below.</p>
+    </div>
+    <div class="kh-kpi">
+      <div class="card hero">
+        <div class="lbl">Places saved</div>
+        <div class="val">248</div>
+        <div class="foot"><span>All time</span><span class="delta">+12 this week</span></div>
+      </div>
+      <div class="card">
+        <div class="lbl">Visited</div>
+        <div class="val">62<small> / 248</small></div>
+        <div class="foot"><span>25%</span><span class="delta">+3 mo</span></div>
+      </div>
+      <div class="card">
+        <div class="lbl">Continents</div>
+        <div class="val">6<small> / 7</small></div>
+        <div class="foot"><span>Antarctica pending</span><span class="delta warn">—</span></div>
+      </div>
+      <div class="card">
+        <div class="lbl">On the route</div>
+        <div class="val">14</div>
+        <div class="foot"><span>Next: Kyoto</span><span class="delta">May</span></div>
+      </div>
+      <div class="card">
+        <div class="lbl">Saves this month</div>
+        <div class="val">18</div>
+        <div class="foot"><span>vs 12 last</span><span class="delta">+50%</span></div>
+      </div>
+      <div class="card">
+        <div class="lbl">Most-saved city</div>
+        <div class="val" style="font-size: 2rem">Kyoto</div>
+        <div class="foot"><span>17 places</span><span class="delta">4 visited</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="kh-atlas"><div class="frame"><div id="wf-places-root" class="wf-places wf-places--almanac wf-places--embedded"><div class="wf-places-loading">Loading atlas…</div></div></div></div>
+  <nav class="lab-bottom-nav" aria-label="Structure pager">
+    <a href="13-cinematic-bleed.html">← Cinematic bleed</a>
+    <span class="hint">← → keys</span>
+    <a href="15-marketing-bold.html">Marketing bold →</a>
+  </nav>
+  <script>window.WF_SITE = { id: "02-almanac", title: "Almanac", page: "places-structure" };</script>
+  <script src="../../sites/shared/mock.js"></script>
+  <script type="module" src="../shared/mount.js"></script>
+  <script type="module">
+    const prev = "13-cinematic-bleed.html";
+    const next = "15-marketing-bold.html";
+    window.addEventListener("keydown", (event) => {
+      if (event.defaultPrevented) return;
+      const tag = (event.target && event.target.tagName) || "";
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || event.target?.isContentEditable) return;
+      if (event.key === "ArrowLeft" && prev) location.href = prev;
+      if (event.key === "ArrowRight" && next) location.href = next;
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Wanderfile · Volume — Place</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../shared/site-nav.css" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <header class="vol-topbar">
+    <a class="vol-brand" href="index.html"><span class="dot">V</span>Volume</a>
+    <nav class="vol-nav" aria-label="Primary">
+      <a href="index.html">Discover</a>
+      <a href="index.html?open=places">Places</a>
+      <a href="index.html?open=posts">Posts</a>
+      <a href="add.html">Add</a>
+    </nav>
+  </header>
+
+  <main class="vol-page" id="detail"></main>
+
+  <footer class="vol-footer">
+    <span>© 2026 Wanderfile · Volume</span>
+    <a href="index.html?open=places">Open atlas →</a>
+  </footer>
+
+  <script>
+    window.WF_SITE = {
+      id: "04-volume",
+      title: "Volume",
+      thesis: "Bento hero — shared filter shell, Places & Posts cores swap.",
+      page: "place",
+    };
+  </script>
+  <script src="../shared/mock.js"></script>
+  <script src="../shared/site-nav.js"></script>
+  <script type="module">
+    import { loadPlacesLibrary } from "../shared/api.js";
+
+    const root = document.getElementById("detail");
+    const id = new URLSearchParams(location.search).get("id") || "";
+
+    function render(place) {
+      if (!place) {
+        root.innerHTML = `
+          <a class="vol-back" href="index.html?open=places">← Places</a>
+          <h1>Place not found</h1>
+          <p class="lede">We couldn’t find that destination in the sample atlas.</p>`;
+        return;
+      }
+      const name = place.name || place.display_name || id;
+      const hero = place.hero || null;
+      const meta = [place.country, place.continent, place.categoryLabel || place.category]
+        .filter(Boolean)
+        .join(" · ");
+      root.innerHTML = `
+        <a class="vol-back" href="index.html?open=places">← Places</a>
+        ${hero ? `<div class="vol-detail-hero"><img src="${hero}" alt="" /></div>` : ""}
+        <p class="vol-muted" style="font-size:0.75rem;letter-spacing:0.14em;text-transform:uppercase;font-weight:700;margin:0 0 0.5rem">${meta || "Place"}</p>
+        <h1>${name}</h1>
+        <p class="lede">${place.summary || place.tagline || "A place from your atlas."}</p>
+        <p class="vol-muted">${place.visited ? "Visited" : "Saved"} · ${place.saves || place.postCount || "—"} saves</p>
+      `;
+      document.title = `Wanderfile · Volume — ${name}`;
+    }
+
+    const mockPlace = window.WF_MOCK?.placeById?.(id);
+    if (mockPlace) {
+      render(mockPlace);
+    } else {
+      root.innerHTML = `<p class="vol-muted">Loading…</p>`;
+      loadPlacesLibrary(window.WF_MOCK)
+        .then((lib) => {
+          const place = lib.places.find((p) => p.placeId === id);
+          render(place || { name: id, summary: "From your live atlas." });
+        })
+        .catch(() => render(null));
+    }
+  </script>
+</body>
+</html>

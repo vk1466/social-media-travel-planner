@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>11 · Aurora ambient — Places Page Lab</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,300;1,9..144,400;1,9..144,500&family=Inter:wght@400;500;600;700;800&family=Instrument+Serif:ital@0;1&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../sites/shared/places-browse.css" />
+  <link rel="stylesheet" href="../shared/shell.css" />
+  <style>
+
+body {
+  color: #f2f4f2; font-family: "Inter", var(--a-sans);
+  background: #050810; min-height: 100vh; overflow-x: hidden;
+}
+body::before {
+  content: ""; position: fixed; inset: -30%; z-index: 0;
+  background:
+    radial-gradient(ellipse 60% 40% at 20% 10%, #4dffb3 0%, transparent 55%),
+    radial-gradient(ellipse 70% 40% at 80% 30%, #5da8ff 0%, transparent 55%),
+    radial-gradient(ellipse 60% 40% at 40% 80%, #a55dff 0%, transparent 55%);
+  filter: blur(100px) saturate(1.3); opacity: 0.6;
+  animation: ar-drift 30s ease-in-out infinite alternate;
+}
+@keyframes ar-drift {
+  0% { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(4%, -3%) scale(1.1); }
+}
+.ar-content { position: relative; z-index: 1; }
+.ar-topbar {
+  max-width: 1400px; margin: 0 auto; padding: 24px 28px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.ar-topbar .brand {
+  display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 0.9rem;
+  padding: 8px 14px; background: rgba(255,255,255,0.06); backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.1); border-radius: 999px;
+}
+.ar-topbar .brand .mark {
+  width: 20px; height: 20px; border-radius: 6px;
+  background: linear-gradient(135deg, #4dffb3, #5da8ff);
+  display: grid; place-items: center; color: #05080f; font-family: var(--a-serif); font-style: italic; font-size: 0.85rem;
+}
+.ar-topbar nav { display: flex; gap: 4px; padding: 4px; background: rgba(255,255,255,0.06); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); border-radius: 999px; }
+.ar-topbar nav a { padding: 7px 13px; font-size: 0.78rem; color: rgba(255,255,255,0.7); text-decoration: none; border-radius: 999px; font-weight: 500; }
+.ar-topbar nav a.is-on { background: rgba(255,255,255,0.12); color: white; }
+.ar-hero {
+  max-width: 1400px; margin: 60px auto 32px; padding: 0 28px; text-align: center;
+}
+.ar-hero .k {
+  display: inline-block; padding: 6px 14px;
+  background: rgba(255,255,255,0.06); backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.1); border-radius: 999px;
+  font-size: 0.7rem; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(255,255,255,0.8); font-weight: 700;
+}
+.ar-hero h1 {
+  margin: 22px 0 0; font-family: var(--a-serif); font-weight: 300; font-style: italic;
+  font-size: clamp(3rem, 8vw, 6.5rem); line-height: 0.95; letter-spacing: -0.03em;
+  background: linear-gradient(135deg, #fff 0%, #a5d4ff 60%, #4dffb3 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.ar-hero p { margin: 22px auto 0; max-width: 44ch; color: rgba(255,255,255,0.7); font-size: 1.02rem; line-height: 1.55; }
+.ar-frame {
+  max-width: 1300px; margin: 40px auto 60px; padding: 20px;
+  background: rgba(10,15,25,0.55); backdrop-filter: blur(24px) saturate(1.3);
+  border: 1px solid rgba(255,255,255,0.08); border-radius: 24px;
+  box-shadow: 0 40px 100px -30px rgba(0,0,0,0.6);
+}
+.wf-places--embedded {
+  --pb-bg: transparent; --pb-ink: #f2f4f2; --pb-muted: rgba(255,255,255,0.55);
+  --pb-panel: rgba(255,255,255,0.04); --pb-border: rgba(255,255,255,0.08);
+  --pb-accent: #4dffb3; --pb-accent-ink: #05080f;
+}
+.wf-places--almanac.wf-places--embedded .wf-places-bar { background: rgba(10,15,25,0.7); backdrop-filter: blur(20px); }
+
+  </style>
+</head>
+<body>
+  <header class="lab-top">
+    <a href="../index.html">← Places Page Lab</a>
+    <nav class="lab-top-nav" aria-label="Structure pager">
+      <a href="10-spotlight-sticky.html">← Back</a>
+      <span class="pattern">Structure 11 / 20</span>
+      <a href="12-mosaic-hero.html">Next →</a>
+    </nav>
+    <a href="../../index.html">Design Lab</a>
+  </header>
+
+  <div class="ar-content">
+    <div class="ar-topbar">
+      <a class="brand" href="../../sites/02-almanac/index.html"><span class="mark">A</span>Almanac</a>
+      
+  <nav class="modern-nav" aria-label="Primary">
+    <a href="../../sites/02-almanac/index.html">Discover</a>
+    <a href="../../sites/02-almanac/posts.html">Posts</a>
+    <a class="is-on" href="#">Places</a>
+    <a href="../../sites/02-almanac/history.html">Journal</a>
+    <a href="../../sites/02-almanac/add.html">Add</a>
+  </nav>
+    </div>
+    <section class="ar-hero">
+      <span class="k">Ambient · Places</span>
+      <h1>The atlas, breathing.</h1>
+      <p>Live filters and covers set on a slow aurora wash. The panel below is real — click any cover.</p>
+    </section>
+    <div class="ar-frame"><div id="wf-places-root" class="wf-places wf-places--almanac wf-places--embedded"><div class="wf-places-loading">Loading atlas…</div></div></div>
+  </div>
+  <nav class="lab-bottom-nav" aria-label="Structure pager">
+    <a href="10-spotlight-sticky.html">← Spotlight sticky</a>
+    <span class="hint">← → keys</span>
+    <a href="12-mosaic-hero.html">Photo mosaic hero →</a>
+  </nav>
+  <script>window.WF_SITE = { id: "02-almanac", title: "Almanac", page: "places-structure" };</script>
+  <script src="../../sites/shared/mock.js"></script>
+  <script type="module" src="../shared/mount.js"></script>
+  <script type="module">
+    const prev = "10-spotlight-sticky.html";
+    const next = "12-mosaic-hero.html";
+    window.addEventListener("keydown", (event) => {
+      if (event.defaultPrevented) return;
+      const tag = (event.target && event.target.tagName) || "";
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || event.target?.isContentEditable) return;
+      if (event.key === "ArrowLeft" && prev) location.href = prev;
+      if (event.key === "ArrowRight" && next) location.href = next;
+    });
+  </script>
+</body>
+</html>

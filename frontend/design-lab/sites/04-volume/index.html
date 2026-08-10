@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Wanderfile · Volume — Discover</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../shared/site-nav.css" />
+  <link rel="stylesheet" href="../shared/places-browse.css" />
+  <link rel="stylesheet" href="../shared/posts-browse.css" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div id="app">
+    <header class="vol-topbar">
+      <a class="vol-brand" href="index.html"><span class="dot">V</span>Volume</a>
+      <nav class="vol-nav" aria-label="Primary">
+        <a class="is-on" href="index.html" data-nav-discover>Discover</a>
+        <button type="button" data-open="places">Places</button>
+        <button type="button" data-open="posts">Posts</button>
+        <a href="add.html">Add</a>
+      </nav>
+    </header>
+
+    <section class="vol-bento" aria-label="Library highlight" id="vol-bento">
+      <div class="vol-tile title wide tall">
+        <span class="k">Volume · IV</span>
+        <h1>Places<br />you keep<br /><em>coming back to.</em></h1>
+      </div>
+      <div class="vol-tile" data-slot="0"><img alt="" /><span class="caption">—</span></div>
+      <div class="vol-tile" data-slot="1"><img alt="" /><span class="caption">—</span></div>
+      <div class="vol-tile data">
+        <span class="lbl">Saved</span>
+        <span class="val" data-stat="saved">—</span>
+      </div>
+      <div class="vol-tile" data-slot="2"><img alt="" /><span class="caption">—</span></div>
+      <div class="vol-tile" data-slot="3"><img alt="" /><span class="caption">—</span></div>
+      <div class="vol-tile data">
+        <span class="lbl">Visited so far</span>
+        <span class="val"><em data-stat="visited">—</em></span>
+      </div>
+      <div class="vol-tile wide" data-slot="4"><img alt="" /><span class="caption">—</span></div>
+    </section>
+
+    <section class="vol-library" aria-labelledby="vol-library-title">
+      <div class="vol-library-head">
+        <div>
+          <p class="eyebrow">Your library</p>
+          <h2 id="vol-library-title">Open a shelf</h2>
+          <p>One shared filter chrome for Places and Posts — only the core atlas or lantern body swaps.</p>
+        </div>
+      </div>
+      <div class="vol-tabs" role="tablist" aria-label="Library">
+        <button
+          type="button"
+          class="vol-tab is-places"
+          role="tab"
+          id="tab-places"
+          data-open="places"
+          aria-controls="panel-library"
+          aria-selected="false"
+        >
+          <span class="tab-kicker">Atlas</span>
+          <span class="tab-title">Places</span>
+          <span class="tab-meta" data-tab-meta="places">Loading…</span>
+          <span class="tab-cta">Show atlas ↓</span>
+        </button>
+        <button
+          type="button"
+          class="vol-tab is-posts"
+          role="tab"
+          id="tab-posts"
+          data-open="posts"
+          aria-controls="panel-library"
+          aria-selected="false"
+        >
+          <span class="tab-kicker">Lantern</span>
+          <span class="tab-title">Posts</span>
+          <span class="tab-meta" data-tab-meta="posts">Loading…</span>
+          <span class="tab-cta">Show saves ↓</span>
+        </button>
+      </div>
+
+      <div
+        class="vol-panel"
+        id="panel-library"
+        role="tabpanel"
+        aria-labelledby="tab-places"
+        hidden
+      ></div>
+    </section>
+
+    <footer class="vol-footer">
+      <span>© 2026 Wanderfile · Volume</span>
+      <a href="add.html">Paste a reel →</a>
+    </footer>
+  </div>
+
+  <script>
+    window.WF_SITE = {
+      id: "04-volume",
+      title: "Volume",
+      thesis: "Bento hero — shared filter shell, Places & Posts cores swap.",
+      page: "home",
+    };
+  </script>
+  <script src="../shared/mock.js"></script>
+  <script src="../shared/site-nav.js"></script>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

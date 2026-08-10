@@ -338,7 +338,7 @@ export function PostLibrary({ posts, places, onDeleted, onNavigateToPlace }: Pos
       </div>
 
       <div className="wf-container wf-browse-body">
-        <div className="p3 p3--dark" data-view="lantern-deck" data-mode={deckMode}>
+        <div className="p3" data-view="lantern-deck" data-mode={deckMode}>
           <div className="p3-shell post-library-lantern-shell">
             {browsePosts.length === 0 ? (
               <div className="empty-state">

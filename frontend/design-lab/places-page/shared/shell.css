@@ -169,3 +169,30 @@ body .mark {
 body a.brand { color: inherit; }
 body a.logo { color: inherit; }
 body a.mark { color: inherit; }
+
+/* Default styling for the shared modern-nav pill (any demo can override) */
+.modern-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 999px;
+  font-family: "Inter", var(--a-sans);
+}
+.modern-nav a {
+  padding: 7px 13px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #4a413a;
+  text-decoration: none;
+  border-radius: 999px;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.modern-nav a:hover { color: #1a1612; }
+.modern-nav a.is-on {
+  background: #1a1612;
+  color: #fff;
+}

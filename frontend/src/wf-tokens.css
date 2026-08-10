@@ -6,42 +6,43 @@
    * JS consumers: import { BrandCss, BrandHex, P } from "./brandColors".
    */
 
-  /* Brand greens */
-  --wf-forest: #1f3d31;
-  --wf-forest-mid: #2a4f40;
-  --wf-forest-deep: #142a21;
+  /* Brand greens — Volume forest cards */
+  --wf-forest: #1f3a2c;
+  --wf-forest-mid: #2a4538;
+  --wf-forest-deep: #0d1510;
   --wf-forest-hover: #173026;
   --wf-sage: #2f6b52;
-  --wf-mint: #8fd4b0;
+  /* Accent — Volume coral (replaces mint on CTAs / pills / meters) */
+  --wf-mint: #ff5733;
 
   /* Channel forms for translucent overlays */
-  --wf-forest-rgb: 31 61 49;
-  --wf-forest-mid-rgb: 42 79 64;
-  --wf-forest-deep-rgb: 20 42 33;
+  --wf-forest-rgb: 31 58 44;
+  --wf-forest-mid-rgb: 42 69 56;
+  --wf-forest-deep-rgb: 13 21 16;
   --wf-forest-hover-rgb: 23 48 38;
   --wf-sage-rgb: 47 107 82;
-  --wf-mint-rgb: 143 212 176;
-  --wf-cream-rgb: 244 247 245;
-  --wf-ink-rgb: 28 36 32;
+  --wf-mint-rgb: 255 87 51;
+  --wf-cream-rgb: 250 248 244;
+  --wf-ink-rgb: 26 22 18;
   --wf-sand-rgb: 196 168 130;
   --wf-clay-rgb: 154 115 88;
   --wf-slate-rgb: 61 107 138;
   --wf-plum-rgb: 111 95 138;
 
-  /* Neutrals — light surfaces */
-  --wf-cream: #f4f7f5;
-  --wf-soft: #e8f0ec;
-  --wf-bg: #f4f6f4;
+  /* Neutrals — Volume paper surfaces */
+  --wf-cream: #faf8f4;
+  --wf-soft: #f3efe8;
+  --wf-bg: #faf8f4;
   --wf-surface: #ffffff;
-  --wf-surface-muted: #f0f2f0;
-  --wf-fog: #e8ece9;
-  --wf-border: #dde3de;
-  --wf-border-subtle: #e8ece9;
+  --wf-surface-muted: #f3efe8;
+  --wf-fog: #ebe6df;
+  --wf-border: #e4ddd4;
+  --wf-border-subtle: #ebe6df;
 
   /* Text — three shared roles for the whole site */
-  --wf-ink: #1c2420; /* contrast ink for chips / light insets */
-  --wf-quiet: #9eb0a6; /* muted copy on dark ground */
-  --wf-on-brand: #f4f7f5; /* primary page copy on dark ground */
+  --wf-ink: #1a1612; /* contrast ink for chips / light insets */
+  --wf-quiet: #5c564e; /* muted copy */
+  --wf-on-brand: #faf8f4; /* primary page copy on dark ground */
   /* Page copy — dark site defaults (overridden by .wf-site[data-tone]) */
   --wf-copy: var(--wf-on-brand);
   --wf-copy-muted: var(--wf-quiet);
@@ -120,9 +121,9 @@
   --wf-ease: 160ms ease;
   --wf-ease-slow: 320ms cubic-bezier(0.22, 1, 0.36, 1);
 
-  /* Type — role-specific faces/sizes (picker overrides these) */
-  --wf-font-sans: "DM Sans Variable", system-ui, sans-serif;
-  --wf-font-serif: "Instrument Serif", Georgia, "Times New Roman", serif;
+  /* Type — Volume: Fraunces headlines, DM Sans body */
+  --wf-font-sans: "DM Sans Variable", "Inter", system-ui, sans-serif;
+  --wf-font-serif: "Fraunces Variable", "Fraunces", "Instrument Serif", Georgia, "Times New Roman", serif;
   --wf-font-mono: ui-monospace, "SF Mono", Menlo, Monaco, Consolas, monospace;
   --wf-font-body: var(--wf-font-sans);
   --wf-font-muted: var(--wf-font-sans);

@@ -3,231 +3,251 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Places Page Lab — 20 structures</title>
+    <title>Places Page Lab — 20 modern structures</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
     <style>
       *, *::before, *::after { box-sizing: border-box; }
       html, body { margin: 0; min-height: 100%; }
       body {
-        font-family: "DM Sans", system-ui, sans-serif;
-        background: #0c0f0e; color: #f2f4f2;
+        font-family: "Inter", system-ui, sans-serif;
+        background: #050508; color: #f5f5f7;
         -webkit-font-smoothing: antialiased;
       }
-      .wrap { max-width: 1100px; margin: 0 auto; padding: 48px 24px 88px; }
-      .back { color: #8fa399; text-decoration: none; font-size: 0.85rem; }
-      .back:hover { color: #d0e6dc; }
+      .wrap { max-width: 1200px; margin: 0 auto; padding: 48px 24px 88px; position: relative; }
+      .wrap::before {
+        content: ""; position: absolute; top: -100px; left: 50%; transform: translateX(-50%);
+        width: 800px; height: 500px; border-radius: 50%;
+        background: radial-gradient(circle, rgba(168,85,247,0.25) 0%, transparent 65%);
+        filter: blur(80px); pointer-events: none;
+      }
+      .back { color: rgba(255,255,255,0.55); text-decoration: none; font-size: 0.85rem; font-weight: 500; position: relative; z-index: 1; }
+      .back:hover { color: white; }
       .kicker {
-        font-family: "DM Mono", monospace;
+        font-family: "JetBrains Mono", monospace;
         font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase;
-        color: #8fa399; margin: 18px 0 14px;
+        color: rgba(255,255,255,0.5); margin: 20px 0 14px;
+        position: relative; z-index: 1;
       }
       h1 {
         font-family: "Instrument Serif", Georgia, serif;
-        font-size: clamp(2.2rem, 5vw, 3.3rem);
-        font-weight: 400; font-style: italic; line-height: 1.05;
-        margin: 0 0 14px; letter-spacing: -0.02em;
+        font-size: clamp(2.4rem, 6vw, 4rem);
+        font-weight: 400; font-style: italic; line-height: 1;
+        margin: 0 0 14px; letter-spacing: -0.03em;
+        position: relative; z-index: 1;
+        background: linear-gradient(180deg, #fff 30%, rgba(255,255,255,0.6));
+        -webkit-background-clip: text; background-clip: text; color: transparent;
       }
       .lede {
-        margin: 0; color: #b7c2bc; font-size: 1.02rem; line-height: 1.55; max-width: 640px;
+        margin: 0; color: rgba(255,255,255,0.6); font-size: 1.05rem; line-height: 1.55; max-width: 620px;
+        position: relative; z-index: 1;
       }
       .meta {
         display: flex; flex-wrap: wrap; gap: 12px 20px; margin: 20px 0 36px;
-        font-size: 0.85rem; color: #8fa399;
-      }
-      .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
-      @media (max-width: 720px) { .grid { grid-template-columns: 1fr; } }
-      .card {
-        display: flex; flex-direction: column; gap: 8px;
-        padding: 18px 18px 16px; border: 1px solid #2a3330; background: #141917;
-        color: inherit; text-decoration: none; border-radius: 16px;
-        transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
-      }
-      .card:hover {
-        border-color: #4a6358; background: #1a211e; transform: translateY(-2px);
-      }
-      .num { font-family: "DM Mono", monospace; font-size: 10px; letter-spacing: 0.24em; text-transform: uppercase; color: #6f8579; }
-      .card h2 { margin: 0; font-size: 1.05rem; font-weight: 600; letter-spacing: -0.01em; }
-      .card p { margin: 0; flex: 1; color: #9aaba2; font-size: 0.88rem; line-height: 1.45; }
-      .axis { font-family: "DM Mono", monospace; font-size: 10px; color: #a8c4b6; letter-spacing: 0.16em; text-transform: uppercase; }
-      .cta { font-size: 13px; color: #a8c4b6; font-weight: 500; margin-top: 4px; }
-      .card:hover .cta { color: #d0e6dc; }
-      .note {
-        margin-top: 36px; padding-top: 22px; border-top: 1px solid #2a3330;
-        color: #8fa399; font-size: 0.9rem; line-height: 1.5; max-width: 640px;
+        font-size: 0.85rem; color: rgba(255,255,255,0.5);
+        position: relative; z-index: 1;
       }
       .ref {
-        display: inline-block; margin-top: 10px; color: #a8c4b6; font-size: 0.85rem;
+        display: inline-flex; align-items: center; gap: 8px;
+        padding: 8px 14px; border-radius: 999px;
+        background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+        color: rgba(255,255,255,0.85); text-decoration: none; font-size: 0.85rem; font-weight: 500;
+        margin-top: 4px;
+        position: relative; z-index: 1;
+      }
+      .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; position: relative; z-index: 1; margin-top: 32px; }
+      @media (max-width: 720px) { .grid { grid-template-columns: 1fr; } }
+      .card {
+        display: flex; flex-direction: column; gap: 10px;
+        padding: 20px; border: 1px solid rgba(255,255,255,0.08);
+        background: rgba(255,255,255,0.03); backdrop-filter: blur(20px);
+        color: inherit; text-decoration: none; border-radius: 18px;
+        transition: all 0.2s ease;
+      }
+      .card:hover {
+        border-color: rgba(168,85,247,0.5); background: rgba(168,85,247,0.06);
+        transform: translateY(-2px);
+      }
+      .num { font-family: "JetBrains Mono", monospace; font-size: 10px; letter-spacing: 0.24em; text-transform: uppercase; color: rgba(168,85,247,0.85); font-weight: 600; }
+      .card h2 { margin: 0; font-size: 1.1rem; font-weight: 600; letter-spacing: -0.01em; color: white; }
+      .card p { margin: 0; flex: 1; color: rgba(255,255,255,0.55); font-size: 0.88rem; line-height: 1.5; }
+      .axis { font-family: "JetBrains Mono", monospace; font-size: 10px; color: rgba(255,255,255,0.4); letter-spacing: 0.14em; text-transform: uppercase; }
+      .cta { font-size: 13px; color: #c4b5fd; font-weight: 500; margin-top: 4px; }
+      .card:hover .cta { color: #ddd6fe; }
+      .note {
+        margin-top: 36px; padding-top: 22px; border-top: 1px solid rgba(255,255,255,0.08);
+        color: rgba(255,255,255,0.5); font-size: 0.9rem; line-height: 1.5; max-width: 640px;
+        position: relative; z-index: 1;
       }
     </style>
   </head>
   <body>
     <div class="wrap">
       <a class="back" href="../index.html">← Design Lab</a>
-      <p class="kicker">Places Page Lab · Almanac</p>
-      <h1>Twenty ways to frame the atlas.</h1>
+      <p class="kicker">Places Page Lab · Almanac · v2</p>
+      <h1>Twenty modern shells<br/>around one atlas.</h1>
       <p class="lede">
-        Same Almanac filters and place covers — restructured twenty times, from bare ledger and
-        editorial masthead through museum atrium, letterbox cinema, passport bifolio,
-        constellation veil, night reading room, type monument, and weather bulletin.
+        Same filters and place covers — reframed twenty ways with contemporary web design:
+        bento grids, cinematic posters, glass on mesh, product dashboards, marquee ribbons,
+        aurora ambient, photo mosaics, KPI heroes, vertical stories.
         Page through with ← / → arrow keys.
       </p>
       <div class="meta">
         <span>20 structure demos</span>
-        <span>Minimal · editorial · modern · dark · tactile · expressive</span>
-        <span>Live atlas when signed in</span>
+        <span>Photography-first · dark modes · glass · gradient</span>
+        <span>Atlas cards themed per shell</span>
       </div>
       <a class="ref" href="../sites/02-almanac/places.html">Open current Almanac places →</a>
 
-      <div class="grid" id="grid" style="margin-top:28px"></div>
+      <div class="grid" id="grid"></div>
 
       <p class="note">
         Each demo mounts the real Almanac places browse (filters + covers) with the masthead
-        omitted so the page shell owns branding and hierarchy. The atlas module never changes.
+        omitted, and overrides the atlas card CSS variables so cards match the shell theme.
       </p>
     </div>
     <script type="module">
       const demos = [
   [
     "01",
-    "bare-ledger",
-    "Bare ledger",
-    "Wordmark, hairline, whitespace, atlas. Nothing else earns a pixel.",
-    "Minimal · quiet · utility"
+    "bento-hero",
+    "Bento hero",
+    "A 6-tile bento with photos, metrics, and brand; atlas continues below.",
+    "Modern · bento · product"
   ],
   [
     "02",
-    "quiet-strip",
-    "Editorial masthead",
-    "Oversized italic title, deck, hairline, folio meta — magazine front matter.",
-    "Editorial · quiet · chapter"
+    "cinema-poster",
+    "Cinema poster",
+    "Full-viewport photo poster à la MUBI; atlas snaps up under the mark.",
+    "Cinematic · immersive · dark"
   ],
   [
     "03",
-    "editorial-chapter",
-    "Broadsheet columns",
-    "Ruled columns, running folio, a drop-cap deck. The atlas is the article body.",
-    "Editorial · print · ruled"
+    "photo-split",
+    "Photo split",
+    "Sticky 40% photo column; atlas lives on the right — Airbnb Icons split.",
+    "Modern · split · imagery"
   ],
   [
     "04",
-    "bleed-hero",
-    "Bleed horizon",
-    "One full-bleed sunrise sets the weather; the atlas paper panel rises over it.",
-    "Atmospheric · photographic · immersive"
+    "marquee-ribbon",
+    "Marquee ribbon",
+    "Auto-scrolling photo ribbon of destinations across the top; atlas below.",
+    "Kinetic · motion · imagery"
   ],
   [
     "05",
-    "floating-folio",
-    "Floating folio",
-    "Cream sheet with brass grommets on a linen desk. Atlas as a physical object.",
-    "Tactile · object · warm"
+    "glass-mesh",
+    "Glass on mesh",
+    "Animated conic-gradient mesh; the atlas floats in a frosted glass card.",
+    "Modern · glass · gradient"
   ],
   [
     "06",
-    "split-atrium",
-    "Museum atrium",
-    "Sticky interpretive rail on the left, exhibition hall on the right.",
-    "Museum · split · institutional"
+    "dashboard",
+    "Product dashboard",
+    "Linear-style dark shell — KPI cards, sidebar, atlas as a live widget.",
+    "Product · dark · dashboard"
   ],
   [
     "07",
-    "spine-shelf",
-    "Book spine",
-    "Terracotta hardcover spine with vertical type; the atlas is the interior page.",
-    "Tactile · book · metaphor"
+    "diagonal-split",
+    "Diagonal split",
+    "Clip-path diagonal separates a full photo panel from the atlas region.",
+    "Modern · geometric · bold"
   ],
   [
     "08",
-    "swiss-modular",
-    "Swiss modular",
-    "Visible 12-column grid, wall-label typography, one accent square. No ornament.",
-    "Modern · modular · gallery"
+    "mesh-type",
+    "Mesh + type",
+    "Stripe-style gradient mesh behind an oversized type block; atlas grounded below.",
+    "Modern · gradient · type"
   ],
   [
     "09",
-    "sticky-rail",
-    "Product index rail",
-    "Sticky left index with manifesto and secondary nav — Linear-warmth precision.",
-    "Modern · product · index"
+    "category-rail",
+    "Category rail",
+    "Airbnb Icons rail — round photo tiles across the top; atlas below.",
+    "Product · category · imagery"
   ],
   [
     "10",
-    "letterbox",
-    "Letterbox cinema",
-    "Two black film-strip bars frame a cream projection screen. Feature presentation.",
-    "Dark · luxury · cinematic"
+    "spotlight-sticky",
+    "Spotlight sticky",
+    "Sticky spotlight photo card on the left; atlas scrolls on the right.",
+    "Modern · spotlight · split"
   ],
   [
     "11",
-    "notebook-margin",
-    "Field notes margin",
-    "Ruled left margin with FIG. labels and a dispatch strip. Expedition log energy.",
-    "Tactile · field-guide · annotated"
+    "aurora",
+    "Aurora ambient",
+    "Slow aurora gradient wash behind a translucent glass atlas frame.",
+    "Ambient · atmospheric · glass"
   ],
   [
     "12",
-    "horizon-band",
-    "Horizon band",
-    "A cream-to-dusk gradient horizon with a compass rose. Atlas sits on the plain.",
-    "Atmospheric · travel · soft"
+    "mosaic-hero",
+    "Photo mosaic hero",
+    "A 4-tile photo mosaic hero with the mark laid across; atlas below.",
+    "Modern · mosaic · imagery"
   ],
   [
     "13",
-    "library-carrel",
-    "Card catalog",
-    "Dewey call numbers, tabular type, oppressive calm. Archival not aspirational.",
-    "Archival · dense · institutional"
+    "cinematic-bleed",
+    "Cinematic bleed",
+    "Full-bleed cinematic hero with layered typography lockup; dark atlas.",
+    "Cinematic · dark · bold"
   ],
   [
     "14",
-    "passport-folio",
-    "Passport bifolio",
-    "Perforated edge, authority block, cluster of dashed stamps. Travel document.",
-    "Tactile · document · playful"
+    "kpi-hero",
+    "KPI hero",
+    "Framer-style oversized metric cards as a hero; atlas grounded below.",
+    "Product · data · metrics"
   ],
   [
     "15",
-    "constellation",
-    "Constellation veil",
-    "Warm night sky with drawn constellations; frosted cream panel holds the atlas.",
-    "Unexpected · atmospheric · wild"
+    "marketing-bold",
+    "Marketing bold",
+    "Framer-style bold marketing shell with gradient headline and pill CTA.",
+    "Modern · marketing · bold"
   ],
   [
     "16",
-    "dock-bottom",
-    "Bottom dock",
-    "Atlas fills the viewport; a floating pill dock carries navigation at the bottom.",
-    "Mobile-native · modern · docked"
+    "card-stack",
+    "Card stack",
+    "Rotated stack of photo cards behind the atlas — physical depth, modern.",
+    "Modern · depth · imagery"
   ],
   [
     "17",
-    "veil-overlay",
-    "Night reading room",
-    "Deep espresso field, cognac display type, one lamp-lit cream island of atlas.",
-    "Dark · luxury · editorial"
+    "rich-editorial",
+    "Rich editorial",
+    "Modern editorial with an oversized photograph and precise typography.",
+    "Editorial · modern · imagery"
   ],
   [
     "18",
-    "story-drawer",
-    "Curator drawer",
-    "Utility frame with a right-edge tab that pulls out museum wall text on demand.",
-    "Modern · product · layered"
+    "vercel-dark",
+    "Vercel dark",
+    "Pure black + vibrant magenta/cyan glow, mono type, dark atlas.",
+    "Product · dark · vivid"
   ],
   [
     "19",
-    "type-monument",
-    "Type monument",
-    "Giant italic 'Places' cropped by the viewport becomes the frame; atlas nests below.",
-    "Expressive · maximal · type"
+    "poster-wall",
+    "Poster wall",
+    "Full-viewport 6-poster grid as backdrop; atlas floats over on scroll.",
+    "Immersive · imagery · maximal"
   ],
   [
     "20",
-    "weather-bulletin",
-    "Weather bulletin",
-    "Teletype advisory strip with severity pip and scan animation. Municipal drama.",
-    "Unexpected · utilitarian · expressive"
+    "story-mobile",
+    "Story mobile",
+    "Instagram-story vertical shell with a full-height photo hero and dock.",
+    "Mobile · vertical · stories"
   ]
 ];
       document.getElementById("grid").innerHTML = demos.map(([id, slug, title, blurb, axis]) => `

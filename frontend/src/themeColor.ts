@@ -4,7 +4,7 @@ import {
 } from "./brandColors";
 
 /** Default Wanderfile forest green — source of truth for reset. */
-export const DEFAULT_BRAND_COLOR = "#1f3d31";
+export const DEFAULT_BRAND_COLOR = "#1f3a2c";
 
 export const DEFAULT_BRAND_SHIFT = 1;
 
@@ -675,7 +675,7 @@ function applyTextStylesToDom(styles: TextRoleStyles): void {
   root.style.setProperty("--wf-font-serif", headlineFace);
 }
 
-export const DEFAULT_BRAND_MODE: BrandMode = "dark";
+export const DEFAULT_BRAND_MODE: BrandMode = "light";
 
 export function defaultBrandLabState(): BrandLabState {
   return {

@@ -10,6 +10,7 @@ import {
 } from "@clerk/react";
 
 import "@fontsource-variable/dm-sans";
+import "@fontsource-variable/fraunces";
 import "@fontsource/instrument-serif/400.css";
 import "@fontsource-variable/source-sans-3";
 import "@fontsource-variable/literata";
