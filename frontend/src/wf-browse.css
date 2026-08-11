@@ -1,8 +1,8 @@
-/* Shared browse chrome for /posts and /places — Volume light ground. */
+/* Shared browse chrome for /posts and /places — follows site tone via --wf-copy* / --wf-chrome-*. */
 
 .wf-browse {
-  background: var(--wf-bg);
-  color: var(--wf-ink);
+  background: var(--wf-chrome-bg);
+  color: var(--wf-copy);
   min-height: calc(100vh - var(--wf-header-h));
 }
 
@@ -22,8 +22,7 @@
   text-transform: uppercase;
   letter-spacing: var(--wf-eyebrow-tracking);
   font-weight: 700;
-  /* Forest — mint washes out on paper grounds */
-  color: var(--wf-forest);
+  color: var(--wf-copy-accent);
 }
 
 .wf-browse-title {
@@ -31,13 +30,13 @@
   font-family: var(--wf-font-headline);
   font-size: calc(clamp(2.1rem, 4.5vw, 3rem) * var(--wf-size-headline));
   line-height: 1.05;
-  color: var(--wf-ink);
+  color: var(--wf-copy);
   font-weight: 400;
 }
 
 .wf-browse-lede {
   margin: 0.6rem 0 0;
-  color: var(--wf-quiet);
+  color: var(--wf-copy-muted);
   font-family: var(--wf-font-muted);
   font-size: var(--wf-size-muted);
   line-height: 1.6;
@@ -54,7 +53,7 @@
   font-family: var(--wf-font-serif);
   font-size: 2rem;
   line-height: 1.1;
-  color: var(--wf-ink);
+  color: var(--wf-copy);
 }
 
 .wf-browse-count-label {
@@ -63,17 +62,17 @@
   font-size: 0.66rem;
   text-transform: uppercase;
   letter-spacing: 0.12em;
-  color: var(--wf-quiet);
+  color: var(--wf-copy-muted);
 }
 
 .wf-browse-bar {
   position: sticky;
   top: var(--wf-header-h);
   z-index: 40;
-  background: color-mix(in srgb, var(--wf-bg) 88%, var(--wf-surface));
+  background: color-mix(in srgb, var(--wf-chrome-bg) 88%, var(--wf-chrome-panel));
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border-block: 1px solid var(--wf-border);
+  border-block: 1px solid var(--wf-chrome-border);
 }
 
 .wf-browse-bar-inner {
@@ -88,7 +87,7 @@
   font-size: 0.7rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: var(--wf-quiet);
+  color: var(--wf-copy-muted);
   min-width: 0;
 }
 
@@ -105,7 +104,7 @@
 
 .wf-browse-context button.is-current,
 .wf-browse-context button:hover {
-  color: var(--wf-ink);
+  color: var(--wf-copy);
 }
 
 .wf-browse-context .wf-crumb-sep {
@@ -115,14 +114,14 @@
 
 .wf-browse-context .wf-crumb-up {
   margin-left: 0.75rem;
-  color: var(--wf-forest);
+  color: var(--wf-copy-accent);
 }
 
 .wf-seg {
   display: flex;
   flex-shrink: 0;
-  background: var(--wf-surface);
-  border: 1px solid var(--wf-border);
+  background: var(--wf-chrome-panel);
+  border: 1px solid var(--wf-chrome-border);
   border-radius: var(--wf-radius-pill);
   padding: 3px;
 }
@@ -130,7 +129,7 @@
 .wf-seg-btn {
   border: 0;
   background: transparent;
-  color: var(--wf-quiet);
+  color: var(--wf-copy-muted);
   font-size: 0.7rem;
   text-transform: uppercase;
   letter-spacing: 0.07em;
@@ -166,14 +165,14 @@
   text-transform: uppercase;
   letter-spacing: 0.12em;
   font-weight: 700;
-  color: var(--wf-quiet);
+  color: var(--wf-copy-muted);
   min-width: 68px;
 }
 
 .wf-pill {
-  background: var(--wf-surface);
-  border: 1px solid var(--wf-border);
-  color: var(--wf-quiet);
+  background: var(--wf-chrome-panel);
+  border: 1px solid var(--wf-chrome-border);
+  color: var(--wf-copy-muted);
   border-radius: var(--wf-radius-pill);
   padding: 0.34rem 0.8rem;
   font-size: 0.72rem;
@@ -184,8 +183,8 @@
 }
 
 .wf-pill:hover {
-  color: var(--wf-ink);
-  background: var(--wf-surface-muted);
+  color: var(--wf-copy);
+  background: var(--wf-chrome-panel-muted);
 }
 
 .wf-pill.is-active {
@@ -199,8 +198,8 @@
   display: flex;
   flex-direction: row;
   align-items: center;
-  background: var(--wf-surface);
-  border: 1px solid var(--wf-border);
+  background: var(--wf-chrome-panel);
+  border: 1px solid var(--wf-chrome-border);
   border-radius: var(--wf-radius-pill);
   padding: 0.3rem 0.9rem;
   min-width: 240px;
@@ -212,13 +211,13 @@
   border: 0;
   outline: none;
   background: transparent;
-  color: var(--wf-ink);
+  color: var(--wf-copy);
   font-size: 0.78rem;
   font-family: inherit;
 }
 
 .wf-search-field input::placeholder {
-  color: var(--wf-quiet);
+  color: var(--wf-copy-muted);
 }
 
 .wf-rail {
@@ -251,7 +250,7 @@
 
 .wf-chip:hover {
   background: rgb(var(--wf-forest-rgb) / 0.2);
-  color: var(--wf-ink);
+  color: var(--wf-copy);
 }
 
 .wf-browse a.p3-ring-label {
@@ -260,7 +259,7 @@
 }
 
 .wf-browse a.p3-ring-label:hover {
-  color: var(--wf-forest);
+  color: var(--wf-copy-accent);
   text-decoration: underline;
 }
 
@@ -284,15 +283,15 @@
   gap: 0.65rem;
   padding: 0.65rem 0.85rem;
   border-radius: var(--wf-radius-md);
-  background: var(--wf-surface);
-  border: 1px solid var(--wf-border);
-  color: var(--wf-ink);
+  background: var(--wf-chrome-panel);
+  border: 1px solid var(--wf-chrome-border);
+  color: var(--wf-copy);
   text-decoration: none;
   transition: var(--wf-ease);
 }
 
 .wf-search-row:hover {
-  background: var(--wf-surface-muted);
+  background: var(--wf-chrome-panel-muted);
 }
 
 .wf-search-row-name {
@@ -304,7 +303,7 @@
   flex: 1;
   min-width: 0;
   font-size: 0.72rem;
-  color: var(--wf-quiet);
+  color: var(--wf-copy-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

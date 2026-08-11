@@ -44,13 +44,17 @@
 }
 
 .wf-header[data-tone="light"] .wf-profile-trigger-name {
-  color: var(--wf-ink);
+  color: var(--wf-copy);
+}
+
+.wf-header[data-tone="light"] .wf-profile-chevron {
+  color: var(--wf-copy-muted);
 }
 
 .wf-profile-chevron {
   width: 0.7rem;
   height: 0.7rem;
-  color: var(--wf-quiet);
+  color: var(--wf-on-dark);
   flex-shrink: 0;
   transition: transform var(--wf-ease);
 }
@@ -120,7 +124,7 @@
 .wf-header[data-tone="light"] .wf-profile-panel {
   border-color: var(--wf-border);
   background: var(--wf-surface);
-  color: var(--wf-quiet);
+  color: var(--wf-copy-muted);
   box-shadow: var(--wf-shadow-lg);
 }
 
@@ -181,13 +185,13 @@
 }
 
 .wf-header[data-tone="light"] .wf-profile-name {
-  color: var(--wf-ink);
+  color: var(--wf-copy);
 }
 
 .wf-profile-email {
   margin: 0;
   font-size: 0.78rem;
-  color: var(--wf-quiet);
+  color: var(--wf-copy-muted);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -209,7 +213,7 @@
   font-weight: 700;
   letter-spacing: var(--wf-eyebrow-tracking, 0.1em);
   text-transform: uppercase;
-  color: color-mix(in srgb, var(--wf-mint) 72%, var(--wf-quiet));
+  color: color-mix(in srgb, var(--wf-mint) 72%, var(--wf-on-dark));
 }
 
 .wf-header[data-tone="light"] .wf-profile-section-label {
@@ -243,7 +247,7 @@
 }
 
 .wf-header[data-tone="light"] .wf-profile-action {
-  color: var(--wf-ink);
+  color: var(--wf-copy);
 }
 
 .wf-header[data-tone="light"] .wf-profile-action:hover {
@@ -288,7 +292,7 @@
 
 .wf-profile-action-hint {
   font-size: 0.72rem;
-  color: var(--wf-quiet);
+  color: var(--wf-copy-muted);
   line-height: 1.3;
 }
 

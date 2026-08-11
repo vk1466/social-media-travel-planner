@@ -8,7 +8,7 @@
 
 .wf-site[data-tone="light"] {
   background: var(--wf-bg);
-  color: var(--wf-ink);
+  color: var(--wf-copy);
   color-scheme: light;
   /* Semantic page copy — light ground */
   --wf-copy: var(--wf-ink);
@@ -19,10 +19,10 @@
   --wf-chrome-panel: var(--wf-surface);
   --wf-chrome-panel-muted: var(--wf-surface-muted);
   --wf-chrome-border: var(--wf-border);
-  /* Shared form/button aliases — root defaults assume dark chrome */
-  --text: var(--wf-ink);
-  --text-muted: var(--wf-quiet);
-  --text-subtle: var(--wf-quiet);
+  /* Shared form/button aliases — follow semantic copy roles */
+  --text: var(--wf-copy);
+  --text-muted: var(--wf-copy-muted);
+  --text-subtle: var(--wf-copy-muted);
   --bg: var(--wf-bg);
   --surface: var(--wf-surface);
   --surface-muted: var(--wf-surface-muted);
@@ -33,7 +33,7 @@
 
 .wf-site[data-tone="dark"] {
   background: var(--wf-forest-deep);
-  color: var(--wf-on-brand);
+  color: var(--wf-copy);
   color-scheme: dark;
   /* Semantic page copy — muted uses on-dark, not light-paper quiet */
   --wf-copy: var(--wf-on-brand);
@@ -44,9 +44,9 @@
   --wf-chrome-panel-muted: var(--wf-panel-dark-hover);
   --wf-chrome-border: var(--wf-border-dark);
   /* Shared form/button aliases used by styles.css primitives */
-  --text: var(--wf-on-brand);
-  --text-muted: var(--wf-on-dark);
-  --text-subtle: var(--wf-on-dark);
+  --text: var(--wf-copy);
+  --text-muted: var(--wf-copy-muted);
+  --text-subtle: var(--wf-copy-muted);
   --bg: var(--wf-forest-deep);
   --surface: var(--wf-panel-dark);
   --surface-muted: var(--wf-panel-dark-hover);
@@ -136,14 +136,9 @@
   font-weight: 400;
 }
 
-.wf-header[data-tone="dark"] .wf-header-brand,
-.wf-header[data-tone="dark"] .wf-brand-name {
-  color: var(--wf-on-brand);
-}
-
-.wf-header[data-tone="light"] .wf-header-brand,
-.wf-header[data-tone="light"] .wf-brand-name {
-  color: var(--wf-ink);
+.wf-header-brand,
+.wf-brand-name {
+  color: var(--wf-copy);
 }
 
 .wf-nav {
@@ -161,6 +156,7 @@
   text-decoration: none;
   padding: 0.5rem 0;
   position: relative;
+  color: var(--wf-copy-muted);
   transition: color var(--wf-ease);
 }
 
@@ -176,28 +172,12 @@
   transition: background var(--wf-ease);
 }
 
-.wf-header[data-tone="dark"] .wf-nav-link {
-  color: var(--wf-on-dark);
+.wf-nav-link.active {
+  color: var(--wf-copy);
 }
 
-.wf-header[data-tone="dark"] .wf-nav-link.active {
-  color: var(--wf-on-brand);
-}
-
-.wf-header[data-tone="dark"] .wf-nav-link.active::after {
-  background: var(--wf-mint);
-}
-
-.wf-header[data-tone="light"] .wf-nav-link {
-  color: var(--wf-quiet);
-}
-
-.wf-header[data-tone="light"] .wf-nav-link.active {
-  color: var(--wf-ink);
-}
-
-.wf-header[data-tone="light"] .wf-nav-link.active::after {
-  background: var(--wf-forest);
+.wf-nav-link.active::after {
+  background: var(--wf-copy-accent);
 }
 
 .wf-header-actions {
@@ -230,7 +210,7 @@
 
 .wf-header[data-tone="dark"] .wf-search-btn {
   border-color: var(--wf-border-dark);
-  color: var(--wf-on-dark);
+  color: var(--wf-copy-muted);
 }
 
 .wf-header[data-tone="dark"] .wf-search-btn:hover {
@@ -239,12 +219,12 @@
 
 .wf-header[data-tone="light"] .wf-search-btn {
   border-color: var(--wf-border);
-  color: var(--wf-quiet);
+  color: var(--wf-copy-muted);
 }
 
 .wf-header[data-tone="light"] .wf-search-btn:hover {
   background: var(--wf-surface);
-  color: var(--wf-ink);
+  color: var(--wf-copy);
 }
 
 .wf-kbd {

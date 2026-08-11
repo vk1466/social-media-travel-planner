@@ -11,12 +11,12 @@
   background:
     radial-gradient(ellipse 80% 50% at 8% -12%, rgb(var(--wf-sage-rgb) / 0.12), transparent 55%),
     radial-gradient(ellipse 55% 40% at 100% 0%, rgb(var(--wf-sand-rgb) / 0.14), transparent 50%),
-    var(--wf-bg);
+    var(--wf-chrome-bg);
 }
 
 .home-panel:has(.lib-shell[data-mode="places"]),
 .home-panel:has(.lib-shell[data-mode="posts"]) {
-  background: var(--wf-bg);
+  background: var(--wf-chrome-bg);
 }
 
 .lib-shell-masthead {
@@ -34,8 +34,7 @@
   letter-spacing: 0.18em;
   text-transform: uppercase;
   font-weight: 700;
-  /* Forest — mint washes out on paper grounds */
-  color: var(--wf-forest);
+  color: var(--wf-copy-accent);
 }
 
 .lib-shell-masthead h3 {
@@ -46,12 +45,12 @@
   font-size: clamp(1.8rem, 3vw, 2.4rem);
   letter-spacing: -0.02em;
   line-height: 1.05;
-  color: var(--wf-ink);
+  color: var(--wf-copy);
 }
 
 .lib-shell-lede {
   margin: 0.4rem 0 0;
-  color: var(--wf-quiet);
+  color: var(--wf-copy-muted);
   font-size: 0.92rem;
   line-height: 1.5;
   max-width: 48ch;
@@ -80,7 +79,7 @@
   line-height: 0.95;
   letter-spacing: -0.04em;
   font-weight: 400;
-  color: var(--wf-forest);
+  color: var(--wf-copy-accent);
 }
 
 .lib-shell-count-label {
@@ -89,7 +88,7 @@
   font-size: 0.72rem;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--wf-ink);
+  color: var(--wf-copy);
   font-weight: 700;
   opacity: 0.72;
 }
@@ -98,15 +97,15 @@
   margin: 0 24px 0.85rem;
   padding: 0.75rem 1rem;
   border-radius: 14px;
-  border: 1px solid var(--wf-border);
-  background: var(--wf-surface);
+  border: 1px solid var(--wf-chrome-border);
+  background: var(--wf-chrome-panel);
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
   flex-wrap: wrap;
   font-size: 0.84rem;
-  color: var(--wf-quiet);
+  color: var(--wf-copy-muted);
 }
 
 .lib-shell-banner button {
@@ -130,8 +129,8 @@
   gap: 0.3rem;
   padding: 0.2rem;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--wf-surface) 88%, var(--wf-bg));
-  border: 1px solid var(--wf-border);
+  background: color-mix(in srgb, var(--wf-chrome-panel) 88%, var(--wf-chrome-bg));
+  border: 1px solid var(--wf-chrome-border);
 }
 
 .lib-shell-seg--view {
@@ -142,7 +141,7 @@
   padding: 0.08rem;
   gap: 0.15rem;
   background: transparent;
-  border-color: color-mix(in srgb, var(--wf-border) 70%, transparent);
+  border-color: color-mix(in srgb, var(--wf-chrome-border) 70%, transparent);
   opacity: 0.72;
 }
 
@@ -156,12 +155,12 @@
   font-size: 0.62rem;
   font-weight: 600;
   letter-spacing: 0.02em;
-  color: var(--wf-quiet);
+  color: var(--wf-copy-muted);
 }
 
 .lib-shell-seg--view button.is-active {
-  background: color-mix(in srgb, var(--wf-ink) 8%, transparent);
-  color: var(--wf-ink);
+  background: color-mix(in srgb, var(--wf-copy) 8%, transparent);
+  color: var(--wf-copy);
 }
 
 .lib-shell-seg button {
@@ -170,7 +169,7 @@
   border-radius: 999px;
   padding: 0.4rem 0.9rem;
   background: transparent;
-  color: var(--wf-quiet);
+  color: var(--wf-copy-muted);
   font: inherit;
   font-size: 0.78rem;
   font-weight: 600;
@@ -178,7 +177,7 @@
 }
 
 .lib-shell-seg button:hover {
-  color: var(--wf-ink);
+  color: var(--wf-copy);
 }
 
 .lib-shell-seg button.is-active {
@@ -192,8 +191,8 @@
   display: flex;
   flex-direction: column;
   gap: 0.7rem;
-  background: var(--wf-surface);
-  border: 1px solid var(--wf-border);
+  background: var(--wf-chrome-panel);
+  border: 1px solid var(--wf-chrome-border);
   border-radius: 18px;
 }
 
@@ -209,8 +208,8 @@
   min-width: 180px;
   display: flex;
   align-items: center;
-  background: color-mix(in srgb, var(--wf-surface) 88%, var(--wf-bg));
-  border: 1px solid var(--wf-border);
+  background: color-mix(in srgb, var(--wf-chrome-panel) 88%, var(--wf-chrome-bg));
+  border: 1px solid var(--wf-chrome-border);
   border-radius: 999px;
   padding: 0.45rem 1rem;
 }
@@ -221,18 +220,18 @@
   border: 0;
   outline: none;
   background: transparent;
-  color: var(--wf-ink);
+  color: var(--wf-copy);
   font-size: 0.84rem;
   font-family: inherit;
 }
 
 .lib-shell-search input::placeholder {
-  color: var(--wf-quiet);
+  color: var(--wf-copy-muted);
 }
 
 .lib-shell-seg--primary,
 .lib-shell-seg--secondary {
-  background: color-mix(in srgb, var(--wf-surface) 88%, var(--wf-bg));
+  background: color-mix(in srgb, var(--wf-chrome-panel) 88%, var(--wf-chrome-bg));
 }
 
 .lib-shell-pills {
@@ -244,9 +243,9 @@
 
 .lib-shell-pill {
   appearance: none;
-  background: color-mix(in srgb, var(--wf-surface) 88%, var(--wf-bg));
-  border: 1px solid var(--wf-border);
-  color: var(--wf-quiet);
+  background: color-mix(in srgb, var(--wf-chrome-panel) 88%, var(--wf-chrome-bg));
+  border: 1px solid var(--wf-chrome-border);
+  color: var(--wf-copy-muted);
   border-radius: 999px;
   padding: 0.38rem 0.85rem;
   font-size: 0.74rem;
@@ -256,7 +255,7 @@
 }
 
 .lib-shell-pill:hover {
-  color: var(--wf-ink);
+  color: var(--wf-copy);
 }
 
 .lib-shell-pill.is-active {
@@ -272,12 +271,12 @@
 .lib-shell-pill-more {
   border-style: dashed;
   background: transparent;
-  color: var(--wf-quiet);
+  color: var(--wf-copy-muted);
 }
 
 .lib-shell-pill-more:hover {
-  color: var(--wf-ink);
-  border-color: color-mix(in srgb, var(--wf-ink) 28%, var(--wf-border));
+  color: var(--wf-copy);
+  border-color: color-mix(in srgb, var(--wf-copy) 28%, var(--wf-chrome-border));
 }
 
 .lib-shell-pill .count {
@@ -405,7 +404,7 @@
   appearance: none;
   border: 0;
   background: transparent;
-  color: var(--wf-quiet);
+  color: var(--wf-copy-muted);
   font: inherit;
   font-size: inherit;
   letter-spacing: inherit;
@@ -416,16 +415,16 @@
 
 .lib-shell-crumbs button.is-current,
 .lib-shell-crumbs button:hover {
-  color: var(--wf-ink);
+  color: var(--wf-copy);
 }
 
 .lib-shell-crumbs .wf-crumb-sep {
-  color: var(--wf-border);
+  color: var(--wf-chrome-border);
   margin: 0 0.15rem;
 }
 
 .lib-shell-crumbs .wf-crumb-up {
   margin-left: 0.5rem;
-  color: var(--wf-forest);
+  color: var(--wf-copy-accent);
   font-weight: 700;
 }

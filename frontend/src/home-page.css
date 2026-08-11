@@ -1,8 +1,8 @@
 /* Wanderfile home — Volume bento */
 
 .home {
-  background: var(--wf-bg);
-  color: var(--wf-ink);
+  background: var(--wf-chrome-bg);
+  color: var(--wf-copy);
   font-family: var(--wf-font-sans);
 }
 
@@ -307,8 +307,7 @@ html[data-bento-motion="card-shuffle"] .home-tile--media.is-in .home-tile-layer-
   letter-spacing: 0.18em;
   text-transform: uppercase;
   font-weight: 700;
-  /* Forest — icy mint washes out on paper grounds */
-  color: var(--wf-forest);
+  color: var(--wf-copy-accent);
 }
 
 .home-library-head h2 {
@@ -323,7 +322,7 @@ html[data-bento-motion="card-shuffle"] .home-tile--media.is-in .home-tile-layer-
 
 .home-library-head p {
   margin: 0.4rem 0 0;
-  color: var(--wf-quiet);
+  color: var(--wf-copy-muted);
   font-size: 0.95rem;
   max-width: 42ch;
   line-height: 1.5;

@@ -12,8 +12,8 @@
   background:
     radial-gradient(ellipse 80% 50% at 8% -12%, rgb(var(--wf-sage-rgb) / 0.12), transparent 55%),
     radial-gradient(ellipse 55% 40% at 100% 0%, rgb(var(--wf-sand-rgb) / 0.14), transparent 50%),
-    var(--wf-bg);
-  color: var(--wf-ink);
+    var(--wf-chrome-bg);
+  color: var(--wf-copy);
 }
 
 .pl2--dark {
@@ -189,7 +189,7 @@
 }
 
 .pl2-crumbs button.is-current {
-  color: var(--wf-ink);
+  color: var(--wf-copy);
   font-weight: 700;
 }
 
@@ -2309,8 +2309,8 @@
   font-family: var(--wf-font-sans);
   background:
     radial-gradient(ellipse 70% 45% at 10% -10%, rgb(var(--wf-sage-rgb) / 0.14), transparent 55%),
-    var(--wf-bg);
-  color: var(--wf-ink);
+    var(--wf-chrome-bg);
+  color: var(--wf-copy);
 }
 
 .pl2-gallery-inner {
@@ -2329,7 +2329,7 @@
 .pl2-gallery header p {
   margin: 0.5rem 0 0;
   max-width: 72ch;
-  color: var(--wf-quiet);
+  color: var(--pl2-quiet);
   line-height: 1.55;
 }
 
@@ -2393,7 +2393,7 @@
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--wf-quiet);
+  color: var(--pl2-quiet);
 }
 
 .pl2-gallery-card h2 {
@@ -2406,7 +2406,7 @@
   margin: 0;
   font-size: 0.8rem;
   line-height: 1.45;
-  color: var(--wf-quiet);
+  color: var(--pl2-quiet);
 }
 
 .pl2-gallery-tags {
@@ -2432,12 +2432,12 @@
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--wf-quiet);
+  color: var(--pl2-quiet);
 }
 
 .pl2-gallery-empty {
   margin: 1.5rem 0;
-  color: var(--wf-quiet);
+  color: var(--pl2-quiet);
 }
 
 .pl2-gallery-rejected {
@@ -2455,7 +2455,7 @@
 .pl2-gallery-rejected > p {
   margin: 0.35rem 0 0.9rem;
   font-size: 0.8rem;
-  color: var(--wf-quiet);
+  color: var(--pl2-quiet);
 }
 
 .pl2-gallery-rejected ul {
