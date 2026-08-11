@@ -38,7 +38,7 @@ function emptySwatches(base: string): BrandSwatchMap {
     sage: base,
     mint: base,
     ink: "#1c2420",
-    quiet: "#5a6560",
+    quiet: "#a8b4af",
     onBrand: "#f4f7f5",
   };
 }

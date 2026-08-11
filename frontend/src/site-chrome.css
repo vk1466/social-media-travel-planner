@@ -35,9 +35,9 @@
   background: var(--wf-forest-deep);
   color: var(--wf-on-brand);
   color-scheme: dark;
-  /* Semantic page copy — same as home / browse */
+  /* Semantic page copy — muted uses on-dark, not light-paper quiet */
   --wf-copy: var(--wf-on-brand);
-  --wf-copy-muted: var(--wf-quiet);
+  --wf-copy-muted: var(--wf-on-dark);
   --wf-copy-accent: var(--wf-mint);
   --wf-chrome-bg: var(--wf-forest-deep);
   --wf-chrome-panel: var(--wf-panel-dark);
@@ -45,8 +45,8 @@
   --wf-chrome-border: var(--wf-border-dark);
   /* Shared form/button aliases used by styles.css primitives */
   --text: var(--wf-on-brand);
-  --text-muted: var(--wf-quiet);
-  --text-subtle: var(--wf-quiet);
+  --text-muted: var(--wf-on-dark);
+  --text-subtle: var(--wf-on-dark);
   --bg: var(--wf-forest-deep);
   --surface: var(--wf-panel-dark);
   --surface-muted: var(--wf-panel-dark-hover);

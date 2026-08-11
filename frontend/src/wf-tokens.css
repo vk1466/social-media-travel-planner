@@ -41,7 +41,7 @@
 
   /* Text — three shared roles for the whole site */
   --wf-ink: #1c2623; /* contrast ink for chips / light insets */
-  --wf-quiet: #5c564e; /* muted copy on light paper (Aurora default) */
+  --wf-quiet: #5c564e; /* muted copy on light paper only — never on dark grounds */
   --wf-on-brand: #ecfaf4; /* labels on brand fills / dark-ground copy */
   /* Page copy — light site defaults (overridden by .wf-site[data-tone]) */
   --wf-copy: var(--wf-ink);
@@ -97,9 +97,9 @@
   --wf-cat-stay-ink: #3a5568;
   --wf-cat-stay-border: #c9d7e0;
 
-  /* On-dark surfaces — muted variants of on-brand text */
-  --wf-on-dark: var(--wf-quiet);
-  --wf-on-dark-strong: color-mix(in srgb, var(--wf-on-brand) 92%, var(--wf-quiet));
+  /* On-dark surfaces — light muted (never alias --wf-quiet) */
+  --wf-on-dark: #a8b4af;
+  --wf-on-dark-strong: color-mix(in srgb, var(--wf-on-brand) 92%, var(--wf-on-dark));
   --wf-border-dark: rgb(var(--wf-mint-rgb) / 0.22);
   --wf-panel-dark: rgb(255 255 255 / 0.06);
   --wf-panel-dark-hover: rgb(255 255 255 / 0.1);

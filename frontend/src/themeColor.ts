@@ -83,7 +83,7 @@ export type TextRoleStyle = {
 
 export type TextRoleStyles = Record<TextRoleId, TextRoleStyle>;
 
-/** Copy roles for the dark site — body/muted colors are on-brand + quiet. */
+/** Copy roles for the dark site — body/muted colors are on-brand + on-dark. */
 export const TEXT_ROLES = [
   {
     id: "body" as const,
@@ -191,10 +191,10 @@ export const EDITABLE_BRAND_SWATCHES = [
   },
   {
     key: "quiet",
-    token: "--wf-quiet",
+    token: "--wf-on-dark",
     rgbToken: null,
     label: "Muted text",
-    tip: "Captions, metadata, and secondary copy on dark pages.",
+    tip: "Captions, metadata, and secondary copy on dark pages (--wf-on-dark).",
     group: "text",
   },
   {
@@ -215,8 +215,8 @@ export const DEFAULT_BRAND_OVERRIDES: Partial<Record<EditableBrandKey, string>> 
   forestDeep: "#0b241d",
   sage: "#3fc79a",
   mint: "#a2f0d0",
-  /* Dark muted for light grounds — not the dark-site mint gray */
-  quiet: "#5c564e",
+  /* Muted-on-dark only — light-paper muted lives in --wf-quiet (derived). */
+  quiet: "#a8b4af",
   onBrand: "#ecfaf4",
 };
 
@@ -447,7 +447,7 @@ const SWATCH_TOKEN: Record<EditableBrandKey, string> = {
   sage: "--wf-sage",
   mint: "--wf-mint",
   ink: "--wf-ink",
-  quiet: "--wf-quiet",
+  quiet: "--wf-on-dark",
   onBrand: "--wf-on-brand",
 };
 
@@ -457,7 +457,7 @@ const DEFAULT_SWATCH_HEX: BrandSwatchMap = {
   sage: "#3fc79a",
   mint: "#a2f0d0",
   ink: "#1c2623",
-  quiet: "#5c564e",
+  quiet: "#a8b4af",
   onBrand: "#ecfaf4",
 };
 
@@ -487,9 +487,15 @@ export function deriveBrandPalette(
   const fog = fromHsl(h, Math.min(0.12, s * 0.3), 0.92);
   const border = fromHsl(h, Math.min(0.12, s * 0.28), 0.88);
   const ink = fromHsl(h, Math.min(0.16, s * 0.4), 0.13);
-  // Quiet is muted-on-dark (light gray-green), not dark gray for light pages.
   const onBrand = l > 0.55 ? ink : cream;
+  // Quiet = muted on light paper (dark gray-green). Never use this on dark grounds.
   const quiet = fromHsl(
+    h,
+    Math.min(0.14, s * 0.35),
+    clamp(rgbToHsl(ink).l + 0.22 * Math.max(spread, 0.6), 0.28, 0.42),
+  );
+  // On-dark = muted on dark grounds (light gray-green).
+  const onDark = fromHsl(
     h,
     Math.min(0.14, s * 0.32),
     clamp(rgbToHsl(onBrand).l - 0.22 * Math.max(spread, 0.6), 0.55, 0.78),
@@ -497,6 +503,7 @@ export function deriveBrandPalette(
   const inkHex = rgbToHex(ink);
   const quietHex = rgbToHex(quiet);
   const onBrandHex = rgbToHex(onBrand);
+  const onDarkHex = rgbToHex(onDark);
 
   return {
     "--wf-forest": rgbToHex(forest),
@@ -520,8 +527,8 @@ export function deriveBrandPalette(
     "--wf-success": rgbToHex(sage),
     "--wf-on-brand": onBrandHex,
     "--wf-text-on-brand": onBrandHex,
-    "--wf-on-dark": quietHex,
-    "--wf-on-dark-strong": `color-mix(in srgb, ${onBrandHex} 92%, ${quietHex})`,
+    "--wf-on-dark": onDarkHex,
+    "--wf-on-dark-strong": `color-mix(in srgb, ${onBrandHex} 92%, ${onDarkHex})`,
     "--wf-forest-rgb": rgbChannels(forest),
     "--wf-forest-mid-rgb": rgbChannels(forestMid),
     "--wf-forest-deep-rgb": rgbChannels(forestDeep),
@@ -540,7 +547,8 @@ export function swatchesFromPalette(palette: BrandPalette): BrandSwatchMap {
     sage: palette["--wf-sage"] ?? DEFAULT_SWATCH_HEX.sage,
     mint: palette["--wf-mint"] ?? DEFAULT_SWATCH_HEX.mint,
     ink: palette["--wf-ink"] ?? DEFAULT_SWATCH_HEX.ink,
-    quiet: palette["--wf-quiet"] ?? DEFAULT_SWATCH_HEX.quiet,
+    // Picker “quiet” edits muted-on-dark.
+    quiet: palette["--wf-on-dark"] ?? DEFAULT_SWATCH_HEX.quiet,
     onBrand: palette["--wf-on-brand"] ?? DEFAULT_SWATCH_HEX.onBrand,
   };
 }
@@ -554,7 +562,7 @@ export function readLiveSwatches(): BrandSwatchMap {
     sage: read("--wf-sage", DEFAULT_SWATCH_HEX.sage),
     mint: read("--wf-mint", DEFAULT_SWATCH_HEX.mint),
     ink: read("--wf-ink", DEFAULT_SWATCH_HEX.ink),
-    quiet: read("--wf-quiet", DEFAULT_SWATCH_HEX.quiet),
+    quiet: read("--wf-on-dark", DEFAULT_SWATCH_HEX.quiet),
     onBrand: read("--wf-on-brand", DEFAULT_SWATCH_HEX.onBrand),
   };
 }
@@ -591,10 +599,16 @@ function applyOverridesToDom(overrides: BrandLabState["overrides"]): void {
     root.style.setProperty("--wf-text", overrides.onBrand ?? overrides.ink);
   }
   if (overrides.quiet) {
-    root.style.setProperty("--wf-subtle", overrides.quiet);
-    root.style.setProperty("--wf-text-muted", overrides.quiet);
-    // Dark-site muted copy uses on-dark; keep it in sync with quiet.
+    // “quiet” swatch = muted-on-dark only. Light-paper muted stays --wf-quiet.
     root.style.setProperty("--wf-on-dark", overrides.quiet);
+    const onBrandLive =
+      overrides.onBrand ??
+      (getComputedStyle(root).getPropertyValue("--wf-on-brand").trim() ||
+        DEFAULT_SWATCH_HEX.onBrand);
+    root.style.setProperty(
+      "--wf-on-dark-strong",
+      `color-mix(in srgb, ${onBrandLive} 92%, ${overrides.quiet})`,
+    );
   }
 
   // Keep on-brand / on-dark coherent unless the user overrode them.
@@ -617,19 +631,16 @@ function applyOverridesToDom(overrides: BrandLabState["overrides"]): void {
     root.style.setProperty("--wf-text-on-brand", onBrandHex);
     root.style.setProperty("--wf-text", onBrandHex);
     if (!overrides.quiet) {
-      const quiet = fromHsl(
+      const onDark = fromHsl(
         rgbToHsl(onBrand).h,
         Math.min(0.14, rgbToHsl(onBrand).s * 0.32),
         clamp(rgbToHsl(onBrand).l - 0.22, 0.55, 0.78),
       );
-      const quietHex = rgbToHex(quiet);
-      root.style.setProperty("--wf-quiet", quietHex);
-      root.style.setProperty("--wf-subtle", quietHex);
-      root.style.setProperty("--wf-text-muted", quietHex);
-      root.style.setProperty("--wf-on-dark", quietHex);
+      const onDarkHex = rgbToHex(onDark);
+      root.style.setProperty("--wf-on-dark", onDarkHex);
       root.style.setProperty(
         "--wf-on-dark-strong",
-        `color-mix(in srgb, ${onBrandHex} 92%, ${quietHex})`,
+        `color-mix(in srgb, ${onBrandHex} 92%, ${onDarkHex})`,
       );
     }
   } else {
@@ -643,19 +654,16 @@ function applyOverridesToDom(overrides: BrandLabState["overrides"]): void {
         : overrides.onBrand;
     root.style.setProperty("--wf-text", pageText);
     if (!overrides.quiet) {
-      const quiet = fromHsl(
+      const onDark = fromHsl(
         rgbToHsl(onBrand).h,
         Math.min(0.14, rgbToHsl(onBrand).s * 0.32),
         clamp(rgbToHsl(onBrand).l - 0.22, 0.55, 0.78),
       );
-      const quietHex = rgbToHex(quiet);
-      root.style.setProperty("--wf-quiet", quietHex);
-      root.style.setProperty("--wf-subtle", quietHex);
-      root.style.setProperty("--wf-text-muted", quietHex);
-      root.style.setProperty("--wf-on-dark", quietHex);
+      const onDarkHex = rgbToHex(onDark);
+      root.style.setProperty("--wf-on-dark", onDarkHex);
       root.style.setProperty(
         "--wf-on-dark-strong",
-        `color-mix(in srgb, ${overrides.onBrand} 92%, ${quietHex})`,
+        `color-mix(in srgb, ${overrides.onBrand} 92%, ${onDarkHex})`,
       );
     } else {
       root.style.setProperty(
@@ -866,20 +874,8 @@ function normalizeLabState(raw: Partial<BrandLabState> | undefined): BrandLabSta
       if (!hex) {
         continue;
       }
-      // Legacy light-page muted/ink overrides are too dark for the dark site.
-      if (
-        swatch.key === "quiet" &&
-        mode === "dark" &&
-        rgbToHsl(hexToRgb(hex)).l < 0.45
-      ) {
-        continue;
-      }
-      // Dark-site mint-gray muted is too light for paper grounds.
-      if (
-        swatch.key === "quiet" &&
-        mode === "light" &&
-        rgbToHsl(hexToRgb(hex)).l > 0.5
-      ) {
+      // “quiet” maps to --wf-on-dark. Drop legacy light-paper muted (too dark).
+      if (swatch.key === "quiet" && rgbToHsl(hexToRgb(hex)).l < 0.45) {
         continue;
       }
       if (swatch.key === "ink") {
@@ -892,9 +888,6 @@ function normalizeLabState(raw: Partial<BrandLabState> | undefined): BrandLabSta
     if (legacyInk && !overrides.onBrand && rgbToHsl(hexToRgb(legacyInk)).l > 0.55) {
       overrides.onBrand = legacyInk;
     }
-  }
-  if (mode === "light" && !overrides.quiet) {
-    overrides.quiet = DEFAULT_BRAND_OVERRIDES.quiet ?? "#5c564e";
   }
   const textStyles = migrateLegacyType((raw ?? {}) as Record<string, unknown>);
   return { base, shift, overrides, textStyles, mode };
@@ -997,7 +990,7 @@ export function deleteSavedBrandPalette(id: string): SavedBrandPalette[] {
 export const BRAND_THEME_SEED_KEY = "wf-brand-theme-seed";
 
 /** Bump to re-seed shipped themes after editing the list below. */
-const BRAND_THEME_SEED_VERSION = "themes-v5";
+const BRAND_THEME_SEED_VERSION = "themes-v6";
 
 /** Fixed savedAt base so shipped themes keep their order under user saves. */
 const BRAND_THEME_SEED_EPOCH = Date.UTC(2026, 0, 1);
@@ -1380,7 +1373,7 @@ const BRAND_THEME_SPECS: BrandThemeSpec[] = [
       forestDeep: "#0b241d",
       sage: "#3fc79a",
       mint: "#a2f0d0",
-      quiet: "#5c564e",
+      quiet: "#a8b4af",
       onBrand: "#ecfaf4",
     },
     textStyles: typeSet({

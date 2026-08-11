@@ -18,7 +18,7 @@
 
 .p3--dark {
   --p3-border: var(--wf-border-dark);
-  --p3-quiet: var(--wf-quiet);
+  --p3-quiet: var(--wf-on-dark);
   --p3-panel: var(--wf-panel-dark);
   background:
     radial-gradient(ellipse 70% 45% at 50% -10%, rgb(var(--wf-mint-rgb) / 0.14), transparent 60%),
