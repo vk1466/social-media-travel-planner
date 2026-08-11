@@ -62,6 +62,13 @@
   --wf-clay: #9a7358;
   --wf-slate: #3d6b8a;
   --wf-plum: #6f5f8a;
+  /* Warm mark — home title tile + Posts shelf (Volume coral) */
+  --wf-coral: #ff5733;
+  --wf-coral-soft: #ff8b4d;
+  --wf-coral-deep: #d94a1f;
+  --wf-coral-rgb: 255 87 51;
+  --wf-coral-soft-rgb: 255 139 77;
+  --wf-coral-deep-rgb: 217 74 31;
 
   /* Status */
   --wf-success: #3fc79a;

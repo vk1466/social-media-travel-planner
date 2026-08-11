@@ -183,7 +183,7 @@
 
 .lib-shell-seg button.is-active {
   background: var(--wf-ink);
-  color: var(--wf-cream, #faf8f4);
+  color: var(--wf-on-brand);
 }
 
 .lib-shell-facets {

@@ -23,7 +23,7 @@
   background:
     radial-gradient(ellipse 70% 45% at 50% -10%, rgb(var(--wf-mint-rgb) / 0.13), transparent 60%),
     var(--wf-forest-deep);
-  color: var(--wf-cream);
+  color: var(--wf-on-brand);
 }
 
 .pl2-shell {
@@ -100,10 +100,10 @@
 }
 
 .pl2-reject {
-  border: 1px solid #b45a4a;
+  border: 1px solid var(--wf-danger);
   border-radius: 999px;
   background: transparent;
-  color: #9a4034;
+  color: var(--wf-danger);
   font: inherit;
   font-size: 0.74rem;
   font-weight: 700;
@@ -114,13 +114,13 @@
 }
 
 .pl2-reject:hover {
-  background: #9a4034;
-  color: #fff;
+  background: var(--wf-danger);
+  color: var(--wf-on-brand);
 }
 
 .pl2--dark .pl2-reject {
-  border-color: #e08a7a;
-  color: #e08a7a;
+  border-color: color-mix(in srgb, var(--wf-danger) 75%, var(--wf-on-brand));
+  color: color-mix(in srgb, var(--wf-danger) 75%, var(--wf-on-brand));
 }
 
 .pl2-nav {
@@ -260,7 +260,7 @@
 
 .pl2-filters button.is-active {
   background: var(--wf-forest);
-  color: #fff;
+  color: var(--wf-on-brand);
 }
 
 .pl2--dark .pl2-filters button.is-active {
@@ -324,7 +324,7 @@
 .pl2-type.is-active {
   background: var(--wf-sage);
   border-color: var(--wf-sage);
-  color: #fff;
+  color: var(--wf-on-brand);
 }
 
 .pl2-type.is-active span {
@@ -368,7 +368,7 @@
   place-content: center;
   text-align: center;
   border: 2px solid var(--wf-forest);
-  color: #fff;
+  color: var(--wf-on-brand);
   cursor: pointer;
   overflow: hidden;
   box-shadow: 0 3px 12px rgb(var(--wf-ink-rgb) / 0.3);
@@ -405,7 +405,7 @@
 
 .pl2-map-pin.visited {
   background: var(--wf-sage);
-  border: 2px solid #fff;
+  border: 2px solid var(--wf-on-brand);
 }
 
 .pl2-map-pin.dream {
@@ -473,7 +473,7 @@
 
 .pl2-status.is-visited {
   background: var(--wf-sage);
-  color: #fff;
+  color: var(--wf-on-brand);
 }
 
 .pl2-status.is-dream {
@@ -673,7 +673,7 @@
 
 .pl2-column-row.is-active {
   background: var(--wf-forest);
-  color: #fff;
+  color: var(--wf-on-brand);
 }
 
 .pl2-column-row.is-active .pl2-column-tail {
@@ -764,7 +764,7 @@
   cursor: pointer;
   overflow: hidden;
   text-align: left;
-  color: #fff;
+  color: var(--wf-on-brand);
   background:
     linear-gradient(to top, rgb(255 255 255 / 0.22) var(--ratio), transparent var(--ratio)),
     hsl(158 26% calc(24% + var(--tone) * 13%));
@@ -814,7 +814,7 @@
   text-align: left;
   cursor: pointer;
   overflow: hidden;
-  color: #fff;
+  color: var(--wf-on-brand);
   background:
     linear-gradient(to top, rgb(var(--wf-mint-rgb) / 0.55) var(--ratio), transparent var(--ratio)),
     var(--wf-forest);
@@ -873,7 +873,7 @@
 }
 
 .pl2-sunburst-name {
-  fill: #fff;
+  fill: var(--wf-on-brand);
   font-size: 15px;
   text-anchor: middle;
   font-family: var(--wf-font-serif);
@@ -947,7 +947,7 @@
   font-size: 0.74rem;
   letter-spacing: 0.14em;
   background: var(--wf-forest);
-  color: #fff;
+  color: var(--wf-on-brand);
 }
 
 .pl2-index-row {
@@ -1766,7 +1766,7 @@
   border-style: solid;
   border-color: var(--wf-sage);
   background: var(--wf-sage);
-  color: #fff;
+  color: var(--wf-on-brand);
 }
 
 /* —— 15 Strata —— */
@@ -2227,7 +2227,7 @@
   border: 0;
   border-radius: 999px;
   background: var(--wf-forest);
-  color: #fff;
+  color: var(--wf-on-brand);
   font: inherit;
   font-size: 0.74rem;
   padding: 0.25rem 0.7rem;
@@ -2364,7 +2364,7 @@
   padding: 1rem;
   border: 1px solid var(--wf-border);
   border-radius: 14px;
-  background: #fff;
+  background: var(--wf-surface);
   text-decoration: none;
   color: inherit;
   transition:
@@ -2474,7 +2474,7 @@
   padding: 0.55rem 0.7rem;
   border: 1px solid var(--wf-border);
   border-radius: 10px;
-  background: #fff;
+  background: var(--wf-surface);
   font-size: 0.88rem;
 }
 
@@ -2492,7 +2492,7 @@
 
 .pl2-gallery-rejected button:hover {
   background: var(--wf-sage);
-  color: #fff;
+  color: var(--wf-on-brand);
 }
 
 /* —— Narrow screens —— */

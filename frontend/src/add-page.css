@@ -56,12 +56,12 @@
 
 .add-page-success-link-primary {
   background: var(--wf-forest);
-  color: var(--wf-cream);
+  color: var(--wf-on-brand);
 }
 
 .add-page-success-link-primary:hover {
   background: var(--wf-forest-hover);
-  color: var(--wf-cream);
+  color: var(--wf-on-brand);
 }
 
 .add-page-success-link-secondary {

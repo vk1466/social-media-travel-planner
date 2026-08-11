@@ -28,6 +28,9 @@ export const DEFAULT_BRAND_HEX = {
   clay: "#9a7358",
   slate: "#3d6b8a",
   plum: "#6f5f8a",
+  coral: "#ff5733",
+  coralSoft: "#ff8b4d",
+  coralDeep: "#d94a1f",
   white: "#ffffff",
 } as const;
 
@@ -58,6 +61,9 @@ export const BrandCss = {
   clay: "var(--wf-clay)",
   slate: "var(--wf-slate)",
   plum: "var(--wf-plum)",
+  coral: "var(--wf-coral)",
+  coralSoft: "var(--wf-coral-soft)",
+  coralDeep: "var(--wf-coral-deep)",
   white: "var(--wf-surface)",
   forestRgb: (alpha: number) => `rgb(var(--wf-forest-rgb) / ${alpha})`,
   forestMidRgb: (alpha: number) => `rgb(var(--wf-forest-mid-rgb) / ${alpha})`,
@@ -69,6 +75,7 @@ export const BrandCss = {
   inkRgb: (alpha: number) => `rgb(var(--wf-ink-rgb) / ${alpha})`,
   sandRgb: (alpha: number) => `rgb(var(--wf-sand-rgb) / ${alpha})`,
   clayRgb: (alpha: number) => `rgb(var(--wf-clay-rgb) / ${alpha})`,
+  coralRgb: (alpha: number) => `rgb(var(--wf-coral-rgb) / ${alpha})`,
 } as const;
 
 /** Alias used by demos (swatches should use BrandCss so they track the picker). */
@@ -95,6 +102,9 @@ const TOKEN_TO_HEX_KEY: Record<string, BrandHexKey> = {
   "--wf-clay": "clay",
   "--wf-slate": "slate",
   "--wf-plum": "plum",
+  "--wf-coral": "coral",
+  "--wf-coral-soft": "coralSoft",
+  "--wf-coral-deep": "coralDeep",
 };
 
 export function syncBrandHexFromTokens(tokens: Record<string, string>): void {

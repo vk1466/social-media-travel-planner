@@ -26,49 +26,50 @@ export const BENTO_MOTION_PRESETS: BentoMotionPreset[] = [
     id: "crossfade",
     label: "Crossfade",
     note: "Gentle opacity blend.",
-    swatch: "linear-gradient(135deg, #1a1612 0%, #ff8b4d 100%)",
+    swatch: "linear-gradient(135deg, var(--wf-forest-deep) 0%, var(--wf-coral-soft) 100%)",
   },
   {
     id: "slide-up",
     label: "Slide up",
     note: "Next frame rises from below.",
-    swatch: "linear-gradient(180deg, #ff8b4d 0%, #1f3a2c 100%)",
+    swatch: "linear-gradient(180deg, var(--wf-coral-soft) 0%, var(--wf-forest-deep) 100%)",
   },
   {
     id: "slide-left",
     label: "Slide left",
     note: "Horizontal push, carousel feel.",
-    swatch: "linear-gradient(90deg, #1f3a2c 0%, #ff5733 100%)",
+    swatch: "linear-gradient(90deg, var(--wf-forest-deep) 0%, var(--wf-coral) 100%)",
   },
   {
     id: "zoom-soft",
     label: "Zoom soft",
     note: "Slight scale-in as the new photo arrives.",
-    swatch: "radial-gradient(circle at 40% 40%, #ff8b4d, #0d1510)",
+    swatch: "radial-gradient(circle at 40% 40%, var(--wf-coral-soft), var(--wf-forest-deep))",
   },
   {
     id: "blur-dissolve",
     label: "Blur dissolve",
     note: "Soft focus out, then settle sharp.",
-    swatch: "linear-gradient(135deg, #9eb0a6 0%, #1a1612 100%)",
+    swatch: "linear-gradient(135deg, var(--wf-quiet) 0%, var(--wf-forest-deep) 100%)",
   },
   {
     id: "wipe",
     label: "Wipe",
     note: "Diagonal clip reveal.",
-    swatch: "linear-gradient(135deg, #ff5733 45%, #1a1612 55%)",
+    swatch: "linear-gradient(135deg, var(--wf-coral) 45%, var(--wf-forest-deep) 55%)",
   },
   {
     id: "flip",
     label: "Flip",
     note: "Quick card flip on the Y axis — default.",
-    swatch: "linear-gradient(90deg, #1a1612 50%, #ff8b4d 50%)",
+    swatch: "linear-gradient(90deg, var(--wf-forest-deep) 50%, var(--wf-coral-soft) 50%)",
   },
   {
     id: "card-shuffle",
     label: "Shuffle",
     note: "Tiny tilt and lift — like restacking prints.",
-    swatch: "linear-gradient(160deg, #ff8b4d 0%, #d94a1f 40%, #1f3a2c 100%)",
+    swatch:
+      "linear-gradient(160deg, var(--wf-coral-soft) 0%, var(--wf-coral-deep) 40%, var(--wf-forest-deep) 100%)",
   },
 ];
 

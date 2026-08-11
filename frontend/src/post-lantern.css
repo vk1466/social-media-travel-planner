@@ -23,7 +23,7 @@
   background:
     radial-gradient(ellipse 70% 45% at 50% -10%, rgb(var(--wf-mint-rgb) / 0.14), transparent 60%),
     var(--wf-forest-deep);
-  color: var(--wf-cream);
+  color: var(--wf-on-brand);
 }
 
 .p3-shell {
@@ -125,10 +125,10 @@
 }
 
 .p3-reject {
-  border: 1px solid #b45a4a;
+  border: 1px solid var(--wf-danger);
   border-radius: 999px;
   background: transparent;
-  color: #9a4034;
+  color: var(--wf-danger);
   font: inherit;
   font-size: 0.74rem;
   font-weight: 700;
@@ -138,9 +138,14 @@
   cursor: pointer;
 }
 
+.p3-reject:hover {
+  background: var(--wf-danger);
+  color: var(--wf-on-brand);
+}
+
 .p3--dark .p3-reject {
-  border-color: #e08a7a;
-  color: #e08a7a;
+  border-color: color-mix(in srgb, var(--wf-danger) 75%, var(--wf-on-brand));
+  color: color-mix(in srgb, var(--wf-danger) 75%, var(--wf-on-brand));
 }
 
 .p3-nav {
@@ -197,7 +202,7 @@
 .p3-filters button.is-active {
   background: var(--wf-forest);
   border-color: var(--wf-forest);
-  color: var(--wf-cream);
+  color: var(--wf-on-brand);
 }
 
 .p3--dark .p3-filters button.is-active {
@@ -533,7 +538,7 @@
   justify-content: flex-end;
   gap: 0.25rem;
   padding: 0.55rem;
-  color: #fff;
+  color: var(--wf-on-brand);
 }
 
 .p3-tile-title {

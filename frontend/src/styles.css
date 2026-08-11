@@ -33,6 +33,7 @@
   --clay-accent: var(--wf-clay);
   --slate-accent: var(--wf-slate);
   --plum-accent: var(--wf-plum);
+  --coral-accent: var(--wf-coral);
 
   --success: var(--wf-success);
   --danger: var(--wf-danger);
@@ -493,11 +494,11 @@ a {
   color: var(--danger);
   font-weight: var(--font-weight-6);
   font-size: var(--font-size-1);
-  border: 1px solid var(--red-2);
+  border: 1px solid var(--danger);
 }
 
 .danger-button:hover:not(:disabled) {
-  background: var(--red-0);
+  background: color-mix(in srgb, var(--danger) 10%, var(--surface));
 }
 
 .secondary-button {
@@ -511,7 +512,7 @@ a {
 }
 
 .secondary-button:hover:not(:disabled) {
-  border-color: var(--stone-5);
+  border-color: var(--accent);
   color: var(--text);
   background: var(--surface-muted);
 }
