@@ -226,6 +226,11 @@
   font-weight: 700;
 }
 
+.wf-site[data-tone="light"] .wf-chip-btn.is-active {
+  background: var(--wf-forest-deep);
+  border-color: var(--wf-forest-deep);
+}
+
 .wf-site[data-tone="dark"] .wf-chip-btn.is-active {
   color: var(--wf-forest-deep);
 }

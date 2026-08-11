@@ -1,11 +1,13 @@
 /* Post library — Lantern Deck (production).
-   Tone-dependent surface tokens (--p3-panel/border/quiet) flip under .p3--dark;
+   Tone-dependent surface tokens (--p3-panel/border/quiet/accent) flip under .p3--dark;
    everything else uses --wf-* brand tokens directly. */
 
 .p3 {
   --p3-panel: var(--wf-surface);
   --p3-border: var(--wf-border);
   --p3-quiet: var(--wf-quiet);
+  /* Accent text — forest on paper, mint on dark ground */
+  --p3-accent: var(--wf-forest);
 
   min-height: 100vh;
   font-family: var(--wf-font-sans);
@@ -19,6 +21,7 @@
 .p3--dark {
   --p3-border: var(--wf-border-dark);
   --p3-quiet: var(--wf-on-dark);
+  --p3-accent: var(--wf-mint);
   --p3-panel: var(--wf-panel-dark);
   background:
     radial-gradient(ellipse 70% 45% at 50% -10%, rgb(var(--wf-mint-rgb) / 0.14), transparent 60%),
@@ -55,7 +58,7 @@
 
 .p3-family {
   margin: 0 0 0.2rem;
-  color: var(--wf-sage);
+  color: var(--p3-accent);
 }
 
 .p3-top h1 {
@@ -85,7 +88,7 @@
 
 .p3-inspire {
   margin: 0;
-  color: var(--wf-sage);
+  color: var(--p3-accent);
 }
 
 .p3-wiring {
@@ -96,10 +99,6 @@
   color: var(--p3-quiet);
 }
 
-.p3--dark .p3-family,
-.p3--dark .p3-inspire {
-  color: var(--wf-mint);
-}
 
 .p3-links {
   display: flex;
@@ -112,13 +111,10 @@
 }
 
 .p3-links a {
-  color: var(--wf-sage);
+  color: var(--p3-accent);
   text-decoration: none;
 }
 
-.p3--dark .p3-links a {
-  color: var(--wf-mint);
-}
 
 .p3-links a:hover {
   text-decoration: underline;
@@ -200,8 +196,8 @@
 }
 
 .p3-filters button.is-active {
-  background: var(--wf-forest);
-  border-color: var(--wf-forest);
+  background: var(--wf-forest-deep);
+  border-color: var(--wf-forest-deep);
   color: var(--wf-on-brand);
 }
 
@@ -293,7 +289,7 @@
 }
 
 .p3-ring.is-active .p3-ring-label {
-  color: var(--wf-sage);
+  color: var(--p3-accent);
 }
 
 .p3-ring-count {
@@ -589,7 +585,7 @@
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--wf-mint);
+  color: var(--p3-accent);
 }
 
 /* —— Detail pane (Split Meridian) —— */
@@ -628,12 +624,9 @@
 
 .p3-detail-kicker {
   margin: 0;
-  color: var(--wf-sage);
+  color: var(--p3-accent);
 }
 
-.p3--dark .p3-detail-kicker {
-  color: var(--wf-mint);
-}
 
 .p3-detail-copy h2 {
   margin: 0.25rem 0 0;
@@ -694,13 +687,10 @@
 .p3-open {
   font-size: 0.8rem;
   font-weight: 700;
-  color: var(--wf-sage);
+  color: var(--p3-accent);
   text-decoration: none;
 }
 
-.p3--dark .p3-open {
-  color: var(--wf-mint);
-}
 
 .p3-close {
   border: 1px solid var(--p3-border);
@@ -826,7 +816,7 @@
 }
 
 .p3-bearing.is-active .p3-bearing-label {
-  color: var(--wf-sage);
+  color: var(--p3-accent);
 }
 
 /* —— 06 Inline Aperture —— */

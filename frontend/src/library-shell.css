@@ -113,7 +113,7 @@
   border: 0;
   border-radius: 999px;
   padding: 0.45rem 0.95rem;
-  background: var(--wf-forest);
+  background: var(--wf-forest-deep);
   color: var(--wf-on-brand);
   font: inherit;
   font-size: 0.78rem;
@@ -259,9 +259,9 @@
 }
 
 .lib-shell-pill.is-active {
-  background: var(--wf-forest);
+  background: var(--wf-forest-deep);
   color: var(--wf-on-brand);
-  border-color: var(--wf-forest);
+  border-color: var(--wf-forest-deep);
 }
 
 .lib-shell-pill.is-soft:not(.is-active) {

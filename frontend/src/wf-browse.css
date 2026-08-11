@@ -141,7 +141,7 @@
 }
 
 .wf-seg-btn.is-active {
-  background: var(--wf-forest);
+  background: var(--wf-forest-deep);
   color: var(--wf-on-brand);
 }
 
@@ -188,9 +188,9 @@
 }
 
 .wf-pill.is-active {
-  background: var(--wf-forest);
+  background: var(--wf-forest-deep);
   color: var(--wf-on-brand);
-  border-color: var(--wf-forest);
+  border-color: var(--wf-forest-deep);
   font-weight: 700;
 }
 

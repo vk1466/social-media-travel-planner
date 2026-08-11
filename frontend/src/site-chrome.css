@@ -13,8 +13,8 @@
   /* Semantic page copy — light ground */
   --wf-copy: var(--wf-ink);
   --wf-copy-muted: var(--wf-quiet);
-  /* Mint is a light highlight; use brand fill for accents on paper */
-  --wf-copy-accent: var(--wf-forest);
+  /* Mint is a light highlight; use a deeper brand fill for small accent copy */
+  --wf-copy-accent: var(--wf-forest-hover);
   --wf-chrome-bg: var(--wf-bg);
   --wf-chrome-panel: var(--wf-surface);
   --wf-chrome-panel-muted: var(--wf-surface-muted);
@@ -264,7 +264,7 @@
 }
 
 .wf-header[data-tone="light"] .wf-cta {
-  background: var(--wf-forest);
+  background: var(--wf-forest-deep);
   color: var(--wf-on-brand);
 }
 

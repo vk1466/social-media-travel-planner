@@ -1,11 +1,13 @@
 /* Places browse — Country Covers (production).
-   Tone-dependent surface tokens (--pl2-panel/border/quiet) flip under .pl2--dark;
+   Tone-dependent surface tokens (--pl2-panel/border/quiet/accent) flip under .pl2--dark;
    everything else uses --wf-* brand tokens directly. */
 
 .pl2 {
   --pl2-panel: var(--wf-surface);
   --pl2-border: var(--wf-border);
   --pl2-quiet: var(--wf-quiet);
+  /* Accent text — forest on paper, mint on dark ground */
+  --pl2-accent: var(--wf-forest);
 
   min-height: 100vh;
   font-family: var(--wf-font-sans);
@@ -20,6 +22,7 @@
   --pl2-panel: var(--wf-panel-dark);
   --pl2-border: var(--wf-border-dark);
   --pl2-quiet: rgb(var(--wf-cream-rgb) / 0.62);
+  --pl2-accent: var(--wf-mint);
   background:
     radial-gradient(ellipse 70% 45% at 50% -10%, rgb(var(--wf-mint-rgb) / 0.13), transparent 60%),
     var(--wf-forest-deep);
@@ -70,12 +73,9 @@
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--wf-sage);
+  color: var(--pl2-accent);
 }
 
-.pl2--dark .pl2-inspire {
-  color: var(--wf-mint);
-}
 
 .pl2-links {
   display: flex;
@@ -87,13 +87,10 @@
 }
 
 .pl2-links a {
-  color: var(--wf-sage);
+  color: var(--pl2-accent);
   text-decoration: none;
 }
 
-.pl2--dark .pl2-links a {
-  color: var(--wf-mint);
-}
 
 .pl2-links a:hover {
   text-decoration: underline;
@@ -179,14 +176,11 @@
   background: none;
   padding: 0.1rem 0.2rem;
   font: inherit;
-  color: var(--wf-sage);
+  color: var(--pl2-accent);
   cursor: pointer;
   border-radius: 4px;
 }
 
-.pl2--dark .pl2-crumbs button {
-  color: var(--wf-mint);
-}
 
 .pl2-crumbs button.is-current {
   color: var(--wf-copy);
@@ -322,13 +316,13 @@
 }
 
 .pl2-type.is-active {
-  background: var(--wf-sage);
-  border-color: var(--wf-sage);
+  background: var(--wf-forest-deep);
+  border-color: var(--wf-forest-deep);
   color: var(--wf-on-brand);
 }
 
 .pl2-type.is-active span {
-  color: rgb(255 255 255 / 0.8);
+  color: var(--wf-on-brand);
 }
 
 .pl2--dark .pl2-type.is-active {
@@ -435,12 +429,9 @@
   letter-spacing: 0.05em;
   text-transform: uppercase;
   font-size: 0.66rem;
-  color: var(--wf-sage);
+  color: var(--pl2-accent);
 }
 
-.pl2--dark .pl2-legend-note {
-  color: var(--wf-mint);
-}
 
 /* —— Shared atoms —— */
 .pl2-dot {
@@ -562,7 +553,7 @@
 .pl2-chip-row button span {
   font-size: 0.68rem;
   font-weight: 700;
-  color: var(--wf-sage);
+  color: var(--pl2-accent);
 }
 
 .pl2-chip-row button:hover {
@@ -602,7 +593,7 @@
 .pl2-node-count {
   font-size: 0.72rem;
   font-weight: 700;
-  color: var(--wf-sage);
+  color: var(--pl2-accent);
 }
 
 .pl2-node-sub {
@@ -890,12 +881,9 @@
   font-size: 0.72rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--wf-forest);
+  color: var(--pl2-accent);
 }
 
-.pl2--dark .pl2-sunburst-side h3 {
-  color: var(--wf-mint);
-}
 
 .pl2-sunburst-side ul {
   list-style: none;
@@ -985,7 +973,7 @@
   font: inherit;
   font-size: 0.66rem;
   font-weight: 700;
-  color: var(--wf-sage);
+  color: var(--pl2-accent);
   cursor: pointer;
   padding: 0 0.15rem;
   line-height: 1.25;
@@ -1044,7 +1032,7 @@
 .pl2-twisty {
   border: 0;
   background: none;
-  color: var(--wf-sage);
+  color: var(--pl2-accent);
   font: inherit;
   font-size: 0.7rem;
   cursor: pointer;
@@ -1085,15 +1073,12 @@
 .pl2-command-prompt {
   font-size: 0.7rem;
   font-weight: 700;
-  color: var(--wf-forest);
+  color: var(--pl2-accent);
   border: 1px solid var(--pl2-border);
   border-radius: 5px;
   padding: 0.1rem 0.35rem;
 }
 
-.pl2--dark .pl2-command-prompt {
-  color: var(--wf-mint);
-}
 
 .pl2-command-box input {
   flex: 1;
@@ -1146,12 +1131,9 @@
   font-size: 0.62rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--wf-forest);
+  color: var(--pl2-accent);
 }
 
-.pl2--dark .pl2-command-kind {
-  color: var(--wf-mint);
-}
 
 .pl2-command-name {
   font-weight: 600;
@@ -1226,7 +1208,7 @@
 .pl2-lane > header span {
   font-size: 0.9rem;
   font-weight: 700;
-  color: var(--wf-sage);
+  color: var(--pl2-accent);
 }
 
 .pl2-lane > header p {
@@ -1422,7 +1404,7 @@
 }
 
 .pl2-ledger-numbers strong {
-  color: var(--wf-sage);
+  color: var(--pl2-accent);
 }
 
 .pl2-ledger-numbers small {
@@ -1464,7 +1446,7 @@
   background: none;
   font: inherit;
   font-size: 0.8rem;
-  color: #e9f3ee;
+  color: var(--wf-on-brand);
   cursor: pointer;
   text-align: left;
 }
@@ -1516,7 +1498,7 @@
 }
 
 .pl2-board-status.is-scheduled {
-  color: rgb(233 243 238 / 0.45);
+  color: rgb(var(--wf-cream-rgb) / 0.45);
 }
 
 /* —— 12 Metro lines —— */
@@ -1643,7 +1625,7 @@
   padding: 0.4rem;
   border: 1px solid rgb(var(--wf-mint-rgb) / 0.35);
   font: inherit;
-  color: #eaf5ef;
+  color: var(--wf-on-brand);
   text-align: center;
   cursor: pointer;
   overflow: hidden;
@@ -1697,7 +1679,7 @@
 
 .pl2-zoom-level {
   font-weight: 700;
-  color: var(--wf-sage);
+  color: var(--pl2-accent);
 }
 
 .pl2-zoom-count {
@@ -1754,7 +1736,7 @@
 
 .pl2-zoom-node small {
   font-weight: 700;
-  color: var(--wf-sage);
+  color: var(--pl2-accent);
 }
 
 .pl2-zoom-node.is-place {
@@ -1789,7 +1771,7 @@
   font: inherit;
   text-align: left;
   cursor: pointer;
-  color: #241c14;
+  color: var(--wf-ink);
   background:
     repeating-linear-gradient(
       -22deg,
@@ -1955,7 +1937,7 @@
   padding: 1rem;
   border: 0;
   font: inherit;
-  color: #f2f7f4;
+  color: var(--wf-on-brand);
   text-align: left;
   cursor: pointer;
 }
@@ -2018,12 +2000,9 @@
 .pl2-cover-chips button span {
   font-size: 0.64rem;
   font-weight: 700;
-  color: var(--wf-forest);
+  color: var(--pl2-accent);
 }
 
-.pl2--dark .pl2-cover-chips button span {
-  color: var(--wf-mint);
-}
 
 /* —— 18 Fisheye outline —— */
 .pl2-fisheye {
@@ -2129,7 +2108,7 @@
 .pl2-dual-pane > header span {
   font-size: 1.1rem;
   font-weight: 700;
-  color: var(--wf-sage);
+  color: var(--pl2-accent);
 }
 
 .pl2-dual-pane--dream > header span {
@@ -2253,7 +2232,7 @@
   margin-left: auto;
   font-size: 0.76rem;
   font-weight: 700;
-  color: var(--wf-sage);
+  color: var(--pl2-accent);
 }
 
 .pl2-facet-row {
@@ -2343,7 +2322,7 @@
 }
 
 .pl2-gallery-nav a {
-  color: var(--wf-sage);
+  color: var(--pl2-accent);
   text-decoration: none;
 }
 
@@ -2423,7 +2402,7 @@
   border: 1px solid var(--wf-border);
   border-radius: 999px;
   padding: 0.15rem 0.5rem;
-  color: var(--wf-sage);
+  color: var(--pl2-accent);
 }
 
 .pl2-gallery-count {
@@ -2482,7 +2461,7 @@
   border: 1px solid var(--wf-sage);
   border-radius: 999px;
   background: transparent;
-  color: var(--wf-sage);
+  color: var(--pl2-accent);
   font: inherit;
   font-size: 0.74rem;
   font-weight: 700;
