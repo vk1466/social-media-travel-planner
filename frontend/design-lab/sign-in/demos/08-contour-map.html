@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>08 · Contour map — Sign-in Lab</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../shared/gate.css" />
+    <style>
+      body {
+        background: #f2f5f3;
+      }
+
+      .topo {
+        position: relative;
+        overflow: hidden;
+      }
+
+      .topo svg {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        /* Fade the terrain out behind the panel so copy stays quiet. */
+        mask-image: radial-gradient(72% 66% at 50% 50%, transparent 22%, #000 62%);
+      }
+
+      .panel {
+        position: relative;
+        z-index: 1;
+        width: 100%;
+        max-width: 430px;
+        padding: 38px 34px 32px;
+        border-radius: var(--wf-radius-lg);
+        border: 1px solid var(--wf-border);
+        background: rgb(255 255 255 / 0.92);
+        backdrop-filter: blur(6px);
+        box-shadow: var(--wf-shadow-lg);
+        text-align: center;
+        display: grid;
+        justify-items: center;
+        gap: 16px;
+      }
+
+      .pin {
+        display: grid;
+        place-items: center;
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        background: var(--wf-forest);
+        color: var(--wf-on-brand);
+        box-shadow:
+          0 0 0 6px rgb(31 156 114 / 0.14),
+          0 0 0 13px rgb(31 156 114 / 0.07);
+      }
+
+      .panel .gate-title {
+        font-size: clamp(2.2rem, 5vw, 2.9rem);
+      }
+
+      .panel .gate-sub {
+        max-width: 29ch;
+      }
+
+      .panel .gate-actions {
+        justify-content: center;
+        margin-top: 6px;
+      }
+
+      .panel .btn-primary,
+      .panel .btn-secondary {
+        min-width: 118px;
+      }
+
+      .coords {
+        font-family: ui-monospace, "SF Mono", Menlo, monospace;
+        font-size: 0.72rem;
+        letter-spacing: 0.06em;
+        color: var(--wf-quiet);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="gate-stage topo">
+      <svg viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+        <g fill="none" stroke="#1f9c72" stroke-opacity="0.22" stroke-width="1.4">
+          <path d="M-60 620 C 180 560 300 470 520 470 S 900 560 1260 470" />
+          <path d="M-60 560 C 180 500 310 405 520 408 S 910 500 1260 405" />
+          <path d="M-60 500 C 190 440 320 345 525 348 S 915 440 1260 345" />
+          <path d="M-60 440 C 200 382 330 288 530 292 S 920 382 1260 288" />
+          <path d="M-60 380 C 210 325 340 232 535 236 S 925 325 1260 232" />
+          <path d="M-60 320 C 220 268 350 178 540 182 S 930 268 1260 178" />
+          <path d="M-60 700 C 170 640 290 545 515 545 S 890 640 1260 545" />
+          <path d="M-60 760 C 160 704 280 612 510 612 S 880 704 1260 612" />
+          <path d="M120 60 C 300 120 420 210 640 210 S 1000 120 1300 200" />
+          <path d="M120 0 C 310 58 430 148 650 148 S 1010 58 1300 138" />
+        </g>
+        <g fill="none" stroke="#1c2623" stroke-opacity="0.06" stroke-width="1">
+          <path d="M0 200 H1200 M0 400 H1200 M0 600 H1200" />
+          <path d="M200 0 V800 M400 0 V800 M600 0 V800 M800 0 V800 M1000 0 V800" />
+        </g>
+      </svg>
+      <main class="panel">
+        <span class="pin" aria-hidden="true">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+            <circle cx="12" cy="10" r="2.6" />
+          </svg>
+        </span>
+        <h1 class="gate-title">Wanderfile</h1>
+        <p class="gate-sub">Sign in to save posts, places, and trips to your library.</p>
+        <div class="gate-actions">
+          <button type="button" class="btn btn-primary">Sign in</button>
+          <button type="button" class="btn btn-secondary">Sign up</button>
+        </div>
+        <p class="coords">34.6937° N, 135.5023° E</p>
+      </main>
+    </div>
+    <script type="module" src="../shared/lab-bar.js"></script>
+  </body>
+</html>

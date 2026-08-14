@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>03 · Photo bleed — Sign-in Lab</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../shared/gate.css" />
+    <style>
+      body {
+        background: var(--wf-forest-deep);
+      }
+
+      .bleed {
+        position: relative;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 72px 24px;
+        overflow: hidden;
+      }
+
+      .bleed img {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      /* Two-stop scrim: darkest at the bottom so the buttons keep contrast. */
+      .bleed::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background:
+          radial-gradient(60% 55% at 50% 42%, rgb(11 36 29 / 0.35), transparent 70%),
+          linear-gradient(to bottom, rgb(11 36 29 / 0.5), rgb(11 36 29 / 0.78));
+      }
+
+      .bleed main {
+        position: relative;
+        z-index: 1;
+        display: grid;
+        justify-items: center;
+        gap: 18px;
+        text-align: center;
+        color: var(--wf-on-brand);
+      }
+
+      .bleed .gate-title {
+        font-size: clamp(2.6rem, 7vw, 4.2rem);
+        text-shadow: 0 2px 24px rgb(11 36 29 / 0.45);
+      }
+
+      .bleed .gate-sub {
+        color: rgb(236 250 244 / 0.82);
+        max-width: 32ch;
+      }
+
+      .bleed .gate-eyebrow {
+        color: var(--wf-mint);
+      }
+
+      .bleed .btn-secondary {
+        background: rgb(255 255 255 / 0.1);
+        border-color: rgb(236 250 244 / 0.4);
+        color: var(--wf-on-brand);
+        backdrop-filter: blur(8px);
+      }
+
+      .bleed .btn-secondary:hover {
+        background: rgb(255 255 255 / 0.18);
+        border-color: var(--wf-mint);
+        color: #fff;
+      }
+
+      .credit {
+        position: absolute;
+        z-index: 1;
+        right: 20px;
+        top: 20px;
+        font-size: 0.72rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: rgb(236 250 244 / 0.6);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="bleed">
+      <img
+        src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=2000&h=1300&fit=crop&auto=format&q=72"
+        alt=""
+      />
+      <span class="credit">Lofoten, Norway</span>
+      <main>
+        <p class="gate-eyebrow">Wanderfile</p>
+        <h1 class="gate-title">Save the place, not just the post.</h1>
+        <p class="gate-sub">Sign in to save posts, places, and trips to your library.</p>
+        <div class="gate-actions" style="justify-content: center">
+          <button type="button" class="btn btn-primary">Sign in</button>
+          <button type="button" class="btn btn-secondary">Sign up</button>
+        </div>
+      </main>
+    </div>
+    <script type="module" src="../shared/lab-bar.js"></script>
+  </body>
+</html>

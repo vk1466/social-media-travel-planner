@@ -16,6 +16,9 @@ function escapeHtml(value) {
 
 const PILL_PREVIEW_COUNT = 5;
 
+// Skin demos mount this shell from another folder, so detail links need a prefix.
+const SITE_BASE = window.WF_SITE_BASE || "";
+
 const COPY = {
   places: {
     eyebrow: "Your atlas",
@@ -292,7 +295,7 @@ export function mountLibraryShell(panel, data) {
           if (state.mode !== "places") return;
           onMeta(meta);
         },
-        placeHref: (placeId) => `place.html?id=${encodeURIComponent(placeId)}`,
+        placeHref: (placeId) => `${SITE_BASE}place.html?id=${encodeURIComponent(placeId)}`,
       });
     }
     if (mode === "posts" && !postsCtl) {
@@ -311,8 +314,8 @@ export function mountLibraryShell(panel, data) {
         postHref: (post) =>
           post.postUrl?.startsWith("http")
             ? post.postUrl
-            : `post.html?id=${encodeURIComponent(post.key)}`,
-        placeHref: (placeId) => `place.html?id=${encodeURIComponent(placeId)}`,
+            : `${SITE_BASE}post.html?id=${encodeURIComponent(post.key)}`,
+        placeHref: (placeId) => `${SITE_BASE}place.html?id=${encodeURIComponent(placeId)}`,
       });
     }
   }

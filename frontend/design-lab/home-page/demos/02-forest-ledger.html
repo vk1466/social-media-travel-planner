@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>02 · Forest ledger — Volume home skins</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../sites/shared/places-browse.css" />
+  <link rel="stylesheet" href="../../sites/shared/posts-browse.css" />
+  <link rel="stylesheet" href="../../sites/04-volume/styles.css" />
+  <link rel="stylesheet" href="../shared/lab.css" />
+  <style>
+/* Skin 02 · Forest ledger — Calmest palette of the ten */
+
+:root {
+  --vol-bg: #f3f6f1;
+  --vol-ink: #132019;
+  --vol-muted: #55635a;
+  --vol-accent: #1f6f4f;
+  --vol-accent-deep: #14523a;
+  --vol-panel: #ffffff;
+  --vol-charcoal: #132019;
+  --vol-forest: #1c3a2b;
+  --vol-forest-deep: #0b1610;
+  --vol-border: rgba(19, 32, 25, 0.1);
+  --vol-radius: 18px;
+}
+
+.wf-places--volume,
+.wf-posts--volume {
+  --pb-ink: #132019;
+  --pb-muted: #55635a;
+  --pb-accent: #1f6f4f;
+  --pb-visited: #1f6f4f;
+  --pb-dream: #132019;
+  --pb-pin: #1f6f4f;
+  --pb-cover-radius: 18px;
+}
+
+.vol-brand .dot {
+  background: linear-gradient(135deg, var(--vol-accent), var(--vol-accent-deep));
+}
+
+.vol-motion-toggle,
+.vol-motion-panel {
+  background: #132019;
+  color: #eef4ef;
+}
+
+.vol-motion-sub,
+.vol-motion-preset-note {
+  color: #93a89b;
+}
+
+.vol-motion-swatch {
+  background: linear-gradient(135deg, #132019, #57a37c);
+}
+
+.vol-tile { box-shadow: none; border: 1px solid var(--vol-border); }
+.vol-tile.title {
+  background: linear-gradient(155deg, #2b5c42 0%, #1c3a2b 55%, #0d1a13 100%);
+  border-color: transparent;
+}
+.vol-tile.title .k { color: #cfe3d6; }
+.vol-tile.data { background: #ffffff; color: var(--vol-ink); border: 1px solid var(--vol-border); }
+.vol-tile.data .lbl { color: var(--vol-muted); }
+.vol-tile.data .val em { color: var(--vol-accent); }
+.vol-tab.is-places .tab-cta { color: #8fd4b0; }
+.vol-tab.is-posts { background: linear-gradient(150deg, #f0a24a 0%, #d97b2b 100%); }
+.vol-tab.is-posts .tab-cta { color: #1f1408; }
+.vol-library-head .eyebrow, .vol-shell-eyebrow { color: var(--vol-accent-deep); }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <header class="vol-topbar">
+      <a class="vol-brand" href="02-forest-ledger.html"><span class="dot">V</span>Volume</a>
+      <nav class="vol-nav" aria-label="Primary">
+        <a class="is-on" href="02-forest-ledger.html" data-nav-discover>Discover</a>
+        <button type="button" data-open="places">Places</button>
+        <button type="button" data-open="posts">Posts</button>
+        <a href="../../sites/04-volume/add.html">Add</a>
+      </nav>
+    </header>
+
+    <section class="vol-bento" aria-label="Library highlight" id="vol-bento">
+      <div class="vol-tile title wide tall">
+        <span class="k">Volume · IV</span>
+        <h1>Places<br />you keep<br /><em>coming back to.</em></h1>
+      </div>
+      <div class="vol-tile" data-slot="0">
+        <div class="vol-tile-stack">
+          <img class="vol-tile-layer vol-tile-layer--base" alt="" />
+          <img class="vol-tile-layer vol-tile-layer--next" alt="" />
+        </div>
+        <span class="caption">—</span>
+      </div>
+      <div class="vol-tile" data-slot="1">
+        <div class="vol-tile-stack">
+          <img class="vol-tile-layer vol-tile-layer--base" alt="" />
+          <img class="vol-tile-layer vol-tile-layer--next" alt="" />
+        </div>
+        <span class="caption">—</span>
+      </div>
+      <div class="vol-tile data">
+        <span class="lbl">Saved</span>
+        <span class="val" data-stat="saved">—</span>
+      </div>
+      <div class="vol-tile" data-slot="2">
+        <div class="vol-tile-stack">
+          <img class="vol-tile-layer vol-tile-layer--base" alt="" />
+          <img class="vol-tile-layer vol-tile-layer--next" alt="" />
+        </div>
+        <span class="caption">—</span>
+      </div>
+      <div class="vol-tile" data-slot="3">
+        <div class="vol-tile-stack">
+          <img class="vol-tile-layer vol-tile-layer--base" alt="" />
+          <img class="vol-tile-layer vol-tile-layer--next" alt="" />
+        </div>
+        <span class="caption">—</span>
+      </div>
+      <div class="vol-tile data">
+        <span class="lbl">Visited so far</span>
+        <span class="val"><em data-stat="visited">—</em></span>
+      </div>
+      <div class="vol-tile wide" data-slot="4">
+        <div class="vol-tile-stack">
+          <img class="vol-tile-layer vol-tile-layer--base" alt="" />
+          <img class="vol-tile-layer vol-tile-layer--next" alt="" />
+        </div>
+        <span class="caption">—</span>
+      </div>
+    </section>
+
+    <section class="vol-library" aria-labelledby="vol-library-title">
+      <div class="vol-library-head">
+        <div>
+          <p class="eyebrow">Your library</p>
+          <h2 id="vol-library-title">Open a shelf</h2>
+          <p>One shared filter chrome for Places and Posts — only the core atlas or lantern body swaps.</p>
+        </div>
+      </div>
+      <div class="vol-tabs" role="tablist" aria-label="Library">
+        <button
+          type="button"
+          class="vol-tab is-places"
+          role="tab"
+          id="tab-places"
+          data-open="places"
+          aria-controls="panel-library"
+          aria-selected="false"
+        >
+          <span class="tab-kicker">Atlas</span>
+          <span class="tab-title">Places</span>
+          <span class="tab-meta" data-tab-meta="places">Loading…</span>
+          <span class="tab-cta">Show atlas ↓</span>
+        </button>
+        <button
+          type="button"
+          class="vol-tab is-posts"
+          role="tab"
+          id="tab-posts"
+          data-open="posts"
+          aria-controls="panel-library"
+          aria-selected="false"
+        >
+          <span class="tab-kicker">Lantern</span>
+          <span class="tab-title">Posts</span>
+          <span class="tab-meta" data-tab-meta="posts">Loading…</span>
+          <span class="tab-cta">Show saves ↓</span>
+        </button>
+      </div>
+
+      <div
+        class="vol-panel"
+        id="panel-library"
+        role="tabpanel"
+        aria-labelledby="tab-places"
+        hidden
+      ></div>
+    </section>
+
+    <footer class="vol-footer">
+      <span>© 2026 Wanderfile · Volume — Forest ledger</span>
+      <a href="../../sites/04-volume/add.html">Paste a reel →</a>
+    </footer>
+  </div>
+
+  <div class="vol-motion" data-motion-picker data-open="false">
+    <button type="button" class="vol-motion-toggle" data-motion-toggle>
+      <span class="vol-motion-swatch" data-motion-swatch aria-hidden="true"></span>
+      <span>Motion</span>
+    </button>
+    <div class="vol-motion-panel" data-motion-panel hidden>
+      <p class="vol-motion-title">Photo motion</p>
+      <p class="vol-motion-sub">Rotate profile stills across the bento — one photo per tile.</p>
+      <div class="vol-motion-list" data-motion-list></div>
+    </div>
+  </div>
+
+  <script>
+    window.WF_SITE = {
+      id: "04-volume",
+      title: "Volume",
+      thesis: "Bento hero — shared filter shell, Places & Posts cores swap.",
+      page: "home",
+    };
+    window.WF_SITE_BASE = "../../sites/04-volume/";
+  </script>
+  <script src="../../sites/shared/mock.js"></script>
+  <script type="module" src="../../sites/04-volume/app.js"></script>
+  <script type="module" src="../shared/lab-bar.js"></script>
+</body>
+</html>

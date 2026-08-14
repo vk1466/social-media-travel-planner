@@ -15,6 +15,8 @@ import {
   type BrowsePost,
 } from "../postBrowseModel";
 import { PostDetail } from "./PostDetail";
+import { useBrandVersion } from "../hooks/useBrandVersion";
+import { readBrandMode } from "../themeColor";
 
 import "../post-lantern.css";
 import "../wf-browse.css";
@@ -58,6 +60,8 @@ export function PostLibrary({
   filters,
   onMeta,
 }: PostLibraryProps) {
+  useBrandVersion();
+  const dark = readBrandMode() === "dark";
   const { platform: routePlatform, postId: routePostId } = useParams();
   const navigate = useNavigate();
   const controlled = Boolean(filters);
@@ -396,7 +400,7 @@ export function PostLibrary({
       ) : null}
 
       <div className="wf-container wf-browse-body">
-        <div className="p3" data-view="lantern-deck" data-mode={deckMode}>
+        <div className={dark ? "p3 p3--dark" : "p3"} data-view="lantern-deck" data-mode={deckMode}>
           <div className="p3-shell post-library-lantern-shell">
             {browsePosts.length === 0 ? (
               <div className="empty-state">

@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Home Skins — 10 takes on the Volume home</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;1,9..144,400&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+      }
+
+      body {
+        font-family: "DM Sans", system-ui, sans-serif;
+        background: #0c0f0e;
+        color: #f2f4f2;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      .wrap {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 48px 24px 88px;
+      }
+
+      .back {
+        color: #8fa399;
+        text-decoration: none;
+        font-size: 0.85rem;
+      }
+
+      .back:hover {
+        color: #d0e6dc;
+      }
+
+      .kicker {
+        margin: 18px 0 14px;
+        font-size: 12px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: #8fa399;
+      }
+
+      h1 {
+        margin: 0 0 14px;
+        font-family: "Fraunces", Georgia, serif;
+        font-size: clamp(2.2rem, 5vw, 3.3rem);
+        font-weight: 400;
+        font-style: italic;
+        line-height: 1.05;
+        letter-spacing: -0.02em;
+      }
+
+      .lede {
+        margin: 0;
+        max-width: 660px;
+        color: #b7c2bc;
+        font-size: 1.02rem;
+        line-height: 1.55;
+      }
+
+      .meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px 20px;
+        margin: 20px 0 36px;
+        font-size: 0.85rem;
+        color: #8fa399;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 14px;
+      }
+
+      @media (max-width: 720px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .card {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        padding: 18px;
+        border: 1px solid #2a3330;
+        border-radius: 16px;
+        background: #141917;
+        color: inherit;
+        text-decoration: none;
+        transition:
+          border-color 0.15s ease,
+          background 0.15s ease,
+          transform 0.15s ease;
+      }
+
+      .card:hover {
+        border-color: #4a6358;
+        background: #1a211e;
+        transform: translateY(-2px);
+      }
+
+      .swatch-row {
+        display: flex;
+        gap: 4px;
+        height: 10px;
+        border-radius: 999px;
+        overflow: hidden;
+      }
+
+      .swatch-row i {
+        flex: 1;
+        display: block;
+      }
+
+      .num {
+        font-size: 11px;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: #6f8579;
+      }
+
+      .card h2 {
+        margin: 0;
+        font-size: 1.05rem;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+      }
+
+      .card p {
+        margin: 0;
+        flex: 1;
+        color: #9aaba2;
+        font-size: 0.88rem;
+        line-height: 1.45;
+      }
+
+      .tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      .tags span {
+        font-size: 11px;
+        padding: 3px 9px;
+        border: 1px solid #2f3b36;
+        border-radius: 999px;
+        color: #a8b8b0;
+      }
+
+      .tag {
+        font-size: 0.75rem;
+        color: #6f8579;
+      }
+
+      .tag strong {
+        color: #a8b8b0;
+        font-weight: 500;
+      }
+
+      .cta {
+        font-size: 13px;
+        font-weight: 500;
+        color: #a8c4b6;
+      }
+
+      .card:hover .cta {
+        color: #d0e6dc;
+      }
+
+      .note {
+        max-width: 680px;
+        margin-top: 36px;
+        padding-top: 22px;
+        border-top: 1px solid #2a3330;
+        color: #8fa399;
+        font-size: 0.9rem;
+        line-height: 1.55;
+      }
+
+      .note code {
+        color: #cbd8d2;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <a class="back" href="../index.html">← Design Lab</a>
+      <p class="kicker">Home Skins · Volume home</p>
+      <h1>Ten skins, one home.</h1>
+      <p class="lede">
+        Every option is the live Volume home — same bento hero with rotating profile photos,
+        same Saved / Visited stat tiles, same Places and Posts shelf cards opening the same
+        shared filter panel underneath. Nothing moves, nothing is added or removed. Only
+        palette, type, and surface treatment change.
+      </p>
+      <div class="meta">
+        <span>10 full-page skins</span>
+        <span>Shared markup + <code>04-volume/app.js</code></span>
+        <span>Arrow keys to flip between skins</span>
+      </div>
+
+      <div class="grid" id="grid"></div>
+
+      <p class="note">
+        Skins are ordered from the smallest edit to the most opinionated. Each page is generated
+        from <code>_generate.mjs</code>, which layers one CSS skin over
+        <code>sites/04-volume/styles.css</code> — so whichever wins ports back as a token and
+        surface change, not a rebuild.
+      </p>
+    </div>
+    <script type="module">
+      import { OPTIONS } from "./shared/options.js";
+
+      document.getElementById("grid").innerHTML = OPTIONS.map(
+        (option) => `
+        <a class="card" href="demos/${option.id}-${option.slug}.html">
+          <div class="swatch-row">${option.swatches.map((color) => `<i style="background:${color}"></i>`).join("")}</div>
+          <span class="num">Skin ${option.id}</span>
+          <h2>${option.title}</h2>
+          <p>${option.blurb}</p>
+          <div class="tags">${option.tags.map((tag) => `<span>${tag}</span>`).join("")}</div>
+          <p class="tag"><strong>${option.note}</strong></p>
+          <span class="cta">Open skin →</span>
+        </a>
+      `,
+      ).join("");
+    </script>
+  </body>
+</html>

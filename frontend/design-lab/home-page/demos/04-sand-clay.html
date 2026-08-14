@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>04 · Sand & clay — Volume home skins</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../sites/shared/places-browse.css" />
+  <link rel="stylesheet" href="../../sites/shared/posts-browse.css" />
+  <link rel="stylesheet" href="../../sites/04-volume/styles.css" />
+  <link rel="stylesheet" href="../shared/lab.css" />
+  <style>
+/* Skin 04 · Sand & clay — No gradients anywhere */
+
+:root {
+  --vol-bg: #f3ece2;
+  --vol-ink: #2a211a;
+  --vol-muted: #6d6055;
+  --vol-accent: #c1613c;
+  --vol-accent-deep: #a44b2a;
+  --vol-panel: #fffaf3;
+  --vol-charcoal: #2a211a;
+  --vol-forest: #4a3729;
+  --vol-forest-deep: #2a1e15;
+  --vol-border: rgba(42, 33, 26, 0.14);
+  --vol-radius: 26px;
+}
+
+.wf-places--volume,
+.wf-posts--volume {
+  --pb-ink: #2a211a;
+  --pb-muted: #6d6055;
+  --pb-accent: #c1613c;
+  --pb-panel: #fffaf3;
+  --pb-border: rgba(42, 33, 26, 0.14);
+  --pb-visited: #c1613c;
+  --pb-dream: #2a211a;
+  --pb-pin: #c1613c;
+  --pb-cover-radius: 26px;
+}
+
+.vol-brand .dot {
+  background: linear-gradient(135deg, var(--vol-accent), var(--vol-accent-deep));
+}
+
+.vol-motion-toggle,
+.vol-motion-panel {
+  background: #2a211a;
+  color: #f8f1e8;
+}
+
+.vol-motion-sub,
+.vol-motion-preset-note {
+  color: #bda994;
+}
+
+.vol-motion-swatch {
+  background: linear-gradient(135deg, #2a211a, #c1613c);
+}
+
+.vol-nav { background: var(--vol-panel); backdrop-filter: none; }
+.vol-tile { box-shadow: none; border: 1px solid var(--vol-border); }
+.vol-tile:hover { transform: none; }
+.vol-tile.title { background: var(--vol-accent); border-color: transparent; }
+.vol-tile.data { background: #4a3729; }
+.vol-tile .caption { background: rgba(42, 33, 26, 0.72); backdrop-filter: none; border-radius: 999px; }
+.vol-tab { box-shadow: none; }
+.vol-tab:hover { transform: none; box-shadow: none; border-color: var(--vol-accent); }
+.vol-tab.is-places { background: #4a3729; }
+.vol-tab.is-places .tab-cta { color: #e8a87f; }
+.vol-tab.is-posts { background: var(--vol-accent); }
+.vol-panel { box-shadow: none; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <header class="vol-topbar">
+      <a class="vol-brand" href="04-sand-clay.html"><span class="dot">V</span>Volume</a>
+      <nav class="vol-nav" aria-label="Primary">
+        <a class="is-on" href="04-sand-clay.html" data-nav-discover>Discover</a>
+        <button type="button" data-open="places">Places</button>
+        <button type="button" data-open="posts">Posts</button>
+        <a href="../../sites/04-volume/add.html">Add</a>
+      </nav>
+    </header>
+
+    <section class="vol-bento" aria-label="Library highlight" id="vol-bento">
+      <div class="vol-tile title wide tall">
+        <span class="k">Volume · IV</span>
+        <h1>Places<br />you keep<br /><em>coming back to.</em></h1>
+      </div>
+      <div class="vol-tile" data-slot="0">
+        <div class="vol-tile-stack">
+          <img class="vol-tile-layer vol-tile-layer--base" alt="" />
+          <img class="vol-tile-layer vol-tile-layer--next" alt="" />
+        </div>
+        <span class="caption">—</span>
+      </div>
+      <div class="vol-tile" data-slot="1">
+        <div class="vol-tile-stack">
+          <img class="vol-tile-layer vol-tile-layer--base" alt="" />
+          <img class="vol-tile-layer vol-tile-layer--next" alt="" />
+        </div>
+        <span class="caption">—</span>
+      </div>
+      <div class="vol-tile data">
+        <span class="lbl">Saved</span>
+        <span class="val" data-stat="saved">—</span>
+      </div>
+      <div class="vol-tile" data-slot="2">
+        <div class="vol-tile-stack">
+          <img class="vol-tile-layer vol-tile-layer--base" alt="" />
+          <img class="vol-tile-layer vol-tile-layer--next" alt="" />
+        </div>
+        <span class="caption">—</span>
+      </div>
+      <div class="vol-tile" data-slot="3">
+        <div class="vol-tile-stack">
+          <img class="vol-tile-layer vol-tile-layer--base" alt="" />
+          <img class="vol-tile-layer vol-tile-layer--next" alt="" />
+        </div>
+        <span class="caption">—</span>
+      </div>
+      <div class="vol-tile data">
+        <span class="lbl">Visited so far</span>
+        <span class="val"><em data-stat="visited">—</em></span>
+      </div>
+      <div class="vol-tile wide" data-slot="4">
+        <div class="vol-tile-stack">
+          <img class="vol-tile-layer vol-tile-layer--base" alt="" />
+          <img class="vol-tile-layer vol-tile-layer--next" alt="" />
+        </div>
+        <span class="caption">—</span>
+      </div>
+    </section>
+
+    <section class="vol-library" aria-labelledby="vol-library-title">
+      <div class="vol-library-head">
+        <div>
+          <p class="eyebrow">Your library</p>
+          <h2 id="vol-library-title">Open a shelf</h2>
+          <p>One shared filter chrome for Places and Posts — only the core atlas or lantern body swaps.</p>
+        </div>
+      </div>
+      <div class="vol-tabs" role="tablist" aria-label="Library">
+        <button
+          type="button"
+          class="vol-tab is-places"
+          role="tab"
+          id="tab-places"
+          data-open="places"
+          aria-controls="panel-library"
+          aria-selected="false"
+        >
+          <span class="tab-kicker">Atlas</span>
+          <span class="tab-title">Places</span>
+          <span class="tab-meta" data-tab-meta="places">Loading…</span>
+          <span class="tab-cta">Show atlas ↓</span>
+        </button>
+        <button
+          type="button"
+          class="vol-tab is-posts"
+          role="tab"
+          id="tab-posts"
+          data-open="posts"
+          aria-controls="panel-library"
+          aria-selected="false"
+        >
+          <span class="tab-kicker">Lantern</span>
+          <span class="tab-title">Posts</span>
+          <span class="tab-meta" data-tab-meta="posts">Loading…</span>
+          <span class="tab-cta">Show saves ↓</span>
+        </button>
+      </div>
+
+      <div
+        class="vol-panel"
+        id="panel-library"
+        role="tabpanel"
+        aria-labelledby="tab-places"
+        hidden
+      ></div>
+    </section>
+
+    <footer class="vol-footer">
+      <span>© 2026 Wanderfile · Volume — Sand & clay</span>
+      <a href="../../sites/04-volume/add.html">Paste a reel →</a>
+    </footer>
+  </div>
+
+  <div class="vol-motion" data-motion-picker data-open="false">
+    <button type="button" class="vol-motion-toggle" data-motion-toggle>
+      <span class="vol-motion-swatch" data-motion-swatch aria-hidden="true"></span>
+      <span>Motion</span>
+    </button>
+    <div class="vol-motion-panel" data-motion-panel hidden>
+      <p class="vol-motion-title">Photo motion</p>
+      <p class="vol-motion-sub">Rotate profile stills across the bento — one photo per tile.</p>
+      <div class="vol-motion-list" data-motion-list></div>
+    </div>
+  </div>
+
+  <script>
+    window.WF_SITE = {
+      id: "04-volume",
+      title: "Volume",
+      thesis: "Bento hero — shared filter shell, Places & Posts cores swap.",
+      page: "home",
+    };
+    window.WF_SITE_BASE = "../../sites/04-volume/";
+  </script>
+  <script src="../../sites/shared/mock.js"></script>
+  <script type="module" src="../../sites/04-volume/app.js"></script>
+  <script type="module" src="../shared/lab-bar.js"></script>
+</body>
+</html>

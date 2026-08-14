@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>09 · Reel stack — Sign-in Lab</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../shared/gate.css" />
+    <style>
+      .stack-stage {
+        display: grid;
+        grid-template-columns: minmax(0, 420px) minmax(0, 420px);
+        align-items: center;
+        gap: clamp(32px, 6vw, 80px);
+        justify-content: center;
+      }
+
+      .stack-copy {
+        display: grid;
+        gap: 18px;
+        justify-items: start;
+      }
+
+      .brand-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: var(--wf-quiet);
+      }
+
+      .stack-copy .gate-title {
+        font-size: clamp(2.3rem, 4.6vw, 3.1rem);
+      }
+
+      .stack-copy .gate-actions {
+        margin-top: 4px;
+      }
+
+      /* Three reels fanned out; the front card carries the resolved place. */
+      .reels {
+        position: relative;
+        height: 440px;
+      }
+
+      .reel {
+        position: absolute;
+        width: 214px;
+        border-radius: var(--wf-radius-lg);
+        overflow: hidden;
+        background: var(--wf-surface);
+        border: 1px solid var(--wf-border);
+        box-shadow: var(--wf-shadow-lg);
+      }
+
+      .reel img {
+        display: block;
+        width: 100%;
+        height: 272px;
+        object-fit: cover;
+      }
+
+      .reel-meta {
+        padding: 11px 13px 13px;
+        display: grid;
+        gap: 6px;
+      }
+
+      .reel-meta strong {
+        font-size: 0.86rem;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+      }
+
+      .reel-meta span {
+        font-size: 0.74rem;
+        color: var(--wf-quiet);
+      }
+
+      .chip {
+        justify-self: start;
+        padding: 3px 9px;
+        border-radius: var(--wf-radius-pill);
+        background: #e7f3ec;
+        border: 1px solid #c5e0d0;
+        color: #1f5c3d;
+        font-size: 0.68rem;
+        font-weight: 600;
+      }
+
+      .reel-back {
+        left: 6px;
+        top: 26px;
+        transform: rotate(-8deg);
+        opacity: 0.9;
+      }
+
+      .reel-mid {
+        right: 4px;
+        top: 8px;
+        transform: rotate(7deg);
+        opacity: 0.95;
+      }
+
+      .reel-front {
+        left: 50%;
+        top: 74px;
+        transform: translateX(-50%) rotate(-1.5deg);
+        z-index: 2;
+        width: 232px;
+      }
+
+      @media (max-width: 900px) {
+        .stack-stage {
+          grid-template-columns: minmax(0, 460px);
+        }
+
+        .reels {
+          height: 400px;
+          order: -1;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="gate-stage">
+      <div class="stack-stage">
+        <main class="stack-copy">
+          <div class="brand-row">
+            <span class="gate-mark" aria-hidden="true">W</span>
+            Wanderfile
+          </div>
+          <h1 class="gate-title">Paste a reel. Get the place.</h1>
+          <p class="gate-sub">Sign in to save posts, places, and trips to your library.</p>
+          <div class="gate-actions">
+            <button type="button" class="btn btn-primary">Sign in</button>
+            <button type="button" class="btn btn-secondary">Sign up</button>
+          </div>
+        </main>
+        <div class="reels" aria-hidden="true">
+          <article class="reel reel-back">
+            <img
+              src="https://images.unsplash.com/photo-1523592121529-f6dde35f079e?w=520&h=660&fit=crop&auto=format&q=68"
+              alt=""
+            />
+            <div class="reel-meta">
+              <strong>Sunrise balloons</strong>
+              <span>Cappadocia · TikTok</span>
+            </div>
+          </article>
+          <article class="reel reel-mid">
+            <img
+              src="https://images.unsplash.com/photo-1533106497176-45ae19e68ba2?w=520&h=660&fit=crop&auto=format&q=68"
+              alt=""
+            />
+            <div class="reel-meta">
+              <strong>Cliffside lunch</strong>
+              <span>Positano · YouTube</span>
+            </div>
+          </article>
+          <article class="reel reel-front">
+            <img
+              src="https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=560&h=680&fit=crop&auto=format&q=70"
+              alt=""
+            />
+            <div class="reel-meta">
+              <span class="chip">Culture</span>
+              <strong>Fushimi Inari at dawn</strong>
+              <span>Kyoto, Japan · Instagram</span>
+            </div>
+          </article>
+        </div>
+      </div>
+    </div>
+    <script type="module" src="../shared/lab-bar.js"></script>
+  </body>
+</html>

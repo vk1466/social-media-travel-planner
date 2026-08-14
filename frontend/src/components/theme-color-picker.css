@@ -1,16 +1,16 @@
 /* Color lab UI — dark chrome matching the site ground. */
 .wf-theme-picker {
-  --lab-ink: #f4f7f5;
-  --lab-quiet: #9eb0a6;
-  --lab-subtle: #7f9188;
-  --lab-border: rgb(143 212 176 / 0.22);
-  --lab-surface: #142a21;
+  --lab-ink: var(--wf-on-brand);
+  --lab-quiet: var(--wf-on-dark);
+  --lab-subtle: color-mix(in srgb, var(--wf-on-dark) 80%, transparent);
+  --lab-border: rgb(255 255 255 / 0.14);
+  --lab-surface: var(--wf-panel-dark-hover);
   --lab-muted: rgb(255 255 255 / 0.06);
   --lab-panel: rgb(255 255 255 / 0.08);
-  --lab-accent: #8fd4b0;
-  --lab-accent-deep: #2f6b52;
-  --lab-accent-hover: #a8e0c4;
-  --lab-on-accent: #142a21;
+  --lab-accent: var(--wf-coral);
+  --lab-accent-deep: var(--wf-coral-deep);
+  --lab-accent-hover: var(--wf-coral-soft);
+  --lab-on-accent: var(--wf-forest-deep);
   --lab-danger: #e08a8a;
   --lab-shadow: 0 8px 24px rgb(0 0 0 / 0.28);
   --lab-shadow-lg: 0 16px 40px rgb(0 0 0 / 0.35);

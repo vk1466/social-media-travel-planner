@@ -3,13 +3,13 @@ import {
   syncBrandHexFromTokens,
 } from "./brandColors";
 
-/** Default Wanderfile brand — Aurora Mint from the color picker. */
-export const DEFAULT_BRAND_COLOR = "#1f9c72";
+/** Default Wanderfile brand — Midnight Reel from the home skins lab. */
+export const DEFAULT_BRAND_COLOR = "#ffb648";
 
 export const DEFAULT_BRAND_SHIFT = 1.1;
 
 export const BRAND_COLOR_STORAGE_KEY = "wf-brand-color";
-export const BRAND_LAB_STORAGE_KEY = "wf-brand-lab";
+export const BRAND_LAB_STORAGE_KEY = "wf-brand-lab-v2";
 export const BRAND_SAVED_STORAGE_KEY = "wf-brand-saved";
 
 /** Individual faces a text role can pick. */
@@ -28,6 +28,11 @@ export const TEXT_FACE_OPTIONS = [
     id: "system-sans",
     label: "System sans",
     stack: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+  },
+  {
+    id: "fraunces",
+    label: "Fraunces",
+    stack: '"Fraunces Variable", "Fraunces", Georgia, "Times New Roman", serif',
   },
   {
     id: "instrument",
@@ -130,7 +135,7 @@ export const TEXT_ROLES = [
 export const DEFAULT_TEXT_STYLES: TextRoleStyles = {
   body: { face: "dm-sans", size: "md" },
   muted: { face: "dm-sans", size: "sm" },
-  headline: { face: "newsreader", size: "md" },
+  headline: { face: "fraunces", size: "md" },
   onBrand: { face: "dm-sans", size: "sm" },
 };
 
@@ -210,14 +215,14 @@ export const EDITABLE_BRAND_SWATCHES = [
 export type EditableBrandKey = (typeof EDITABLE_BRAND_SWATCHES)[number]["key"];
 export type EditableSwatchGroup = (typeof EDITABLE_BRAND_SWATCHES)[number]["group"];
 
-/** Hand-tuned swatches — Aurora Mint on light paper (Volume default). */
+/** Hand-tuned swatches — Midnight Reel on near-black. */
 export const DEFAULT_BRAND_OVERRIDES: Partial<Record<EditableBrandKey, string>> = {
-  forestDeep: "#0b241d",
-  sage: "#3fc79a",
-  mint: "#a2f0d0",
+  forestDeep: "#0e1013",
+  sage: "#f0a02a",
+  mint: "#ffd79a",
   /* Muted-on-dark only — light-paper muted lives in --wf-quiet (derived). */
-  quiet: "#a8b4af",
-  onBrand: "#ecfaf4",
+  quiet: "#98a1ac",
+  onBrand: "#f2f3f5",
 };
 
 export type BrandMode = "dark" | "light";
@@ -453,12 +458,12 @@ const SWATCH_TOKEN: Record<EditableBrandKey, string> = {
 
 const DEFAULT_SWATCH_HEX: BrandSwatchMap = {
   forest: DEFAULT_BRAND_COLOR,
-  forestDeep: "#0b241d",
-  sage: "#3fc79a",
-  mint: "#a2f0d0",
-  ink: "#1c2623",
-  quiet: "#a8b4af",
-  onBrand: "#ecfaf4",
+  forestDeep: "#0e1013",
+  sage: "#f0a02a",
+  mint: "#ffd79a",
+  ink: "#20180a",
+  quiet: "#98a1ac",
+  onBrand: "#f2f3f5",
 };
 
 /** Derive the Wanderfile token set from a brand hex + shift amount. */
@@ -699,7 +704,7 @@ function applyTextStylesToDom(styles: TextRoleStyles): void {
   root.style.setProperty("--wf-font-serif", headlineFace);
 }
 
-export const DEFAULT_BRAND_MODE: BrandMode = "light";
+export const DEFAULT_BRAND_MODE: BrandMode = "dark";
 
 export function defaultBrandLabState(): BrandLabState {
   return {
@@ -990,7 +995,7 @@ export function deleteSavedBrandPalette(id: string): SavedBrandPalette[] {
 export const BRAND_THEME_SEED_KEY = "wf-brand-theme-seed";
 
 /** Bump to re-seed shipped themes after editing the list below. */
-const BRAND_THEME_SEED_VERSION = "themes-v6";
+const BRAND_THEME_SEED_VERSION = "themes-v7";
 
 /** Fixed savedAt base so shipped themes keep their order under user saves. */
 const BRAND_THEME_SEED_EPOCH = Date.UTC(2026, 0, 1);
@@ -1030,6 +1035,29 @@ function typeSet(spec: {
  * set spans travel today plus the food, film, and fashion reels coming later.
  */
 const BRAND_THEME_SPECS: BrandThemeSpec[] = [
+  {
+    id: "theme-midnight-reel",
+    name: "Midnight Reel",
+    note: "Near-black with amber numerals — saved reel photography carries the page.",
+    base: "#ffb648",
+    shift: 1.1,
+    mode: "dark",
+    overrides: {
+      forestDeep: "#0e1013",
+      sage: "#f0a02a",
+      mint: "#ffd79a",
+      quiet: "#98a1ac",
+      onBrand: "#f2f3f5",
+    },
+    textStyles: typeSet({
+      headlineFace: "fraunces",
+      headlineSize: "md",
+      copyFace: "dm-sans",
+      bodySize: "md",
+      mutedSize: "sm",
+      buttonSize: "sm",
+    }),
+  },
   {
     id: "theme-trail-pine",
     name: "Trail Pine",

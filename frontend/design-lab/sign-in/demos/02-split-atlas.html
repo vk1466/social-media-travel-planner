@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>02 · Split atlas — Sign-in Lab</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../shared/gate.css" />
+    <style>
+      .split {
+        min-height: 100vh;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+      }
+
+      .split-copy {
+        display: grid;
+        align-content: center;
+        justify-items: start;
+        gap: 20px;
+        padding: 72px clamp(32px, 6vw, 88px);
+        background: var(--wf-cream);
+      }
+
+      .brand-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 0.82rem;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        color: var(--wf-quiet);
+      }
+
+      .split-copy .gate-title {
+        font-size: clamp(2.4rem, 4.4vw, 3.4rem);
+      }
+
+      .split-copy .gate-actions {
+        margin-top: 6px;
+      }
+
+      .mosaic {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: 1fr 1fr 1fr;
+        gap: 4px;
+        padding: 4px;
+        background: var(--wf-forest-deep);
+      }
+
+      .mosaic figure {
+        position: relative;
+        margin: 0;
+        overflow: hidden;
+        background: var(--wf-soft);
+      }
+
+      .mosaic figure:first-child {
+        grid-row: span 2;
+      }
+
+      .mosaic img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+
+      /* Place labels sit on a scrim so they stay legible on any photo. */
+      .mosaic figcaption {
+        position: absolute;
+        inset: auto 0 0 0;
+        padding: 26px 14px 12px;
+        background: linear-gradient(to top, rgb(11 36 29 / 0.72), transparent);
+        color: var(--wf-on-brand);
+        font-size: 0.74rem;
+        font-weight: 500;
+        letter-spacing: 0.02em;
+      }
+
+      @media (max-width: 880px) {
+        .split {
+          grid-template-columns: 1fr;
+        }
+
+        .split-copy {
+          padding: 64px 28px 48px;
+        }
+
+        .mosaic {
+          grid-template-rows: 180px 180px;
+          grid-template-columns: 1fr 1fr;
+        }
+
+        .mosaic figure:first-child {
+          grid-row: span 1;
+        }
+
+        .mosaic figure:nth-child(n + 4) {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="split">
+      <main class="split-copy">
+        <div class="brand-row">
+          <span class="gate-mark" aria-hidden="true">W</span>
+          Wanderfile
+        </div>
+        <h1 class="gate-title">Every reel you saved, finally on a map.</h1>
+        <p class="gate-sub">Sign in to save posts, places, and trips to your library.</p>
+        <div class="gate-actions">
+          <button type="button" class="btn btn-primary">Sign in</button>
+          <button type="button" class="btn btn-secondary">Sign up</button>
+        </div>
+      </main>
+      <div class="mosaic" aria-hidden="true">
+        <figure>
+          <img
+            src="https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=900&h=1200&fit=crop&auto=format&q=70"
+            alt=""
+            loading="eager"
+          />
+          <figcaption>Kyoto, Japan</figcaption>
+        </figure>
+        <figure>
+          <img
+            src="https://images.unsplash.com/photo-1580323956656-26bbb1206e34?w=700&h=520&fit=crop&auto=format&q=70"
+            alt=""
+          />
+          <figcaption>Lisbon, Portugal</figcaption>
+        </figure>
+        <figure>
+          <img
+            src="https://images.unsplash.com/photo-1523592121529-f6dde35f079e?w=700&h=520&fit=crop&auto=format&q=70"
+            alt=""
+          />
+          <figcaption>Cappadocia, Türkiye</figcaption>
+        </figure>
+        <figure>
+          <img
+            src="https://images.unsplash.com/photo-1520962880247-cfaf541c8724?w=700&h=520&fit=crop&auto=format&q=70"
+            alt=""
+          />
+          <figcaption>Patagonia, Chile</figcaption>
+        </figure>
+        <figure>
+          <img
+            src="https://images.unsplash.com/photo-1533106497176-45ae19e68ba2?w=700&h=520&fit=crop&auto=format&q=70"
+            alt=""
+          />
+          <figcaption>Positano, Italy</figcaption>
+        </figure>
+      </div>
+    </div>
+    <script type="module" src="../shared/lab-bar.js"></script>
+  </body>
+</html>

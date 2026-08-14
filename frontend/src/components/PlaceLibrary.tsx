@@ -3,6 +3,8 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 
 import { fetchPlaceDetail, type Place } from "../api";
 import { usePlaceAtlas } from "../hooks/usePlaceAtlas";
+import { useBrandVersion } from "../hooks/useBrandVersion";
+import { readBrandMode } from "../themeColor";
 import type {
   LibraryShellMeta,
   PlacesShellFilters,
@@ -76,6 +78,8 @@ export function PlaceLibrary({
   filters,
   onMeta,
 }: PlaceLibraryProps) {
+  useBrandVersion();
+  const dark = readBrandMode() === "dark";
   const { placeId: routePlaceId } = useParams();
   const navigate = useNavigate();
   const { places, apiPlaces, visitedIds, loading, refresh } = usePlaceAtlas(authReady, {
@@ -413,7 +417,7 @@ export function PlaceLibrary({
       ) : null}
 
       <div className="wf-container wf-browse-body">
-        <div className="pl2" data-view="country-covers" data-mode={viewMode} data-level={scope.level}>
+        <div className={dark ? "pl2 pl2--dark" : "pl2"} data-view="country-covers" data-mode={viewMode} data-level={scope.level}>
           <div className="pl2-shell place-library-covers-shell">
             {!omitChrome ? (
               <>

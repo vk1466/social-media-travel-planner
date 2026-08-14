@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>07 · Postcard — Sign-in Lab</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;1,9..144,400&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../shared/gate.css" />
+    <style>
+      body {
+        background: #efeadf;
+      }
+
+      /* Outer sheet is the card stock; the dashed rule is the deckle edge. */
+      .postcard {
+        position: relative;
+        width: 100%;
+        max-width: 560px;
+        padding: 14px;
+        border-radius: 6px;
+        background: #fdfbf6;
+        box-shadow:
+          0 1px 0 rgb(28 38 35 / 0.08),
+          0 22px 48px rgb(28 38 35 / 0.14);
+      }
+
+      .postcard-inner {
+        position: relative;
+        padding: 38px 34px 32px;
+        border: 1px dashed rgb(28 38 35 / 0.26);
+        border-radius: 3px;
+        display: grid;
+        gap: 16px;
+      }
+
+      .stamp {
+        position: absolute;
+        top: 18px;
+        right: 18px;
+        width: 74px;
+        height: 90px;
+        padding: 6px;
+        background: #fff;
+        /* Perforation ring made from repeating dots on all four edges. */
+        box-shadow: 0 0 0 1px rgb(28 38 35 / 0.12);
+        display: grid;
+      }
+
+      .stamp span {
+        display: grid;
+        place-items: center;
+        text-align: center;
+        background: linear-gradient(160deg, var(--wf-sage), var(--wf-forest));
+        color: var(--wf-on-brand);
+        font-family: var(--wf-font-serif);
+        font-style: italic;
+        font-size: 0.78rem;
+        line-height: 1.25;
+        padding: 6px;
+      }
+
+      .postmark {
+        position: absolute;
+        top: 96px;
+        right: 34px;
+        width: 92px;
+        height: 92px;
+        border: 2px solid rgb(154 115 88 / 0.5);
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        transform: rotate(-14deg);
+        color: rgb(154 115 88 / 0.7);
+        font-size: 0.58rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        text-align: center;
+        line-height: 1.5;
+        pointer-events: none;
+      }
+
+      .postcard .gate-eyebrow {
+        color: var(--wf-clay);
+      }
+
+      .postcard .gate-title {
+        font-size: clamp(2.2rem, 5.4vw, 3rem);
+        max-width: 14ch;
+      }
+
+      .postcard .gate-sub {
+        max-width: 30ch;
+      }
+
+      .postcard .gate-actions {
+        margin-top: 6px;
+      }
+
+      .postcard .btn-secondary {
+        background: transparent;
+        border-color: rgb(28 38 35 / 0.24);
+      }
+
+      .address-lines {
+        margin-top: 6px;
+        display: grid;
+        gap: 11px;
+      }
+
+      .address-lines i {
+        display: block;
+        height: 1px;
+        background: rgb(28 38 35 / 0.12);
+      }
+
+      .address-lines i:nth-child(2) {
+        width: 78%;
+      }
+
+      .address-lines i:nth-child(3) {
+        width: 56%;
+      }
+
+      @media (max-width: 560px) {
+        .stamp,
+        .postmark {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="gate-stage">
+      <main class="postcard">
+        <div class="postcard-inner">
+          <div class="stamp" aria-hidden="true"><span>Wander&shy;file</span></div>
+          <div class="postmark" aria-hidden="true">Saved<br />· 2026 ·<br />Anywhere</div>
+          <p class="gate-eyebrow">Greetings from</p>
+          <h1 class="gate-title">Wanderfile</h1>
+          <p class="gate-sub">Sign in to save posts, places, and trips to your library.</p>
+          <div class="gate-actions">
+            <button type="button" class="btn btn-primary">Sign in</button>
+            <button type="button" class="btn btn-secondary">Sign up</button>
+          </div>
+          <div class="address-lines" aria-hidden="true">
+            <i></i><i></i><i></i>
+          </div>
+        </div>
+      </main>
+    </div>
+    <script type="module" src="../shared/lab-bar.js"></script>
+  </body>
+</html>

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>01 · Paper card — Sign-in Lab</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../shared/gate.css" />
+    <style>
+      .card {
+        width: 100%;
+        max-width: 420px;
+        padding: 40px 36px 34px;
+        border-radius: var(--wf-radius-xl);
+        border: 1px solid var(--wf-border);
+        background: var(--wf-surface);
+        box-shadow: var(--wf-shadow-md);
+        text-align: center;
+        display: grid;
+        justify-items: center;
+        gap: 18px;
+      }
+
+      .card .gate-sub {
+        max-width: 30ch;
+      }
+
+      .card .gate-actions {
+        justify-content: center;
+        margin-top: 4px;
+      }
+
+      .card .btn-primary,
+      .card .btn-secondary {
+        min-width: 118px;
+      }
+
+      .card footer {
+        margin-top: 6px;
+        font-size: 0.78rem;
+        color: var(--wf-quiet);
+      }
+
+      /* Hairline above the footnote instead of a heavier divider. */
+      .card footer::before {
+        content: "";
+        display: block;
+        width: 40px;
+        height: 1px;
+        margin: 0 auto 12px;
+        background: var(--wf-border);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="gate-stage">
+      <main class="card">
+        <span class="gate-mark" aria-hidden="true">W</span>
+        <h1 class="gate-title">Wanderfile</h1>
+        <p class="gate-sub">Sign in to save posts, places, and trips to your library.</p>
+        <div class="gate-actions">
+          <button type="button" class="btn btn-primary">Sign in</button>
+          <button type="button" class="btn btn-secondary">Sign up</button>
+        </div>
+        <footer>Instagram, TikTok, and YouTube links welcome.</footer>
+      </main>
+    </div>
+    <script type="module" src="../shared/lab-bar.js"></script>
+  </body>
+</html>

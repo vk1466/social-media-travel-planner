@@ -38,7 +38,7 @@
   /* Semantic page copy — muted uses on-dark, not light-paper quiet */
   --wf-copy: var(--wf-on-brand);
   --wf-copy-muted: var(--wf-on-dark);
-  --wf-copy-accent: var(--wf-mint);
+  --wf-copy-accent: var(--wf-coral);
   --wf-chrome-bg: var(--wf-forest-deep);
   --wf-chrome-panel: var(--wf-panel-dark);
   --wf-chrome-panel-muted: var(--wf-panel-dark-hover);
@@ -118,6 +118,7 @@
 .wf-brand-mark {
   flex-shrink: 0;
   display: block;
+  color: var(--wf-coral);
 }
 
 .wf-brand-mark-pin {
@@ -248,7 +249,7 @@
   justify-content: center;
   padding: 0.45rem 0.95rem;
   border-radius: var(--wf-radius-pill);
-  background: var(--wf-mint);
+  background: var(--wf-coral);
   color: var(--wf-forest-deep);
   font-family: var(--wf-font-on-brand);
   font-size: var(--wf-size-on-brand);

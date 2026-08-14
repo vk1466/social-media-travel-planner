@@ -1,0 +1,219 @@
+/*
+ * Shared scaffolding for the ten signed-out gate options.
+ *
+ * Brand tokens mirror frontend/src/wf-tokens.css so a chosen option can be
+ * ported to SignedOutGate in main.tsx without re-picking colors or type.
+ * Each demo keeps the same three elements in the same order:
+ * wordmark -> one-line subtitle -> Sign in (primary) + Sign up (secondary).
+ */
+:root {
+  --wf-forest: #1f9c72;
+  --wf-forest-mid: #29b485;
+  --wf-forest-hover: #198b65;
+  --wf-forest-deep: #0b241d;
+  --wf-sage: #3fc79a;
+  --wf-mint: #a2f0d0;
+  --wf-cream: #f5f8f7;
+  --wf-soft: #e0ebe7;
+  --wf-bg: #f4f6f5;
+  --wf-surface: #ffffff;
+  --wf-surface-muted: #f0f2f1;
+  --wf-border: #dde4e2;
+  --wf-border-subtle: #e8edeb;
+  --wf-ink: #1c2623;
+  --wf-quiet: #5c564e;
+  --wf-on-brand: #ecfaf4;
+  --wf-on-dark: #a8b4af;
+  --wf-sand: #c4a882;
+  --wf-clay: #9a7358;
+  --wf-coral: #ff5733;
+  --wf-coral-deep: #d94a1f;
+
+  --wf-radius-sm: 8px;
+  --wf-radius-md: 12px;
+  --wf-radius-lg: 18px;
+  --wf-radius-xl: 24px;
+  --wf-radius-pill: 999px;
+
+  --wf-shadow-sm: 0 1px 2px rgb(28 38 35 / 0.04);
+  --wf-shadow-md: 0 8px 24px rgb(28 38 35 / 0.06);
+  --wf-shadow-lg: 0 16px 40px rgb(28 38 35 / 0.08);
+
+  --wf-font-sans: "DM Sans", system-ui, sans-serif;
+  --wf-font-serif: "Fraunces", Georgia, "Times New Roman", serif;
+  --wf-ease: 160ms ease;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  font-family: var(--wf-font-sans);
+  background: var(--wf-bg);
+  color: var(--wf-ink);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Full-height stage every option centers its gate inside. */
+.gate-stage {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 72px 24px;
+}
+
+.gate-title {
+  margin: 0;
+  font-family: var(--wf-font-serif);
+  font-weight: 400;
+  font-size: clamp(2.1rem, 4.6vw, 3rem);
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+.gate-sub {
+  margin: 0;
+  max-width: 34ch;
+  color: var(--wf-quiet);
+  font-size: 1rem;
+  line-height: 1.55;
+}
+
+.gate-eyebrow {
+  margin: 0;
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--wf-forest);
+}
+
+.gate-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.btn {
+  font-family: var(--wf-font-sans);
+  font-size: 0.875rem;
+  font-weight: 600;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition:
+    background var(--wf-ease),
+    border-color var(--wf-ease),
+    color var(--wf-ease),
+    transform var(--wf-ease);
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn-primary {
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--wf-radius-pill);
+  background: var(--wf-forest);
+  color: var(--wf-on-brand);
+  box-shadow: var(--wf-shadow-sm);
+}
+
+.btn-primary:hover {
+  background: var(--wf-forest-hover);
+}
+
+.btn-secondary {
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--wf-radius-pill);
+  border-color: var(--wf-border);
+  background: var(--wf-surface);
+  color: var(--wf-quiet);
+}
+
+.btn-secondary:hover {
+  border-color: var(--wf-forest);
+  color: var(--wf-ink);
+  background: var(--wf-surface-muted);
+}
+
+/* Compass-rose wordmark used by the options that show a brand lockup. */
+.gate-mark {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: linear-gradient(140deg, var(--wf-forest-mid), var(--wf-forest));
+  color: var(--wf-on-brand);
+  font-family: var(--wf-font-serif);
+  font-size: 1.35rem;
+  line-height: 1;
+  box-shadow: var(--wf-shadow-sm);
+}
+
+/* ---- Review chrome: sticky bar to flip between the ten options ---- */
+/* Bottom-right, not centered — the gate itself owns the middle of the screen. */
+.lab-bar {
+  position: fixed;
+  z-index: 50;
+  right: 18px;
+  bottom: 18px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 8px 7px 14px;
+  border-radius: var(--wf-radius-pill);
+  border: 1px solid rgb(255 255 255 / 0.14);
+  background: rgb(11 36 29 / 0.9);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 12px 32px rgb(0 0 0 / 0.28);
+  font-size: 0.78rem;
+  color: var(--wf-on-dark);
+}
+
+.lab-bar a {
+  color: var(--wf-mint);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.lab-bar a:hover {
+  color: #fff;
+}
+
+.lab-bar select {
+  font-family: inherit;
+  font-size: 0.78rem;
+  padding: 5px 8px;
+  border-radius: var(--wf-radius-pill);
+  border: 1px solid rgb(255 255 255 / 0.18);
+  background: rgb(255 255 255 / 0.08);
+  color: #fff;
+}
+
+.lab-bar .lab-sep {
+  opacity: 0.35;
+}
+
+@media (max-width: 560px) {
+  .lab-bar {
+    font-size: 0.72rem;
+  }
+
+  .lab-bar .lab-sep,
+  .lab-bar .lab-hide {
+    display: none;
+  }
+}

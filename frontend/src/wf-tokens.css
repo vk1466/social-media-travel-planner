@@ -6,48 +6,48 @@
    * JS consumers: import { BrandCss, BrandHex, P } from "./brandColors".
    */
 
-  /* Brand greens — Aurora Mint (color picker theme) */
-  --wf-forest: #1f9c72;
-  --wf-forest-mid: #29b485;
-  --wf-forest-deep: #0b241d;
-  --wf-forest-hover: #198b65;
-  --wf-sage: #3fc79a;
-  /* Highlight — icy mint */
-  --wf-mint: #a2f0d0;
+  /* Brand — Midnight Reel (amber on near-black) */
+  --wf-forest: #ffb648;
+  --wf-forest-mid: #ffc56a;
+  --wf-forest-deep: #0e1013;
+  --wf-forest-hover: #f0a02a;
+  --wf-sage: #f0a02a;
+  /* Highlight — pale amber */
+  --wf-mint: #ffd79a;
 
   /* Channel forms for translucent overlays */
-  --wf-forest-rgb: 31 156 114;
-  --wf-forest-mid-rgb: 41 180 133;
-  --wf-forest-deep-rgb: 11 36 29;
-  --wf-forest-hover-rgb: 25 139 101;
-  --wf-sage-rgb: 63 199 154;
-  --wf-mint-rgb: 162 240 208;
-  --wf-cream-rgb: 245 248 247;
-  --wf-ink-rgb: 28 38 35;
+  --wf-forest-rgb: 255 182 72;
+  --wf-forest-mid-rgb: 255 197 106;
+  --wf-forest-deep-rgb: 14 16 19;
+  --wf-forest-hover-rgb: 240 160 42;
+  --wf-sage-rgb: 240 160 42;
+  --wf-mint-rgb: 255 215 154;
+  --wf-cream-rgb: 242 243 245;
+  --wf-ink-rgb: 32 24 10;
   --wf-sand-rgb: 196 168 130;
   --wf-clay-rgb: 154 115 88;
   --wf-slate-rgb: 61 107 138;
   --wf-plum-rgb: 111 95 138;
 
-  /* Neutrals — derived Aurora paper */
-  --wf-cream: #f5f8f7;
-  --wf-soft: #e0ebe7;
-  --wf-bg: #f4f6f5;
-  --wf-surface: #ffffff;
-  --wf-surface-muted: #f0f2f1;
-  --wf-fog: #e8edeb;
-  --wf-border: #dde4e2;
-  --wf-border-subtle: #e8edeb;
+  /* Neutrals — midnight charcoal (light mode re-derives paper) */
+  --wf-cream: #f2f3f5;
+  --wf-soft: #1d2128;
+  --wf-bg: #0e1013;
+  --wf-surface: #171a1f;
+  --wf-surface-muted: #14171c;
+  --wf-fog: #1d2128;
+  --wf-border: rgb(255 255 255 / 0.1);
+  --wf-border-subtle: rgb(255 255 255 / 0.08);
 
   /* Text — three shared roles for the whole site */
-  --wf-ink: #1c2623; /* contrast ink for chips / light insets */
+  --wf-ink: #20180a; /* contrast ink for chips / light insets */
   --wf-quiet: #5c564e; /* muted copy on light paper only — never on dark grounds */
-  --wf-on-brand: #ecfaf4; /* labels on brand fills / dark-ground copy */
-  /* Page copy — light site defaults (overridden by .wf-site[data-tone]) */
-  --wf-copy: var(--wf-ink);
-  --wf-copy-muted: var(--wf-quiet);
-  --wf-copy-accent: var(--wf-forest);
-  --wf-chrome-bg: var(--wf-bg);
+  --wf-on-brand: #f2f3f5; /* labels on brand fills / dark-ground copy */
+  /* Page copy — dark site defaults (overridden by .wf-site[data-tone]) */
+  --wf-copy: var(--wf-on-brand);
+  --wf-copy-muted: var(--wf-on-dark);
+  --wf-copy-accent: var(--wf-mint);
+  --wf-chrome-bg: var(--wf-forest-deep);
   --wf-chrome-panel: var(--wf-surface);
   --wf-chrome-panel-muted: var(--wf-surface-muted);
   --wf-chrome-border: var(--wf-border);
@@ -62,13 +62,13 @@
   --wf-clay: #9a7358;
   --wf-slate: #3d6b8a;
   --wf-plum: #6f5f8a;
-  /* Warm mark — home title tile + Posts shelf (Volume coral) */
-  --wf-coral: #ff5733;
-  --wf-coral-soft: #ff8b4d;
-  --wf-coral-deep: #d94a1f;
-  --wf-coral-rgb: 255 87 51;
-  --wf-coral-soft-rgb: 255 139 77;
-  --wf-coral-deep-rgb: 217 74 31;
+  /* Warm mark — home title tile + Posts shelf (Midnight amber) */
+  --wf-coral: #ffb648;
+  --wf-coral-soft: #ffd79a;
+  --wf-coral-deep: #f0a02a;
+  --wf-coral-rgb: 255 182 72;
+  --wf-coral-soft-rgb: 255 215 154;
+  --wf-coral-deep-rgb: 240 160 42;
 
   /* Status */
   --wf-success: #3fc79a;
@@ -98,11 +98,11 @@
   --wf-cat-stay-border: #c9d7e0;
 
   /* On-dark surfaces — light muted (never alias --wf-quiet) */
-  --wf-on-dark: #a8b4af;
+  --wf-on-dark: #98a1ac;
   --wf-on-dark-strong: color-mix(in srgb, var(--wf-on-brand) 92%, var(--wf-on-dark));
-  --wf-border-dark: rgb(var(--wf-mint-rgb) / 0.22);
-  --wf-panel-dark: rgb(255 255 255 / 0.06);
-  --wf-panel-dark-hover: rgb(255 255 255 / 0.1);
+  --wf-border-dark: rgb(255 255 255 / 0.1);
+  --wf-panel-dark: #171a1f;
+  --wf-panel-dark-hover: #1d2128;
 
   /* Geometry */
   --wf-radius-xs: 6px;

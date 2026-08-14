@@ -2,16 +2,16 @@
 /* Global aliases, resets, and shared primitives */
 
   :root {
-  color-scheme: light;
+  color-scheme: dark;
 
   /* Short aliases → wf tokens (single source: wf-tokens.css) */
   --font-sans: var(--wf-font-sans);
   --font-serif: var(--wf-font-serif);
   --font-mono: var(--wf-font-mono);
 
-  --text: var(--wf-ink);
-  --text-muted: var(--wf-quiet);
-  --text-subtle: var(--wf-quiet);
+  --text: var(--wf-copy);
+  --text-muted: var(--wf-copy-muted);
+  --text-subtle: var(--wf-copy-muted);
 
   --bg: var(--wf-bg);
   --surface: var(--wf-surface);
@@ -52,6 +52,19 @@
   color: var(--text);
   background: var(--bg);
   -webkit-font-smoothing: antialiased;
+}
+
+html[data-wf-mode="light"] {
+  color-scheme: light;
+}
+
+html[data-wf-mode="dark"] {
+  color-scheme: dark;
+  --bg: var(--wf-forest-deep);
+  --surface: var(--wf-panel-dark);
+  --surface-muted: var(--wf-panel-dark-hover);
+  --border: var(--wf-border-dark);
+  --border-subtle: rgb(255 255 255 / 0.08);
 }
 
 * {

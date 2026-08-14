@@ -1,11 +1,11 @@
 /* Bento motion lab — sits beside the color picker. */
 .wf-bento-motion {
-  --lab-ink: #f4f7f5;
-  --lab-quiet: #9eb0a6;
-  --lab-border: rgb(143 212 176 / 0.22);
-  --lab-surface: #142a21;
+  --lab-ink: var(--wf-on-brand);
+  --lab-quiet: var(--wf-on-dark);
+  --lab-border: rgb(255 255 255 / 0.14);
+  --lab-surface: var(--wf-panel-dark-hover);
   --lab-muted: rgb(255 255 255 / 0.06);
-  --lab-accent: #8fd4b0;
+  --lab-accent: var(--wf-coral);
   --lab-shadow-lg: 0 16px 40px rgb(0 0 0 / 0.35);
   --lab-radius: 12px;
   --lab-radius-sm: 6px;

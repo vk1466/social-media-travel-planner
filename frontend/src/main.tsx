@@ -1,13 +1,7 @@
 import { StrictMode, useEffect, useMemo } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
-import {
-  ClerkProvider,
-  Show,
-  SignInButton,
-  SignUpButton,
-  useAuth,
-} from "@clerk/react";
+import { ClerkProvider, Show, useAuth } from "@clerk/react";
 
 import "@fontsource-variable/dm-sans";
 import "@fontsource-variable/fraunces";
@@ -21,6 +15,7 @@ import "open-props/style";
 import App from "./App";
 import { setAuthTokenGetter } from "./api";
 import { wanderfileClerkAppearance } from "./clerkAppearance";
+import { SignedOutGate } from "./components/SignedOutGate";
 import { useBrandVersion } from "./hooks/useBrandVersion";
 import {
   applyBrandLab,
@@ -31,6 +26,7 @@ import {
 import "./wf-tokens.css";
 import "./tw.css";
 import "./styles.css";
+import "./signed-out-gate.css";
 import "./post-card.css";
 import "./post-flip-modal.css";
 import "./place-browse.css";
@@ -76,30 +72,6 @@ function DevAuthBridge({ children }: { children: React.ReactNode }) {
     setAuthTokenGetter(async () => "dev:local-dev-user");
   }, []);
   return <>{children}</>;
-}
-
-function SignedOutGate() {
-  const tone = readBrandMode();
-  return (
-    <div className="wf-site app-page" data-tone={tone}>
-      <main className="app-shell" style={{ maxWidth: 480, margin: "4rem auto", textAlign: "center" }}>
-        <h1 className="hero-title">Wanderfile</h1>
-        <p className="hero-subtitle">Sign in to save posts, places, and trips to your library.</p>
-        <div style={{ display: "flex", gap: "0.75rem", justifyContent: "center", flexWrap: "wrap" }}>
-          <SignInButton mode="modal">
-            <button type="button" className="primary-button">
-              Sign in
-            </button>
-          </SignInButton>
-          <SignUpButton mode="modal">
-            <button type="button" className="secondary-button">
-              Sign up
-            </button>
-          </SignUpButton>
-        </div>
-      </main>
-    </div>
-  );
 }
 
 function ThemedClerkProvider({ children }: { children: React.ReactNode }) {

@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>06 · Editorial masthead — Sign-in Lab</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;1,9..144,300;1,9..144,400&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../shared/gate.css" />
+    <style>
+      body {
+        background: #faf8f4;
+      }
+
+      .masthead {
+        width: 100%;
+        max-width: 720px;
+      }
+
+      .rule {
+        height: 1px;
+        background: rgb(28 38 35 / 0.16);
+      }
+
+      .rule-thick {
+        height: 3px;
+        background: var(--wf-ink);
+      }
+
+      .masthead-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 16px;
+        padding: 0 0 10px;
+        font-size: 0.68rem;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--wf-quiet);
+      }
+
+      .masthead-top .issue {
+        color: var(--wf-coral);
+        font-weight: 600;
+      }
+
+      .masthead-body {
+        padding: 34px 0 30px;
+        display: grid;
+        gap: 20px;
+      }
+
+      .masthead .gate-title {
+        font-size: clamp(2.8rem, 8vw, 5rem);
+        line-height: 0.98;
+        max-width: 18ch;
+      }
+
+      .masthead .gate-title em {
+        font-style: italic;
+        color: var(--wf-forest);
+      }
+
+      .masthead .gate-sub {
+        max-width: 42ch;
+        font-size: 1.05rem;
+      }
+
+      .masthead .gate-actions {
+        margin-top: 4px;
+      }
+
+      .masthead-foot {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 22px;
+        padding: 12px 0 0;
+        font-size: 0.74rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--wf-quiet);
+      }
+
+      @media (max-width: 560px) {
+        .masthead-top {
+          font-size: 0.6rem;
+          letter-spacing: 0.12em;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="gate-stage">
+      <main class="masthead">
+        <div class="rule-thick"></div>
+        <div class="masthead-top">
+          <span>Wanderfile</span>
+          <span class="issue">Field notes</span>
+          <span>Est. 2026</span>
+        </div>
+        <div class="rule"></div>
+        <div class="masthead-body">
+          <h1 class="gate-title">A library for the places you <em>keep</em> screenshotting.</h1>
+          <p class="gate-sub">Sign in to save posts, places, and trips to your library.</p>
+          <div class="gate-actions">
+            <button type="button" class="btn btn-primary">Sign in</button>
+            <button type="button" class="btn btn-secondary">Sign up</button>
+          </div>
+        </div>
+        <div class="rule"></div>
+        <div class="masthead-foot">
+          <span>Instagram</span>
+          <span>TikTok</span>
+          <span>YouTube</span>
+          <span>Maps &amp; visits</span>
+        </div>
+      </main>
+    </div>
+    <script type="module" src="../shared/lab-bar.js"></script>
+  </body>
+</html>

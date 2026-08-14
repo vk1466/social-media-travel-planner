@@ -1,0 +1,81 @@
+/**
+ * Review chrome for the Volume home skins.
+ * Sits above the skin so each page still reads as a real product home.
+ * The Volume motion picker owns the bottom-right corner, so the pager stays on top.
+ */
+.lab-bar {
+  position: sticky;
+  top: 0;
+  z-index: 9500;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  padding: 8px 16px;
+  background: #0c0f0e;
+  color: #f2f4f2;
+  border-bottom: 1px solid #232b28;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif;
+  font-size: 12px;
+}
+
+.lab-bar a {
+  color: #a8c4b6;
+  text-decoration: none;
+}
+
+.lab-bar a:hover {
+  color: #d0e6dc;
+}
+
+.lab-bar .lab-title {
+  font-weight: 600;
+  color: #f5f7f6;
+}
+
+.lab-bar .lab-note {
+  color: #8fa399;
+  max-width: 420px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.lab-bar .lab-pager {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.lab-bar select {
+  font-family: inherit;
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid #2f3b36;
+  background: #141917;
+  color: #d0e6dc;
+}
+
+.lab-bar .lab-step {
+  padding: 4px 10px;
+  border: 1px solid #2f3b36;
+  border-radius: 999px;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+
+.lab-bar .lab-count {
+  color: #6f8579;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 700px) {
+  .lab-bar .lab-note,
+  .lab-bar .lab-count {
+    display: none;
+  }
+}

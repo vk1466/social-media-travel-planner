@@ -113,8 +113,8 @@
   border: 0;
   border-radius: 999px;
   padding: 0.45rem 0.95rem;
-  background: var(--wf-forest-deep);
-  color: var(--wf-on-brand);
+  background: var(--wf-coral);
+  color: var(--wf-forest-deep);
   font: inherit;
   font-size: 0.78rem;
   font-weight: 700;
@@ -181,8 +181,8 @@
 }
 
 .lib-shell-seg button.is-active {
-  background: var(--wf-ink);
-  color: var(--wf-on-brand);
+  background: var(--wf-coral);
+  color: var(--wf-forest-deep);
 }
 
 .lib-shell-facets {
@@ -259,9 +259,9 @@
 }
 
 .lib-shell-pill.is-active {
-  background: var(--wf-forest-deep);
-  color: var(--wf-on-brand);
-  border-color: var(--wf-forest-deep);
+  background: var(--wf-coral);
+  color: var(--wf-forest-deep);
+  border-color: var(--wf-coral);
 }
 
 .lib-shell-pill.is-soft:not(.is-active) {

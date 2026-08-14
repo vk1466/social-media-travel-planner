@@ -16,7 +16,7 @@ export interface SiteLayoutProps {
   children: ReactNode;
 }
 
-/** Site chrome shell — tone follows brand mode (Volume defaults to light). */
+/** Site chrome shell — tone follows brand mode (Midnight Reel defaults to dark). */
 export function SiteLayout({
   isAdmin = false,
   postCount,
