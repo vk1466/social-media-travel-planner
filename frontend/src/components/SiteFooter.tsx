@@ -55,17 +55,12 @@ export function SiteFooter({
             <ul className="wf-footer-links">
               <li>
                 <Link to="/" className="wf-footer-link">
-                  Home
-                </Link>
-              </li>
-              <li>
-                <Link to="/saved" className="wf-footer-link">
-                  Saved lab
+                  Saved
                 </Link>
               </li>
               <li>
                 <Link to="/posts" className="wf-footer-link">
-                  Saves
+                  Posts
                 </Link>
               </li>
               <li>

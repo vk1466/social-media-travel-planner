@@ -38,12 +38,12 @@ export function SignedOutGate() {
           Sign in to save posts, places, and trips to your library.
         </p>
         <div className="signed-out-actions">
-          <SignInButton mode="modal">
+          <SignInButton mode="modal" forceRedirectUrl="/">
             <button type="button" className="primary-button">
               Sign in
             </button>
           </SignInButton>
-          <SignUpButton mode="modal">
+          <SignUpButton mode="modal" forceRedirectUrl="/">
             <button type="button" className="secondary-button">
               Sign up
             </button>

@@ -5,6 +5,7 @@ import {
   Outlet,
   Route,
   Routes,
+  useLocation,
   useNavigate,
   useParams,
 } from "react-router-dom";
@@ -21,7 +22,6 @@ import {
 } from "./api";
 import { AddLinksPage } from "./components/AddLinksPage";
 import { AdminPage } from "./components/AdminPage";
-import { HomePage } from "./components/HomePage";
 import { PageHeader } from "./components/PageHeader";
 import { PlaceLibrary } from "./components/PlaceLibrary";
 import { PostLibrary } from "./components/PostLibrary";
@@ -34,6 +34,11 @@ import { clerkEnabled } from "./authMode";
 function RedirectMapPlaceToPlaces() {
   const { placeId } = useParams<{ placeId: string }>();
   return <Navigate to={placeId ? `/places/${placeId}` : "/places"} replace />;
+}
+
+function RedirectToDashboard() {
+  const location = useLocation();
+  return <Navigate to={{ pathname: "/", search: location.search }} replace />;
 }
 
 function PlacesRoutes({ authReady }: { authReady: boolean }) {
@@ -227,24 +232,6 @@ function AppRoutes({ authReady }: { authReady: boolean }) {
         <Route
           path="/"
           element={
-            <HomePage
-              posts={posts}
-              places={places}
-              visitCount={visitCount}
-              authReady={authReady}
-              loadingPosts={loadingPosts}
-              onDeleted={refresh}
-              onNavigateToPlace={navigateToPlace}
-              onNavigateToPost={(platform, postId) => {
-                const { platform: routePlatform, nativeId } = postRouteParts(platform, postId);
-                navigate(`/posts/${routePlatform}/${nativeId}`);
-              }}
-            />
-          }
-        />
-        <Route
-          path="/saved"
-          element={
             <SavedPage
               posts={posts}
               places={places}
@@ -260,6 +247,7 @@ function AppRoutes({ authReady }: { authReady: boolean }) {
             />
           }
         />
+        <Route path="/saved" element={<RedirectToDashboard />} />
         <Route path="/posts" element={<Navigate to="/?open=posts" replace />} />
         <Route
           path="/posts/:platform/:postId"
@@ -298,7 +286,7 @@ function AppRoutes({ authReady }: { authReady: boolean }) {
         />
         <Route
           path="/admin"
-          element={isAdmin ? <AdminPage /> : <Navigate to="/posts" replace />}
+          element={isAdmin ? <AdminPage /> : <Navigate to="/" replace />}
         />
         <Route path="*" element={<NotFoundPage />} />
       </Route>
