@@ -25,3 +25,26 @@ def test_trim_post_info_from_fixture() -> None:
   assert trimmed["places"][0].latitude == 38.7131
   assert trimmed["places"][0].longitude == -9.1279
   assert trimmed["thumbnail_url"] == "https://cdn.example.com/noise.jpg"
+
+
+MINDCASE_FIXTURE_PATH = Path(__file__).parent / "fixtures" / "instagram_post_mindcase.json"
+
+
+def test_trim_post_info_from_mindcase_fixture() -> None:
+  raw = json.loads(MINDCASE_FIXTURE_PATH.read_text(encoding="utf-8"))
+  trimmed = _trim_post_info(raw)
+
+  assert trimmed["caption"] == "3 days in Lisbon you can't miss #lisbon #portugal"
+  assert trimmed["author_handle"] == "wanderlust_ana"
+  assert trimmed["media_kind"] == "reel"
+  assert trimmed["posted_at"] == "2023-02-10T16:46:10Z"
+  assert trimmed["like_count"] == 48210
+  assert trimmed["comment_count"] == 13
+  assert trimmed["top_comments"] == (
+    "The pastel de nata spot is Manteigaria!",
+    "Alfama at sunrise is unreal",
+  )
+  assert trimmed["hashtags"] == ("lisbon", "portugal")
+  assert len(trimmed["places"]) == 1
+  assert trimmed["places"][0].place_name == "Alfama"
+  assert trimmed["thumbnail_url"] == "https://cdn.example.com/noise.jpg"

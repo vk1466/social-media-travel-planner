@@ -33,8 +33,8 @@ Stacks always deploy to **us-west-2** (see `infra/app.py`). Override only with
    `ADMIN_USER_IDS`. Include `http://localhost:5173` in `CORS_ORIGINS` if you
    run the Vite UI against the dev API.
 
-4. Set GitHub Actions **secrets**: `ENSEMBLEDATA_TOKEN`, `SUPADATA_API_KEY`,
-   `OPENAI_API_KEY`, `AWS_DEPLOY_ROLE_ARN`.
+4. Set GitHub Actions **secrets**: `MINDCASE_API_KEY`, `SUPADATA_API_KEY`,
+   `OPENAI_API_KEY`, `TMDB_API_KEY`, `OMDB_API_KEY`, `AWS_DEPLOY_ROLE_ARN`.
 
 5. Deploy once manually (optional) to verify:
 
@@ -43,9 +43,11 @@ cd infra
 source .venv/bin/activate
 export CORS_ORIGINS=http://localhost:5173,https://your-app.vercel.app
 export CLERK_ISSUER=https://your-instance.clerk.accounts.dev
-export ENSEMBLEDATA_TOKEN=...
+export MINDCASE_API_KEY=...
 export SUPADATA_API_KEY=...
 export OPENAI_API_KEY=...
+export TMDB_API_KEY=...
+export OMDB_API_KEY=...
 cdk deploy TravelPlanner-dev
 # later:
 cdk deploy TravelPlanner-prod

@@ -27,6 +27,8 @@ class FeatureFlag:
     "extract_reel_frame_text": True,
     # When Nominatim locate fails, try one cheap Google Geocoding/Places call.
     "google_geocode_fallback": False,
+    # Classify SavedPost.content_category, then dispatch place vs movie close.
+    "content_categories": True,
     "place_facts_ttl_days": 30,
     "place_facts_max_docs": 6,
   }

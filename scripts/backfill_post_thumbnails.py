@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Re-fetch Instagram post thumbnails, persist to S3, and update DynamoDB.
 
-Instagram CDN URLs expire. This script calls EnsembleData for a fresh
-display_url, uploads the image to MEDIA_BUCKET when configured, and writes
+Instagram CDN URLs expire. This script calls Mindcase for a fresh
+display image, uploads the image to MEDIA_BUCKET when configured, and writes
 the durable S3 URL (or CDN fallback) to thumbnail_url / fetched_at.
 """
 
@@ -20,7 +20,7 @@ from urllib.parse import urlparse
 
 import certifi
 
-from travelplanner.clients.ensembledata import fetch_post_info_and_comments
+from travelplanner.clients.mindcase import fetch_post
 from travelplanner.library import list_user_posts
 from travelplanner.logging_config import configure_logging
 from travelplanner.media.thumbnails import persist_thumbnail
@@ -87,12 +87,12 @@ def refresh_post_thumbnail(post: SavedPost, *, force: bool, dry_run: bool) -> st
 
   fresh_cdn: str | None = None
   try:
-    raw = fetch_post_info_and_comments(code=shortcode, num_comments=0)
+    raw = fetch_post(post_url=post.post_url, shortcode=shortcode)
     fresh_cdn = extract_thumbnail_url(raw)
-  except Exception as exc:  # EnsembleData / network
+  except Exception as exc:  # Mindcase / network
     logger.warning("fetch failed post_id=%s: %s", post.post_id, exc)
 
-  # When EnsembleData is rate-limited, still try to persist a reachable stored CDN URL.
+  # When Mindcase is rate-limited, still try to persist a reachable stored CDN URL.
   source = fresh_cdn
   if not source and existing and not _is_s3_thumbnail_url(existing) and _thumbnail_reachable(existing):
     source = existing
@@ -153,7 +153,7 @@ def main() -> None:
     "--sleep",
     type=float,
     default=0.4,
-    help="Seconds between EnsembleData calls (default 0.4)",
+    help="Seconds between Mindcase calls (default 0.4)",
   )
   args = parser.parse_args()
 

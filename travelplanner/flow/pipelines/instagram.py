@@ -1,4 +1,6 @@
+from travelplanner.steps.extract_movies import EXTRACT_MOVIES_STEP
 from travelplanner.steps.extract_places import EXTRACT_PLACES_STEP
+from travelplanner.steps.resolve_movies import RESOLVE_MOVIES_STEP
 from travelplanner.steps.instagram.analyze_video import ANALYZE_VIDEO_STEP
 from travelplanner.steps.instagram.extract_image_text import EXTRACT_IMAGE_TEXT_STEP
 from travelplanner.steps.instagram.extract_reel_frame_text import (
@@ -16,9 +18,14 @@ INSTAGRAM_HEAD_STEPS = (
   PERSIST_THUMBNAIL_STEP,
 )
 
-SHARED_CLOSE_STEPS = (
+PLACE_CLOSE_STEPS = (
   EXTRACT_PLACES_STEP,
   PROCESS_MENTIONS_STEP,
+)
+
+MOVIE_CLOSE_STEPS = (
+  EXTRACT_MOVIES_STEP,
+  RESOLVE_MOVIES_STEP,
 )
 
 INSTAGRAM_TAIL_BY_RESOURCE_TYPE: dict[str, tuple] = {
@@ -39,5 +46,6 @@ INSTAGRAM_TAIL_BY_RESOURCE_TYPE: dict[str, tuple] = {
 __all__ = [
   "INSTAGRAM_HEAD_STEPS",
   "INSTAGRAM_TAIL_BY_RESOURCE_TYPE",
-  "SHARED_CLOSE_STEPS",
+  "MOVIE_CLOSE_STEPS",
+  "PLACE_CLOSE_STEPS",
 ]

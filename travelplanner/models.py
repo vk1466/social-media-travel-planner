@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum
 
+from travelplanner.movie_hints import ExtractedMovie, ResolvedMovie
 from travelplanner.place_hints import ExtractedPlace, PlaceMention, PlatformPlace
 
 
@@ -55,10 +56,13 @@ class SavedPost:
   top_comments: tuple[str, ...] = ()
   places: tuple[PlatformPlace, ...] = ()
   extracted_places: tuple[ExtractedPlace, ...] = ()
+  extracted_movies: tuple[ExtractedMovie, ...] = ()
+  resolved_movies: tuple[ResolvedMovie, ...] = ()
   place_ids: tuple[str, ...] = ()
   thumbnail_url: str | None = None
   fetched_at: str | None = None
   reel_summary: str | None = None
+  content_category: str | None = None
 
 
 @dataclass(frozen=True)

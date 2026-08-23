@@ -25,11 +25,11 @@ import { HomePage } from "./components/HomePage";
 import { PageHeader } from "./components/PageHeader";
 import { PlaceLibrary } from "./components/PlaceLibrary";
 import { PostLibrary } from "./components/PostLibrary";
+import { SavedPage } from "./components/SavedPage";
 import { SearchPage } from "./components/SearchPage";
 import { SiteLayout } from "./components/SiteLayout";
 import { TravelHistory } from "./components/TravelHistory";
-
-const clerkEnabled = Boolean(import.meta.env.VITE_CLERK_PUBLISHABLE_KEY);
+import { clerkEnabled } from "./authMode";
 
 function RedirectMapPlaceToPlaces() {
   const { placeId } = useParams<{ placeId: string }>();
@@ -228,6 +228,24 @@ function AppRoutes({ authReady }: { authReady: boolean }) {
           path="/"
           element={
             <HomePage
+              posts={posts}
+              places={places}
+              visitCount={visitCount}
+              authReady={authReady}
+              loadingPosts={loadingPosts}
+              onDeleted={refresh}
+              onNavigateToPlace={navigateToPlace}
+              onNavigateToPost={(platform, postId) => {
+                const { platform: routePlatform, nativeId } = postRouteParts(platform, postId);
+                navigate(`/posts/${routePlatform}/${nativeId}`);
+              }}
+            />
+          }
+        />
+        <Route
+          path="/saved"
+          element={
+            <SavedPage
               posts={posts}
               places={places}
               visitCount={visitCount}

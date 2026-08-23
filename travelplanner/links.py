@@ -4,8 +4,9 @@ import re
 
 from travelplanner.models import Platform
 
+# Canonical /p|reel|reels|tv/{code} and Instagram's /{handle}/p|reel|…/{code} share URLs.
 INSTAGRAM_SHORTCODE_PATTERN = re.compile(
-  r"instagram\.com/(?:p|reels?|tv)/([A-Za-z0-9_-]+)",
+  r"instagram\.com/(?:(?:p|reels?|tv)|[A-Za-z0-9._]+/(?:p|reels?|tv))/([A-Za-z0-9_-]+)",
   re.IGNORECASE,
 )
 
@@ -28,7 +29,7 @@ def extract_instagram_shortcode(post_url: str) -> str:
   if not match:
     raise ValueError(
       f"Could not extract Instagram shortcode from URL: {post_url!r} "
-      "(expected /p/, /reel/, /reels/, or /tv/ path)"
+      "(expected /p/, /reel/, /reels/, or /tv/ path, optionally after a username)"
     )
   return match.group(1)
 

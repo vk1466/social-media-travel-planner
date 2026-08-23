@@ -27,9 +27,11 @@ shared = {
   "clerk_issuer": _env_str("CLERK_ISSUER"),
   "admin_user_ids": _env_str("ADMIN_USER_IDS"),
   "openai_model": _env_str("OPENAI_MODEL", "gpt-4o-mini"),
-  "ensembledata_token": _env_str("ENSEMBLEDATA_TOKEN"),
+  "mindcase_api_key": _env_str("MINDCASE_API_KEY"),
   "supadata_api_key": _env_str("SUPADATA_API_KEY"),
   "openai_api_key": _env_str("OPENAI_API_KEY"),
+  "tmdb_api_key": _env_str("TMDB_API_KEY"),
+  "omdb_api_key": _env_str("OMDB_API_KEY"),
   "env": aws_env,
 }
 

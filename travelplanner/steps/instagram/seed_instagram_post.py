@@ -11,7 +11,10 @@ from travelplanner.steps.instagram.media import extract_media_kind
 
 logger = logging.getLogger(__name__)
 
-_REEL_URL = re.compile(r"instagram\.com/(?:reels?|tv)/", re.IGNORECASE)
+_REEL_URL = re.compile(
+  r"instagram\.com/(?:(?:reels?|tv)|[A-Za-z0-9._]+/(?:reels?|tv))/",
+  re.IGNORECASE,
+)
 
 
 def _resource_type_from_url(post_url: str) -> str | None:

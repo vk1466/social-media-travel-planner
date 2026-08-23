@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
-import { deletePost, nativePostId, type Place, type SavedPost } from "../api";
+import { deletePost, fetchVisitedPlaceIds, nativePostId, type Place, type SavedPost } from "../api";
+import { categoryLabel } from "../categoryLabels";
+import { effectiveContentCategory } from "../contentCategory";
 import type {
   LibraryShellMeta,
   PostsDeckMode,
@@ -71,11 +73,18 @@ export function PostLibrary({
   const [selectedPost, setSelectedPost] = useState<SavedPost | null>(null);
   const [localDeckMode, setLocalDeckMode] = useState<DeckMode>("deck");
   const [localSearchQuery, setLocalSearchQuery] = useState("");
+  const [localContentCategory, setLocalContentCategory] = useState("all");
+  const [localPlaceStatus, setLocalPlaceStatus] = useState<"all" | "visited" | "inspiration">("all");
+  const [localPlaceTypes, setLocalPlaceTypes] = useState<string[]>([]);
+  const [visitedIds, setVisitedIds] = useState<Set<string>>(new Set());
 
   const platformFilter = filters?.platform ?? localPlatformFilter;
   const ringKey = filters?.ringKey ?? localRingKey;
   const deckMode = filters?.deckMode ?? localDeckMode;
   const searchQuery = filters?.query ?? localSearchQuery;
+  const contentCategory = filters?.contentCategory ?? localContentCategory;
+  const placeStatus = filters?.placeStatus ?? localPlaceStatus;
+  const placeTypes = filters?.placeTypes ?? localPlaceTypes;
 
   const setPlatformFilter = (value: string) => {
     if (!controlled) setLocalPlatformFilter(value);
@@ -94,19 +103,46 @@ export function PostLibrary({
     () => Object.fromEntries(places.map((place) => [place.place_id, place.display_name])),
     [places],
   );
+  const placesById = useMemo(
+    () => Object.fromEntries(places.map((place) => [place.place_id, place])),
+    [places],
+  );
+
+  useEffect(() => {
+    if (contentCategory !== "travel") {
+      setVisitedIds(new Set());
+      return;
+    }
+    let cancelled = false;
+    void fetchVisitedPlaceIds()
+      .then((ids) => {
+        if (!cancelled) setVisitedIds(new Set(ids));
+      })
+      .catch(() => {
+        if (!cancelled) setVisitedIds(new Set());
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [contentCategory]);
+
+  const topicPosts = useMemo(() => {
+    if (contentCategory === "all") return posts;
+    return posts.filter((post) => effectiveContentCategory(post) === contentCategory);
+  }, [posts, contentCategory]);
 
   const browsePosts = useMemo(
-    () => mapSavedPosts(posts, placeNamesById),
-    [posts, placeNamesById],
+    () => mapSavedPosts(topicPosts, placeNamesById),
+    [topicPosts, placeNamesById],
   );
 
   const postsByKey = useMemo(() => {
     const map = new Map<string, SavedPost>();
-    for (const post of posts) {
+    for (const post of topicPosts) {
       map.set(post.post_id, post);
     }
     return map;
-  }, [posts]);
+  }, [topicPosts]);
 
   const platformPosts = useMemo(() => {
     if (platformFilter === "all") {
@@ -180,7 +216,27 @@ export function PostLibrary({
   const filtered = useMemo(() => {
     let list = platformPosts;
 
-    if (ringKey !== "all") {
+    if (contentCategory === "travel") {
+      list = list.filter((browse) => {
+        const post = postsByKey.get(browse.key);
+        if (!post) return false;
+        if (placeStatus === "visited") {
+          if (!post.place_ids.some((placeId) => visitedIds.has(placeId))) return false;
+        } else if (placeStatus === "inspiration") {
+          if (post.place_ids.length === 0) return false;
+          if (post.place_ids.some((placeId) => visitedIds.has(placeId))) return false;
+        }
+        if (placeTypes.length > 0) {
+          const types = post.place_ids.map(
+            (placeId) => placesById[placeId]?.category ?? "other",
+          );
+          if (!types.some((type) => placeTypes.includes(type))) return false;
+        }
+        return true;
+      });
+    }
+
+    if (ringKey !== "all" && contentCategory !== "travel") {
       list = list.filter((browse) => {
         const post = postsByKey.get(browse.key);
         if (!post) {
@@ -220,7 +276,45 @@ export function PostLibrary({
     }
 
     return list;
-  }, [platformPosts, ringKey, postsByKey, searchQuery]);
+  }, [
+    platformPosts,
+    contentCategory,
+    placeStatus,
+    placeTypes,
+    visitedIds,
+    placesById,
+    ringKey,
+    postsByKey,
+    searchQuery,
+  ]);
+
+  const placeTypePills = useMemo(() => {
+    if (contentCategory !== "travel") return [];
+    const counts = new Map<string, number>();
+    for (const browse of platformPosts) {
+      const post = postsByKey.get(browse.key);
+      if (!post) continue;
+      if (placeStatus === "visited") {
+        if (!post.place_ids.some((placeId) => visitedIds.has(placeId))) continue;
+      } else if (placeStatus === "inspiration") {
+        if (post.place_ids.length === 0) continue;
+        if (post.place_ids.some((placeId) => visitedIds.has(placeId))) continue;
+      }
+      const types = new Set(
+        post.place_ids.map((placeId) => placesById[placeId]?.category ?? "other"),
+      );
+      for (const type of types) {
+        counts.set(type, (counts.get(type) ?? 0) + 1);
+      }
+    }
+    return Array.from(counts.entries())
+      .map(([key, count]) => ({
+        key,
+        label: categoryLabel(key === "other" ? null : key),
+        count,
+      }))
+      .sort((left, right) => right.count - left.count || left.label.localeCompare(right.label));
+  }, [contentCategory, platformPosts, postsByKey, placeStatus, visitedIds, placesById]);
 
   const eras = useMemo(() => groupByMonth(filtered), [filtered]);
 
@@ -237,7 +331,7 @@ export function PostLibrary({
   // Latest month opens by default; re-open latest when filters change the set.
   useEffect(() => {
     setOpenEraKey(null);
-  }, [platformFilter, ringKey, searchQuery]);
+  }, [platformFilter, ringKey, searchQuery, contentCategory, placeStatus, placeTypes]);
 
   useEffect(() => {
     if (eras.length === 0) {
@@ -292,13 +386,16 @@ export function PostLibrary({
       count: filtered.length,
       countLabel: "saves",
       context: openEraLabel,
-      pills: placeRings.map((ring) => ({
-        key: ring.key,
-        label: ring.label,
-        count: ring.count,
-      })),
+      pills:
+        contentCategory === "travel"
+          ? placeTypePills
+          : placeRings.map((ring) => ({
+              key: ring.key,
+              label: ring.label,
+              count: ring.count,
+            })),
     });
-  }, [onMeta, filtered.length, openEraLabel, placeRings]);
+  }, [onMeta, filtered.length, openEraLabel, placeRings, contentCategory, placeTypePills]);
 
   function toggleEra(key: string) {
     setOpenEraKey((current) => (current === key ? NO_ERA : key));

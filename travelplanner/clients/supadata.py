@@ -98,11 +98,15 @@ def _poll_transcript_job(client: Supadata, job_id: str) -> str | None:
     status = response.get("status")
     if status == "completed":
       result = response.get("result")
-      if isinstance(result, dict):
-        return _transcript_to_text(Transcript(**result))
-      if "content" in response:
-        return _transcript_to_text(Transcript(**response))
-      return None
+      payload = result if isinstance(result, dict) else response
+      if not isinstance(payload, dict) or "content" not in payload:
+        return None
+      try:
+        cleaned = {key: value for key, value in payload.items() if key != "status"}
+        return _transcript_to_text(Transcript(**cleaned))
+      except TypeError:
+        logger.warning("supadata transcript payload incompatible; using content only")
+        return _transcript_to_text(Transcript(content=payload["content"]))
     if status == "failed":
       return None
 

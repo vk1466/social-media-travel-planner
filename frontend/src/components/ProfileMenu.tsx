@@ -8,12 +8,11 @@ import {
 } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
+import { clerkEnabled } from "../authMode";
 import { wanderfileClerkAppearance } from "../clerkAppearance";
 import { useBrandVersion } from "../hooks/useBrandVersion";
 import { readBrandMode } from "../themeColor";
 import "./profile-menu.css";
-
-const clerkEnabled = Boolean(import.meta.env.VITE_CLERK_PUBLISHABLE_KEY);
 
 export interface ProfileMenuProps {
   isAdmin?: boolean;

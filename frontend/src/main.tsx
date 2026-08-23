@@ -14,6 +14,7 @@ import "open-props/style";
 
 import App from "./App";
 import { setAuthTokenGetter } from "./api";
+import { clerkPublishableKey, useLocalDevAuth } from "./authMode";
 import { wanderfileClerkAppearance } from "./clerkAppearance";
 import { SignedOutGate } from "./components/SignedOutGate";
 import { useBrandVersion } from "./hooks/useBrandVersion";
@@ -39,8 +40,6 @@ import "./site-chrome.css";
 // Seed shipped themes, then apply stored/default brand before first paint.
 seedBrandThemes();
 applyBrandLab(readBrandLabState());
-
-const clerkPublishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undefined;
 
 function AuthTokenBridge({ children }: { children: React.ReactNode }) {
   const { getToken, isLoaded, isSignedIn } = useAuth();
@@ -92,8 +91,27 @@ function ThemedClerkProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
+function MissingClerkKey() {
+  return (
+    <div className="signed-out-gate">
+      <main className="signed-out-copy">
+        <div className="signed-out-brand">
+          <span className="signed-out-mark" aria-hidden="true">
+            W
+          </span>
+          Wanderfile
+        </div>
+        <h1 className="signed-out-title">Clerk is not configured.</h1>
+        <p className="signed-out-sub">
+          Set <code>VITE_CLERK_PUBLISHABLE_KEY</code> for this build, then redeploy.
+        </p>
+      </main>
+    </div>
+  );
+}
+
 function Root() {
-  if (!clerkPublishableKey) {
+  if (useLocalDevAuth) {
     return (
       <DevAuthBridge>
         <BrowserRouter>
@@ -101,6 +119,10 @@ function Root() {
         </BrowserRouter>
       </DevAuthBridge>
     );
+  }
+
+  if (!clerkPublishableKey) {
+    return <MissingClerkKey />;
   }
 
   return (

@@ -6,8 +6,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from travelplanner.logging_config import configure_logging
 from travelplanner import settings
 from travelplanner.categories import CATEGORIES
+from travelplanner.content_categories import CONTENT_CATEGORY_SET
 from travelplanner.feature_flag import FeatureFlag
-from travelplanner.library import list_user_places, list_user_posts, user_owns_post
+from travelplanner.library import (
+  content_category_counts,
+  list_user_places,
+  list_user_posts,
+  user_owns_post,
+)
 from travelplanner.models import Place, Platform, SavedPost, Visit, make_post_id, parse_post_id
 from travelplanner.pipeline import unlink_post_from_user
 from travelplanner.place_hints import PlaceMention
@@ -41,6 +47,7 @@ from server import timeline_staging
 from server.media_proxy import fetch_proxied_media
 from server.schemas import (
   AdminMeSchema,
+  ContentCategoryCountSchema,
   PlaceSchema,
   VisitedStatusSchema,
   ErrorResponse,
@@ -316,9 +323,24 @@ def delete_visits(
 def list_posts(
   user_id: CurrentUserId,
   platform: Platform | None = Query(default=None),
+  content_category: str | None = Query(default=None),
 ) -> list[SavedPostSchema]:
-  posts = list_user_posts(user_id, platform=platform)
+  if content_category is not None and content_category not in CONTENT_CATEGORY_SET:
+    raise HTTPException(status_code=400, detail="Unknown content_category")
+  posts = list_user_posts(
+    user_id,
+    platform=platform,
+    content_category=content_category,
+  )
   return [_post_to_schema(post) for post in posts]
+
+
+@app.get("/api/content-categories", response_model=list[ContentCategoryCountSchema])
+def list_content_categories(user_id: CurrentUserId) -> list[ContentCategoryCountSchema]:
+  return [
+    ContentCategoryCountSchema(category=category, count=count)
+    for category, count in content_category_counts(user_id)
+  ]
 
 
 @app.get("/api/posts/{platform}/{post_id}", response_model=SavedPostSchema, responses={404: {"model": ErrorResponse}})

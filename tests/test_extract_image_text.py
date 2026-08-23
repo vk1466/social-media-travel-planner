@@ -46,6 +46,25 @@ def test_extract_slide_image_urls_falls_back_to_cover() -> None:
   assert extract_slide_image_urls(raw) == ["https://cdn.example/only.jpg"]
 
 
+def test_extract_slide_image_urls_from_mindcase_carousel() -> None:
+  raw = {
+    "type": "Sidecar",
+    "image": "https://cdn.example/cover.jpg",
+    "carouselImages": [
+      "https://cdn.example/a.jpg",
+      "https://cdn.example/b.jpg",
+    ],
+    "carouselSlideMediaUrls": [
+      {"url": "https://cdn.example/c.jpg"},
+    ],
+  }
+  assert extract_slide_image_urls(raw) == [
+    "https://cdn.example/a.jpg",
+    "https://cdn.example/b.jpg",
+    "https://cdn.example/c.jpg",
+  ]
+
+
 def test_extract_slide_image_urls_empty() -> None:
   assert extract_slide_image_urls({}) == []
 

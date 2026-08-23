@@ -15,12 +15,12 @@ import {
   type PostsShellFilters,
 } from "../libraryShellModel";
 import { BROWSE_PLATFORMS } from "../postBrowseModel";
+import { contentCategoryTabs } from "../contentCategory";
+import { clerkEnabled } from "../authMode";
 import { PlaceLibrary } from "./PlaceLibrary";
 import { PostLibrary } from "./PostLibrary";
 
 import "../library-shell.css";
-
-const clerkEnabled = Boolean(import.meta.env.VITE_CLERK_PUBLISHABLE_KEY);
 
 export interface LibraryShellProps {
   mode: LibraryMode;
@@ -85,7 +85,7 @@ export function LibraryShell({
   useEffect(() => {
     setPillsExpanded(false);
     setMeta(EMPTY_LIBRARY_META);
-  }, [mode]);
+  }, [mode, postsFilters.contentCategory]);
 
   const handleMeta = (next: LibraryShellMeta) => {
     setMeta((prev) => (metaEqual(prev, next) ? prev : next));
@@ -93,9 +93,11 @@ export function LibraryShell({
 
   const copy = LIBRARY_SHELL_COPY[mode];
   const searchValue = mode === "places" ? placesFilters.query : postsFilters.query;
+  const topicTabs = contentCategoryTabs(posts);
+  const travelPostFilters = mode === "posts" && postsFilters.contentCategory === "travel";
 
   const placePills = meta.pills;
-  const placeSelected = placesFilters.typeFilter;
+  const placeSelected = travelPostFilters ? postsFilters.placeTypes : placesFilters.typeFilter;
   const postLead = meta.pills.filter((pill) => pill.key === "all");
   const postRest = meta.pills.filter((pill) => pill.key !== "all");
   const postVisibleRest = visiblePills(
@@ -245,24 +247,85 @@ export function LibraryShell({
               </div>
             </>
           ) : (
-            <div
-              className="lib-shell-seg lib-shell-seg--primary"
-              role="group"
-              aria-label="Platform filter"
-            >
-              {BROWSE_PLATFORMS.map((key) => (
+            <>
+              <div
+                className="lib-shell-seg lib-shell-seg--primary"
+                role="group"
+                aria-label="Category filter"
+              >
                 <button
-                  key={key}
                   type="button"
-                  className={postsFilters.platform === key ? "is-active" : ""}
+                  className={postsFilters.contentCategory === "all" ? "is-active" : ""}
                   onClick={() =>
-                    setPostsFilters((current) => ({ ...current, platform: key }))
+                    setPostsFilters((current) => ({
+                      ...current,
+                      contentCategory: "all",
+                      ringKey: "all",
+                      placeStatus: "all",
+                      placeTypes: [],
+                    }))
                   }
                 >
-                  {key === "all" ? "Everything" : key}
+                  All
                 </button>
-              ))}
-            </div>
+                {topicTabs.map((tab) => (
+                  <button
+                    key={tab.key}
+                    type="button"
+                    className={postsFilters.contentCategory === tab.key ? "is-active" : ""}
+                    onClick={() =>
+                      setPostsFilters((current) => ({
+                        ...current,
+                        contentCategory: tab.key,
+                        ringKey: "all",
+                        placeStatus: "all",
+                        placeTypes: [],
+                      }))
+                    }
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+              <div
+                className="lib-shell-seg lib-shell-seg--secondary"
+                role="group"
+                aria-label="Platform filter"
+              >
+                {BROWSE_PLATFORMS.map((key) => (
+                  <button
+                    key={key}
+                    type="button"
+                    className={postsFilters.platform === key ? "is-active" : ""}
+                    onClick={() =>
+                      setPostsFilters((current) => ({ ...current, platform: key }))
+                    }
+                  >
+                    {key === "all" ? "Everything" : key}
+                  </button>
+                ))}
+              </div>
+              {travelPostFilters ? (
+                <div
+                  className="lib-shell-seg lib-shell-seg--secondary"
+                  role="group"
+                  aria-label="Place status"
+                >
+                  {(["all", "visited", "inspiration"] as const).map((key) => (
+                    <button
+                      key={key}
+                      type="button"
+                      className={postsFilters.placeStatus === key ? "is-active" : ""}
+                      onClick={() =>
+                        setPostsFilters((current) => ({ ...current, placeStatus: key }))
+                      }
+                    >
+                      {key === "all" ? "Everything" : key === "visited" ? "Visited" : "Inspiration"}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+            </>
           )}
         </div>
 
@@ -293,6 +356,51 @@ export function LibraryShell({
                       typeFilter: current.typeFilter.includes(pill.key)
                         ? current.typeFilter.filter((entry) => entry !== pill.key)
                         : [...current.typeFilter, pill.key],
+                    }))
+                  }
+                >
+                  {pill.label}
+                  {pill.count != null ? <span className="count">{pill.count}</span> : null}
+                </button>
+              ))}
+              {placePills.length > PILL_PREVIEW_COUNT ? (
+                <button
+                  type="button"
+                  className="lib-shell-pill lib-shell-pill-more"
+                  onClick={() => setPillsExpanded((value) => !value)}
+                >
+                  {pillsExpanded
+                    ? "Show less"
+                    : `+${Math.max(placePills.length - placeVisible.length, 0)} more`}
+                </button>
+              ) : null}
+            </>
+          ) : travelPostFilters ? (
+            <>
+              <button
+                type="button"
+                className={`lib-shell-pill ${
+                  postsFilters.placeTypes.length === 0 ? "is-active is-soft" : ""
+                }`}
+                onClick={() =>
+                  setPostsFilters((current) => ({ ...current, placeTypes: [] }))
+                }
+              >
+                All types
+              </button>
+              {placeVisible.map((pill) => (
+                <button
+                  key={pill.key}
+                  type="button"
+                  className={`lib-shell-pill ${
+                    postsFilters.placeTypes.includes(pill.key) ? "is-active" : ""
+                  }`}
+                  onClick={() =>
+                    setPostsFilters((current) => ({
+                      ...current,
+                      placeTypes: current.placeTypes.includes(pill.key)
+                        ? current.placeTypes.filter((entry) => entry !== pill.key)
+                        : [...current.placeTypes, pill.key],
                     }))
                   }
                 >

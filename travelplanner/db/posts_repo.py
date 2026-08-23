@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from dataclasses import asdict
 
+from travelplanner.content_categories import normalize_content_category
 from travelplanner.models import Platform, SavedPost, make_post_id, parse_post_id
+from travelplanner.movie_hints import ExtractedMovie, ResolvedMovie, normalize_title_kind
 from travelplanner.place_hints import ExtractedPlace, PlatformPlace
 from travelplanner.db.serialize import from_dynamo, to_dynamo
 from travelplanner.db.tables import get_table
@@ -20,6 +22,41 @@ def _extracted_place_from_dict(data: dict) -> ExtractedPlace:
     attributes=tuple(data.get("attributes", [])),
     parent_place_name=data.get("parent_place_name"),
     parent_category=data.get("parent_category"),
+  )
+
+
+def _extracted_movie_from_dict(data: dict) -> ExtractedMovie:
+  year = data.get("year")
+  return ExtractedMovie(
+    title=data["title"],
+    year=int(year) if isinstance(year, int) else None,
+    details=data.get("details"),
+    kind=normalize_title_kind(data.get("kind")),
+  )
+
+
+def _resolved_movie_from_dict(data: dict) -> ResolvedMovie:
+  year = data.get("year")
+  runtime = data.get("runtime_minutes")
+  rating = data.get("imdb_rating")
+  rt = data.get("rotten_tomatoes_percent")
+  seasons = data.get("number_of_seasons")
+  tmdb_id = data["tmdb_id"]
+  return ResolvedMovie(
+    tmdb_id=int(tmdb_id),
+    title=data["title"],
+    imdb_id=data.get("imdb_id"),
+    year=int(year) if isinstance(year, int) else None,
+    runtime_minutes=int(runtime) if isinstance(runtime, int) else None,
+    original_language=data.get("original_language"),
+    genres=tuple(data.get("genres") or []),
+    classification=data.get("classification"),
+    plot_summary=data.get("plot_summary"),
+    imdb_rating=float(rating) if isinstance(rating, (int, float)) else None,
+    rotten_tomatoes_percent=int(rt) if isinstance(rt, int) else None,
+    review_summary=data.get("review_summary"),
+    kind=normalize_title_kind(data.get("kind")),
+    number_of_seasons=int(seasons) if isinstance(seasons, int) else None,
   )
 
 
@@ -64,10 +101,17 @@ def post_from_dict(data: dict) -> SavedPost:
     extracted_places=tuple(
       _extracted_place_from_dict(place) for place in data.get("extracted_places", [])
     ),
+    extracted_movies=tuple(
+      _extracted_movie_from_dict(movie) for movie in data.get("extracted_movies", [])
+    ),
+    resolved_movies=tuple(
+      _resolved_movie_from_dict(movie) for movie in data.get("resolved_movies", [])
+    ),
     place_ids=tuple(data.get("place_ids", [])),
     thumbnail_url=data.get("thumbnail_url"),
     fetched_at=data.get("fetched_at"),
     reel_summary=data.get("reel_summary"),
+    content_category=normalize_content_category(data.get("content_category")),
   )
 
 

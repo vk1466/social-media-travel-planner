@@ -2,18 +2,43 @@
 
 from __future__ import annotations
 
+from collections import Counter
+
+from travelplanner.content_categories import (
+  CONTENT_CATEGORY_TAB_ORDER,
+  inferred_content_category,
+)
 from travelplanner.db import places_repo, user_places_repo, user_posts_repo
 from travelplanner.models import Place, Platform, SavedPost
 from travelplanner.places import list_places
 from travelplanner.store import batch_get_posts
 
 
-def list_user_posts(user_id: str, platform: Platform | None = None) -> list[SavedPost]:
+def list_user_posts(
+  user_id: str,
+  platform: Platform | None = None,
+  content_category: str | None = None,
+) -> list[SavedPost]:
   post_ids = user_posts_repo.list_user_post_ids(user_id)
   posts = batch_get_posts(post_ids)
   if platform is not None:
     posts = [post for post in posts if post.platform == platform]
+  if content_category is not None:
+    posts = [
+      post for post in posts if inferred_content_category(post) == content_category
+    ]
   return sorted(posts, key=lambda post: post.fetched_at or "", reverse=True)
+
+
+def content_category_counts(user_id: str) -> list[tuple[str, int]]:
+  """Distinct inferred categories on the user's posts, vocab order, with counts."""
+  posts = list_user_posts(user_id)
+  counts = Counter(inferred_content_category(post) for post in posts)
+  return [
+    (category, counts[category])
+    for category in CONTENT_CATEGORY_TAB_ORDER
+    if counts[category]
+  ]
 
 
 def user_owns_post(user_id: str, post_id: str) -> bool:

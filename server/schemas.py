@@ -27,6 +27,30 @@ class ExtractedPlaceSchema(BaseModel):
   parent_category: str | None = None
 
 
+class ExtractedMovieSchema(BaseModel):
+  title: str
+  year: int | None = None
+  details: str | None = None
+  kind: str = "movie"
+
+
+class ResolvedMovieSchema(BaseModel):
+  tmdb_id: int
+  title: str
+  imdb_id: str | None = None
+  year: int | None = None
+  runtime_minutes: int | None = None
+  original_language: str | None = None
+  genres: list[str] = Field(default_factory=list)
+  classification: str | None = None
+  plot_summary: str | None = None
+  imdb_rating: float | None = None
+  rotten_tomatoes_percent: int | None = None
+  review_summary: str | None = None
+  kind: str = "movie"
+  number_of_seasons: int | None = None
+
+
 class SavedPostSchema(BaseModel):
   post_id: str
   post_url: str
@@ -41,10 +65,13 @@ class SavedPostSchema(BaseModel):
   top_comments: list[str] = Field(default_factory=list)
   places: list[PlatformPlaceSchema] = Field(default_factory=list)
   extracted_places: list[ExtractedPlaceSchema] = Field(default_factory=list)
+  extracted_movies: list[ExtractedMovieSchema] = Field(default_factory=list)
+  resolved_movies: list[ResolvedMovieSchema] = Field(default_factory=list)
   place_ids: list[str] = Field(default_factory=list)
   thumbnail_url: str | None = None
   fetched_at: str | None = None
   reel_summary: str | None = None
+  content_category: str | None = None
 
 
 class PlaceLocationSchema(BaseModel):
@@ -107,6 +134,11 @@ class PlaceFactsRefreshSchema(BaseModel):
   status: str
   note: str = ""
   facts: PlaceFactsSchema | None = None
+
+
+class ContentCategoryCountSchema(BaseModel):
+  category: str
+  count: int
 
 class PlaceDetailSchema(BaseModel):
   place: PlaceSchema

@@ -19,6 +19,9 @@ export interface PostsShellFilters {
   ringKey: string;
   query: string;
   deckMode: PostsDeckMode;
+  contentCategory: string;
+  placeStatus: PlacesStatusFilter;
+  placeTypes: string[];
 }
 
 export interface LibraryShellPill {
@@ -47,6 +50,9 @@ export const DEFAULT_POSTS_FILTERS: PostsShellFilters = {
   ringKey: "all",
   query: "",
   deckMode: "deck",
+  contentCategory: "all",
+  placeStatus: "all",
+  placeTypes: [],
 };
 
 export const EMPTY_LIBRARY_META: LibraryShellMeta = {

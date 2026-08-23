@@ -1,4 +1,7 @@
+from dataclasses import replace
+
 from travelplanner.models import Platform, SavedPost, make_post_id
+from travelplanner.movie_hints import ExtractedMovie, ResolvedMovie
 from travelplanner.place_hints import ExtractedPlace, PlatformPlace
 from travelplanner.store import delete_post, has_post, load_all_posts, load_post, post_from_dict, save_post
 
@@ -50,6 +53,87 @@ def test_store_round_trip(dynamodb) -> None:
 
   all_posts = load_all_posts()
   assert all_posts == [post]
+
+
+def test_store_round_trip_content_category(dynamodb) -> None:
+  post = replace(_sample_post(), content_category="fashion")
+  save_post(post)
+  loaded = load_post(Platform.INSTAGRAM, post.post_id)
+  assert loaded is not None
+  assert loaded.content_category == "fashion"
+
+
+def test_store_round_trip_extracted_movies(dynamodb) -> None:
+  post = replace(
+    _sample_post(),
+    content_category="movies",
+    extracted_movies=(
+      ExtractedMovie(title="Dune: Part Two", year=2024, details="Trailer."),
+    ),
+  )
+  save_post(post)
+  loaded = load_post(Platform.INSTAGRAM, post.post_id)
+  assert loaded is not None
+  assert loaded.extracted_movies == post.extracted_movies
+
+
+def test_store_round_trip_resolved_movies(dynamodb) -> None:
+  post = replace(
+    _sample_post(),
+    content_category="movies",
+    resolved_movies=(
+      ResolvedMovie(
+        tmdb_id=424694,
+        title="Bohemian Rhapsody",
+        imdb_id="tt1727824",
+        year=2018,
+        runtime_minutes=135,
+        original_language="en",
+        genres=("Music", "Drama"),
+        classification="PG-13",
+        plot_summary="Queen origin story.",
+        imdb_rating=7.9,
+        rotten_tomatoes_percent=60,
+        review_summary="Strong lead, mixed overall.",
+      ),
+    ),
+  )
+  save_post(post)
+  loaded = load_post(Platform.INSTAGRAM, post.post_id)
+  assert loaded is not None
+  assert loaded.resolved_movies == post.resolved_movies
+
+
+def test_store_round_trip_resolved_tv(dynamodb) -> None:
+  post = replace(
+    _sample_post(),
+    content_category="movies",
+    extracted_movies=(
+      ExtractedMovie(title="Stranger Things", year=2016, kind="tv"),
+    ),
+    resolved_movies=(
+      ResolvedMovie(
+        tmdb_id=66732,
+        title="Stranger Things",
+        imdb_id="tt4574334",
+        year=2016,
+        runtime_minutes=50,
+        original_language="en",
+        genres=("Sci-Fi & Fantasy", "Drama"),
+        classification="TV-14",
+        plot_summary="Kids in Hawkins.",
+        imdb_rating=8.7,
+        rotten_tomatoes_percent=92,
+        kind="tv",
+        number_of_seasons=5,
+      ),
+    ),
+  )
+  save_post(post)
+  loaded = load_post(Platform.INSTAGRAM, post.post_id)
+  assert loaded is not None
+  assert loaded.extracted_movies == post.extracted_movies
+  assert loaded.resolved_movies == post.resolved_movies
 
 
 def test_load_normalizes_legacy_native_post_id(dynamodb) -> None:

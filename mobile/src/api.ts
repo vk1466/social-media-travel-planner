@@ -48,6 +48,30 @@ export interface ExtractedPlace {
   parent_category?: string | null;
 }
 
+export interface ExtractedMovie {
+  title: string;
+  year?: number | null;
+  details?: string | null;
+  kind?: string | null;
+}
+
+export interface ResolvedMovie {
+  tmdb_id: number;
+  title: string;
+  imdb_id?: string | null;
+  year?: number | null;
+  runtime_minutes?: number | null;
+  original_language?: string | null;
+  genres: string[];
+  classification?: string | null;
+  plot_summary?: string | null;
+  imdb_rating?: number | null;
+  rotten_tomatoes_percent?: number | null;
+  review_summary?: string | null;
+  kind?: string | null;
+  number_of_seasons?: number | null;
+}
+
 export interface SavedPost {
   post_id: string;
   post_url: string;
@@ -62,10 +86,13 @@ export interface SavedPost {
   top_comments: string[];
   places: PlatformPlace[];
   extracted_places: ExtractedPlace[];
+  extracted_movies?: ExtractedMovie[];
+  resolved_movies?: ResolvedMovie[];
   place_ids: string[];
   thumbnail_url?: string | null;
   fetched_at?: string | null;
   reel_summary?: string | null;
+  content_category?: string | null;
 }
 
 export function parsePostId(postId: string): { platform: string; nativeId: string } {

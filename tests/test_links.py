@@ -12,6 +12,11 @@ from travelplanner.models import Platform
     ("https://www.instagram.com/reels/DacxT80BYau/", "DacxT80BYau"),
     ("https://www.instagram.com/tv/ABC123_xyz/?utm_source=share", "ABC123_xyz"),
     ("https://www.instagram.com/p/CjDN1tzMIjR?igsh=abc", "CjDN1tzMIjR"),
+    ("https://www.instagram.com/findingoodfilms/reel/DV7fIBpSzcm/", "DV7fIBpSzcm"),
+    ("https://www.instagram.com/webseries/reel/Db6ApX-hy6H/", "Db6ApX-hy6H"),
+    ("https://www.instagram.com/the_indian_web_series/p/Db-rK3TueDp/", "Db-rK3TueDp"),
+    ("https://www.instagram.com/some.user/reels/DacxT80BYau/", "DacxT80BYau"),
+    ("https://www.instagram.com/a_handle/tv/ABC123_xyz/", "ABC123_xyz"),
   ],
 )
 def test_extract_instagram_shortcode(url: str, expected: str) -> None:

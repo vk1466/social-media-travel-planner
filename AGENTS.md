@@ -28,7 +28,7 @@ travelplanner/
 
 ```
 travelplanner/ core library — no CLI, no web code
-  clients/ reusable API clients (EnsembleData, Supadata, geocoder)
+  clients/ reusable API clients (Mindcase, Supadata, geocoder)
   sources/ platform-specific fetchers (one file per platform)
   db/      DynamoDB client, table helpers, repos (Posts, Places, User*, Visits)
   models.py SavedPost, Place, Visit, TAGS — domain entities

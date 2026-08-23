@@ -14,6 +14,7 @@ def test_media_enrichment_flags_default_on() -> None:
   assert FeatureFlag.get("extract_image_text") is True
   assert FeatureFlag.get("extract_video_analysis") is True
   assert FeatureFlag.get("extract_reel_frame_text") is True
+  assert FeatureFlag.get("content_categories") is True
 
 
 def test_place_facts_tuning_constants() -> None:

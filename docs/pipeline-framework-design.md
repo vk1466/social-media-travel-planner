@@ -69,7 +69,13 @@ in [AGENTS.md](../AGENTS.md#feature-flags).
 
 Examples already in this design: `extract_image_text`, `extract_video_analysis`,
 and `extract_reel_frame_text` stay flagged off until validated; place-facts
-enrichment uses `place_facts`.
+enrichment uses `place_facts`. Post topic classification uses `content_categories`
+(currently on in this environment): ingest stamps `SavedPost.content_category`
+then dispatches close by category — **place** pipeline for travel (and unset),
+**movie** pipeline for movies (extract films and TV series, then TMDB/OMDb
+catalog facts). Fashion / hairstyle / food / other skip close until they have
+their own pipelines. A shared Movie table is not live; catalog facts persist on
+`SavedPost.resolved_movies`.
 
 When adding a pipeline step that is not ready for all environments, register a
 flag and keep the composition able to skip or no-op when the flag is off — do
@@ -92,7 +98,7 @@ Entry (API / CLI / mobile)
 | Layer | Owns | Must not |
 |-------|------|----------|
 | **Persona** | Discovery, Timeline gates, “what to do with resolved places” | Geocode, dedupe, LLM extract of places |
-| **Pipeline** | Which steps run for `(platform, resource_type)` | Ad-hoc business rules, visit creation |
+| **Pipeline** | Which steps run for `(platform, resource_type)` and close for `content_category` | Ad-hoc business rules, visit creation |
 | **Step** | One transformation or I/O | Decide product policy for weak pins |
 | **Runner** | Logging, retries, failure recording | Domain logic |
 | **clients/** | HTTP / API wrappers | Import steps, pipelines, or personas |
@@ -103,21 +109,25 @@ Entry (API / CLI / mobile)
 ## Resource types
 
 Pipelines are keyed by **platform + resource type**, not by “post” as a
-catch-all.
+catch-all. After classify, **close** is keyed by `content_category`.
 
 | Platform | Resource types |
 |----------|----------------|
 | Instagram | `reel`, `video`, `image`, `carousel` |
 | Google Timeline | `timeline_visit` |
 
-Resource type is often known only **after** fetch. Dispatch is two-phase:
+Resource type is often known only **after** fetch. Dispatch is:
 
 1. **Head (by platform):** seed post (platform + shortcode + resource type) → fetch media.
 2. **Tail (by platform + resource type):** transcript and/or image text.
-3. **Shared close:** extract places → locate → dedupe → upsert.
+3. **Classify (flagged):** `classify_content` stamps `SavedPost.content_category`. No-op when `content_categories` is off.
+4. **Close (by content category):**
+   - `travel` or unset (classify skipped / failed) → **place pipeline:** extract places → locate → dedupe → upsert.
+   - `movies` → **movie pipeline:** extract films and TV series onto `SavedPost.extracted_movies` (`kind` is `movie` or `tv`), then `resolve_movies` (TMDB movie or TV identity + details, OMDb IMDb/RT scores, optional review summary). Snapshot stored on `SavedPost.resolved_movies`. No geocode. Shared Movie upsert is not wired yet.
+   - `fashion` / `hairstyle` / `food` / `other` → skip close (save the post only).
 
 Timeline has no fetch head; it starts at locate (coordinates) with optional
-nearby POI fallback, then the same shared close.
+nearby POI fallback, then the place close steps.
 
 ---
 
@@ -179,7 +189,10 @@ stats into a string and store them in `post_id` or any other identity field.
 
 ```text
 travelplanner/steps/
+  classify_content.py        # generic — post topic; flag content_categories
   extract_places.py          # generic — LLM from ContentBundle
+  extract_movies.py          # generic — film and TV titles from ContentBundle
+  resolve_movies.py          # generic — TMDB movie/TV resolve + OMDb ratings
   locate_by_name.py          # generic
   locate_by_coordinates.py   # generic
   nearby_pois.py             # generic
@@ -196,11 +209,12 @@ travelplanner/steps/
 
 ### ContentBundle / ContentSnippet
 
-Media-agnostic input to `extract_places`: a list of `(source, text)` snippets
-(caption, hashtags, comments, location tag, transcript, video analysis, image
-text, optional prior summary). `ContentBundle` is a convenience shape that
-flattens into snippets. Prefer one extractor used by every platform and
-resource type.
+Media-agnostic input to `extract_places` and `extract_movies`: a list of
+`(source, text)` snippets (caption, hashtags, comments, location tag, transcript,
+video analysis, image text, optional prior summary). `ContentBundle` is a
+convenience shape that flattens into snippets. Prefer one extractor used by
+every platform and resource type. Close dispatch picks **which** extractor
+runs; it does not change the bundle.
 
 ### Adding a step
 

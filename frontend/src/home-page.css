@@ -338,6 +338,15 @@ html[data-bento-motion="card-shuffle"] .home-tile--media.is-in .home-tile-layer-
   gap: 12px;
 }
 
+.home-tabs--saved {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+}
+
+.saved-view-toggle {
+  margin: 1rem 0 0;
+  width: fit-content;
+}
+
 .home-tab {
   border: 1px solid var(--wf-chrome-border);
   background: var(--wf-chrome-panel);

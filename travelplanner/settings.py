@@ -7,14 +7,10 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-def ensembledata_token() -> str:
-  value = os.getenv("ENSEMBLEDATA_TOKEN")
-  if not value:
-    raise RuntimeError(
-      "Missing ENSEMBLEDATA_TOKEN environment variable. "
-      "Copy .env.example to .env and set your EnsembleData API token."
-    )
-  return value
+def mindcase_api_key() -> str | None:
+  """Optional until first Instagram fetch; client raises if missing then."""
+  value = os.getenv("MINDCASE_API_KEY")
+  return value.strip() if value else None
 
 
 def supadata_api_key() -> str:
@@ -35,6 +31,18 @@ def openai_api_key() -> str | None:
 def google_maps_api_key() -> str | None:
   """Optional Google Maps / Places key for locate fallback (1f)."""
   value = os.getenv("GOOGLE_MAPS_API_KEY")
+  return value.strip() if value else None
+
+
+def tmdb_api_key() -> str | None:
+  """Optional TMDB v3 API key for movie resolve / facts."""
+  value = os.getenv("TMDB_API_KEY")
+  return value.strip() if value else None
+
+
+def omdb_api_key() -> str | None:
+  """Optional OMDb key for IMDb / Rotten Tomatoes scores."""
+  value = os.getenv("OMDB_API_KEY")
   return value.strip() if value else None
 
 

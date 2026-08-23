@@ -380,6 +380,54 @@ def test_users_see_only_their_posts(dynamodb) -> None:
   assert client.get("/api/posts", headers={"X-User-Id": "user-b"}).json() == []
 
 
+def test_list_posts_filters_content_category(dynamodb) -> None:
+  fashion = SavedPost(
+    post_id="instagram:fit",
+    post_url="https://www.instagram.com/reel/fit/",
+    platform=Platform.INSTAGRAM,
+    media_kind="reel",
+    caption="outfit",
+    fetched_at="2026-07-06T21:15:04Z",
+    content_category="fashion",
+  )
+  travel = SavedPost(
+    post_id="instagram:trip",
+    post_url="https://www.instagram.com/reel/trip/",
+    platform=Platform.INSTAGRAM,
+    media_kind="reel",
+    caption="lisbon",
+    fetched_at="2026-07-06T21:16:04Z",
+    place_ids=("place-1",),
+  )
+  save_post(fashion)
+  save_post(travel)
+  user_posts_repo.link_user_post("user-a", fashion.post_id)
+  user_posts_repo.link_user_post("user-a", travel.post_id)
+
+  client = TestClient(app)
+  fashion_posts = client.get(
+    "/api/posts",
+    params={"content_category": "fashion"},
+    headers=HEADERS,
+  )
+  assert fashion_posts.status_code == 200
+  assert [post["post_id"] for post in fashion_posts.json()] == ["instagram:fit"]
+
+  counts = client.get("/api/content-categories", headers=HEADERS)
+  assert counts.status_code == 200
+  assert counts.json() == [
+    {"category": "travel", "count": 1},
+    {"category": "fashion", "count": 1},
+  ]
+
+  unknown = client.get(
+    "/api/posts",
+    params={"content_category": "not-a-category"},
+    headers=HEADERS,
+  )
+  assert unknown.status_code == 400
+
+
 def test_admin_me_reports_admin(dynamodb) -> None:
   client = TestClient(app)
   response = client.get("/api/admin/me", headers=HEADERS)

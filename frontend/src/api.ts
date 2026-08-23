@@ -10,18 +10,29 @@ export function setAuthTokenGetter(getter: (() => Promise<string | null>) | null
   authTokenGetter = getter;
 }
 
+function localDevHeaders(userId = "local-dev-user"): Record<string, string> {
+  if (!import.meta.env.DEV) {
+    return {};
+  }
+  return { "X-User-Id": userId };
+}
+
 async function authHeaders(): Promise<Record<string, string>> {
   if (!authTokenGetter) {
-    return { "X-User-Id": "local-dev-user" };
+    return localDevHeaders();
   }
   const token = await authTokenGetter();
   if (!token) {
-    return { "X-User-Id": "local-dev-user" };
+    return localDevHeaders();
   }
   if (token.startsWith("dev:")) {
+    const userId = token.slice(4) || "local-dev-user";
+    if (!import.meta.env.DEV) {
+      return {};
+    }
     return {
       Authorization: `Bearer ${token}`,
-      "X-User-Id": token.slice(4) || "local-dev-user",
+      "X-User-Id": userId,
     };
   }
   return { Authorization: `Bearer ${token}` };
@@ -49,6 +60,30 @@ export interface ExtractedPlace {
   parent_category?: string | null;
 }
 
+export interface ExtractedMovie {
+  title: string;
+  year?: number | null;
+  details?: string | null;
+  kind?: string | null;
+}
+
+export interface ResolvedMovie {
+  tmdb_id: number;
+  title: string;
+  imdb_id?: string | null;
+  year?: number | null;
+  runtime_minutes?: number | null;
+  original_language?: string | null;
+  genres: string[];
+  classification?: string | null;
+  plot_summary?: string | null;
+  imdb_rating?: number | null;
+  rotten_tomatoes_percent?: number | null;
+  review_summary?: string | null;
+  kind?: string | null;
+  number_of_seasons?: number | null;
+}
+
 export interface SavedPost {
   /** Globally unique primary key: `{platform}:{native_id}`. */
   post_id: string;
@@ -64,11 +99,14 @@ export interface SavedPost {
   top_comments: string[];
   places: PlatformPlace[];
   extracted_places: ExtractedPlace[];
+  extracted_movies?: ExtractedMovie[];
+  resolved_movies?: ResolvedMovie[];
   /** Foreign keys → Place.place_id */
   place_ids: string[];
   thumbnail_url?: string | null;
   fetched_at?: string | null;
   reel_summary?: string | null;
+  content_category?: string | null;
 }
 
 /** Split a global post_id (`platform:native`) for API routes and navigation. */
@@ -372,9 +410,24 @@ export async function fetchActiveJob(kind?: string): Promise<Job | null> {
   return request<Job | null>(`/api/jobs/active${query}`);
 }
 
-export async function fetchPosts(platform?: string): Promise<SavedPost[]> {
-  const query = platform ? `?platform=${encodeURIComponent(platform)}` : "";
-  return request<SavedPost[]>(`/api/posts${query}`);
+export async function fetchPosts(
+  platform?: string,
+  contentCategory?: string,
+): Promise<SavedPost[]> {
+  const params = new URLSearchParams();
+  if (platform) params.set("platform", platform);
+  if (contentCategory) params.set("content_category", contentCategory);
+  const query = params.toString();
+  return request<SavedPost[]>(`/api/posts${query ? `?${query}` : ""}`);
+}
+
+export interface ContentCategoryCount {
+  category: string;
+  count: number;
+}
+
+export async function fetchContentCategories(): Promise<ContentCategoryCount[]> {
+  return request<ContentCategoryCount[]>("/api/content-categories");
 }
 
 export async function fetchPost(platform: string, postId: string): Promise<SavedPost> {
