@@ -73,9 +73,9 @@ export function PostLibrary({
   const [selectedPost, setSelectedPost] = useState<SavedPost | null>(null);
   const [localDeckMode, setLocalDeckMode] = useState<DeckMode>("deck");
   const [localSearchQuery, setLocalSearchQuery] = useState("");
-  const [localContentCategory, setLocalContentCategory] = useState("all");
-  const [localPlaceStatus, setLocalPlaceStatus] = useState<"all" | "visited" | "inspiration">("all");
-  const [localPlaceTypes, setLocalPlaceTypes] = useState<string[]>([]);
+  const [localContentCategory] = useState("all");
+  const [localPlaceStatus] = useState<"all" | "visited" | "inspiration">("all");
+  const [localPlaceTypes] = useState<string[]>([]);
   const [visitedIds, setVisitedIds] = useState<Set<string>>(new Set());
 
   const platformFilter = filters?.platform ?? localPlatformFilter;
