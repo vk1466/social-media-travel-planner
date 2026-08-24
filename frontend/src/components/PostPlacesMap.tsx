@@ -71,10 +71,16 @@ function Recenter({ places, activePlaceId }: { places: Place[]; activePlaceId?: 
 interface PostPlacesMapProps {
   places: Place[];
   activePlaceId?: string | null;
+  pinIndexByPlaceId?: Record<string, number>;
   onSelectPlaceId?: (placeId: string) => void;
 }
 
-export function PostPlacesMap({ places, activePlaceId, onSelectPlaceId }: PostPlacesMapProps) {
+export function PostPlacesMap({
+  places,
+  activePlaceId,
+  pinIndexByPlaceId,
+  onSelectPlaceId,
+}: PostPlacesMapProps) {
   const mapped = mappablePlaces(places);
   const active = mapped.find((place) => place.place_id === activePlaceId) ?? mapped[0];
 
@@ -110,17 +116,21 @@ export function PostPlacesMap({ places, activePlaceId, onSelectPlaceId }: PostPl
         <TileLayer url={VOYAGER_URL} attribution={VOYAGER_ATTR} subdomains="abcd" />
         <InvalidateSize />
         <Recenter places={mapped} activePlaceId={active.place_id} />
-        {mapped.map((place, index) => (
-          <Marker
-            key={place.place_id}
-            position={[place.location.latitude!, place.location.longitude!]}
-            icon={numberedPin(index, place.place_id === active.place_id)}
-            zIndexOffset={place.place_id === active.place_id ? 600 : 0}
-            eventHandlers={{
-              click: () => onSelectPlaceId?.(place.place_id),
-            }}
-          />
-        ))}
+        {mapped.map((place, index) => {
+          const pinIndex = pinIndexByPlaceId?.[place.place_id] ?? index;
+          const selected = place.place_id === active.place_id;
+          return (
+            <Marker
+              key={place.place_id}
+              position={[place.location.latitude!, place.location.longitude!]}
+              icon={numberedPin(pinIndex, selected)}
+              zIndexOffset={selected ? 600 : 0}
+              eventHandlers={{
+                click: () => onSelectPlaceId?.(place.place_id),
+              }}
+            />
+          );
+        })}
       </MapContainer>
       <div className="post-flip-live-map-chip">
         <p>{active.display_name}</p>

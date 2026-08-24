@@ -1,6 +1,6 @@
 import { StrictMode, useEffect, useMemo } from "react";
 import { createRoot } from "react-dom/client";
-import { BrowserRouter } from "react-router-dom";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { ClerkProvider, Show, useAuth } from "@clerk/react";
 
 import "@fontsource-variable/dm-sans";
@@ -17,6 +17,8 @@ import { setAuthTokenGetter } from "./api";
 import { clerkPublishableKey, useLocalDevAuth } from "./authMode";
 import { wanderfileClerkAppearance } from "./clerkAppearance";
 import { SignedOutGate } from "./components/SignedOutGate";
+import { FlipCollapsedVariations } from "./components/FlipCollapsedVariations";
+import { FlipDetailCardDemos } from "./components/FlipDetailCardDemos";
 import { useBrandVersion } from "./hooks/useBrandVersion";
 import {
   applyBrandLab,
@@ -130,12 +132,23 @@ function Root() {
     <ThemedClerkProvider>
       <AuthTokenBridge>
         <BrowserRouter>
-          <Show when="signed-out">
-            <SignedOutGate />
-          </Show>
-          <Show when="signed-in">
-            <App />
-          </Show>
+          <Routes>
+            <Route path="/dev/flip-cards/collapsed" element={<FlipCollapsedVariations />} />
+            <Route path="/dev/flip-cards" element={<FlipDetailCardDemos />} />
+            <Route
+              path="*"
+              element={
+                <>
+                  <Show when="signed-out">
+                    <SignedOutGate />
+                  </Show>
+                  <Show when="signed-in">
+                    <App />
+                  </Show>
+                </>
+              }
+            />
+          </Routes>
         </BrowserRouter>
       </AuthTokenBridge>
     </ThemedClerkProvider>

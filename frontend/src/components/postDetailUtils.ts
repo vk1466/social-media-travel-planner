@@ -1,4 +1,13 @@
-import type { ExtractedPlace, Place, PlatformPlace, SavedPost } from "../api";
+import type {
+  ExtractedMovie,
+  ExtractedPlace,
+  Place,
+  PlatformPlace,
+  ResolvedMovie,
+  SavedPost,
+} from "../api";
+import { categoryLabel } from "../categoryLabels";
+import { contentCategoryLabel, effectiveContentCategory } from "../contentCategory";
 import { googleMapsUrl } from "../maps";
 import { getCaptionExcerpt, getPostTitle } from "../postDisplayUtils";
 
@@ -25,6 +34,20 @@ export interface PlaceSummary {
   mapUrl?: string | null;
   latitude?: number | null;
   longitude?: number | null;
+}
+
+/** Bottom-strip card for travel stops, movies, or generic reel details. */
+export interface ReelDetailItem {
+  key: string;
+  name: string;
+  category?: string | null;
+  metaParts: string[];
+  details?: string | null;
+  tip?: string | null;
+  placeId?: string;
+  mapUrl?: string | null;
+  actionLabel?: string | null;
+  actionHref?: string | null;
 }
 
 export function locationFromExtracted(place: ExtractedPlace): string | undefined {
@@ -233,6 +256,149 @@ export function buildReelSummary(post: SavedPost): {
   const reelSummary = llmSummary || fallbackSummary;
   const summaryExcerpt = getCaptionExcerpt(reelSummary, 160);
   return { llmSummary, fallbackSummary, reelSummary, summaryExcerpt };
+}
+
+export function movieKindLabel(kind?: string | null): string {
+  return kind?.trim().toLowerCase() === "tv" ? "TV series" : "Film";
+}
+
+function formatRuntime(minutes?: number | null): string | undefined {
+  if (minutes == null || minutes <= 0) {
+    return undefined;
+  }
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  if (hours === 0) {
+    return `${rest} min`;
+  }
+  if (rest === 0) {
+    return `${hours}h`;
+  }
+  return `${hours}h ${rest}m`;
+}
+
+function movieCatalogUrl(movie: ResolvedMovie): { href: string; label: string } {
+  const imdbId = movie.imdb_id?.trim();
+  if (imdbId) {
+    return { href: `https://www.imdb.com/title/${imdbId}/`, label: "IMDb" };
+  }
+  const path = movie.kind?.trim().toLowerCase() === "tv" ? "tv" : "movie";
+  return { href: `https://www.themoviedb.org/${path}/${movie.tmdb_id}`, label: "TMDB" };
+}
+
+function movieMetaParts(movie: ResolvedMovie, extracted?: ExtractedMovie): string[] {
+  const seasons = movie.number_of_seasons;
+  return [
+    movie.year != null ? String(movie.year) : extracted?.year != null ? String(extracted.year) : undefined,
+    formatRuntime(movie.runtime_minutes),
+    seasons != null && seasons > 0 ? `${seasons} season${seasons === 1 ? "" : "s"}` : undefined,
+    movie.classification,
+    movie.imdb_rating != null ? `IMDb ${movie.imdb_rating.toFixed(1)}` : undefined,
+    movie.rotten_tomatoes_percent != null ? `RT ${movie.rotten_tomatoes_percent}%` : undefined,
+    movie.genres.slice(0, 3).join(" · ") || undefined,
+  ].filter((part): part is string => Boolean(part));
+}
+
+function detailItemFromResolvedMovie(
+  movie: ResolvedMovie,
+  extracted: ExtractedMovie | undefined,
+  key: string,
+): ReelDetailItem {
+  const catalog = movieCatalogUrl(movie);
+  return {
+    key,
+    name: movie.title,
+    category: movieKindLabel(movie.kind ?? extracted?.kind),
+    metaParts: movieMetaParts(movie, extracted),
+    details: extracted?.details?.trim() || movie.plot_summary,
+    tip: movie.review_summary,
+    actionHref: catalog.href,
+    actionLabel: catalog.label,
+  };
+}
+
+export function buildMovieDetailItems(post: SavedPost): ReelDetailItem[] {
+  const extracted = post.extracted_movies ?? [];
+  const resolved = post.resolved_movies ?? [];
+  const usedResolved = new Set<number>();
+  const items: ReelDetailItem[] = [];
+
+  extracted.forEach((mention, index) => {
+    const matchIndex = resolved.findIndex((movie, resolvedIndex) => {
+      if (usedResolved.has(resolvedIndex)) {
+        return false;
+      }
+      return movie.title.trim().toLowerCase() === mention.title.trim().toLowerCase();
+    });
+    if (matchIndex >= 0) {
+      usedResolved.add(matchIndex);
+      const movie = resolved[matchIndex]!;
+      items.push(detailItemFromResolvedMovie(movie, mention, `movie-${movie.tmdb_id}`));
+      return;
+    }
+    items.push({
+      key: `extracted-movie-${index}`,
+      name: mention.title,
+      category: movieKindLabel(mention.kind),
+      metaParts: mention.year != null ? [String(mention.year)] : [],
+      details: mention.details,
+    });
+  });
+
+  resolved.forEach((movie, index) => {
+    if (usedResolved.has(index)) {
+      return;
+    }
+    items.push(detailItemFromResolvedMovie(movie, undefined, `movie-${movie.tmdb_id}-${index}`));
+  });
+
+  return items;
+}
+
+export function placeSummaryToDetailItem(place: PlaceSummary): ReelDetailItem {
+  const metaParts = [place.locationLine].filter((part): part is string => Boolean(part));
+  return {
+    key: place.key,
+    name: place.name,
+    category: place.category ? categoryLabel(place.category) : undefined,
+    metaParts,
+    details: place.details,
+    tip: place.tips[0],
+    placeId: place.placeId,
+    mapUrl: place.mapUrl,
+  };
+}
+
+export function buildGenericReelDetailItems(post: SavedPost): ReelDetailItem[] {
+  const { reelSummary } = buildReelSummary(post);
+  const heading = shortHeading(post);
+  if (!reelSummary && !heading) {
+    return [];
+  }
+  return [
+    {
+      key: "reel-details",
+      name: heading || "Saved post",
+      category: contentCategoryLabel(effectiveContentCategory(post)),
+      metaParts: post.hashtags.slice(0, 4).map((tag) => tag.replace(/^#/, "")),
+      details: reelSummary || undefined,
+    },
+  ];
+}
+
+export function buildReelDetailItems(
+  post: SavedPost,
+  placeSummaries: PlaceSummary[],
+): ReelDetailItem[] {
+  const category = effectiveContentCategory(post);
+  if (category === "travel") {
+    return placeSummaries.map(placeSummaryToDetailItem);
+  }
+  if (category === "movies") {
+    const movies = buildMovieDetailItems(post);
+    return movies.length > 0 ? movies : buildGenericReelDetailItems(post);
+  }
+  return buildGenericReelDetailItems(post);
 }
 
 /** Returns indices of dots to show — at most `maxVisible`, centered on `active`. */

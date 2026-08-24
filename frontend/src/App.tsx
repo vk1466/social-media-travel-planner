@@ -21,6 +21,8 @@ import {
   type SavedPost,
 } from "./api";
 import { AddLinksPage } from "./components/AddLinksPage";
+import { FlipCollapsedVariations } from "./components/FlipCollapsedVariations";
+import { FlipDetailCardDemos } from "./components/FlipDetailCardDemos";
 import { AdminPage } from "./components/AdminPage";
 import { PageHeader } from "./components/PageHeader";
 import { PlaceLibrary } from "./components/PlaceLibrary";
@@ -227,6 +229,8 @@ function AppRoutes({ authReady }: { authReady: boolean }) {
       <Route path="/map/demos/:themeId/:placeId" element={<Navigate to="/places" replace />} />
       <Route path="/site/demos" element={<Navigate to="/" replace />} />
       <Route path="/site/demos/:demoId" element={<Navigate to="/" replace />} />
+      <Route path="/dev/flip-cards/collapsed" element={<FlipCollapsedVariations />} />
+      <Route path="/dev/flip-cards" element={<FlipDetailCardDemos />} />
 
       <Route element={<ChromeOutlet {...chromeShared} />}>
         <Route
