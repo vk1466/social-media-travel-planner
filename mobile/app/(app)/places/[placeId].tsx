@@ -116,7 +116,7 @@ export default function PlaceDetailScreen() {
   }
 
   const { place, parent, children, source_posts: sourcePosts } = detail;
-  const mapUrl = googleMapsUrl(place.location);
+  const mapUrl = place.google_maps_url || googleMapsUrl(place.location);
   const locationLine = [place.location.city, place.location.state_province, place.location.country]
     .filter(Boolean)
     .join(" · ");

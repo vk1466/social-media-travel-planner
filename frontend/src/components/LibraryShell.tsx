@@ -124,7 +124,7 @@ export function LibraryShell({
           <p className="lib-shell-lede">{copy.lede}</p>
         </div>
         <div className="lib-shell-aside">
-          <div className="lib-shell-seg lib-shell-seg--view" role="group" aria-label="View mode">
+          <div className="wf-seg wf-seg--view" role="group" aria-label="View mode">
             {mode === "places" ? (
               <>
                 <button
@@ -204,7 +204,7 @@ export function LibraryShell({
           {mode === "places" ? (
             <>
               <div
-                className="lib-shell-seg lib-shell-seg--primary"
+                className="wf-seg wf-seg--soft"
                 role="group"
                 aria-label="Status filter"
               >
@@ -222,7 +222,7 @@ export function LibraryShell({
                 ))}
               </div>
               <div
-                className="lib-shell-seg lib-shell-seg--secondary"
+                className="wf-seg wf-seg--soft"
                 role="group"
                 aria-label="Grouping"
               >
@@ -249,7 +249,7 @@ export function LibraryShell({
           ) : (
             <>
               <div
-                className="lib-shell-seg lib-shell-seg--primary"
+                className="wf-seg wf-seg--soft"
                 role="group"
                 aria-label="Category filter"
               >
@@ -288,7 +288,7 @@ export function LibraryShell({
                 ))}
               </div>
               <div
-                className="lib-shell-seg lib-shell-seg--secondary"
+                className="wf-seg wf-seg--soft"
                 role="group"
                 aria-label="Platform filter"
               >
@@ -305,9 +305,33 @@ export function LibraryShell({
                   </button>
                 ))}
               </div>
+              <div
+                className="wf-seg wf-seg--soft"
+                role="group"
+                aria-label="Timeline"
+              >
+                <button
+                  type="button"
+                  className={postsFilters.dateMode === "saved" ? "is-active" : ""}
+                  onClick={() =>
+                    setPostsFilters((current) => ({ ...current, dateMode: "saved" }))
+                  }
+                >
+                  Saved
+                </button>
+                <button
+                  type="button"
+                  className={postsFilters.dateMode === "posted" ? "is-active" : ""}
+                  onClick={() =>
+                    setPostsFilters((current) => ({ ...current, dateMode: "posted" }))
+                  }
+                >
+                  Posted
+                </button>
+              </div>
               {travelPostFilters ? (
                 <div
-                  className="lib-shell-seg lib-shell-seg--secondary"
+                  className="wf-seg wf-seg--soft"
                   role="group"
                   aria-label="Place status"
                 >

@@ -137,6 +137,7 @@ class Place:
   source_post_ids: tuple[str, ...] = ()
   parent_place_id: str | None = None
   facts: PlaceFacts | None = None
+  google_maps_url: str | None = None
 
 
 VISIT_SOURCES = frozenset({"manual", "instagram", "timeline"})

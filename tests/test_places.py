@@ -338,6 +338,10 @@ def test_upsert_place_creates_new_place(dynamodb) -> None:
   assert place.tips == ("Arrive early",)
   assert place.source_post_ids == ("instagram:abc123",)
   assert place.aliases == ()
+  assert place.google_maps_url == (
+    "https://www.google.com/maps/search/?api=1"
+    "&query=Multnomah%20Falls%2C%20Portland%2C%20Oregon%2C%20United%20States"
+  )
 
 
 def test_upsert_place_merges_into_existing_place(dynamodb) -> None:

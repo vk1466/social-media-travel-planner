@@ -1,138 +1,30 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { fetchPlaceDetail, fetchPost, nativePostId, type ExtractedPlace, type PlatformPlace, type SavedPost } from "../api";
-import { coverArt } from "../coverArt";
-import { googleMapsUrl } from "../maps";
-import {
-  formatPostDate,
-  getCaptionExcerpt,
-  getPlatformLabel,
-  getPostTitle,
-  proxiedMediaUrl,
-} from "../postDisplayUtils";
+import { fetchPlaceDetail, fetchPost, nativePostId, type Place, type SavedPost } from "../api";
+import { categoryLabel } from "../categoryLabels";
+import { readPostCardLayout } from "../postCardLayout";
+import { formatPostDate, getPlatformLabel, proxiedMediaUrl } from "../postDisplayUtils";
 import { DetailModal } from "./DetailModal";
 import { PostReelFace } from "./PostMediaPreview";
-import { RelationRail, type RelationRailItem } from "./RelationRail";
+import { PostPlacesMap } from "./PostPlacesMap";
+import {
+  buildPlaceSummaries,
+  buildReelSummary,
+  formatCoordinates,
+  mapPlaceStub,
+  shortHeading,
+  windowedDotIndices,
+  type LinkedPlace,
+  type PlaceSummary,
+} from "./postDetailUtils";
 
 interface PostDetailProps {
   post: SavedPost;
   onClose: () => void;
   onDelete: () => Promise<void>;
   onNavigateToPlace?: (placeId: string) => void;
-}
-
-interface LinkedPlace {
-  placeId: string;
-  displayName: string;
-  city?: string | null;
-  country?: string | null;
-}
-
-interface PlaceSummary {
-  key: string;
-  name: string;
-  placeId?: string;
-  locationLine?: string;
-  parentPlaceName?: string | null;
-  category?: string | null;
-  attributes: string[];
-  details?: string | null;
-  tips: string[];
-  mapUrl?: string | null;
-}
-
-function locationFromExtracted(place: ExtractedPlace): string | undefined {
-  const parts = [place.city, place.state_province, place.country].filter(Boolean);
-  return parts.length > 0 ? parts.join(", ") : undefined;
-}
-
-function locationFromTagged(place: PlatformPlace): string | undefined {
-  const parts = [place.city, place.country].filter(Boolean);
-  return parts.length > 0 ? parts.join(", ") : undefined;
-}
-
-function buildPlaceSummaries(post: SavedPost, linkedPlaces: LinkedPlace[]): PlaceSummary[] {
-  const linkedByIndex = new Map(linkedPlaces.map((linked, index) => [index, linked]));
-  const count = Math.max(post.extracted_places.length, post.place_ids.length);
-
-  if (count > 0) {
-    const summaries: PlaceSummary[] = [];
-    for (let index = 0; index < count; index += 1) {
-      const extracted = post.extracted_places[index];
-      const linked = linkedByIndex.get(index) ?? (
-        post.place_ids[index]
-          ? { placeId: post.place_ids[index], displayName: post.place_ids[index] }
-          : undefined
-      );
-
-      if (extracted) {
-        summaries.push({
-          key: linked?.placeId ?? `${extracted.place_name}-${index}`,
-          name: linked?.displayName ?? extracted.place_name,
-          placeId: linked?.placeId,
-          locationLine: locationFromExtracted(extracted),
-          parentPlaceName: extracted.parent_place_name,
-          category: extracted.category,
-          attributes: extracted.attributes ?? [],
-          details: extracted.details,
-          tips: extracted.tips,
-        });
-        continue;
-      }
-
-      if (linked) {
-        summaries.push({
-          key: linked.placeId,
-          name: linked.displayName,
-          placeId: linked.placeId,
-          attributes: [],
-          tips: [],
-        });
-      }
-    }
-    return summaries;
-  }
-
-  return post.places.map((place, index) => {
-    const mapUrl = googleMapsUrl({
-      display_name: place.place_name,
-      city: place.city,
-      country: place.country,
-      latitude: place.latitude,
-      longitude: place.longitude,
-    });
-    return {
-      key: `${place.place_name}-${place.latitude}-${place.longitude}-${index}`,
-      name: place.place_name,
-      locationLine: locationFromTagged(place),
-      attributes: [],
-      tips: [],
-      mapUrl,
-    };
-  });
-}
-
-function captionFallbackSummary(post: SavedPost): string {
-  const caption = post.caption?.trim() ?? "";
-  if (!caption) {
-    return "";
-  }
-  const lines = caption
-    .split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean);
-  if (lines.length > 1) {
-    return lines.slice(1).join(" ");
-  }
-  return caption;
-}
-
-function shortHeading(post: SavedPost): string {
-  const title = getPostTitle(post);
-  if (title.length <= 56) {
-    return title;
-  }
-  return `${title.slice(0, 53).trimEnd()}…`;
+  onPrevPost?: () => void;
+  onNextPost?: () => void;
 }
 
 function DeleteIcon() {
@@ -165,21 +57,313 @@ function FlipIcon() {
   );
 }
 
+function ChevronLeftIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+      <path
+        d="M10 12L6 8l4-4"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function ChevronRightIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+      <path
+        d="M6 4l4 4-4 4"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function PlayIcon() {
+  return (
+    <svg width="10" height="10" viewBox="0 0 16 16" aria-hidden="true">
+      <path d="M5 3l9 5-9 5V3z" fill="currentColor" />
+    </svg>
+  );
+}
+
+// ── PlaceCard: one stop in the horizontal scroll list ─────────────────────────
+
+interface PlaceCardProps {
+  place: PlaceSummary;
+  index: number;
+  isActive: boolean;
+  onNavigateToPlace?: (placeId: string) => void;
+}
+
+function PlaceCard({ place, index, isActive, onNavigateToPlace }: PlaceCardProps) {
+  const placeId = place.placeId;
+  const canOpenPlace = Boolean(placeId && onNavigateToPlace);
+  const tip = place.tips[0];
+
+  return (
+    <li className={isActive ? "post-flip-place-item is-active" : "post-flip-place-item"}>
+      <span className="post-flip-place-index">{String(index + 1).padStart(2, "0")}</span>
+      <div className="post-flip-place-copy">
+        {canOpenPlace ? (
+          <button
+            type="button"
+            className="post-flip-place-name"
+            onClick={() => onNavigateToPlace?.(placeId!)}
+          >
+            {place.name}
+          </button>
+        ) : (
+          <p className="post-flip-place-name-static">{place.name}</p>
+        )}
+        {(place.category ||
+          place.locationLine ||
+          (place.latitude != null && place.longitude != null)) && (
+          <p className="post-flip-place-meta">
+            {place.category && (
+              <span className="post-flip-place-category">{categoryLabel(place.category)}</span>
+            )}
+            {place.locationLine && (
+              <span className="post-flip-place-location">{place.locationLine}</span>
+            )}
+            {place.latitude != null && place.longitude != null && (
+              <span className="post-flip-place-coords">
+                {formatCoordinates(place.latitude, place.longitude)}
+              </span>
+            )}
+          </p>
+        )}
+        {place.details && <p className="post-flip-place-blurb">{place.details}</p>}
+        {tip && <p className="post-flip-place-tip">{tip}</p>}
+      </div>
+      <div className="post-flip-place-actions">
+        {place.mapUrl && (
+          <a
+            className="text-button post-flip-maps-link"
+            href={place.mapUrl}
+            target="_blank"
+            rel="noreferrer"
+          >
+            Open in Maps
+          </a>
+        )}
+        {canOpenPlace && (
+          <button
+            type="button"
+            className="text-button place-summary-open"
+            onClick={() => onNavigateToPlace?.(placeId!)}
+          >
+            View place
+          </button>
+        )}
+      </div>
+    </li>
+  );
+}
+
+// ── PostFlipFront: detail + map face ──────────────────────────────────────────
+
+interface PostFlipFrontProps {
+  post: SavedPost;
+  flipped: boolean;
+  placeSummaries: PlaceSummary[];
+  overviewPlaces: Place[];
+  activePlaceIndex: number;
+  activePlaceId: string | null;
+  placeListRef: React.RefObject<HTMLUListElement | null>;
+  onFlip: () => void;
+  onClose: () => void;
+  onDelete: () => void;
+  scrollToPlaceIndex: (index: number) => void;
+  onNavigateToPlace?: (placeId: string) => void;
+}
+
+function PostFlipFront({
+  post,
+  flipped,
+  placeSummaries,
+  overviewPlaces,
+  activePlaceIndex,
+  activePlaceId,
+  placeListRef,
+  onFlip,
+  onClose,
+  onDelete,
+  scrollToPlaceIndex,
+  onNavigateToPlace,
+}: PostFlipFrontProps) {
+  const { reelSummary, llmSummary, summaryExcerpt } = buildReelSummary(post);
+  const heading = shortHeading(post);
+  const showHeading =
+    Boolean(heading) &&
+    (!reelSummary ||
+      Boolean(llmSummary) ||
+      !reelSummary.toLowerCase().startsWith(heading.replace(/…$/, "").toLowerCase().slice(0, 24)));
+
+  const dateLabel = formatPostDate(post);
+  const platformLabel = getPlatformLabel(post);
+  const thumbUrl = proxiedMediaUrl(post.thumbnail_url);
+  const thumbStyle = thumbUrl ? { backgroundImage: `url("${thumbUrl}")` } : undefined;
+
+  return (
+    <section
+      className="post-flip-face post-flip-front"
+      data-card-layout={readPostCardLayout()}
+      aria-hidden={flipped}
+    >
+      {thumbStyle && (
+        <div className="post-flip-front-thumb" style={thumbStyle} aria-hidden="true" />
+      )}
+      <div className="post-flip-front-wash" aria-hidden="true" />
+      <div className="post-flip-front-glow" aria-hidden="true" />
+
+      <header className="post-flip-header">
+        <div className="post-flip-meta">
+          <p className="post-flip-eyebrow">
+            {platformLabel}
+            {post.author_handle ? ` · @${post.author_handle}` : ""}
+          </p>
+          <div className="detail-badges">
+            <span className="badge badge-muted">{post.media_kind}</span>
+            {dateLabel && <span className="badge badge-muted">{dateLabel}</span>}
+            <button type="button" className="post-flip-reel-pill" onClick={onFlip}>
+              <PlayIcon />
+              Watch
+            </button>
+          </div>
+        </div>
+        <div className="post-flip-header-actions">
+          <button
+            type="button"
+            className="icon-button post-flip-delete-icon"
+            aria-label="Delete post"
+            title="Delete"
+            onClick={onDelete}
+          >
+            <DeleteIcon />
+          </button>
+          <button
+            type="button"
+            className="icon-button icon-button-close post-flip-front-close"
+            onClick={onClose}
+            aria-label="Close"
+          />
+        </div>
+      </header>
+
+      <div className="post-flip-map-fill">
+        <div className="post-flip-map-intro">
+          {showHeading && (
+            <h2 id="post-detail-title" className="post-flip-heading">
+              {heading}
+            </h2>
+          )}
+          {reelSummary && (
+            <p
+              id={showHeading ? undefined : "post-detail-title"}
+              className="post-flip-summary"
+            >
+              {summaryExcerpt.text}
+            </p>
+          )}
+          {!showHeading && !reelSummary && (
+            <h2 id="post-detail-title" className="post-flip-heading">
+              {heading || "Saved post"}
+            </h2>
+          )}
+        </div>
+
+        {placeSummaries.length > 0 && (
+          <PostPlacesMap
+            places={overviewPlaces}
+            activePlaceId={activePlaceId}
+            onSelectPlaceId={(placeId) => {
+              const index = placeSummaries.findIndex(
+                (place) => (place.placeId ?? place.key) === placeId,
+              );
+              if (index >= 0) {
+                scrollToPlaceIndex(index);
+              }
+            }}
+          />
+        )}
+
+        <div className="post-flip-map-places">
+          {placeSummaries.length === 0 ? (
+            <p className="post-flip-empty">No places extracted from this post yet.</p>
+          ) : (
+            <>
+              <ul className="post-flip-place-list" ref={placeListRef}>
+                {placeSummaries.map((place, index) => (
+                  <PlaceCard
+                    key={place.key}
+                    place={place}
+                    index={index}
+                    isActive={index === activePlaceIndex}
+                    onNavigateToPlace={onNavigateToPlace}
+                  />
+                ))}
+              </ul>
+              <div className="post-flip-place-pager">
+                <p className="post-flip-brief-meta">
+                  {activePlaceIndex + 1} / {placeSummaries.length}
+                </p>
+                {placeSummaries.length > 1 && (
+                  <div className="post-flip-place-dots" role="tablist" aria-label="Stops">
+                    {windowedDotIndices(placeSummaries.length, activePlaceIndex).map((index) => (
+                      <button
+                        key={placeSummaries[index]!.key}
+                        type="button"
+                        role="tab"
+                        aria-label={`Stop ${index + 1}: ${placeSummaries[index]!.name}`}
+                        aria-selected={index === activePlaceIndex}
+                        className={
+                          index === activePlaceIndex
+                            ? "post-flip-place-dot is-active"
+                            : "post-flip-place-dot"
+                        }
+                        onClick={() => scrollToPlaceIndex(index)}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ── PostDetail: root component ────────────────────────────────────────────────
+
 export function PostDetail({
   post: initialPost,
   onClose,
   onDelete,
   onNavigateToPlace,
+  onPrevPost,
+  onNextPost,
 }: PostDetailProps) {
   const [post, setPost] = useState(initialPost);
   const [linkedPlaces, setLinkedPlaces] = useState<LinkedPlace[]>([]);
   const [flipped, setFlipped] = useState(false);
-  const [summaryExpanded, setSummaryExpanded] = useState(false);
+  const [activePlaceIndex, setActivePlaceIndex] = useState(0);
+  const placeListRef = useRef<HTMLUListElement>(null);
 
   useEffect(() => {
     let cancelled = false;
     setFlipped(false);
-    setSummaryExpanded(false);
+    setActivePlaceIndex(0);
 
     async function loadFreshPost() {
       try {
@@ -195,7 +379,6 @@ export function PostDetail({
     }
 
     void loadFreshPost();
-
     return () => {
       cancelled = true;
     };
@@ -218,6 +401,9 @@ export function PostDetail({
               displayName: detail.place.display_name,
               city: detail.place.location.city,
               country: detail.place.location.country,
+              latitude: detail.place.location.latitude,
+              longitude: detail.place.location.longitude,
+              providerPlaceId: detail.place.location.provider_place_id,
             };
           } catch {
             return { placeId, displayName: placeId };
@@ -239,44 +425,47 @@ export function PostDetail({
     () => buildPlaceSummaries(post, linkedPlaces),
     [post, linkedPlaces],
   );
-  const placeRailItems = useMemo((): RelationRailItem[] => {
-    if (linkedPlaces.length > 0) {
-      return linkedPlaces.map((linked) => ({
-        key: linked.placeId,
-        to: `/places/${linked.placeId}`,
-        label: linked.displayName,
-        sublabel: [linked.city, linked.country].filter(Boolean).join(", ") || undefined,
-        background: coverArt(linked.displayName),
-        shape: "cover" as const,
-      }));
-    }
-    return placeSummaries.map((place) => ({
-      key: place.key,
-      to: place.placeId ? `/places/${place.placeId}` : "/places",
-      label: place.name,
-      sublabel: place.locationLine,
-      background: coverArt(place.name),
-      shape: "cover" as const,
-    }));
-  }, [linkedPlaces, placeSummaries]);
-  const heading = shortHeading(post);
-  const llmSummary = post.reel_summary?.trim() ?? "";
-  const fallbackSummary = captionFallbackSummary(post);
-  const reelSummary = llmSummary || fallbackSummary;
-  // Avoid repeating the same caption as both heading and summary.
-  const showHeading =
-    Boolean(heading) &&
-    (!reelSummary ||
-      Boolean(llmSummary) ||
-      !reelSummary.toLowerCase().startsWith(heading.replace(/…$/, "").toLowerCase().slice(0, 24)));
-  const summaryExcerpt = getCaptionExcerpt(reelSummary, 240);
-  const canExpandSummary = summaryExcerpt.truncated;
-  const dateLabel = formatPostDate(post);
-  const platformLabel = getPlatformLabel(post);
-  const thumbUrl = proxiedMediaUrl(post.thumbnail_url);
-  const thumbStyle = thumbUrl
-    ? { backgroundImage: `url("${thumbUrl}")` }
-    : undefined;
+  const overviewPlaces = useMemo(
+    () => placeSummaries.map(mapPlaceStub).filter((place): place is Place => place != null),
+    [placeSummaries],
+  );
+  const activePlace = placeSummaries[activePlaceIndex] ?? placeSummaries[0];
+  const activePlaceId = activePlace ? (activePlace.placeId ?? activePlace.key) : null;
+
+  const scrollToPlaceIndex = useCallback((index: number) => {
+    setActivePlaceIndex(index);
+    const item = placeListRef.current?.children[index] as HTMLElement | undefined;
+    item?.scrollIntoView({ behavior: "smooth", inline: "start", block: "nearest" });
+  }, []);
+
+  useEffect(() => {
+    const list = placeListRef.current;
+    if (!list) return;
+    const items = [...list.querySelectorAll<HTMLElement>(".post-flip-place-item")];
+    if (items.length === 0) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+        if (!visible) return;
+        const index = items.indexOf(visible.target as HTMLElement);
+        if (index >= 0) {
+          setActivePlaceIndex(index);
+        }
+      },
+      { root: list, threshold: 0.55 },
+    );
+    items.forEach((item) => observer.observe(item));
+    return () => observer.disconnect();
+  }, [placeSummaries.length]);
+
+  const handleDelete = async () => {
+    if (!window.confirm("Delete this saved post?")) return;
+    await onDelete();
+    onClose();
+  };
 
   return (
     <DetailModal
@@ -286,151 +475,22 @@ export function PostDetail({
     >
       <div className={flipped ? "post-flip is-flipped" : "post-flip"}>
         <div className="post-flip-inner">
-          <section className="post-flip-face post-flip-front" aria-hidden={flipped}>
-            <div className="post-flip-front-wash" aria-hidden="true" />
-            <div className="post-flip-front-glow" aria-hidden="true" />
-            {thumbStyle && (
-              <div className="post-flip-front-thumb" style={thumbStyle} aria-hidden="true" />
-            )}
+          <PostFlipFront
+            post={post}
+            flipped={flipped}
+            placeSummaries={placeSummaries}
+            overviewPlaces={overviewPlaces}
+            activePlaceIndex={activePlaceIndex}
+            activePlaceId={activePlaceId}
+            placeListRef={placeListRef}
+            onFlip={() => setFlipped(true)}
+            onClose={onClose}
+            onDelete={() => void handleDelete()}
+            scrollToPlaceIndex={scrollToPlaceIndex}
+            onNavigateToPlace={onNavigateToPlace}
+          />
 
-            <header className="post-flip-header">
-              <div className="post-flip-meta">
-                <p className="post-flip-eyebrow">
-                  {platformLabel}
-                  {post.author_handle ? ` · @${post.author_handle}` : ""}
-                </p>
-                <div className="detail-badges">
-                  <span className="badge">{post.media_kind}</span>
-                  {dateLabel && <span className="badge badge-muted">{dateLabel}</span>}
-                </div>
-              </div>
-              <button
-                type="button"
-                className="icon-button icon-button-close"
-                onClick={onClose}
-                aria-label="Close"
-              />
-            </header>
-
-            <div className="post-flip-front-body">
-              <section className="post-flip-intro">
-                {showHeading && (
-                  <h2 id="post-detail-title" className="post-flip-heading">
-                    {heading}
-                  </h2>
-                )}
-                {reelSummary && (
-                  <>
-                    <p
-                      id={showHeading ? undefined : "post-detail-title"}
-                      className="post-flip-summary"
-                    >
-                      {summaryExpanded || !canExpandSummary
-                        ? reelSummary
-                        : summaryExcerpt.text}
-                    </p>
-                    {canExpandSummary && (
-                      <button
-                        type="button"
-                        className="text-button post-caption-toggle"
-                        onClick={() => setSummaryExpanded((open) => !open)}
-                      >
-                        {summaryExpanded ? "Show less" : "Show more"}
-                      </button>
-                    )}
-                  </>
-                )}
-                {!showHeading && !reelSummary && (
-                  <h2 id="post-detail-title" className="post-flip-heading">
-                    {heading || "Saved post"}
-                  </h2>
-                )}
-              </section>
-
-              <section className="post-flip-places">
-                <h3>
-                  {placeSummaries.length > 0
-                    ? `Places (${placeSummaries.length})`
-                    : "Places"}
-                </h3>
-                {placeSummaries.length === 0 ? (
-                  <p className="post-flip-empty">No places extracted from this post yet.</p>
-                ) : (
-                  <ul className="post-flip-place-list">
-                    {placeSummaries.map((place) => {
-                      const placeId = place.placeId;
-                      const canOpenPlace = Boolean(placeId && onNavigateToPlace);
-                      return (
-                        <li key={place.key} className="post-flip-place-item">
-                          <div className="post-flip-place-copy">
-                            {canOpenPlace ? (
-                              <button
-                                type="button"
-                                className="post-flip-place-name"
-                                onClick={() => onNavigateToPlace?.(placeId!)}
-                              >
-                                {place.name}
-                              </button>
-                            ) : (
-                              <p className="post-flip-place-name-static">{place.name}</p>
-                            )}
-                            {place.locationLine && (
-                              <p className="post-flip-place-location">{place.locationLine}</p>
-                            )}
-                            {place.details && (
-                              <p className="post-flip-place-blurb">{place.details}</p>
-                            )}
-                          </div>
-                          {canOpenPlace && (
-                            <button
-                              type="button"
-                              className="text-button place-summary-open"
-                              onClick={() => onNavigateToPlace?.(placeId!)}
-                            >
-                              View place →
-                            </button>
-                          )}
-                        </li>
-                      );
-                    })}
-                  </ul>
-                )}
-              </section>
-
-              <RelationRail
-                heading="Places in this post"
-                emptyText="No places found in this post yet."
-                items={placeRailItems}
-              />
-            </div>
-
-            <footer className="post-flip-footer">
-              <button
-                type="button"
-                className="post-flip-toggle"
-                onClick={() => setFlipped(true)}
-              >
-                <FlipIcon />
-                View reel
-              </button>
-              <button
-                type="button"
-                className="icon-button post-flip-delete-icon"
-                aria-label="Delete post"
-                title="Delete"
-                onClick={async () => {
-                  if (!window.confirm("Delete this saved post?")) {
-                    return;
-                  }
-                  await onDelete();
-                  onClose();
-                }}
-              >
-                <DeleteIcon />
-              </button>
-            </footer>
-          </section>
-
+          {/* ── BACK: reel preview ─────────────────────────────────────── */}
           <section className="post-flip-face post-flip-back" aria-hidden={!flipped}>
             <PostReelFace post={post} active={flipped} />
             <div className="post-flip-back-scrim" aria-hidden="true" />
@@ -453,6 +513,30 @@ export function PostDetail({
             </button>
           </section>
         </div>
+
+        {/* ── Side nav arrows: prev / next post (desktop only) ──────── */}
+        {onPrevPost && (
+          <button
+            type="button"
+            className="post-flip-side-arrow post-flip-side-arrow-left"
+            onClick={onPrevPost}
+            aria-label="Previous post"
+            title="Previous post"
+          >
+            <ChevronLeftIcon />
+          </button>
+        )}
+        {onNextPost && (
+          <button
+            type="button"
+            className="post-flip-side-arrow post-flip-side-arrow-right"
+            onClick={onNextPost}
+            aria-label="Next post"
+            title="Next post"
+          >
+            <ChevronRightIcon />
+          </button>
+        )}
       </div>
     </DetailModal>
   );

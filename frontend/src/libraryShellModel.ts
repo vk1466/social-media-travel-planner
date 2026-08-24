@@ -5,6 +5,7 @@ export type LibraryMode = "places" | "posts";
 export type PlacesStatusFilter = "all" | "visited" | "inspiration";
 export type PlacesViewMode = "covers" | "map";
 export type PostsDeckMode = "deck" | "grid";
+export type PostsDateMode = "saved" | "posted";
 
 export interface PlacesShellFilters {
   statusFilter: PlacesStatusFilter;
@@ -19,6 +20,7 @@ export interface PostsShellFilters {
   ringKey: string;
   query: string;
   deckMode: PostsDeckMode;
+  dateMode: PostsDateMode;
   contentCategory: string;
   placeStatus: PlacesStatusFilter;
   placeTypes: string[];
@@ -50,6 +52,7 @@ export const DEFAULT_POSTS_FILTERS: PostsShellFilters = {
   ringKey: "all",
   query: "",
   deckMode: "deck",
+  dateMode: "saved",
   contentCategory: "all",
   placeStatus: "all",
   placeTypes: [],
@@ -76,7 +79,7 @@ export const LIBRARY_SHELL_COPY = {
   posts: {
     eyebrow: "Your library",
     title: "Posts",
-    lede: "Every reel and save — same filter chrome as Places, different conditions underneath.",
+    lede: "Every reel and save — group by the month you saved it, or when it originally posted.",
     searchPlaceholder: "Title, place, tag…",
     searchLabel: "Search saves",
     pillAll: "All saves",

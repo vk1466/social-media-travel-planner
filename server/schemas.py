@@ -127,6 +127,7 @@ class PlaceSchema(BaseModel):
   source_post_ids: list[str] = Field(default_factory=list)
   parent_place_id: str | None = None
   facts: PlaceFactsSchema | None = None
+  google_maps_url: str | None = None
 
 
 class PlaceFactsRefreshSchema(BaseModel):

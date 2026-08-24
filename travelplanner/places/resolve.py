@@ -10,6 +10,7 @@ from travelplanner.categories import (
 )
 from travelplanner.models import Place, PlaceLocation
 from travelplanner.place_hints import PlaceMention
+from travelplanner.places.maps import with_google_maps_url
 from travelplanner.places.store import load_all_places, load_place, place_key, save_place
 from travelplanner.places.locate import haversine_meters, name_similarity
 
@@ -198,6 +199,7 @@ def upsert_place_record(
       mention.place_name,
       source_post_id,
     )
+  place = with_google_maps_url(place)
   save_place(place)
   return place
 

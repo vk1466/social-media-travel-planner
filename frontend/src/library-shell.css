@@ -25,7 +25,7 @@
   justify-content: space-between;
   gap: 1.5rem;
   flex-wrap: wrap;
-  padding: 1rem 48px 1rem 24px;
+  padding: 1rem calc(var(--wf-gutter-sm) + 2rem) 1rem var(--wf-gutter-sm);
 }
 
 .lib-shell-eyebrow {
@@ -94,7 +94,7 @@
 }
 
 .lib-shell-banner {
-  margin: 0 24px 0.85rem;
+  margin: 0 var(--wf-gutter-sm) 0.85rem;
   padding: 0.75rem 1rem;
   border-radius: 14px;
   border: 1px solid var(--wf-chrome-border);
@@ -123,70 +123,20 @@
   cursor: pointer;
 }
 
-.lib-shell-seg {
-  display: inline-flex;
-  flex-wrap: wrap;
-  gap: 0.3rem;
-  padding: 0.2rem;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--wf-chrome-panel) 88%, var(--wf-chrome-bg));
-  border: 1px solid var(--wf-chrome-border);
+.lib-shell-banner button:focus-visible {
+  outline: 2px solid var(--wf-coral);
+  outline-offset: 2px;
 }
 
-.lib-shell-seg--view {
-  margin-left: 0;
+/* View-mode toggle in the masthead aside: offset toward the panel edge */
+.lib-shell-aside .wf-seg--view {
+  position: relative;
+  right: calc(-1 * var(--wf-gutter-sm));
   margin-top: -0.15rem;
-  /* Sit nearer the panel edge without shifting the count. */
-  margin-right: -30px;
-  padding: 0.08rem;
-  gap: 0.15rem;
-  background: transparent;
-  border-color: color-mix(in srgb, var(--wf-chrome-border) 70%, transparent);
-  opacity: 0.72;
-}
-
-.lib-shell-seg--view:hover,
-.lib-shell-seg--view:focus-within {
-  opacity: 1;
-}
-
-.lib-shell-seg--view button {
-  padding: 0.18rem 0.5rem;
-  font-size: 0.62rem;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  color: var(--wf-copy-muted);
-}
-
-.lib-shell-seg--view button.is-active {
-  background: color-mix(in srgb, var(--wf-copy) 8%, transparent);
-  color: var(--wf-copy);
-}
-
-.lib-shell-seg button {
-  appearance: none;
-  border: 0;
-  border-radius: 999px;
-  padding: 0.4rem 0.9rem;
-  background: transparent;
-  color: var(--wf-copy-muted);
-  font: inherit;
-  font-size: 0.78rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.lib-shell-seg button:hover {
-  color: var(--wf-copy);
-}
-
-.lib-shell-seg button.is-active {
-  background: var(--wf-coral);
-  color: var(--wf-forest-deep);
 }
 
 .lib-shell-facets {
-  margin: 1rem 24px 0;
+  margin: 1rem var(--wf-gutter-sm) 0;
   padding: 0.95rem 1rem;
   display: flex;
   flex-direction: column;
@@ -229,10 +179,6 @@
   color: var(--wf-copy-muted);
 }
 
-.lib-shell-seg--primary,
-.lib-shell-seg--secondary {
-  background: color-mix(in srgb, var(--wf-chrome-panel) 88%, var(--wf-chrome-bg));
-}
 
 .lib-shell-pills {
   display: flex;
@@ -319,7 +265,7 @@
   width: 100%;
   margin: 0;
   padding-top: 0.25rem;
-  padding-inline: 24px;
+  padding-inline: var(--wf-gutter-sm);
   padding-bottom: 0;
 }
 
@@ -358,7 +304,7 @@
 
 .lib-shell-core .pl2[data-mode="map"] .pl2-hint {
   margin: 0;
-  padding: 0.65rem 24px 1rem;
+  padding: 0.65rem var(--wf-gutter-sm) 1rem;
 }
 
 .lib-shell-core .post-library-lantern .p3 {
@@ -372,7 +318,7 @@
   max-width: none;
   width: 100%;
   margin: 0;
-  padding: 0.25rem 24px 1.5rem;
+  padding: 0.25rem var(--wf-gutter-sm) 1.5rem;
 }
 
 .lib-shell-core .post-library-lantern .p3-timeline,
@@ -390,7 +336,7 @@
 
 .lib-shell-crumbs {
   margin: 0 0 0.75rem;
-  padding: 0 24px;
+  padding: 0 var(--wf-gutter-sm);
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -427,4 +373,60 @@
   margin-left: 0.5rem;
   color: var(--wf-copy-accent);
   font-weight: 700;
+}
+
+/* ── Responsive breakpoints ─────────────────────────────── */
+
+@media (max-width: 760px) {
+  .lib-shell-masthead {
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 0.85rem var(--wf-gutter-sm) 0.75rem;
+  }
+
+  .lib-shell-aside {
+    flex-direction: row;
+    align-items: center;
+    gap: 1rem;
+    margin-left: 0;
+    align-self: auto;
+  }
+
+  /* Reset the position-based offset so the view toggle doesn't clip */
+  .lib-shell-aside .wf-seg--view {
+    right: 0;
+    margin-top: 0;
+  }
+
+  .lib-shell-count {
+    text-align: left;
+  }
+
+  .lib-shell-search {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+
+  .lib-shell-toolbar {
+    gap: 0.45rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .lib-shell-masthead {
+    padding-inline: var(--wf-gutter-sm);
+  }
+
+  .lib-shell-facets {
+    margin-inline: var(--wf-gutter-sm);
+    padding: 0.75rem 0.85rem;
+  }
+
+  .lib-shell-seg {
+    flex-wrap: wrap;
+  }
+
+  .lib-shell-crumbs {
+    padding-inline: var(--wf-gutter-sm);
+  }
 }

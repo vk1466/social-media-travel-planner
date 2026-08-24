@@ -6,11 +6,18 @@
    * JS consumers: import { BrandCss, BrandHex, P } from "./brandColors".
    */
 
-  /* Brand — Midnight Reel (amber on near-black) */
+  /*
+   * Brand — Midnight Reel (amber on near-black).
+   * --wf-coral / --wf-coral-soft are intentional aliases of --wf-forest / --wf-mint.
+   * Convention: use --wf-coral for UI interactive accents (active pills, buttons,
+   * focus rings); use --wf-forest for brand color references (logos, backgrounds).
+   * Use --wf-mint for text highlights on dark grounds; --wf-coral-soft for fills.
+   */
   --wf-forest: #ffb648;
   --wf-forest-mid: #ffc56a;
   --wf-forest-deep: #0e1013;
   --wf-forest-hover: #f0a02a;
+  /* --wf-sage is an alias of --wf-forest-hover; prefer --wf-sage for success/status indicators */
   --wf-sage: #f0a02a;
   /* Highlight — pale amber */
   --wf-mint: #ffd79a;
@@ -62,10 +69,14 @@
   --wf-clay: #9a7358;
   --wf-slate: #3d6b8a;
   --wf-plum: #6f5f8a;
-  /* Warm mark — home title tile + Posts shelf (Midnight amber) */
-  --wf-coral: #ffb648;
-  --wf-coral-soft: #ffd79a;
-  --wf-coral-deep: #f0a02a;
+  /*
+   * Warm mark — intentional aliases of the forest/mint pair.
+   * Use --wf-coral for UI interactive accents (active pills, buttons, focus rings).
+   * Use --wf-coral-soft for soft fill variants and overlays.
+   */
+  --wf-coral: #ffb648;       /* == --wf-forest */
+  --wf-coral-soft: #ffd79a;  /* == --wf-mint */
+  --wf-coral-deep: #f0a02a;  /* == --wf-forest-hover / --wf-sage */
   --wf-coral-rgb: 255 182 72;
   --wf-coral-soft-rgb: 255 215 154;
   --wf-coral-deep-rgb: 240 160 42;
@@ -127,6 +138,19 @@
   /* Motion */
   --wf-ease: 160ms ease;
   --wf-ease-slow: 320ms cubic-bezier(0.22, 1, 0.36, 1);
+
+  /*
+   * Canonical breakpoints — documentation anchors only.
+   * CSS @media cannot reference custom properties, but these values are the
+   * single source of truth. All @media rules in this project must use one of:
+   *   --wf-bp-sm  → 640px   (small phones / single-column)
+   *   --wf-bp-md  → 760px   (mobile / standard — most common)
+   *   --wf-bp-lg  → 960px   (tablet / narrow desktop)
+   * Prefer 760px over 720px; prefer 960px over 900px when migrating.
+   */
+  --wf-bp-sm: 640px;
+  --wf-bp-md: 760px;
+  --wf-bp-lg: 960px;
 
   /* Type — Volume: Fraunces headlines, DM Sans body */
   --wf-font-sans: "DM Sans Variable", "Inter", system-ui, sans-serif;

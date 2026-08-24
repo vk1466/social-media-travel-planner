@@ -89,7 +89,7 @@ export function PlaceDetail({
   const sourcePosts = detail?.source_posts ?? [];
   const parent = detail?.parent ?? null;
   const children = detail?.children ?? [];
-  const mapUrl = googleMapsUrl(place.location);
+  const mapUrl = place.google_maps_url || googleMapsUrl(place.location);
   const mapPlaces = useMemo(() => [place, ...children], [place, children]);
   const savedFromItems = useMemo((): RelationRailItem[] => {
     return sourcePosts.map((post, index) => {

@@ -16,14 +16,24 @@ import {
   type Visit,
   type VisitDetail,
 } from "../api";
-import { categoryLabel } from "../categoryLabels";
 import "../history-page.css";
 import { CategoryChip } from "./CategoryChip";
 import { FilterChipRow, type FilterChipOption } from "./FilterChipRow";
+import { LogVisitForm } from "./LogVisitForm";
 import { PageHeader } from "./PageHeader";
 import { PageMetric } from "./PageMetric";
-import { ApertureIcon, FileIcon, PinIcon, ReviewIcon } from "./PanelIcons";
+import { ApertureIcon, FileIcon } from "./PanelIcons";
 import { SectionPanel } from "./SectionPanel";
+import { TimelineReviewPanel } from "./TimelineReviewPanel";
+import {
+  categoryLabel,
+} from "../categoryLabels";
+import {
+  compareVisitsNewestFirst,
+  groupVisitsByYear,
+  sourceLabel,
+  visitDateLabel,
+} from "./travelHistoryHelpers";
 
 interface TravelHistoryProps {
   refreshToken?: number;
@@ -33,121 +43,10 @@ interface TravelHistoryProps {
   onImportStarted?: (jobId: string) => void;
 }
 
-const MONTH_ABBREVIATIONS = [
-  "Jan",
-  "Feb",
-  "Mar",
-  "Apr",
-  "May",
-  "Jun",
-  "Jul",
-  "Aug",
-  "Sep",
-  "Oct",
-  "Nov",
-  "Dec",
-];
-
-const UNDATED_GROUP_KEY = "undated";
-
-interface CalendarDay {
-  year: number;
-  month: number;
-  day: number;
-}
-
-function parseCalendarDay(value: string | null | undefined): CalendarDay | null {
-  if (!value) {
-    return null;
-  }
-  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
-  if (!match) {
-    return null;
-  }
-  return { year: Number(match[1]), month: Number(match[2]), day: Number(match[3]) };
-}
-
-function monthDayLabel(day: CalendarDay): string {
-  return `${MONTH_ABBREVIATIONS[day.month - 1] ?? ""} ${day.day}`.trim();
-}
-
-/** Compact rail label: "Mar 3", "Mar 3–9", or "Mar 28 – Apr 2". */
-function visitDateLabel(visitedFrom?: string | null, visitedTo?: string | null): string {
-  const from = parseCalendarDay(visitedFrom);
-  if (!from) {
-    return "Undated";
-  }
-  const to = parseCalendarDay(visitedTo);
-  if (!to || (to.year === from.year && to.month === from.month && to.day === from.day)) {
-    return monthDayLabel(from);
-  }
-  if (to.year === from.year && to.month === from.month) {
-    return `${monthDayLabel(from)}–${to.day}`;
-  }
-  return `${monthDayLabel(from)} – ${monthDayLabel(to)}`;
-}
-
-function visitYearLabel(visitedFrom?: string | null): string {
-  const from = parseCalendarDay(visitedFrom);
-  return from ? String(from.year) : "Undated";
-}
-
 function locationLine(place: Place | null | undefined): string {
-  if (!place) {
-    return "";
-  }
+  if (!place) return "";
   const { city, state_province: stateProvince, country } = place.location;
   return [city, stateProvince, country].filter(Boolean).join(", ");
-}
-
-function sourceLabel(source: string | null | undefined): string | null {
-  if (source === "timeline") {
-    return "Timeline";
-  }
-  if (source === "instagram") {
-    return "Instagram";
-  }
-  if (source === "manual") {
-    return "Manual";
-  }
-  return null;
-}
-
-/** Newest first; undated visits sink to the bottom. */
-function compareVisitsNewestFirst(left: VisitDetail, right: VisitDetail): number {
-  const leftFrom = left.visit.visited_from ?? "";
-  const rightFrom = right.visit.visited_from ?? "";
-  if (leftFrom && rightFrom) {
-    return rightFrom.localeCompare(leftFrom);
-  }
-  if (leftFrom) {
-    return -1;
-  }
-  if (rightFrom) {
-    return 1;
-  }
-  return left.visit.place_name.localeCompare(right.visit.place_name);
-}
-
-interface VisitYearGroup {
-  key: string;
-  label: string;
-  entries: VisitDetail[];
-}
-
-function groupVisitsByYear(visits: VisitDetail[]): VisitYearGroup[] {
-  const groups: VisitYearGroup[] = [];
-  for (const entry of visits) {
-    const label = visitYearLabel(entry.visit.visited_from);
-    const key = label === "Undated" ? UNDATED_GROUP_KEY : label;
-    const current = groups[groups.length - 1];
-    if (current && current.key === key) {
-      current.entries.push(entry);
-    } else {
-      groups.push({ key, label, entries: [entry] });
-    }
-  }
-  return groups;
 }
 
 export function TravelHistory({
@@ -162,7 +61,6 @@ export function TravelHistory({
   const [places, setPlaces] = useState<Place[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
   const [importing, setImporting] = useState(false);
   const [timelineImporting, setTimelineImporting] = useState(false);
   const [timelineSummary, setTimelineSummary] = useState<string | null>(null);
@@ -170,13 +68,6 @@ export function TravelHistory({
   const [instagramUsername, setInstagramUsername] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const timelineInputRef = useRef<HTMLInputElement>(null);
-
-  const [destinationQuery, setDestinationQuery] = useState("");
-  const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
-  const [visitedFrom, setVisitedFrom] = useState("");
-  const [visitedTo, setVisitedTo] = useState("");
-  const [notes, setNotes] = useState("");
-  const [suggestionsOpen, setSuggestionsOpen] = useState(false);
 
   const refresh = async () => {
     setLoading(true);
@@ -200,19 +91,6 @@ export function TravelHistory({
   useEffect(() => {
     void refresh();
   }, [refreshToken]);
-
-  const suggestions = useMemo(() => {
-    const query = destinationQuery.trim().toLowerCase();
-    if (query.length < 2) {
-      return [];
-    }
-    return places
-      .filter((place) => {
-        const haystack = [place.display_name, ...place.aliases].join(" ").toLowerCase();
-        return haystack.includes(query);
-      })
-      .slice(0, 8);
-  }, [destinationQuery, places]);
 
   const sortedVisits = useMemo(() => [...visits].sort(compareVisitsNewestFirst), [visits]);
 
@@ -238,12 +116,8 @@ export function TravelHistory({
       counts.set(key, (counts.get(key) ?? 0) + 1);
     }
     const sorted = Array.from(counts.entries()).sort(([a], [b]) => {
-      if (a === "uncategorized") {
-        return 1;
-      }
-      if (b === "uncategorized") {
-        return -1;
-      }
+      if (a === "uncategorized") return 1;
+      if (b === "uncategorized") return -1;
       return categoryLabel(a).localeCompare(categoryLabel(b));
     });
     return [
@@ -257,9 +131,7 @@ export function TravelHistory({
   }, [visits]);
 
   const filteredVisits = useMemo(() => {
-    if (categoryFilter === "all") {
-      return sortedVisits;
-    }
+    if (categoryFilter === "all") return sortedVisits;
     return sortedVisits.filter(({ place }) => {
       const key = place?.category ?? "uncategorized";
       return key === categoryFilter;
@@ -267,21 +139,6 @@ export function TravelHistory({
   }, [sortedVisits, categoryFilter]);
 
   const visitGroups = useMemo(() => groupVisitsByYear(filteredVisits), [filteredVisits]);
-
-  const resetForm = () => {
-    setDestinationQuery("");
-    setSelectedPlace(null);
-    setVisitedFrom("");
-    setVisitedTo("");
-    setNotes("");
-    setSuggestionsOpen(false);
-  };
-
-  const handleSelectSuggestion = (place: Place) => {
-    setSelectedPlace(place);
-    setDestinationQuery(place.display_name);
-    setSuggestionsOpen(false);
-  };
 
   const handleImportInstagram = async (event: FormEvent) => {
     event.preventDefault();
@@ -317,10 +174,10 @@ export function TravelHistory({
     setTimelineImporting(true);
     try {
       const jobId = await importTimelineFile(file);
-      setTimelineSummary("Timeline import started — progress opens on the add page and survives a refresh.");
-      if (input) {
-        input.value = "";
-      }
+      setTimelineSummary(
+        "Timeline import started — progress opens on the add page and survives a refresh.",
+      );
+      if (input) input.value = "";
       onImportStarted?.(jobId);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to import Timeline");
@@ -334,9 +191,7 @@ export function TravelHistory({
       scope === "timeline"
         ? "Delete all visits imported from Google Maps Timeline? Linked places with no remaining visits will be unlinked. This cannot be undone."
         : "Delete ALL visited-place history (Timeline, Instagram, and manual)? Linked places with no remaining visits will be unlinked. This cannot be undone.";
-    if (!window.confirm(message)) {
-      return;
-    }
+    if (!window.confirm(message)) return;
     setError(null);
     try {
       const result = await cleanupVisits(scope);
@@ -385,44 +240,21 @@ export function TravelHistory({
     }
   };
 
-  const handleSubmit = async (event: FormEvent) => {
-    event.preventDefault();
-    setError(null);
-
-    const query = destinationQuery.trim();
-    if (!query) {
-      setError("Enter a destination");
-      return;
-    }
-    if (visitedTo && !visitedFrom) {
-      setError("Enter a start date if you set an end date");
-      return;
-    }
-
-    setSaving(true);
-    try {
-      await createVisit({
-        visited_from: visitedFrom || null,
-        visited_to: visitedTo || null,
-        notes: notes.trim() || null,
-        place_id: selectedPlace?.place_id ?? null,
-        place_query: selectedPlace ? null : query,
-      });
-      resetForm();
-      await refresh();
-      onChanged?.();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to save visit");
-    } finally {
-      setSaving(false);
-    }
+  const handleVisitSaved = async (data: {
+    visited_from: string | null;
+    visited_to: string | null;
+    notes: string | null;
+    place_id: string | null;
+    place_query: string | null;
+  }) => {
+    await createVisit(data);
+    await refresh();
+    onChanged?.();
   };
 
   const handleDelete = async (visit: Visit) => {
     const confirmed = window.confirm(`Remove ${visit.place_name} from your history?`);
-    if (!confirmed) {
-      return;
-    }
+    if (!confirmed) return;
     setError(null);
     try {
       await deleteVisit(visit.visit_id);
@@ -451,183 +283,20 @@ export function TravelHistory({
       {error ? <p className="banner-error">{error}</p> : null}
       {timelineSummary ? <p className="banner-success">{timelineSummary}</p> : null}
 
-      {reviews.length > 0 ? (
-        <SectionPanel
-          className="history-panel"
-          tone="notice"
-          icon={<ReviewIcon />}
-          title="Review Timeline places"
-          subtitle="Ambiguous imports — keep the trip memories, discard the everyday stops. Suggestions are hints only."
-          actions={
-            <span className="history-review-badge">
-              {reviews.length} waiting
-            </span>
-          }
-        >
-          <ul className="history-review-list">
-            {reviews.map(({ visit, place, suggestion, suggestion_reason: suggestionReason }) => {
-              const busy = reviewBusyId === visit.visit_id;
-              const where = locationLine(place);
-              return (
-                <li key={visit.visit_id} className="history-review-item">
-                  <div className="history-review-copy">
-                    {place && onNavigateToPlace ? (
-                      <button
-                        type="button"
-                        className="history-entry-link"
-                        onClick={() => onNavigateToPlace(place.place_id)}
-                      >
-                        {visit.place_name}
-                      </button>
-                    ) : (
-                      <span className="history-entry-name">{visit.place_name}</span>
-                    )}
-                    <div className="history-entry-meta">
-                      <CategoryChip category={place?.category} small />
-                      <span className="history-entry-date-inline">
-                        {visitDateLabel(visit.visited_from, visit.visited_to)}
-                      </span>
-                      {where ? <span className="history-entry-where">{where}</span> : null}
-                    </div>
-                    {suggestion ? (
-                      <p className="history-review-suggestion">
-                        Suggested: {suggestion}
-                        {suggestionReason ? ` — ${suggestionReason}` : ""}
-                      </p>
-                    ) : null}
-                  </div>
-                  <div className="history-actions history-review-actions">
-                    <button
-                      type="button"
-                      className="primary-button"
-                      disabled={busy}
-                      onClick={() => void handleAcceptReview(visit.visit_id)}
-                    >
-                      Keep
-                    </button>
-                    <button
-                      type="button"
-                      className="danger-button"
-                      disabled={busy}
-                      onClick={() => void handleDiscardReview(visit.visit_id)}
-                    >
-                      Discard
-                    </button>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        </SectionPanel>
-      ) : null}
+      <TimelineReviewPanel
+        reviews={reviews}
+        reviewBusyId={reviewBusyId}
+        onNavigateToPlace={onNavigateToPlace}
+        onAccept={(visitId) => void handleAcceptReview(visitId)}
+        onDiscard={(visitId) => void handleDiscardReview(visitId)}
+      />
 
-      <SectionPanel
-        className="history-panel"
-        icon={<PinIcon />}
-        title="Log a visit"
-        subtitle="Pick a place from your atlas or type a new destination. Dates are optional."
-      >
-        <form className="history-form" onSubmit={(event) => void handleSubmit(event)}>
-          <div className="history-form-grid">
-            <label className="history-field history-field-destination">
-              <span className="field-label">Destination</span>
-              <div className="visit-destination-wrap">
-                <input
-                  type="search"
-                  className="place-search visit-destination-input"
-                  placeholder="Tokyo, Smith Rock, Lisbon…"
-                  value={destinationQuery}
-                  onChange={(event) => {
-                    setDestinationQuery(event.target.value);
-                    setSelectedPlace(null);
-                    setSuggestionsOpen(true);
-                  }}
-                  onFocus={() => setSuggestionsOpen(true)}
-                  onBlur={() => {
-                    window.setTimeout(() => setSuggestionsOpen(false), 150);
-                  }}
-                  autoComplete="off"
-                  disabled={saving}
-                />
-                {suggestionsOpen && suggestions.length > 0 && (
-                  <ul className="visit-suggestions" role="listbox">
-                    {suggestions.map((place) => (
-                      <li key={place.place_id}>
-                        <button
-                          type="button"
-                          className="visit-suggestion"
-                          onMouseDown={(event) => event.preventDefault()}
-                          onClick={() => handleSelectSuggestion(place)}
-                        >
-                          <span className="visit-suggestion-name">{place.display_name}</span>
-                          <span className="visit-suggestion-meta">
-                            {[
-                              categoryLabel(place.category),
-                              place.location.city,
-                              place.location.country,
-                            ]
-                              .filter(Boolean)
-                              .join(" · ") || "in your library"}
-                          </span>
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-              {selectedPlace ? (
-                <p className="history-hint">
-                  Using {categoryLabel(selectedPlace.category).toLowerCase()} from your atlas
-                </p>
-              ) : destinationQuery.trim().length >= 2 ? (
-                <p className="history-hint">
-                  Will look up “{destinationQuery.trim()}” and add it if it’s new
-                </p>
-              ) : null}
-            </label>
-
-            <label className="history-field">
-              <span className="field-label">From (optional)</span>
-              <input
-                type="date"
-                className="platform-filter"
-                value={visitedFrom}
-                onChange={(event) => setVisitedFrom(event.target.value)}
-                disabled={saving}
-              />
-            </label>
-
-            <label className="history-field">
-              <span className="field-label">To (optional)</span>
-              <input
-                type="date"
-                className="platform-filter"
-                value={visitedTo}
-                onChange={(event) => setVisitedTo(event.target.value)}
-                disabled={saving}
-              />
-            </label>
-          </div>
-
-          <label className="history-field">
-            <span className="field-label">Notes (optional)</span>
-            <textarea
-              className="links-input history-notes"
-              rows={2}
-              placeholder="Who you went with, season, highlights…"
-              value={notes}
-              onChange={(event) => setNotes(event.target.value)}
-              disabled={saving}
-            />
-          </label>
-
-          <div className="history-actions">
-            <button type="submit" className="primary-button" disabled={saving}>
-              {saving ? "Saving…" : "Mark as visited"}
-            </button>
-          </div>
-        </form>
-      </SectionPanel>
+      <LogVisitForm
+        places={places}
+        disabled={jobRunning}
+        onVisitSaved={handleVisitSaved}
+        onError={setError}
+      />
 
       <div className="history-import-grid">
         <SectionPanel
@@ -653,7 +322,11 @@ export function TravelHistory({
               />
             </label>
             <div className="history-actions">
-              <button type="submit" className="primary-button" disabled={importing || jobRunning}>
+              <button
+                type="submit"
+                className="primary-button"
+                disabled={importing || jobRunning}
+              >
                 {importing ? "Starting…" : jobRunning ? "Import running…" : "Import visits"}
               </button>
             </div>

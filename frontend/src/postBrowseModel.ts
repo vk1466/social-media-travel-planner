@@ -9,7 +9,6 @@ import type { CSSProperties } from "react";
 import type { SavedPost } from "./api";
 import { DEMO_POSTS, type DemoPost } from "./postListDemoData";
 import {
-  formatPostDate,
   getPlatformLabel,
   getPostDescription,
   getPostTitle,
@@ -32,6 +31,8 @@ export interface BrowsePost {
   monthKey: string;
   monthLabel: string;
   timestamp: number;
+  savedAt?: string | null;
+  postedAt?: string | null;
   thumbnailUrl: string | null;
   author: string | null;
   postUrl: string;
@@ -70,8 +71,23 @@ function aspectFor(platform: string, mediaKind: string): number {
   return 1.35;
 }
 
+export type PostTimeline = "saved" | "posted";
+
+function dateLabelFromIso(iso: string | null | undefined): string {
+  if (!iso) {
+    return "—";
+  }
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) {
+    return "—";
+  }
+  return date.toLocaleDateString();
+}
+
 function fromSavedPost(post: SavedPost): BrowsePost {
-  const time = timeParts(post.posted_at ?? post.fetched_at);
+  const savedAt = post.fetched_at ?? null;
+  const postedAt = post.posted_at ?? null;
+  const time = timeParts(savedAt ?? postedAt);
   const placeNames = Array.from(
     new Set(
       [
@@ -89,8 +105,10 @@ function fromSavedPost(post: SavedPost): BrowsePost {
     placeNames,
     placeCount: placeNames.length || post.place_ids.length,
     tags: post.hashtags.map((tag) => tag.replace(/^#/, "").toLowerCase()).slice(0, 4),
-    dateLabel: formatPostDate(post) ?? "—",
+    dateLabel: dateLabelFromIso(savedAt ?? postedAt),
     ...time,
+    savedAt,
+    postedAt,
     thumbnailUrl: post.thumbnail_url ?? null,
     author: post.author_handle ?? null,
     postUrl: post.post_url,
@@ -112,11 +130,32 @@ function fromDemoPost(post: DemoPost): BrowsePost {
     tags: post.hashtags.slice(0, 4),
     dateLabel: new Date(post.posted_at).toLocaleDateString(),
     ...time,
+    savedAt: post.posted_at,
+    postedAt: post.posted_at,
     thumbnailUrl: post.thumbnail_url,
     author: post.author_handle,
     postUrl: post.post_url,
     aspect: aspectFor(post.platform, post.media_kind),
   };
+}
+
+/** Re-key month groups and sort by saved date or original post date. */
+export function withPostTimeline(posts: BrowsePost[], timeline: PostTimeline): BrowsePost[] {
+  return posts
+    .map((post) => {
+      const iso = timeline === "posted" ? post.postedAt ?? post.savedAt : post.savedAt ?? post.postedAt;
+      return {
+        ...post,
+        dateLabel: dateLabelFromIso(iso),
+        ...timeParts(iso),
+      };
+    })
+    .sort((left, right) => {
+      if (right.timestamp !== left.timestamp) {
+        return right.timestamp - left.timestamp;
+      }
+      return left.title.localeCompare(right.title);
+    });
 }
 
 /** Newest first; sample content fills in when the account has few posts. */

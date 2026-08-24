@@ -199,6 +199,7 @@ export interface Place {
   source_post_ids: string[];
   parent_place_id?: string | null;
   facts?: PlaceFacts | null;
+  google_maps_url?: string | null;
 }
 
 export interface PlaceDetail {

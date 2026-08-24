@@ -6,6 +6,7 @@ import { categoryLabel } from "../categoryLabels";
 import { effectiveContentCategory } from "../contentCategory";
 import type {
   LibraryShellMeta,
+  PostsDateMode,
   PostsDeckMode,
   PostsShellFilters,
 } from "../libraryShellModel";
@@ -14,6 +15,7 @@ import {
   groupByMonth,
   mapSavedPosts,
   thumbStyle,
+  withPostTimeline,
   type BrowsePost,
 } from "../postBrowseModel";
 import { PostDetail } from "./PostDetail";
@@ -72,6 +74,7 @@ export function PostLibrary({
   const [openEraKey, setOpenEraKey] = useState<string | null>(null);
   const [selectedPost, setSelectedPost] = useState<SavedPost | null>(null);
   const [localDeckMode, setLocalDeckMode] = useState<DeckMode>("deck");
+  const [localDateMode, setLocalDateMode] = useState<PostsDateMode>("saved");
   const [localSearchQuery, setLocalSearchQuery] = useState("");
   const [localContentCategory] = useState("all");
   const [localPlaceStatus] = useState<"all" | "visited" | "inspiration">("all");
@@ -81,6 +84,7 @@ export function PostLibrary({
   const platformFilter = filters?.platform ?? localPlatformFilter;
   const ringKey = filters?.ringKey ?? localRingKey;
   const deckMode = filters?.deckMode ?? localDeckMode;
+  const dateMode = filters?.dateMode ?? localDateMode;
   const searchQuery = filters?.query ?? localSearchQuery;
   const contentCategory = filters?.contentCategory ?? localContentCategory;
   const placeStatus = filters?.placeStatus ?? localPlaceStatus;
@@ -94,6 +98,9 @@ export function PostLibrary({
   };
   const setDeckMode = (value: DeckMode) => {
     if (!controlled) setLocalDeckMode(value);
+  };
+  const setDateMode = (value: PostsDateMode) => {
+    if (!controlled) setLocalDateMode(value);
   };
   const setSearchQuery = (value: string) => {
     if (!controlled) setLocalSearchQuery(value);
@@ -132,8 +139,8 @@ export function PostLibrary({
   }, [posts, contentCategory]);
 
   const browsePosts = useMemo(
-    () => mapSavedPosts(topicPosts, placeNamesById),
-    [topicPosts, placeNamesById],
+    () => withPostTimeline(mapSavedPosts(topicPosts, placeNamesById), dateMode),
+    [topicPosts, placeNamesById, dateMode],
   );
 
   const postsByKey = useMemo(() => {
@@ -331,7 +338,7 @@ export function PostLibrary({
   // Latest month opens by default; re-open latest when filters change the set.
   useEffect(() => {
     setOpenEraKey(null);
-  }, [platformFilter, ringKey, searchQuery, contentCategory, placeStatus, placeTypes]);
+  }, [platformFilter, ringKey, searchQuery, contentCategory, placeStatus, placeTypes, dateMode]);
 
   useEffect(() => {
     if (eras.length === 0) {
@@ -432,8 +439,8 @@ export function PostLibrary({
               <p className="wf-browse-eyebrow">Your library</p>
               <h1 className="wf-browse-title">Saves</h1>
               <p className="wf-browse-lede">
-                Every reel, short, and post you've kept — grouped by the month you saved it and the
-                places inside it.
+                Every reel, short, and post you've kept — grouped by when you saved it, or when it
+                originally posted.
               </p>
             </div>
             <div className="wf-browse-count">
@@ -445,6 +452,23 @@ export function PostLibrary({
           <div className="wf-browse-bar">
             <div className="wf-container wf-browse-bar-inner">
               <p className="wf-browse-context">{openEraLabel}</p>
+              <div className="wf-browse-bar-controls">
+              <div className="wf-seg" role="group" aria-label="Timeline">
+                <button
+                  type="button"
+                  className={`wf-seg-btn ${dateMode === "saved" ? "is-active" : ""}`}
+                  onClick={() => setDateMode("saved")}
+                >
+                  Saved
+                </button>
+                <button
+                  type="button"
+                  className={`wf-seg-btn ${dateMode === "posted" ? "is-active" : ""}`}
+                  onClick={() => setDateMode("posted")}
+                >
+                  Posted
+                </button>
+              </div>
               <div className="wf-seg" role="group" aria-label="Layout">
                 <button
                   type="button"
@@ -460,6 +484,7 @@ export function PostLibrary({
                 >
                   Grid
                 </button>
+              </div>
               </div>
             </div>
           </div>
@@ -642,18 +667,29 @@ export function PostLibrary({
         </div>
       </div>
 
-      {selectedPost && (
-        <PostDetail
-          post={selectedPost}
-          onClose={closePost}
-          onNavigateToPlace={onNavigateToPlace}
-          onDelete={async () => {
-            await deletePost(selectedPost.platform, nativePostId(selectedPost));
-            closePost();
-            onDeleted();
-          }}
-        />
-      )}
+      {selectedPost && (() => {
+        const selectedIndex = filtered.findIndex(
+          (p) => p.key === selectedPost.post_id && p.platform === selectedPost.platform,
+        );
+        const prevBrowse = selectedIndex > 0 ? filtered[selectedIndex - 1] : undefined;
+        const nextBrowse = selectedIndex < filtered.length - 1 ? filtered[selectedIndex + 1] : undefined;
+        const prevPost = prevBrowse ? postsByKey.get(prevBrowse.key) : undefined;
+        const nextPost = nextBrowse ? postsByKey.get(nextBrowse.key) : undefined;
+        return (
+          <PostDetail
+            post={selectedPost}
+            onClose={closePost}
+            onNavigateToPlace={onNavigateToPlace}
+            onPrevPost={prevPost ? () => openPost(prevPost) : undefined}
+            onNextPost={nextPost ? () => openPost(nextPost) : undefined}
+            onDelete={async () => {
+              await deletePost(selectedPost.platform, nativePostId(selectedPost));
+              closePost();
+              onDeleted();
+            }}
+          />
+        );
+      })()}
     </section>
   );
 }

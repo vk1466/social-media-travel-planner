@@ -540,3 +540,28 @@ html[data-bento-motion="card-shuffle"] .home-tile--media.is-in .home-tile-layer-
     grid-column: span 2;
   }
 }
+
+@media (max-width: 480px) {
+  .home-bento {
+    grid-auto-rows: 140px;
+  }
+
+  /* Title tile goes full-width and single-row on very small phones */
+  .home-tile--title.home-tile--wide.home-tile--tall {
+    grid-column: span 2;
+    grid-row: span 1;
+    min-height: 160px;
+  }
+
+  .home-tile--title h1 {
+    font-size: clamp(1.5rem, 8vw, 1.9rem);
+  }
+
+  .home-tile-val {
+    font-size: 2.2rem;
+  }
+
+  .home-cta-inner {
+    padding: 1.75rem 1.25rem;
+  }
+}
