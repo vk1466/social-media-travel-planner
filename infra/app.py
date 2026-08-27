@@ -26,6 +26,7 @@ shared = {
   "cors_origins": _env_str("CORS_ORIGINS", "http://localhost:5173"),
   "clerk_issuer": _env_str("CLERK_ISSUER"),
   "admin_user_ids": _env_str("ADMIN_USER_IDS"),
+  "clerk_secret_key": _env_str("CLERK_SECRET_KEY"),
   "openai_model": _env_str("OPENAI_MODEL", "gpt-4o-mini"),
   "mindcase_api_key": _env_str("MINDCASE_API_KEY"),
   "supadata_api_key": _env_str("SUPADATA_API_KEY"),

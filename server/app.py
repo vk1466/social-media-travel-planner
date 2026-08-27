@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from fastapi import BackgroundTasks, FastAPI, HTTPException, Query, Response
 from fastapi.middleware.cors import CORSMiddleware
+import httpx
 
 from travelplanner.logging_config import configure_logging
 from travelplanner import settings
@@ -19,7 +20,8 @@ from travelplanner.pipeline import unlink_post_from_user
 from travelplanner.place_hints import PlaceMention
 from travelplanner.places import cleanup_all_data, list_places, load_place, place_to_dict, reprocess_all_places
 from travelplanner.places.facts import enrich_place_facts, facts_are_stale
-from travelplanner.db import jobs_repo, place_candidates_repo
+from travelplanner.clients.clerk import list_clerk_users
+from travelplanner.db import jobs_repo, place_candidates_repo, user_posts_repo
 from travelplanner.places.debug import debug_locate
 from travelplanner.personas.profile_import import list_recent_post_urls, normalize_instagram_username
 from travelplanner.store import load_post, post_to_dict
@@ -40,13 +42,15 @@ from travelplanner.visits import (
   visited_place_ids,
 )
 
-from server.auth import AdminUserId, CurrentUserId
+from server.auth import AdminUserId, AuthenticatedUserId, CurrentUserId, SuperAdminUserId
 from server.ingest_runner import start_ingest_job
 from server import jobs
 from server import timeline_staging
 from server.media_proxy import fetch_proxied_media
 from server.schemas import (
   AdminMeSchema,
+  AdminUserSchema,
+  AdminUsersResponse,
   ContentCategoryCountSchema,
   PlaceSchema,
   VisitedStatusSchema,
@@ -390,10 +394,45 @@ def cleanup_data(user_id: AdminUserId) -> MaintenanceResultSchema:
 
 
 @app.get("/api/admin/me", response_model=AdminMeSchema)
-def admin_me(user_id: CurrentUserId) -> AdminMeSchema:
+def admin_me(
+  auth_user_id: AuthenticatedUserId,
+  acting_user_id: CurrentUserId,
+) -> AdminMeSchema:
   return AdminMeSchema(
-    is_admin=settings.is_admin_user(user_id),
+    is_admin=settings.is_admin_user(auth_user_id),
+    is_super_admin=settings.is_super_admin_user(auth_user_id),
+    authenticated_user_id=auth_user_id,
+    acting_user_id=acting_user_id,
   )
+
+
+@app.get(
+  "/api/admin/users",
+  response_model=AdminUsersResponse,
+  responses={403: {"model": ErrorResponse}},
+)
+def admin_list_users(user_id: SuperAdminUserId) -> AdminUsersResponse:
+  """List signed-up users for the super-admin view-as dropdown."""
+  del user_id
+  by_id: dict[str, AdminUserSchema] = {}
+  try:
+    for clerk_user in list_clerk_users():
+      by_id[clerk_user.user_id] = AdminUserSchema(
+        user_id=clerk_user.user_id,
+        email=clerk_user.email,
+        display_name=clerk_user.display_name,
+      )
+  except httpx.HTTPError:
+    # Fall through to DynamoDB membership ids when Clerk is unavailable.
+    pass
+  for known_user_id in user_posts_repo.list_distinct_user_ids():
+    if known_user_id not in by_id:
+      by_id[known_user_id] = AdminUserSchema(user_id=known_user_id)
+  users = sorted(
+    by_id.values(),
+    key=lambda row: ((row.email or "").lower(), row.user_id),
+  )
+  return AdminUsersResponse(users=users)
 
 
 @app.post(

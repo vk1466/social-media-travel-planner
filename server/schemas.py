@@ -94,6 +94,17 @@ class FactEvidenceSchema(BaseModel):
   source_ref: str
 
 
+class StoredFactDocumentSchema(BaseModel):
+  tool_id: str = ""
+  source_name: str
+  source_ref: str
+  title: str = ""
+  retrieved_at: str = ""
+  latitude: float | None = None
+  longitude: float | None = None
+  content: dict = Field(default_factory=dict)
+
+
 class PlaceFactsSchema(BaseModel):
   status: str
   fetched_at: str
@@ -110,9 +121,13 @@ class PlaceFactsSchema(BaseModel):
   distance_km: float | None = None
   elevation_gain_m: int | None = None
   difficulty: str | None = None
+  highlights: list[str] = Field(default_factory=list)
+  caveats: list[str] = Field(default_factory=list)
+  recommendations: list[str] = Field(default_factory=list)
   evidence: list[FactEvidenceSchema] = Field(default_factory=list)
   conflicts: list[str] = Field(default_factory=list)
   notes: list[str] = Field(default_factory=list)
+  source_documents: list[StoredFactDocumentSchema] = Field(default_factory=list)
 
 
 class PlaceSchema(BaseModel):
@@ -333,6 +348,19 @@ class MaintenanceResultSchema(BaseModel):
 
 class AdminMeSchema(BaseModel):
   is_admin: bool
+  is_super_admin: bool = False
+  authenticated_user_id: str | None = None
+  acting_user_id: str | None = None
+
+
+class AdminUserSchema(BaseModel):
+  user_id: str
+  email: str | None = None
+  display_name: str | None = None
+
+
+class AdminUsersResponse(BaseModel):
+  users: list[AdminUserSchema]
 
 
 class LocateDebugRequest(BaseModel):

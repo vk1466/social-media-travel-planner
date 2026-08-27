@@ -1,4 +1,7 @@
 let authTokenGetter: (() => Promise<string | null>) | null = null;
+let viewAsUserId: string | null = null;
+
+const VIEW_AS_STORAGE_KEY = "wf_view_as_user_id";
 
 /** API origin (TravelPlanner-dev/prod ApiEndpoint). Required for local Vite and Vercel. */
 export const API_BASE_URL = (
@@ -10,6 +13,30 @@ export function setAuthTokenGetter(getter: (() => Promise<string | null>) | null
   authTokenGetter = getter;
 }
 
+/** Super-admin only: act as another user for library/dashboard requests. */
+export function setViewAsUserId(userId: string | null): void {
+  viewAsUserId = userId && userId.trim() ? userId.trim() : null;
+  if (typeof window !== "undefined") {
+    if (viewAsUserId) {
+      window.localStorage.setItem(VIEW_AS_STORAGE_KEY, viewAsUserId);
+    } else {
+      window.localStorage.removeItem(VIEW_AS_STORAGE_KEY);
+    }
+  }
+}
+
+export function getViewAsUserId(): string | null {
+  if (viewAsUserId) {
+    return viewAsUserId;
+  }
+  if (typeof window === "undefined") {
+    return null;
+  }
+  const stored = window.localStorage.getItem(VIEW_AS_STORAGE_KEY);
+  viewAsUserId = stored && stored.trim() ? stored.trim() : null;
+  return viewAsUserId;
+}
+
 function localDevHeaders(userId = "local-dev-user"): Record<string, string> {
   if (!import.meta.env.DEV) {
     return {};
@@ -18,24 +45,28 @@ function localDevHeaders(userId = "local-dev-user"): Record<string, string> {
 }
 
 async function authHeaders(): Promise<Record<string, string>> {
+  const headers: Record<string, string> = {};
   if (!authTokenGetter) {
-    return localDevHeaders();
-  }
-  const token = await authTokenGetter();
-  if (!token) {
-    return localDevHeaders();
-  }
-  if (token.startsWith("dev:")) {
-    const userId = token.slice(4) || "local-dev-user";
-    if (!import.meta.env.DEV) {
-      return {};
+    Object.assign(headers, localDevHeaders());
+  } else {
+    const token = await authTokenGetter();
+    if (!token) {
+      Object.assign(headers, localDevHeaders());
+    } else if (token.startsWith("dev:")) {
+      const userId = token.slice(4) || "local-dev-user";
+      if (import.meta.env.DEV) {
+        headers.Authorization = `Bearer ${token}`;
+        headers["X-User-Id"] = userId;
+      }
+    } else {
+      headers.Authorization = `Bearer ${token}`;
     }
-    return {
-      Authorization: `Bearer ${token}`,
-      "X-User-Id": userId,
-    };
   }
-  return { Authorization: `Bearer ${token}` };
+  const actingUserId = getViewAsUserId();
+  if (actingUserId) {
+    headers["X-View-As-User-Id"] = actingUserId;
+  }
+  return headers;
 }
 
 export interface PlatformPlace {
@@ -166,6 +197,17 @@ export interface FactEvidence {
   source_ref: string;
 }
 
+export interface StoredFactDocument {
+  tool_id: string;
+  source_name: string;
+  source_ref: string;
+  title: string;
+  retrieved_at: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  content?: Record<string, unknown>;
+}
+
 export interface PlaceFacts {
   status: string;
   fetched_at: string;
@@ -182,9 +224,13 @@ export interface PlaceFacts {
   distance_km?: number | null;
   elevation_gain_m?: number | null;
   difficulty?: string | null;
+  highlights?: string[];
+  caveats?: string[];
+  recommendations?: string[];
   evidence: FactEvidence[];
   conflicts: string[];
   notes: string[];
+  source_documents?: StoredFactDocument[];
 }
 
 export interface Place {
@@ -573,6 +619,19 @@ export async function cleanupData(): Promise<MaintenanceResult> {
 
 export interface AdminMe {
   is_admin: boolean;
+  is_super_admin: boolean;
+  authenticated_user_id?: string | null;
+  acting_user_id?: string | null;
+}
+
+export interface AdminUser {
+  user_id: string;
+  email?: string | null;
+  display_name?: string | null;
+}
+
+export interface AdminUsersResponse {
+  users: AdminUser[];
 }
 
 export interface LocateDebugInput {
@@ -602,6 +661,10 @@ export interface LocateDebugResult {
 
 export async function fetchAdminMe(): Promise<AdminMe> {
   return request<AdminMe>("/api/admin/me");
+}
+
+export async function fetchAdminUsers(): Promise<AdminUsersResponse> {
+  return request<AdminUsersResponse>("/api/admin/users");
 }
 
 export async function debugLocate(input: LocateDebugInput): Promise<LocateDebugResult> {

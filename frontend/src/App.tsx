@@ -16,7 +16,9 @@ import {
   fetchPlaces,
   fetchPosts,
   fetchVisits,
+  getViewAsUserId,
   postRouteParts,
+  setViewAsUserId,
   type Place,
   type SavedPost,
 } from "./api";
@@ -74,20 +76,26 @@ function NotFoundPage() {
 
 interface ChromeOutletProps {
   isAdmin: boolean;
+  isSuperAdmin: boolean;
   postCount: number;
   placeCount: number;
+  onViewAsChange: (userId: string | null) => void;
 }
 
 function ChromeOutlet({
   isAdmin,
+  isSuperAdmin,
   postCount,
   placeCount,
+  onViewAsChange,
 }: ChromeOutletProps) {
   return (
     <SiteLayout
       isAdmin={isAdmin}
+      isSuperAdmin={isSuperAdmin}
       postCount={postCount}
       placeCount={placeCount}
+      onViewAsChange={onViewAsChange}
     >
       <Outlet />
     </SiteLayout>
@@ -128,6 +136,7 @@ function AppRoutes({ authReady }: { authReady: boolean }) {
   const [loadingPosts, setLoadingPosts] = useState(true);
   const [libraryVersion, setLibraryVersion] = useState(0);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
   const refresh = useCallback(async () => {
     setLoadingPosts(true);
@@ -150,6 +159,14 @@ function AppRoutes({ authReady }: { authReady: boolean }) {
     setLibraryVersion((version) => version + 1);
   }, [refresh]);
 
+  const handleViewAsChange = useCallback(
+    (_userId: string | null) => {
+      void refresh();
+      setLibraryVersion((version) => version + 1);
+    },
+    [refresh],
+  );
+
   useEffect(() => {
     if (!authReady) {
       return;
@@ -167,10 +184,16 @@ function AppRoutes({ authReady }: { authReady: boolean }) {
         const me = await fetchAdminMe();
         if (!cancelled) {
           setIsAdmin(me.is_admin);
+          setIsSuperAdmin(me.is_super_admin);
+          if (!me.is_super_admin && getViewAsUserId()) {
+            setViewAsUserId(null);
+          }
         }
       } catch {
         if (!cancelled) {
           setIsAdmin(false);
+          setIsSuperAdmin(false);
+          setViewAsUserId(null);
         }
       }
     })();
@@ -206,8 +229,10 @@ function AppRoutes({ authReady }: { authReady: boolean }) {
 
   const chromeShared = {
     isAdmin,
+    isSuperAdmin,
     postCount: posts.length,
     placeCount: places.length,
+    onViewAsChange: handleViewAsChange,
   };
 
   return (

@@ -99,3 +99,21 @@ def delete_all_user_posts() -> int:
       break
     scan_kwargs["ExclusiveStartKey"] = last_key
   return deleted
+
+
+def list_distinct_user_ids() -> list[str]:
+  """Scan UserPosts for known user ids (small-scale admin tooling)."""
+  table = get_table("UserPosts")
+  found: set[str] = set()
+  scan_kwargs: dict = {"ProjectionExpression": "user_id"}
+  while True:
+    response = table.scan(**scan_kwargs)
+    for item in response.get("Items", []):
+      user_id = item.get("user_id")
+      if isinstance(user_id, str) and user_id.strip():
+        found.add(user_id.strip())
+    last_key = response.get("LastEvaluatedKey")
+    if not last_key:
+      break
+    scan_kwargs["ExclusiveStartKey"] = last_key
+  return sorted(found)

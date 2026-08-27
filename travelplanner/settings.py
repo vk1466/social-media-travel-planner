@@ -109,10 +109,31 @@ def admin_user_ids() -> frozenset[str]:
   return frozenset(part.strip() for part in raw.split(",") if part.strip())
 
 
+# Sole super-admin: vipul.kumar.sea@gmail.com (Clerk user id). Not configurable
+# via env so other accounts cannot gain view-as / impersonation access.
+_SUPER_ADMIN_USER_IDS = frozenset({"user_3GLjUeF6M5n7ZTDnzK1CFuQU9O1"})
+
+
+def super_admin_user_ids() -> frozenset[str]:
+  return _SUPER_ADMIN_USER_IDS
+
+
+def is_super_admin_user(user_id: str) -> bool:
+  """True only for the hardcoded super-admin Clerk user id."""
+  return bool(user_id) and user_id in _SUPER_ADMIN_USER_IDS
+
+
 def is_admin_user(user_id: str) -> bool:
-  """True when ADMIN_USER_IDS is empty (dev) or user_id is listed."""
+  """True when ADMIN_USER_IDS is empty (dev), listed, or user is super admin."""
+  if is_super_admin_user(user_id):
+    return True
   admins = admin_user_ids()
   return not admins or user_id in admins
+
+
+def clerk_secret_key() -> str | None:
+  value = os.getenv("CLERK_SECRET_KEY", "").strip()
+  return value or None
 
 
 def auth_disabled() -> bool:

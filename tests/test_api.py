@@ -434,7 +434,54 @@ def test_admin_me_reports_admin(dynamodb) -> None:
   assert response.status_code == 200
   body = response.json()
   assert body["is_admin"] is True
+  assert body["is_super_admin"] is False
+  assert body["authenticated_user_id"] == "user-a"
+  assert body["acting_user_id"] == "user-a"
   assert "place_pipeline" not in body
+
+
+def test_super_admin_can_view_as_another_user(monkeypatch, dynamodb) -> None:
+  from travelplanner.models import Platform, SavedPost
+  from travelplanner.store import save_post
+
+  super_id = "user_3GLjUeF6M5n7ZTDnzK1CFuQU9O1"
+  other_id = "user_other"
+  post = SavedPost(
+    post_id="instagram:viewas1",
+    post_url="https://www.instagram.com/reel/viewas1/",
+    platform=Platform.INSTAGRAM,
+    media_kind="reel",
+    caption="other user post",
+  )
+  save_post(post)
+  user_posts_repo.link_user_post(other_id, post.post_id)
+
+  client = TestClient(app)
+  denied = client.get(
+    "/api/posts",
+    headers={"X-User-Id": "user-a", "X-View-As-User-Id": other_id},
+  )
+  assert denied.status_code == 403
+
+  me = client.get("/api/admin/me", headers={"X-User-Id": super_id})
+  assert me.status_code == 200
+  assert me.json()["is_super_admin"] is True
+
+  viewed = client.get(
+    "/api/posts",
+    headers={"X-User-Id": super_id, "X-View-As-User-Id": other_id},
+  )
+  assert viewed.status_code == 200
+  body = viewed.json()
+  assert len(body) == 1
+  assert body[0]["post_id"] == "instagram:viewas1"
+
+  users = client.get("/api/admin/users", headers={"X-User-Id": super_id})
+  assert users.status_code == 200
+  assert any(row["user_id"] == other_id for row in users.json()["users"])
+
+  blocked = client.get("/api/admin/users", headers={"X-User-Id": "user-a"})
+  assert blocked.status_code == 403
 
 
 def test_admin_locate_read_only(monkeypatch, dynamodb) -> None:

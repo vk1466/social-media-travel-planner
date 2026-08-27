@@ -3,9 +3,12 @@ import { Link } from "react-router-dom";
 import { useBrandVersion } from "../hooks/useBrandVersion";
 import { readBrandMode } from "../themeColor";
 import { ProfileMenu } from "./ProfileMenu";
+import { ViewAsSwitcher } from "./ViewAsSwitcher";
 
 export interface SiteHeaderProps {
   isAdmin?: boolean;
+  isSuperAdmin?: boolean;
+  onViewAsChange?: (userId: string | null) => void;
 }
 
 function BrandMark() {
@@ -27,7 +30,11 @@ function BrandMark() {
   );
 }
 
-export function SiteHeader({ isAdmin = false }: SiteHeaderProps) {
+export function SiteHeader({
+  isAdmin = false,
+  isSuperAdmin = false,
+  onViewAsChange,
+}: SiteHeaderProps) {
   useBrandVersion();
   const tone = readBrandMode();
   return (
@@ -39,6 +46,8 @@ export function SiteHeader({ isAdmin = false }: SiteHeaderProps) {
         </Link>
 
         <div className="wf-header-actions">
+          <ViewAsSwitcher enabled={isSuperAdmin} onChange={onViewAsChange} />
+
           <Link to="/add" className="wf-cta">
             Add links
           </Link>
