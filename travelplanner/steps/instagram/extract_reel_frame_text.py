@@ -6,6 +6,7 @@ from travelplanner.feature_flag import FeatureFlag
 from travelplanner.flow.context import IngestContext
 from travelplanner.flow.step import Step
 from travelplanner.reel_frame_text import read_reel_frame_text
+from travelplanner.steps.instagram.media import extract_video_url
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +20,7 @@ def extract_reel_frame_text(ctx: IngestContext) -> IngestContext:
     return ctx
 
   raw = ctx.raw_payload if isinstance(ctx.raw_payload, dict) else {}
-  video_url = raw.get("video_url")
+  video_url = extract_video_url(raw)
   if not video_url:
     logger.info("extract_reel_frame_text skipped: no video_url")
     return ctx

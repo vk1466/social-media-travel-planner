@@ -29,8 +29,9 @@ CLOSE_PIPELINE_PLACE = "place"
 CLOSE_PIPELINE_MOVIE = "movie"
 
 # Categories with no close pipeline yet — save the post, skip place/movie work.
+# Food still uses the place pipeline: restaurant/cafe recs are pin-able.
 _SKIP_CLOSE_CATEGORIES: frozenset[str] = frozenset(
-  {"fashion", "hairstyle", "food", "other"}
+  {"fashion", "hairstyle", "other"}
 )
 
 
@@ -57,9 +58,9 @@ def inferred_content_category(post: SavedPost) -> str:
 def close_pipeline_for_category(category: str | None) -> str | None:
   """Which close pipeline to run after classify.
 
-  ``place`` — extract/locate/upsert places (travel, or unset when classify skipped).
+  ``place`` — extract/locate/upsert places (travel, food, or unset when classify skipped).
   ``movie`` — extract films and TV series from the content bundle.
-  ``None`` — skip close (fashion / hairstyle / food / other until they have pipelines).
+  ``None`` — skip close (fashion / hairstyle / other until they have pipelines).
   """
   normalized = normalize_content_category(category)
   if normalized == "movies":

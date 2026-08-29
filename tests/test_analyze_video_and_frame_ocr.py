@@ -80,3 +80,21 @@ def test_extract_reel_frame_text_sets_image_text_when_enabled() -> None:
     result = extract_reel_frame_text(ctx)
   mock_read.assert_called_once_with("https://cdn.example/v.mp4")
   assert result.image_text == "Håen📍"
+
+
+def test_extract_reel_frame_text_reads_mindcase_video_url() -> None:
+  ctx = IngestContext(
+    post_url="https://www.instagram.com/reel/abc/",
+    user_id="u1",
+    resource_type="reel",
+    shortcode="abc",
+    raw_payload={"videoUrl": "https://cdn.example/mindcase.mp4"},
+  )
+  FeatureFlag.set("extract_reel_frame_text", True)
+  with patch(
+    "travelplanner.steps.instagram.extract_reel_frame_text.read_reel_frame_text",
+    return_value="Quán chay",
+  ) as mock_read:
+    result = extract_reel_frame_text(ctx)
+  mock_read.assert_called_once_with("https://cdn.example/mindcase.mp4")
+  assert result.image_text == "Quán chay"

@@ -41,7 +41,7 @@ def test_close_pipeline_for_category() -> None:
   assert close_pipeline_for_category("movies") == CLOSE_PIPELINE_MOVIE
   assert close_pipeline_for_category("fashion") is None
   assert close_pipeline_for_category("hairstyle") is None
-  assert close_pipeline_for_category("food") is None
+  assert close_pipeline_for_category("food") == CLOSE_PIPELINE_PLACE
   assert close_pipeline_for_category("other") is None
 
 

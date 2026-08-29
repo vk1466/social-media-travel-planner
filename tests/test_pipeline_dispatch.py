@@ -52,6 +52,10 @@ def test_close_steps_dispatch_by_category() -> None:
   assert movie_name == "instagram_movie_close"
   assert movie_steps == MOVIE_CLOSE_STEPS
 
+  food_name, food_steps = close_steps_for_category("food")
+  assert food_name == "instagram_place_close"
+  assert food_steps == PLACE_CLOSE_STEPS
+
   skip_name, skip_steps = close_steps_for_category("fashion")
   assert skip_name == "instagram_close_skipped"
   assert skip_steps == ()

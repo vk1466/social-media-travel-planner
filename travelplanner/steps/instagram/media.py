@@ -287,6 +287,15 @@ def trim_post_info(raw: dict[str, Any]) -> dict[str, Any]:
   }
 
 
+def extract_video_url(raw: dict[str, Any]) -> str | None:
+  """Direct MP4 URL from a Mindcase (videoUrl) or GraphQL (video_url) payload."""
+  for key in ("video_url", "videoUrl"):
+    value = raw.get(key)
+    if isinstance(value, str) and value.strip():
+      return value.strip()
+  return None
+
+
 def canonical_media_url(shortcode: str, media_kind: str) -> str:
   if media_kind == "reel":
     return f"https://www.instagram.com/reel/{shortcode}/"
