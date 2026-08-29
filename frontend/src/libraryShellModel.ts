@@ -44,7 +44,7 @@ export const DEFAULT_PLACES_FILTERS: PlacesShellFilters = {
   grouping: "region",
   typeFilter: [],
   query: "",
-  viewMode: "covers",
+  viewMode: "map",
 };
 
 export const DEFAULT_POSTS_FILTERS: PostsShellFilters = {

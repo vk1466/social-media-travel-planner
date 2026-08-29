@@ -91,7 +91,7 @@ export function PlaceLibrary({
   const [localStatusFilter, setLocalStatusFilter] = useState<StatusFilter>("all");
   const [localTypeFilter, setLocalTypeFilter] = useState<string[]>([]);
   const [localGrouping, setLocalGrouping] = useState<AtlasGrouping>("region");
-  const [localViewMode, setLocalViewMode] = useState<ViewMode>("covers");
+  const [localViewMode, setLocalViewMode] = useState<ViewMode>("map");
   const [expandedKeys, setExpandedKeys] = useState<string[]>([]);
   const [localSearchQuery, setLocalSearchQuery] = useState("");
 
