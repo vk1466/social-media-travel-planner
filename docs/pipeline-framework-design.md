@@ -71,10 +71,11 @@ Examples already in this design: `extract_image_text`, `extract_video_analysis`,
 and `extract_reel_frame_text` stay flagged off until validated; place-facts
 enrichment uses `place_facts`. Post topic classification uses `content_categories`
 (currently on in this environment): ingest stamps `SavedPost.content_category`
-then dispatches close by category — **place** pipeline for travel, food (and
-unset), **movie** pipeline for movies (extract films and TV series, then
-TMDB/OMDb catalog facts). Fashion / hairstyle / other skip close until they
-have their own pipelines. A shared Movie table is not live; catalog facts persist on
+then dispatches close by category — **place** pipeline for travel (and unset;
+restaurant/cafe recs classify as travel so they pin on the atlas),
+**movie** pipeline for movies (extract films and TV series, then
+TMDB/OMDb catalog facts). Fashion / hairstyle / food (recipes only) / other
+skip close until they have their own pipelines. A shared Movie table is not live; catalog facts persist on
 `SavedPost.resolved_movies`.
 
 When adding a pipeline step that is not ready for all environments, register a
@@ -122,9 +123,9 @@ Resource type is often known only **after** fetch. Dispatch is:
 2. **Tail (by platform + resource type):** transcript and/or image text.
 3. **Classify (flagged):** `classify_content` stamps `SavedPost.content_category`. No-op when `content_categories` is off.
 4. **Close (by content category):**
-   - `travel`, `food`, or unset (classify skipped / failed) → **place pipeline:** extract places → locate → dedupe → upsert. Food recs pin restaurants/cafes/markets; home-cooking with no venue yields no pins.
+   - `travel` or unset (classify skipped / failed) → **place pipeline:** extract places → locate → dedupe → upsert. Named restaurants/cafes/bars/markets are travel places; copy dish/order recs onto details and tips.
    - `movies` → **movie pipeline:** extract films and TV series onto `SavedPost.extracted_movies` (`kind` is `movie` or `tv`), then `resolve_movies` (TMDB movie or TV identity + details, OMDb IMDb/RT scores, optional review summary). Snapshot stored on `SavedPost.resolved_movies`. No geocode. Shared Movie upsert is not wired yet.
-   - `fashion` / `hairstyle` / `other` → skip close (save the post only).
+   - `fashion` / `hairstyle` / `food` / `other` → skip close (save the post only). `food` is recipes and kitchen content with no visitable venue.
 
 Timeline has no fetch head; it starts at locate (coordinates) with optional
 nearby POI fallback, then the place close steps.

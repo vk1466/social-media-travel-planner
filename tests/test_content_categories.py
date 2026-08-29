@@ -41,9 +41,14 @@ def test_close_pipeline_for_category() -> None:
   assert close_pipeline_for_category("movies") == CLOSE_PIPELINE_MOVIE
   assert close_pipeline_for_category("fashion") is None
   assert close_pipeline_for_category("hairstyle") is None
-  assert close_pipeline_for_category("food") == CLOSE_PIPELINE_PLACE
+  assert close_pipeline_for_category("food") is None
   assert close_pipeline_for_category("other") is None
 
 
 def test_classify_prompt_includes_tv_series() -> None:
   assert "TV series" in CLASSIFY_PROMPT
+
+
+def test_classify_prompt_sends_venues_to_travel() -> None:
+  assert "visitable venue" in CLASSIFY_PROMPT
+  assert "use travel, not food" in CLASSIFY_PROMPT

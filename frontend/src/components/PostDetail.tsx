@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { fetchPlaceDetail, fetchPost, nativePostId, type Place, type SavedPost } from "../api";
-import { effectiveContentCategory } from "../contentCategory";
+import { mappablePlaces } from "../placeMapUtils";
 import { readPostCardLayout } from "../postCardLayout";
 import { formatPostDate, getPlatformLabel, proxiedMediaUrl } from "../postDisplayUtils";
 import { DetailModal } from "./DetailModal";
@@ -253,8 +253,7 @@ function PostFlipFront({
   const platformLabel = getPlatformLabel(post);
   const thumbUrl = proxiedMediaUrl(post.thumbnail_url);
   const thumbStyle = thumbUrl ? { backgroundImage: `url("${thumbUrl}")` } : undefined;
-  const isTravelPost = effectiveContentCategory(post) === "travel";
-  const showMap = isTravelPost && overviewPlaces.length > 0;
+  const showMap = mappablePlaces(overviewPlaces).length > 0;
   const showCards = detailItems.length > 0;
 
   return (

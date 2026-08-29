@@ -30,10 +30,11 @@ CLASSIFY_SCHEMA: dict[str, Any] = {
       "enum": list(CONTENT_CATEGORIES),
       "description": (
         "Primary topic of this post. travel = destinations, itineraries, "
-        "hotels, restaurants as a trip. movies = films and TV series, "
-        "trailers, recaps, reviews. fashion = outfits, clothing, styling "
-        "looks. hairstyle = haircuts, color, hair tutorials. food = home "
-        "cooking or recipes, not a trip. other = anything else or mixed/unclear."
+        "hotels, and any named restaurant/cafe/bar/market you can visit. "
+        "movies = films and TV series, trailers, recaps, reviews. "
+        "fashion = outfits, clothing, styling looks. hairstyle = haircuts, "
+        "color, hair tutorials. food = recipes, home cooking, kitchen "
+        "technique with no visitable venue. other = anything else or mixed/unclear."
       ),
     }
   },
@@ -44,14 +45,17 @@ CLASSIFY_SCHEMA: dict[str, Any] = {
 CLASSIFY_PROMPT = (
   "Classify this social media post into exactly one primary content_category.\n\n"
   "Categories:\n"
-  "- travel: destinations, itineraries, hotels, restaurants as part of a trip, "
-  "outdoor places to visit.\n"
+  "- travel: destinations, itineraries, hotels, outdoor places, and any reel "
+  "that names a restaurant, cafe, bar, or market you can go to — including "
+  "local food guides and reviews, in any language. Visiting a venue is travel "
+  "even when the reel is mostly about the food.\n"
   "- movies: films and TV series (trailers, recaps, reviews, scenes, "
   "what-to-watch). Includes streaming shows, seasons, and episodes.\n"
   "- fashion: outfits, clothing, styling, lookbooks, what-to-wear.\n"
   "- hairstyle: haircuts, color, hair care, hair tutorials.\n"
-  "- food: home cooking, recipes, kitchen technique. A restaurant reel that is "
-  "about going there on a trip is travel, not food.\n"
+  "- food: recipes, home cooking, kitchen technique, or food talk with no "
+  "visitable venue. If a specific restaurant/cafe/bar/market is named or shown "
+  "as a place to go, use travel, not food.\n"
   "- other: mixed, unclear, or none of the above.\n\n"
   "Pick the dominant topic from the sources. Do not invent facts. If sources "
   "are thin or mixed, use other."
