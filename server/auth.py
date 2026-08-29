@@ -82,7 +82,8 @@ def get_acting_user_id(
     return auth_user_id
   target_user_id = x_view_as_user_id.strip()
   if not settings.is_super_admin_user(auth_user_id):
-    raise HTTPException(status_code=403, detail="View-as requires super admin")
+    # Leftover view-as from a prior super-admin session must not 403 the library.
+    return auth_user_id
   return target_user_id
 
 

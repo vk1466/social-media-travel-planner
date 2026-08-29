@@ -171,36 +171,35 @@ function AppRoutes({ authReady }: { authReady: boolean }) {
     if (!authReady) {
       return;
     }
-    void refresh();
-  }, [authReady, refresh]);
-
-  useEffect(() => {
-    if (!authReady) {
-      return;
-    }
     let cancelled = false;
     void (async () => {
       try {
         const me = await fetchAdminMe();
-        if (!cancelled) {
-          setIsAdmin(me.is_admin);
-          setIsSuperAdmin(me.is_super_admin);
-          if (!me.is_super_admin && getViewAsUserId()) {
-            setViewAsUserId(null);
-          }
+        if (cancelled) {
+          return;
         }
-      } catch {
-        if (!cancelled) {
-          setIsAdmin(false);
-          setIsSuperAdmin(false);
+        setIsAdmin(me.is_admin);
+        setIsSuperAdmin(me.is_super_admin);
+        if (!me.is_super_admin && getViewAsUserId()) {
           setViewAsUserId(null);
         }
+      } catch {
+        if (cancelled) {
+          return;
+        }
+        setIsAdmin(false);
+        setIsSuperAdmin(false);
+        setViewAsUserId(null);
+      }
+      if (!cancelled) {
+        await refresh();
+        setLibraryVersion((version) => version + 1);
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [authReady]);
+  }, [authReady, refresh]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {

@@ -457,11 +457,12 @@ def test_super_admin_can_view_as_another_user(monkeypatch, dynamodb) -> None:
   user_posts_repo.link_user_post(other_id, post.post_id)
 
   client = TestClient(app)
-  denied = client.get(
+  ignored = client.get(
     "/api/posts",
     headers={"X-User-Id": "user-a", "X-View-As-User-Id": other_id},
   )
-  assert denied.status_code == 403
+  assert ignored.status_code == 200
+  assert ignored.json() == []
 
   me = client.get("/api/admin/me", headers={"X-User-Id": super_id})
   assert me.status_code == 200
