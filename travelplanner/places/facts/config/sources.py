@@ -12,7 +12,16 @@ SOURCE_PRIORITY: dict[str, int] = {
 
 # Omit a source → it may fill any field. Otherwise only listed fields win.
 SOURCE_FIELD_ALLOWLIST: dict[str, frozenset[str]] = {
-  "wikipedia": frozenset({"famous_for", "best_time_to_visit"}),
+  "wikipedia": frozenset(
+    {
+      "famous_for",
+      "best_time_to_visit",
+      "typical_duration_minutes",
+      "highlights",
+      "caveats",
+      "recommendations",
+    }
+  ),
 }
 
 

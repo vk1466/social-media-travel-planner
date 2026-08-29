@@ -635,6 +635,123 @@
   color: var(--wf-coral-soft);
 }
 
+.post-flip-reel-pill.is-visited {
+  background: rgb(var(--wf-sage-rgb) / 0.28);
+  border-color: rgb(var(--wf-sage-rgb) / 0.55);
+  color: var(--wf-on-brand);
+}
+
+.post-flip-reel-pill:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+/* ── Place detail: same card chrome, scrollable content, tiled map ─────────── */
+
+.place-flip-face {
+  background: #0e1013;
+}
+
+.place-flip-body {
+  position: relative;
+  z-index: 2;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0 var(--size-4) var(--size-4);
+  scrollbar-width: thin;
+  scrollbar-color: rgb(255 255 255 / 0.2) transparent;
+}
+
+.place-flip-body .post-flip-heading {
+  margin-bottom: var(--size-2);
+}
+
+.place-flip-muted {
+  margin: 0 0 var(--size-2);
+  color: rgb(var(--wf-cream-rgb) / 0.58);
+  font-size: var(--font-size-0);
+  line-height: 1.4;
+}
+
+.place-flip-section {
+  margin-top: var(--size-4);
+  padding-top: var(--size-4);
+  border-top: 1px solid rgb(255 255 255 / 0.08);
+}
+
+.place-flip-section h3 {
+  margin: 0 0 var(--size-3);
+  color: rgb(var(--wf-cream-rgb) / 0.5);
+  font-size: var(--font-size-0);
+  font-weight: var(--font-weight-6);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.place-flip-list {
+  margin: 0;
+  padding-left: var(--size-4);
+  color: rgb(var(--wf-cream-rgb) / 0.78);
+  font-size: var(--font-size-1);
+  line-height: 1.45;
+}
+
+.place-flip-list li + li {
+  margin-top: var(--size-2);
+}
+
+.place-flip-inline {
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--wf-coral-soft);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.place-flip-inline:hover {
+  color: var(--wf-on-brand);
+}
+
+.place-flip-maps {
+  display: inline-flex;
+  margin-top: var(--size-3);
+  font-size: var(--font-size-1);
+  font-weight: var(--font-weight-6);
+  text-decoration: none;
+}
+
+.place-flip-body .place-facts-row dt {
+  color: rgb(var(--wf-cream-rgb) / 0.5);
+}
+
+.place-flip-body .place-facts-row dd {
+  color: rgb(var(--wf-cream-rgb) / 0.82);
+}
+
+.place-flip-body .place-facts-row a {
+  color: var(--wf-coral-soft);
+}
+
+.place-flip-body .rr-heading {
+  color: rgb(var(--wf-cream-rgb) / 0.5);
+}
+
+.place-flip-body .rr-empty {
+  color: rgb(var(--wf-cream-rgb) / 0.58);
+}
+
+.place-flip-body .post-flip-live-map {
+  margin: 0;
+}
+
+.place-flip-body .source-post-button {
+  display: inline;
+}
+
 
 
 .post-flip-footer {

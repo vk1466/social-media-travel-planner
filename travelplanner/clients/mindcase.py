@@ -23,6 +23,7 @@ logger = logging.getLogger(__name__)
 
 API_BASE = "https://api.mindcase.co/v1"
 POSTS_RUN_PATH = "/data/instagram/posts/run"
+GOOGLE_MAPS_PLACES_RUN_PATH = "/data/google-maps/places/run"
 POLL_INTERVAL_SECONDS = 2.0
 MAX_WAIT_SECONDS = 180
 _SSL_CONTEXT = ssl.create_default_context(cafile=certifi.where())
@@ -80,6 +81,29 @@ def fetch_posts(
   if not params:
     raise ValueError("post_urls or handle is required")
   return _run_job(POSTS_RUN_PATH, params)
+
+
+def fetch_google_maps_places(
+  *,
+  keywords: list[str] | None = None,
+  location: str | None = None,
+  place_urls: list[str] | None = None,
+  max_results: int = 1,
+) -> list[dict[str, Any]]:
+  """Google Maps place listings via Mindcase (hours, phone, website, categories)."""
+  params: dict[str, Any] = {"maxResults": max(1, max_results), "maxImages": 0}
+  urls = [url.strip() for url in (place_urls or []) if url and url.strip()]
+  if urls:
+    params["placeUrls"] = urls
+  else:
+    terms = [term.strip() for term in (keywords or []) if term and term.strip()]
+    if not terms:
+      raise ValueError("keywords or place_urls is required")
+    params["keywords"] = terms
+    loc = (location or "").strip()
+    if loc:
+      params["location"] = loc
+  return _run_job(GOOGLE_MAPS_PLACES_RUN_PATH, params)
 
 
 def _run_job(path: str, params: dict[str, Any]) -> list[dict[str, Any]]:

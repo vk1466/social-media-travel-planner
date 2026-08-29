@@ -88,3 +88,31 @@ def test_fetch_post_raises_without_key(monkeypatch) -> None:
     assert False, "expected RuntimeError"
   except RuntimeError as exc:
     assert "MINDCASE_API_KEY" in str(exc)
+
+
+def test_fetch_google_maps_places_posts_params(monkeypatch) -> None:
+  monkeypatch.setenv("MINDCASE_API_KEY", "mk_live_test")
+
+  def fake_request(method: str, path: str, body: dict | None = None) -> dict:
+    assert method == "POST"
+    assert path == mindcase.GOOGLE_MAPS_PLACES_RUN_PATH
+    assert body == {
+      "params": {
+        "maxResults": 1,
+        "maxImages": 0,
+        "keywords": ["Crater Lake"],
+        "location": "Oregon, United States",
+      }
+    }
+    return {
+      "status": "completed",
+      "data": [{"businessName": "Crater Lake", "placeId": "ChIJ_test"}],
+    }
+
+  monkeypatch.setattr(mindcase, "_request", fake_request)
+  rows = mindcase.fetch_google_maps_places(
+    keywords=["Crater Lake"],
+    location="Oregon, United States",
+    max_results=1,
+  )
+  assert rows[0]["placeId"] == "ChIJ_test"

@@ -10,6 +10,7 @@ from travelplanner.steps.instagram.fetch_media import FETCH_MEDIA_STEP
 from travelplanner.steps.instagram.fetch_transcript import FETCH_TRANSCRIPT_STEP
 from travelplanner.steps.instagram.persist_thumbnail import PERSIST_THUMBNAIL_STEP
 from travelplanner.steps.instagram.seed_instagram_post import SEED_INSTAGRAM_POST_STEP
+from travelplanner.steps.enrich_place_facts import ENRICH_PLACE_FACTS_STEP
 from travelplanner.steps.process_mentions import PROCESS_MENTIONS_STEP
 
 INSTAGRAM_HEAD_STEPS = (
@@ -21,6 +22,7 @@ INSTAGRAM_HEAD_STEPS = (
 PLACE_CLOSE_STEPS = (
   EXTRACT_PLACES_STEP,
   PROCESS_MENTIONS_STEP,
+  ENRICH_PLACE_FACTS_STEP,
 )
 
 MOVIE_CLOSE_STEPS = (

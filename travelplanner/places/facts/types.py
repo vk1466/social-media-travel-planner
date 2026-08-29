@@ -21,6 +21,9 @@ class FactQuery:
   aliases: tuple[str, ...] = ()
   country: str | None = None
   country_code: str | None = None
+  city: str | None = None
+  state_province: str | None = None
+  provider_place_id: str | None = None
 
 
 @dataclass(frozen=True)

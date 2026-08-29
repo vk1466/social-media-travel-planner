@@ -5,7 +5,7 @@ from typing import Any
 
 from travelplanner.db.serialize import from_dynamo, to_dynamo
 from travelplanner.db.tables import get_table
-from travelplanner.models import FactEvidence, Place, PlaceFacts, PlaceLocation
+from travelplanner.models import FactEvidence, Place, PlaceFacts, PlaceLocation, StoredFactDocument
 
 
 def _facts_from_dict(data: dict[str, Any] | None) -> PlaceFacts | None:
@@ -30,8 +30,32 @@ def _facts_from_dict(data: dict[str, Any] | None) -> PlaceFacts | None:
     )
   opening = data.get("opening_hours_text") or ()
   cuisines = data.get("cuisines") or ()
+  highlights = data.get("highlights") or ()
+  caveats = data.get("caveats") or ()
+  recommendations = data.get("recommendations") or ()
   conflicts = data.get("conflicts") or ()
   notes = data.get("notes") or ()
+  source_documents: list[StoredFactDocument] = []
+  for item in data.get("source_documents") or []:
+    if not isinstance(item, dict):
+      continue
+    source_ref = item.get("source_ref")
+    source_name = item.get("source_name")
+    if not source_ref or not source_name:
+      continue
+    content = item.get("content") if isinstance(item.get("content"), dict) else {}
+    source_documents.append(
+      StoredFactDocument(
+        tool_id=str(item.get("tool_id") or ""),
+        source_name=str(source_name),
+        source_ref=str(source_ref),
+        title=str(item.get("title") or source_ref),
+        retrieved_at=str(item.get("retrieved_at") or ""),
+        latitude=item.get("latitude"),
+        longitude=item.get("longitude"),
+        content=dict(content),
+      )
+    )
   return PlaceFacts(
     status=str(data.get("status") or "empty"),
     fetched_at=str(data.get("fetched_at") or ""),
@@ -48,9 +72,13 @@ def _facts_from_dict(data: dict[str, Any] | None) -> PlaceFacts | None:
     distance_km=data.get("distance_km"),
     elevation_gain_m=data.get("elevation_gain_m"),
     difficulty=data.get("difficulty"),
+    highlights=tuple(highlights),
+    caveats=tuple(caveats),
+    recommendations=tuple(recommendations),
     evidence=tuple(evidence),
     conflicts=tuple(conflicts),
     notes=tuple(notes),
+    source_documents=tuple(source_documents),
   )
 
 

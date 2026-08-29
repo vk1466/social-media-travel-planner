@@ -19,10 +19,33 @@ FILLABLE_FIELDS: tuple[str, ...] = (
   "distance_km",
   "elevation_gain_m",
   "difficulty",
+  "highlights",
+  "caveats",
+  "recommendations",
+)
+
+# Filled by the LLM insights pass, not the structured Google/OSM mappers.
+INTERPRETIVE_FIELDS: frozenset[str] = frozenset(
+  {
+    "famous_for",
+    "best_time_to_visit",
+    "typical_duration_minutes",
+    "highlights",
+    "caveats",
+    "recommendations",
+  }
 )
 
 # Stored as tuple[str, ...] on PlaceFacts.
-LIST_FIELDS: frozenset[str] = frozenset({"opening_hours_text", "cuisines"})
+LIST_FIELDS: frozenset[str] = frozenset(
+  {
+    "opening_hours_text",
+    "cuisines",
+    "highlights",
+    "caveats",
+    "recommendations",
+  }
+)
 
 _STRING: dict[str, Any] = {"type": ["string", "null"]}
 _STRING_LIST: dict[str, Any] = {"type": "array", "items": {"type": "string"}}
@@ -48,4 +71,7 @@ FIELD_JSON_SCHEMAS: dict[str, dict[str, Any]] = {
   "distance_km": _FLOAT,
   "elevation_gain_m": _INT,
   "difficulty": _DIFFICULTY,
+  "highlights": _STRING_LIST,
+  "caveats": _STRING_LIST,
+  "recommendations": _STRING_LIST,
 }

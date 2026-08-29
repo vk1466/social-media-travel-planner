@@ -17,13 +17,15 @@ category.
 Place (pinned + categorized)
    → fetch from sources chosen by category
    → keep only documents that describe THIS pin
-   → LLM fills a category-scoped fact schema from those documents
+   → persist those documents
+   → code maps structured fields (hours, phone, website, cuisine, fees)
+   → LLM fills interpretive fields (famous-for, highlights, caveats, recs)
    → code validates, records provenance, stores
 ```
 
-**One sentence:** tools find the facts, code decides what is trustworthy and
-complete enough, the LLM only reads retrieved documents — it never supplies a
-fact from its own memory.
+**One sentence:** tools find the facts, code copies structured fields and
+decides what is complete enough, the LLM only synthesizes judgment from
+retrieved documents — it never supplies hours or a phone number from memory.
 
 ---
 
@@ -33,7 +35,8 @@ fact from its own memory.
 |----------|--------|-----|
 | Who picks tools | Code, from a `category → tools` table | 15 rows, no judgement needed; keeps runs deterministic |
 | Who filters wrong entities | Code — distance from our pin, then name similarity | Survives provider schema churn; geometry doesn't rename |
-| Who fills fields | One LLM call over normalized documents | Handles messy, differently-shaped payloads |
+| Who fills structured fields | Code mappers (Google / OSM / NPS) | Mindcase Google Maps is a fixed schema |
+| Who fills interpretive fields | One LLM call over stored documents + static facts | Famous-for, highlights, caveats, recommendations |
 | Who decides "good enough" | Code — per-category required-field policy | Completeness is policy, not opinion |
 | LLM conflict adjudication | Phase 4, only where sources disagree | Most conflicts resolve by source priority |
 | When it runs | Lazy / on demand — never in the ingest path | Cost and Nominatim-style rate limits |
@@ -94,19 +97,23 @@ class PlaceFacts:
   distance_km: float | None = None
   elevation_gain_m: int | None = None
   difficulty: str | None = None                 # easy | moderate | hard
+  # Insights (LLM pass)
+  highlights: tuple[str, ...] = ()
+  caveats: tuple[str, ...] = ()
+  recommendations: tuple[str, ...] = ()
   # Provenance / trust
   evidence: tuple[FactEvidence, ...] = ()
   conflicts: tuple[str, ...] = ()               # "opening_hours_text: google≠osm"
   notes: tuple[str, ...] = ()
+  source_documents: tuple[StoredFactDocument, ...] = ()
 ```
 
 `Place` gains `facts: PlaceFacts | None = None`.
 
 **Why nested, not a new table:** the place detail page always wants facts
-alongside the place, `place_to_dict` already uses `asdict`, and we store
-compact normalized values (never raw provider payloads), so item size stays
-small. If purge requirements or size force a split later, move it behind
-`places/facts/store.py` without touching callers.
+alongside the place, `place_to_dict` already uses `asdict`. Normalized values
+stay compact; matched `source_documents` keep the provider snapshot so a later
+insights pass (or a mapper change) does not need to re-fetch.
 
 **Write path:** enrichment must not clobber a concurrent ingest merge.
 `save_place` does a full `put_item`, so add a targeted
@@ -118,9 +125,9 @@ small. If purge requirements or size force a split later, move it behind
 
 ### Category field policy
 
-One table drives both the LLM's JSON schema and the completeness check.
-Requesting only relevant fields keeps prompts small and stops the model from
-reaching for irrelevant ones.
+One table drives the completeness check. Structured fill maps whatever the
+sources have; the LLM insights schema is the shared interpretive field set,
+not a per-category subset.
 
 | Category | Required | Optional |
 |----------|----------|----------|
@@ -198,9 +205,11 @@ enrich_place_facts(place)
   1. select_tools(category)          catalog lookup, honors setting gates
   2. fetch                           throttled, per-tool failures are non-fatal
   3. match_documents(place, docs)    distance gate → name gate → cap
-  4. llm_fill(place, docs, fields)   one strict-JSON call, temperature 0
-  5. verify(draft, docs)             evidence check, format check, conflicts
-  6. save_place_facts(place_id, ...)
+  4. persist matched source_documents
+  5. structured_fill                 code maps Google/OSM/NPS fields
+  6. verify(draft, docs)             evidence check, format check, conflicts
+  7. llm_insights                    interpretive fields only (fail-soft)
+  8. overlay + save_place_facts
 ```
 
 ### 3. Match filter
@@ -226,22 +235,19 @@ Reuses `haversine_meters` and `name_similarity` from `places/locate.py`.
   restaurant in one building), keep both and let the LLM pick or abstain. That
   is the one identity decision worth spending a model on.
 
-### 4. LLM fill
+### 4. Structured fill
 
-One `chat.completions` call, `temperature=0`, strict `json_schema` built from
-the category's required + optional fields, mirroring `llm_pick` /
-`llm_gate` style. Fails soft: no API key, API error, or unparseable response
-returns `None` plus a note, and the caller stores nothing.
+Code maps Google / OSM / NPS keys onto `PlaceFacts` (hours, phone, website,
+cuisine, price, admission). Missing OpenAI does **not** skip this pass.
 
-Prompt contract:
+### 5. LLM insights
 
-> You are given documents already retrieved for one specific place. Fill only
-> fields these documents support. Every filled field must cite the
-> `source_ref` it came from. If the documents describe a different place, or
-> do not mention a field, leave it null. Never use prior knowledge. Never
-> guess hours, fees, or cuisine.
+One `chat.completions` call, `temperature=0`, strict `json_schema` for
+interpretive fields only (`famous_for`, `best_time_to_visit`,
+`typical_duration_minutes`, `highlights`, `caveats`, `recommendations`).
+Fails soft: structured facts are still saved.
 
-### 5. Verify (code)
+### 6. Verify (code)
 
 1. Drop any field whose cited `source_ref` is not in the document set.
 2. Format checks: `price_level` in 0–4, `website_url` is http(s),
@@ -259,31 +265,30 @@ Prompt contract:
 
 ## When it runs
 
-**Never during ingest.** Ingest already serializes on Nominatim
-(`infra/travel_planner_stack.py` runs the place Map at `maxConcurrency=1`), and
-most saved places are never opened.
+Travel **place close** (after mentions are resolved) calls `enrich_place_facts`
+for each new/stale pin so a travel reel stores hours, phone, and website on
+ingest. Mindcase Google Maps is the Google source (`MINDCASE_API_KEY`).
+Place-detail view still enqueues a refresh when facts are missing or past TTL.
 
 | Trigger | Behavior |
 |---------|----------|
+| Travel reel ingest (place close) | After `process_place_mentions`, enrich each resolved pin if facts are missing/stale |
 | Place detail viewed | If facts missing or stale, enqueue an async refresh; return the place immediately without blocking |
 | Admin refresh | `POST /api/places/{place_id}/facts/refresh` — force, ignore TTL |
 | Backfill | Admin job over a filter (category / country), batched through Step Functions like the Timeline import |
 
-`PLACE_FACTS_ENABLED` gates the whole feature so it can ship dark.
+`place_facts` still gates the lazy/admin path. Ingest enrichment uses `force=True` so a travel reel can fill facts whenever Mindcase is configured.
 
 ---
 
 ## Settings
 
-Added to `travelplanner/settings.py` in the existing style (validated, sane
-default, raises on garbage):
-
 | Env var | Default | Purpose |
 |---------|---------|---------|
-| `PLACE_FACTS_ENABLED` | `false` | Master switch |
-| `PLACE_FACTS_TTL_DAYS` | `30` | Refresh eligibility |
-| `PLACE_FACTS_MAX_DOCS` | `6` | Documents passed to the LLM |
-| `GOOGLE_MAPS_API_KEY` | unset | Enables `google_place_details` |
+| `place_facts` feature flag | `false` | Master switch for lazy/admin refresh |
+| `place_facts_ttl_days` | `30` | Refresh eligibility |
+| `place_facts_max_docs` | `6` | Documents passed to the LLM |
+| `MINDCASE_API_KEY` | unset | Enables `google_place_details` (Google Maps via Mindcase) |
 | `NPS_API_KEY` | unset | Enables `nps_park` |
 
 ---
@@ -352,8 +357,8 @@ moto-based suite:
 - Verify: fabricated `source_ref` dropped; out-of-range `price_level` dropped;
   conflict recorded with the priority source winning.
 - Completeness policy per category → `complete` / `partial` / `empty`.
-- Fail-soft: no `OPENAI_API_KEY`, tool raising, LLM returning invalid JSON —
-  all leave the place unchanged and log a note.
+- Fail-soft: no `OPENAI_API_KEY` still stores structured facts; tool raising
+  still stores empty/partial; LLM invalid JSON skips insights only.
 - Repo: `save_place_facts` preserves concurrently merged `tips`.
 
 ---

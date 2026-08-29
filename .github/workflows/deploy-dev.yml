@@ -5,6 +5,11 @@ on:
     branches:
       - main
       - feat/serverless
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-dev
+  cancel-in-progress: false
 
 permissions:
   id-token: write
@@ -47,6 +52,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          role-session-name: github-actions-travelplanner-dev
           aws-region: ${{ env.AWS_REGION }}
       - name: Deploy dev stack
         working-directory: infra

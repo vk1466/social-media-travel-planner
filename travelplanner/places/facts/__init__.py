@@ -1,4 +1,4 @@
-"""Type-specific place facts: tools → match → fill → verify → store.
+"""Type-specific place facts: tools → match → structured fill → insights → store.
 
 Layout:
   config/    declarative fields, categories, rules, source trust

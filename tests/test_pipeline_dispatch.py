@@ -32,6 +32,7 @@ def test_instagram_tail_by_resource_type() -> None:
   assert [step.name for step in PLACE_CLOSE_STEPS] == [
     "extract_places",
     "process_place_mentions",
+    "enrich_place_facts",
   ]
   assert [step.name for step in MOVIE_CLOSE_STEPS] == [
     "extract_movies",

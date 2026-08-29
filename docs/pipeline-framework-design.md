@@ -194,6 +194,8 @@ travelplanner/steps/
   extract_places.py          # generic — LLM from ContentBundle
   extract_movies.py          # generic — film and TV titles from ContentBundle
   resolve_movies.py          # generic — TMDB movie/TV resolve + OMDb ratings
+  process_mentions.py        # generic — locate + upsert mentions
+  enrich_place_facts.py      # generic — structured Google/OSM facts + LLM insights
   locate_by_name.py          # generic
   locate_by_coordinates.py   # generic
   nearby_pois.py             # generic

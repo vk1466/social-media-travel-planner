@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from typing import Any
 from enum import Enum
 
 from travelplanner.movie_hints import ExtractedMovie, ResolvedMovie
@@ -92,6 +93,20 @@ class FactEvidence:
 
 
 @dataclass(frozen=True)
+class StoredFactDocument:
+  """Matched source snapshot so a later insights pass can reuse the fetch."""
+
+  tool_id: str
+  source_name: str
+  source_ref: str
+  title: str
+  retrieved_at: str
+  latitude: float | None = None
+  longitude: float | None = None
+  content: dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
 class PlaceFacts:
   """Objective, source-backed facts. Separate from reel `details` / `tips`."""
 
@@ -113,10 +128,15 @@ class PlaceFacts:
   distance_km: float | None = None
   elevation_gain_m: int | None = None
   difficulty: str | None = None  # easy | moderate | hard
+  # Insights (LLM pass; still cited)
+  highlights: tuple[str, ...] = ()
+  caveats: tuple[str, ...] = ()
+  recommendations: tuple[str, ...] = ()
   # Provenance / trust
   evidence: tuple[FactEvidence, ...] = ()
   conflicts: tuple[str, ...] = ()  # "opening_hours_text: google≠osm"
   notes: tuple[str, ...] = ()
+  source_documents: tuple[StoredFactDocument, ...] = ()
 
 @dataclass(frozen=True)
 class Place:

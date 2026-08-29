@@ -55,6 +55,9 @@ FIELD_RULES: dict[str, FieldRule] = {
     kind="enum",
     enum_values=frozenset({"easy", "moderate", "hard"}),
   ),
+  "highlights": FieldRule(kind="string_list", max_item_len=280),
+  "caveats": FieldRule(kind="string_list", max_item_len=280),
+  "recommendations": FieldRule(kind="string_list", max_item_len=280),
 }
 
 

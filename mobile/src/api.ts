@@ -144,6 +144,17 @@ export interface FactEvidence {
   source_ref: string;
 }
 
+export interface StoredFactDocument {
+  tool_id: string;
+  source_name: string;
+  source_ref: string;
+  title: string;
+  retrieved_at: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  content?: Record<string, unknown>;
+}
+
 export interface PlaceFacts {
   status: string;
   fetched_at: string;
@@ -160,9 +171,13 @@ export interface PlaceFacts {
   distance_km?: number | null;
   elevation_gain_m?: number | null;
   difficulty?: string | null;
+  highlights?: string[];
+  caveats?: string[];
+  recommendations?: string[];
   evidence: FactEvidence[];
   conflicts: string[];
   notes: string[];
+  source_documents?: StoredFactDocument[];
 }
 
 export interface Place {

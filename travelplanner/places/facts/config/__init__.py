@@ -10,6 +10,7 @@ from travelplanner.places.facts.config.categories import (
 from travelplanner.places.facts.config.fields import (
   FIELD_JSON_SCHEMAS,
   FILLABLE_FIELDS,
+  INTERPRETIVE_FIELDS,
   LIST_FIELDS,
 )
 from travelplanner.places.facts.config.rules import FIELD_RULES, FieldRule, field_value_ok
@@ -25,6 +26,7 @@ __all__ = [
   "FIELD_JSON_SCHEMAS",
   "FIELD_RULES",
   "FILLABLE_FIELDS",
+  "INTERPRETIVE_FIELDS",
   "FieldRule",
   "LIST_FIELDS",
   "SOURCE_FIELD_ALLOWLIST",

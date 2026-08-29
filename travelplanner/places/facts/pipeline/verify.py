@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
 from typing import Any
 
 from travelplanner.models import FactEvidence, PlaceFacts
 from travelplanner.places.facts.config.categories import completeness_status
-from travelplanner.places.facts.config.fields import FILLABLE_FIELDS, LIST_FIELDS
+from travelplanner.places.facts.config.fields import FILLABLE_FIELDS, INTERPRETIVE_FIELDS, LIST_FIELDS
 from travelplanner.places.facts.config.rules import field_value_ok
 from travelplanner.places.facts.config.sources import source_may_fill, source_priority
 from travelplanner.places.facts.types import SourceDocument, utc_now_iso
@@ -135,4 +136,48 @@ def verify_facts(
     conflicts=conflicts,
     notes=notes,
     fetched_at=fetched_at,
+  )
+
+
+def _field_present(facts: PlaceFacts, field_name: str) -> bool:
+  value = getattr(facts, field_name)
+  if value is None:
+    return False
+  if isinstance(value, (list, tuple)):
+    return len(value) > 0
+  if isinstance(value, str):
+    return bool(value.strip())
+  return True
+
+
+def overlay_interpretive_facts(
+  base: PlaceFacts,
+  insights: PlaceFacts,
+  *,
+  category: str | None,
+) -> PlaceFacts:
+  """Keep structured fields; replace interpretive fields the insights pass filled."""
+  updates: dict[str, Any] = {}
+  filled: set[str] = set()
+  for field_name in INTERPRETIVE_FIELDS:
+    if _field_present(insights, field_name):
+      updates[field_name] = getattr(insights, field_name)
+      filled.add(field_name)
+  if not filled:
+    combined_notes = tuple(dict.fromkeys([*base.notes, *insights.notes]))
+    return replace(base, notes=combined_notes)
+
+  kept_evidence = tuple(row for row in base.evidence if row.field_name not in filled)
+  insight_evidence = tuple(row for row in insights.evidence if row.field_name in filled)
+  merged_values: dict[str, Any] = {
+    name: updates[name] if name in updates else getattr(base, name)
+    for name in FILLABLE_FIELDS
+  }
+  return replace(
+    base,
+    status=completeness_status(category, merged_values),
+    evidence=kept_evidence + insight_evidence,
+    conflicts=tuple(dict.fromkeys([*base.conflicts, *insights.conflicts])),
+    notes=tuple(dict.fromkeys([*base.notes, *insights.notes])),
+    **updates,
   )

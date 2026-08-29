@@ -25,9 +25,10 @@ cdk bootstrap aws://ACCOUNT_ID/us-west-2
 Stacks always deploy to **us-west-2** (see `infra/app.py`). Override only with
 `CDK_DEPLOY_REGION` if you intentionally need another region.
 
-2. Create an IAM role for GitHub Actions OIDC that can deploy the CDK stacks
-   (CloudFormation, ECR, Lambda, IAM pass-role for the stack, S3, Step Functions,
-   DynamoDB). Store the role ARN as GitHub secret `AWS_DEPLOY_ROLE_ARN`.
+2. GitHub Actions assumes IAM role `travelplanner-github-actions` via OIDC
+   (`token.actions.githubusercontent.com`, repo `vk1466/social-media-travel-planner`).
+   That role may assume the CDK bootstrap roles (`cdk-hnb659fds-*`). Store its ARN
+   as GitHub secret `AWS_DEPLOY_ROLE_ARN`.
 
 3. Set GitHub Actions **variables**: `CORS_ORIGINS`, `CLERK_ISSUER`, optional
    `ADMIN_USER_IDS`. Include `http://localhost:5173` in `CORS_ORIGINS` if you

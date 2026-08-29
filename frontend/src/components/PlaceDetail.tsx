@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, lazy, Suspense } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import {
   fetchPlaceDetail,
@@ -12,12 +12,11 @@ import { googleMapsUrl } from "../maps";
 import { factsAttribution, factsRows } from "../placeFacts";
 import { getPlatformLabel, getPostTitle } from "../postDisplayUtils";
 import { thumbStyle } from "../postBrowseModel";
+import { mappablePlaces } from "../placeMapUtils";
 import { DetailModal } from "./DetailModal";
 import { CategoryChip } from "./CategoryChip";
-import { mappablePlaces } from "../placeMapUtils";
+import { PostPlacesMap } from "./PostPlacesMap";
 import { RelationRail, type RelationRailItem } from "./RelationRail";
-
-const PlaceMap = lazy(() => import("./PlaceMap").then((module) => ({ default: module.PlaceMap })));
 
 interface PlaceDetailProps {
   place: Place;
@@ -45,7 +44,6 @@ export function PlaceDetail({
   visited = false,
   onClose,
   onNavigateToPlace,
-  onNavigateToPost,
   onVisitedChange,
 }: PlaceDetailProps) {
   const [detail, setDetail] = useState<PlaceDetailData | null>(null);
@@ -152,197 +150,180 @@ export function PlaceDetail({
   };
 
   return (
-    <DetailModal titleId="place-detail-title" onClose={onClose}>
-      <header className="detail-header">
-        <div>
-          {parent && (
-            <p className="detail-eyebrow">
-              Part of{" "}
-              <button
-                type="button"
-                className="inline-link-button"
-                onClick={() => onNavigateToPlace?.(parent)}
-              >
-                {parent.display_name}
-              </button>
-            </p>
-          )}
-          <p className="detail-eyebrow">{locationBreadcrumb(place)}</p>
-          <h2 id="place-detail-title">{place.display_name}</h2>
-          {place.aliases.length > 0 && (
-            <p className="detail-muted">also known as {place.aliases.join(", ")}</p>
-          )}
-          <div className="place-visited-row">
-            <button
-              type="button"
-              className={isVisited ? "visited-button visited-button-active" : "visited-button"}
-              onClick={() => void handleToggleVisited()}
-              disabled={visitedSaving}
-              aria-pressed={isVisited}
-            >
-              {visitedSaving ? "Saving…" : isVisited ? "Visited" : "Mark as visited"}
-            </button>
-            {isVisited && <span className="place-visited-hint">In your travel history</span>}
-          </div>
-          {visitedError && <p className="banner-error">{visitedError}</p>}
-        </div>
-        <button type="button" className="icon-button icon-button-close" onClick={onClose} aria-label="Close" />
-      </header>
+    <DetailModal titleId="place-detail-title" onClose={onClose} panelClassName="detail-panel-flip">
+      <div className="post-flip">
+        <div className="post-flip-inner">
+          <section className="post-flip-face post-flip-front place-flip-face">
+            <div className="post-flip-front-wash" aria-hidden="true" />
+            <div className="post-flip-front-glow" aria-hidden="true" />
 
-      {loading && <p className="detail-muted">Loading latest saved data…</p>}
-
-      {children.length > 0 && (
-        <section className="detail-section">
-          <h3>Activities &amp; spots here ({children.length})</h3>
-          <ul className="detail-list place-child-detail-list">
-            {children.map((child) => (
-              <li key={child.place_id}>
-                <button
-                  type="button"
-                  className="inline-link-button"
-                  onClick={() => onNavigateToPlace?.(child)}
-                >
-                  {child.display_name}
-                </button>
-                <span className="place-child-tags">
-                  <CategoryChip category={child.category} small />
-                  {(child.attributes ?? []).map((attr) => (
+            <header className="post-flip-header">
+              <div className="post-flip-meta">
+                {parent && (
+                  <p className="post-flip-eyebrow">
+                    Part of{" "}
+                    <button
+                      type="button"
+                      className="place-flip-inline"
+                      onClick={() => onNavigateToPlace?.(parent)}
+                    >
+                      {parent.display_name}
+                    </button>
+                  </p>
+                )}
+                <p className="post-flip-eyebrow">{locationBreadcrumb(place)}</p>
+                <div className="detail-badges">
+                  <CategoryChip category={place.category} small />
+                  {(place.attributes ?? []).map((attr) => (
                     <span key={attr} className="tag-chip tag-chip-small">
                       {attr}
                     </span>
                   ))}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      <section className="detail-section">
-        <h3>Category</h3>
-        <div className="tag-list">
-          <CategoryChip category={place.category} />
-          {(place.attributes ?? []).map((attr) => (
-            <span key={attr} className="tag-chip">
-              {attr}
-            </span>
-          ))}
-        </div>
-      </section>
-
-      <section className="detail-section">
-        <h3>Facts</h3>
-        {detail?.facts_refresh_queued && (
-          <p className="detail-muted">Looking up source-backed facts…</p>
-        )}
-        {place.facts == null && !detail?.facts_refresh_queued && (
-          <p className="detail-muted">No source-backed facts yet.</p>
-        )}
-        {place.facts?.status === "empty" && (
-          <p className="detail-muted">No objective facts found for this place.</p>
-        )}
-        {place.facts && place.facts.status !== "empty" && (
-          <>
-            <dl className="place-facts-list">
-              {factsRows(place.facts).map((row) => (
-                <div key={row.label} className="place-facts-row">
-                  <dt>{row.label}</dt>
-                  <dd>
-                    {row.label === "Website" ? (
-                      <a href={row.value} target="_blank" rel="noreferrer">
-                        {row.value}
-                      </a>
-                    ) : (
-                      row.value
-                    )}
-                  </dd>
-                </div>
-              ))}
-            </dl>
-            {factsAttribution(place.facts) && (
-              <p className="detail-muted place-facts-attribution">
-                {factsAttribution(place.facts)}
-              </p>
-            )}
-          </>
-        )}
-      </section>
-
-      {place.details.length > 0 && (
-        <section className="detail-section">
-          <h3>Details</h3>
-          <ul className="detail-list">
-            {place.details.map((detailText) => (
-              <li key={detailText}>{detailText}</li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      {place.tips.length > 0 && (
-        <section className="detail-section">
-          <h3>Tips</h3>
-          <ul className="detail-list">
-            {place.tips.map((tip) => (
-              <li key={tip}>{tip}</li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      <section className="detail-section">
-        <h3>Source posts ({sourcePosts.length})</h3>
-        {sourcePosts.length === 0 ? (
-          <p className="detail-muted">No saved posts found for this place.</p>
-        ) : (
-          <ul className="detail-list source-post-list">
-            {sourcePosts.map((post) => (
-              <li key={`${post.platform}-${post.post_id}`}>
-                {onNavigateToPost ? (
                   <button
                     type="button"
-                    className="inline-link-button source-post-button"
-                    onClick={() => onNavigateToPost(post.platform, nativePostId(post))}
+                    className={isVisited ? "post-flip-reel-pill is-visited" : "post-flip-reel-pill"}
+                    onClick={() => void handleToggleVisited()}
+                    disabled={visitedSaving}
+                    aria-pressed={isVisited}
                   >
-                    <span className="badge badge-muted">{post.platform}</span>{" "}
-                    {post.caption ? post.caption.slice(0, 80) : post.post_url}
+                    {visitedSaving ? "Saving…" : isVisited ? "Visited" : "Mark visited"}
                   </button>
-                ) : (
-                  <a href={post.post_url} target="_blank" rel="noreferrer">
-                    <span className="badge badge-muted">{post.platform}</span>{" "}
-                    {post.caption ? post.caption.slice(0, 80) : post.post_url}
-                  </a>
+                </div>
+              </div>
+              <div className="post-flip-header-actions">
+                <button
+                  type="button"
+                  className="icon-button icon-button-close post-flip-front-close"
+                  onClick={onClose}
+                  aria-label="Close"
+                />
+              </div>
+            </header>
+
+            <div className="place-flip-body">
+              <h2 id="place-detail-title" className="post-flip-heading">
+                {place.display_name}
+              </h2>
+              {place.aliases.length > 0 && (
+                <p className="place-flip-muted">also known as {place.aliases.join(", ")}</p>
+              )}
+              {isVisited && <p className="place-flip-muted">In your travel history</p>}
+              {visitedError && <p className="banner-error">{visitedError}</p>}
+              {loading && <p className="place-flip-muted">Loading latest saved data…</p>}
+
+              {children.length > 0 && (
+                <section className="place-flip-section">
+                  <h3>Activities &amp; spots here ({children.length})</h3>
+                  <ul className="place-flip-list">
+                    {children.map((child) => (
+                      <li key={child.place_id}>
+                        <button
+                          type="button"
+                          className="place-flip-inline"
+                          onClick={() => onNavigateToPlace?.(child)}
+                        >
+                          {child.display_name}
+                        </button>
+                        <span className="place-child-tags">
+                          <CategoryChip category={child.category} small />
+                          {(child.attributes ?? []).map((attr) => (
+                            <span key={attr} className="tag-chip tag-chip-small">
+                              {attr}
+                            </span>
+                          ))}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
+
+              <section className="place-flip-section">
+                <h3>Facts</h3>
+                {detail?.facts_refresh_queued && (
+                  <p className="place-flip-muted">Looking up source-backed facts…</p>
                 )}
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+                {place.facts == null && !detail?.facts_refresh_queued && (
+                  <p className="place-flip-muted">No source-backed facts yet.</p>
+                )}
+                {place.facts?.status === "empty" && (
+                  <p className="place-flip-muted">No objective facts found for this place.</p>
+                )}
+                {place.facts && place.facts.status !== "empty" && (
+                  <>
+                    <dl className="place-facts-list">
+                      {factsRows(place.facts).map((row) => (
+                        <div key={row.label} className="place-facts-row">
+                          <dt>{row.label}</dt>
+                          <dd>
+                            {row.label === "Website" ? (
+                              <a href={row.value} target="_blank" rel="noreferrer">
+                                {row.value}
+                              </a>
+                            ) : (
+                              row.value
+                            )}
+                          </dd>
+                        </div>
+                      ))}
+                    </dl>
+                    {factsAttribution(place.facts) && (
+                      <p className="place-flip-muted place-facts-attribution">
+                        {factsAttribution(place.facts)}
+                      </p>
+                    )}
+                  </>
+                )}
+              </section>
 
-      <RelationRail
-        heading="Saved from"
-        emptyText="No saved posts point here yet."
-        items={savedFromItems}
-      />
+              {place.details.length > 0 && (
+                <section className="place-flip-section">
+                  <h3>Details</h3>
+                  <ul className="place-flip-list">
+                    {place.details.map((detailText) => (
+                      <li key={detailText}>{detailText}</li>
+                    ))}
+                  </ul>
+                </section>
+              )}
 
-      {mappablePlaces(mapPlaces).length > 0 && (
-        <section className="detail-section">
-          <h3>Map</h3>
-          <Suspense fallback={<p className="loading-copy">Loading map…</p>}>
-            <PlaceMap places={mapPlaces} height="240px" showCaption={false} />
-          </Suspense>
-          {mapUrl && (
-            <a
-              className="detail-open-link detail-map-link"
-              href={mapUrl}
-              target="_blank"
-              rel="noreferrer"
-            >
-              Open in Google Maps
-            </a>
-          )}
-        </section>
-      )}
+              {place.tips.length > 0 && (
+                <section className="place-flip-section">
+                  <h3>Tips</h3>
+                  <ul className="place-flip-list">
+                    {place.tips.map((tip) => (
+                      <li key={tip}>{tip}</li>
+                    ))}
+                  </ul>
+                </section>
+              )}
+
+              <RelationRail
+                heading={`Saved from${sourcePosts.length ? ` (${sourcePosts.length})` : ""}`}
+                emptyText="No saved posts point here yet."
+                items={savedFromItems}
+              />
+
+              {mappablePlaces(mapPlaces).length > 0 && (
+                <section className="place-flip-section">
+                  <h3>Map</h3>
+                  <PostPlacesMap places={mapPlaces} />
+                  {mapUrl && (
+                    <a
+                      className="place-flip-inline place-flip-maps"
+                      href={mapUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Open in Google Maps
+                    </a>
+                  )}
+                </section>
+              )}
+            </div>
+          </section>
+        </div>
+      </div>
     </DetailModal>
   );
 }

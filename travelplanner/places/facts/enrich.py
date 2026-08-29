@@ -1,4 +1,4 @@
-"""Orchestrate place-facts enrichment: tools → match → LLM → verify → store."""
+"""Orchestrate place-facts enrichment: tools → match → structured fill → insights → store."""
 
 from __future__ import annotations
 
@@ -8,10 +8,11 @@ from datetime import datetime, timedelta, timezone
 
 from travelplanner.db.places_repo import save_place_facts
 from travelplanner.feature_flag import FeatureFlag
-from travelplanner.models import Place, PlaceFacts
-from travelplanner.places.facts.pipeline.fill import fill_facts_from_documents
+from travelplanner.models import Place, PlaceFacts, StoredFactDocument
+from travelplanner.places.facts.pipeline.fill import fill_insights_from_documents
 from travelplanner.places.facts.pipeline.match import match_documents
-from travelplanner.places.facts.pipeline.verify import verify_facts
+from travelplanner.places.facts.pipeline.structured import draft_facts_from_documents
+from travelplanner.places.facts.pipeline.verify import overlay_interpretive_facts, verify_facts
 from travelplanner.places.facts.tools.catalog import select_tools
 from travelplanner.places.facts.types import FactQuery, SourceDocument, utc_now_iso
 
@@ -58,6 +59,9 @@ def _build_query(place: Place) -> FactQuery | None:
     aliases=place.aliases,
     country=place.location.country,
     country_code=place.location.country_code,
+    city=place.location.city,
+    state_province=place.location.state_province,
+    provider_place_id=place.location.provider_place_id,
   )
 
 
@@ -74,6 +78,24 @@ def _fetch_all(query: FactQuery) -> tuple[list[SourceDocument], list[str]]:
       continue
     documents.extend(fetched)
   return documents, notes
+
+
+def _stored_documents(documents: list[SourceDocument]) -> tuple[StoredFactDocument, ...]:
+  stored: list[StoredFactDocument] = []
+  for document in documents:
+    stored.append(
+      StoredFactDocument(
+        tool_id=document.tool_id,
+        source_name=document.source_name,
+        source_ref=document.source_ref,
+        title=document.title,
+        retrieved_at=document.retrieved_at,
+        latitude=document.latitude,
+        longitude=document.longitude,
+        content=dict(document.content),
+      )
+    )
+  return tuple(stored)
 
 
 def enrich_place_facts(
@@ -108,11 +130,14 @@ def enrich_place_facts(
 
   raw_docs, tool_notes = _fetch_all(query)
   matched = match_documents(place, raw_docs)
+  stored_docs = _stored_documents(matched)
+  fetched_at = utc_now_iso()
   if not matched:
     empty = PlaceFacts(
       status="empty",
-      fetched_at=utc_now_iso(),
+      fetched_at=fetched_at,
       notes=tuple(tool_notes + ["no matching source documents"]),
+      source_documents=stored_docs,
     )
     if persist:
       save_place_facts(place.place_id, empty)
@@ -123,31 +148,57 @@ def enrich_place_facts(
       note="no matching documents",
     )
 
-  draft, fill_note = fill_facts_from_documents(place, matched)
+  draft = draft_facts_from_documents(matched)
   if draft is None:
+    empty = PlaceFacts(
+      status="empty",
+      fetched_at=fetched_at,
+      notes=tuple(tool_notes + ["no structured fields in source documents"]),
+      source_documents=stored_docs,
+    )
+    if persist:
+      save_place_facts(place.place_id, empty)
     return EnrichResult(
       place_id=place.place_id,
-      status="error",
-      note=fill_note,
+      status="saved",
+      facts=empty,
+      note="no structured fields",
     )
 
   facts = verify_facts(
     draft,
     matched,
     category=place.category,
-    fetched_at=utc_now_iso(),
+    fetched_at=fetched_at,
   )
-  # Attach tool / fill notes without dropping verify notes.
-  combined_notes = tuple(dict.fromkeys([*facts.notes, *tool_notes, fill_note]))
-  facts = replace(facts, notes=combined_notes)
+  facts = replace(facts, source_documents=stored_docs)
+
+  insight_draft, insight_note = fill_insights_from_documents(
+    place,
+    matched,
+    static_facts=facts,
+  )
+  if insight_draft is not None:
+    insights = verify_facts(
+      insight_draft,
+      matched,
+      category=place.category,
+      fetched_at=fetched_at,
+    )
+    facts = overlay_interpretive_facts(facts, insights, category=place.category)
+  combined_notes = tuple(
+    dict.fromkeys([*facts.notes, *tool_notes, insight_note])
+  )
+  facts = replace(facts, notes=combined_notes, source_documents=stored_docs)
 
   if persist:
     save_place_facts(place.place_id, facts)
   logger.info(
-    "place_facts saved place_id=%s status=%s evidence=%d",
+    "place_facts saved place_id=%s status=%s evidence=%d docs=%d",
     place.place_id,
     facts.status,
     len(facts.evidence),
+    len(facts.source_documents),
   )
   return EnrichResult(
     place_id=place.place_id,

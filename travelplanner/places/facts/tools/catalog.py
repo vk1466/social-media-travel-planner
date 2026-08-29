@@ -42,13 +42,11 @@ FACT_TOOLS: tuple[FactTool, ...] = (
   ),
   FactTool(
     tool_id="google_place_details",
-    description="Google Places details (cuisine, hours, price, phone)",
+    description="Google Maps place details via Mindcase (hours, phone, website)",
     source_name="google_places",
-    categories=frozenset(
-      {"restaurant", "cafe", "bar", "hotel", "museum", "market", "landmark"}
-    ),
+    categories=frozenset(),  # all travel categories
     cost_class="paid",
-    requires_setting="GOOGLE_MAPS_API_KEY",
+    requires_setting="MINDCASE_API_KEY",
     fetch=fetch_google_place_details,
   ),
   FactTool(

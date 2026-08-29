@@ -94,10 +94,8 @@ function MapsPlace({
 }
 
 function LayoutDemo({
-  onToast,
   render,
 }: {
-  onToast: (toast: Toast) => void;
   render: (item: Stop, index: number, expanded: boolean, toggle: (key: string) => void) => ReactNode;
 }) {
   const { listRef, activeIndex, scrollTo, expandedKey, toggle } = useExpandList();
@@ -124,7 +122,6 @@ function LayoutDemo({
 function AFlowLine({ onToast }: { onToast: (toast: Toast) => void }) {
   return (
     <LayoutDemo
-      onToast={onToast}
       render={(item, _index, expanded, toggle) => (
         <div className="flip-place-body">
           <p className="flip-place-flow">
@@ -150,7 +147,6 @@ function AFlowLine({ onToast }: { onToast: (toast: Toast) => void }) {
 function BMetaInline({ onToast }: { onToast: (toast: Toast) => void }) {
   return (
     <LayoutDemo
-      onToast={onToast}
       render={(item, _index, expanded, toggle) => (
         <div className="flip-place-body">
           <p className="flip-place-flow">
@@ -177,7 +173,6 @@ function BMetaInline({ onToast }: { onToast: (toast: Toast) => void }) {
 function CTitleActions({ onToast }: { onToast: (toast: Toast) => void }) {
   return (
     <LayoutDemo
-      onToast={onToast}
       render={(item, _index, expanded, toggle) => (
         <div className="flip-place-body">
           <p className="flip-place-flow flip-place-flow-spread">
@@ -204,7 +199,6 @@ function CTitleActions({ onToast }: { onToast: (toast: Toast) => void }) {
 function DBlurbRunOn({ onToast }: { onToast: (toast: Toast) => void }) {
   return (
     <LayoutDemo
-      onToast={onToast}
       render={(item, _index, expanded, toggle) => (
         <div className="flip-place-body">
           <p className="flip-place-runon">
@@ -234,7 +228,6 @@ function DBlurbRunOn({ onToast }: { onToast: (toast: Toast) => void }) {
 function ETipOnTitle({ onToast }: { onToast: (toast: Toast) => void }) {
   return (
     <LayoutDemo
-      onToast={onToast}
       render={(item, _index, expanded, toggle) => (
         <div className="flip-place-body">
           <p className="flip-place-flow">
@@ -260,7 +253,6 @@ function ETipOnTitle({ onToast }: { onToast: (toast: Toast) => void }) {
 function FChipStreet({ onToast }: { onToast: (toast: Toast) => void }) {
   return (
     <LayoutDemo
-      onToast={onToast}
       render={(item, _index, expanded, toggle) => (
         <div className="flip-place-body">
           <p className="flip-place-flow">
@@ -289,7 +281,6 @@ function FChipStreet({ onToast }: { onToast: (toast: Toast) => void }) {
 function GSplitRail({ onToast }: { onToast: (toast: Toast) => void }) {
   return (
     <LayoutDemo
-      onToast={onToast}
       render={(item, _index, expanded, toggle) => (
         <div className="flip-place-split">
           <div className="flip-place-body">
@@ -310,7 +301,6 @@ function GSplitRail({ onToast }: { onToast: (toast: Toast) => void }) {
 function HCaptionStack({ onToast }: { onToast: (toast: Toast) => void }) {
   return (
     <LayoutDemo
-      onToast={onToast}
       render={(item, _index, expanded, toggle) => (
         <div className="flip-place-body">
           <p className="flip-place-kicker">{item.category}</p>
@@ -335,7 +325,6 @@ function HCaptionStack({ onToast }: { onToast: (toast: Toast) => void }) {
 function IFooterBar({ onToast }: { onToast: (toast: Toast) => void }) {
   return (
     <LayoutDemo
-      onToast={onToast}
       render={(item, _index, expanded, toggle) => (
         <div className="flip-place-body">
           <p className="flip-place-flow">
@@ -361,7 +350,6 @@ function IFooterBar({ onToast }: { onToast: (toast: Toast) => void }) {
 function JSentence({ onToast }: { onToast: (toast: Toast) => void }) {
   return (
     <LayoutDemo
-      onToast={onToast}
       render={(item, _index, expanded, toggle) => (
         <div className="flip-place-body">
           <p className="flip-place-sentence">

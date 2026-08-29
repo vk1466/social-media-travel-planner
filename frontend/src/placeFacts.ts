@@ -56,5 +56,14 @@ export function factsRows(facts: PlaceFacts): { label: string; value: string }[]
     rows.push({ label: "Elevation gain", value: `${facts.elevation_gain_m} m` });
   }
   if (facts.difficulty) rows.push({ label: "Difficulty", value: facts.difficulty });
+  if (facts.highlights && facts.highlights.length > 0) {
+    rows.push({ label: "Highlights", value: facts.highlights.join("; ") });
+  }
+  if (facts.caveats && facts.caveats.length > 0) {
+    rows.push({ label: "Watch out", value: facts.caveats.join("; ") });
+  }
+  if (facts.recommendations && facts.recommendations.length > 0) {
+    rows.push({ label: "Recommendations", value: facts.recommendations.join("; ") });
+  }
   return rows;
 }
