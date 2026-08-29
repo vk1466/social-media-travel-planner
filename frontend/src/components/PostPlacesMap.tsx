@@ -3,14 +3,10 @@ import L from "leaflet";
 import { MapContainer, Marker, TileLayer, useMap } from "react-leaflet";
 
 import type { Place } from "../api";
-import { googleMapsDirectionsUrl, googleMapsUrl } from "../maps";
+import { CARTO_BASEMAP_ATTR, cartoVoyagerTileUrl, googleMapsDirectionsUrl, googleMapsUrl } from "../maps";
 import { mappablePlaces } from "../placeMapUtils";
 
 import "leaflet/dist/leaflet.css";
-
-const VOYAGER_URL = "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png";
-const VOYAGER_ATTR =
-  '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
 
 function numberedPin(index: number, selected: boolean): L.DivIcon {
   const size = selected ? 28 : 22;
@@ -113,7 +109,7 @@ export function PostPlacesMap({
         zoomControl={false}
         attributionControl
       >
-        <TileLayer url={VOYAGER_URL} attribution={VOYAGER_ATTR} subdomains="abcd" />
+        <TileLayer url={cartoVoyagerTileUrl()} attribution={CARTO_BASEMAP_ATTR} subdomains="abcd" />
         <InvalidateSize />
         <Recenter places={mapped} activePlaceId={active.place_id} />
         {mapped.map((place, index) => {

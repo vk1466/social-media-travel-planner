@@ -35,7 +35,8 @@ Stacks always deploy to **us-west-2** (see `infra/app.py`). Override only with
    run the Vite UI against the dev API.
 
 4. Set GitHub Actions **secrets**: `MINDCASE_API_KEY`, `SUPADATA_API_KEY`,
-   `OPENAI_API_KEY`, `TMDB_API_KEY`, `OMDB_API_KEY`, `AWS_DEPLOY_ROLE_ARN`.
+   `OPENAI_API_KEY`, `TMDB_API_KEY`, `OMDB_API_KEY`, `AWS_DEPLOY_ROLE_ARN`,
+   `VITE_CARTO_BASEMAPS_API_KEY` (frontend Vercel env; not used by CDK).
 
 5. Deploy once manually (optional) to verify:
 
@@ -69,6 +70,7 @@ cd frontend
 cp .env.example .env.local
 # VITE_API_BASE_URL=<ApiEndpoint from TravelPlanner-dev>
 # VITE_CLERK_PUBLISHABLE_KEY=<Clerk key for that issuer>
+# VITE_CARTO_BASEMAPS_API_KEY=<CARTO Basemaps key>
 npm install
 npm run dev
 ```
@@ -83,6 +85,7 @@ includes that origin.
 3. Environment variables (Production):
    - `VITE_API_BASE_URL` = prod stack `ApiEndpoint` (no trailing slash)
    - `VITE_CLERK_PUBLISHABLE_KEY` = Clerk production publishable key
+   - `VITE_CARTO_BASEMAPS_API_KEY` = CARTO Basemaps API key (same value as GitHub secret)
 4. Clerk production instance: allow the Vercel origin and API origin; set backend
    `CLERK_ISSUER` to match (via GitHub var / deploy env).
 

@@ -2,14 +2,10 @@ import { useEffect, useMemo } from "react";
 import { MapContainer, Marker, Popup, TileLayer, useMap } from "react-leaflet";
 import L from "leaflet";
 
+import { CARTO_BASEMAP_ATTR, cartoVoyagerTileUrl } from "../maps";
 import { type AtlasNode } from "../placeAtlasModel";
 
 import "leaflet/dist/leaflet.css";
-
-/** Same basemap as the production atlas so the toggle stays honest. */
-const VOYAGER = "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png";
-const CARTO_ATTR =
-  '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
 
 function hasCoords(node: AtlasNode): boolean {
   return node.lat !== null && node.lng !== null;
@@ -107,7 +103,7 @@ export function AtlasMapPanel({ scope, onOpenNode }: AtlasMapPanelProps) {
         scrollWheelZoom
         worldCopyJump
       >
-        <TileLayer url={VOYAGER} attribution={CARTO_ATTR} subdomains="abcd" opacity={0.75} />
+        <TileLayer url={cartoVoyagerTileUrl()} attribution={CARTO_BASEMAP_ATTR} subdomains="abcd" opacity={0.75} />
         <InvalidateSize />
         <FitScope scope={scope} />
 

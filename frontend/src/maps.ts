@@ -57,6 +57,16 @@ export function googleMapsDirectionsUrl(latitude: number, longitude: number): st
   return `https://www.google.com/maps/dir/?${params.toString()}`;
 }
 
+export const CARTO_BASEMAP_ATTR =
+  '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
+
+/** Voyager raster tiles. CARTO now requires `key` on every request. */
+export function cartoVoyagerTileUrl(): string {
+  const key = import.meta.env.VITE_CARTO_BASEMAPS_API_KEY?.trim() ?? "";
+  const base = "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png";
+  return key ? `${base}?key=${encodeURIComponent(key)}` : base;
+}
+
 /** OpenStreetMap embed (no API key) for a Google-Maps-like preview. */
 export function osmEmbedUrl(latitude: number, longitude: number, span = 0.04): string {
   const west = longitude - span;
