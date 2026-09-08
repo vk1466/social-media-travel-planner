@@ -562,3 +562,73 @@ def test_admin_list_place_candidates(dynamodb) -> None:
   )
   assert filtered.status_code == 200
   assert filtered.json()["candidates"][0]["resolved_place_id"] == "us-maybe-falls"
+
+
+def test_reconstruct_recipe_endpoint(monkeypatch, dynamodb) -> None:
+  from travelplanner.recipe_hints import ExtractedRecipe, RecipeIngredient
+
+  post = SavedPost(
+    post_id="instagram:food123",
+    post_url="https://www.instagram.com/reel/food123/",
+    platform=Platform.INSTAGRAM,
+    media_kind="video",
+    caption="Quick garlic noodles! So good.",
+    fetched_at="2026-07-06T21:15:04Z",
+  )
+  save_post(post)
+  user_posts_repo.link_user_post("user-a", post.post_id)
+
+  mock_recipe = ExtractedRecipe(
+    title="Garlic Noodles",
+    ingredients=(
+      RecipeIngredient(name="noodles", amount="8 oz", amount_numeric=8.0, unit="oz"),
+      RecipeIngredient(name="garlic", amount="4 cloves", amount_numeric=4.0, unit="clove"),
+    ),
+    steps=("Boil noodles.", "Saute garlic and toss."),
+    estimated_inferred=True,
+    servings="2",
+    prep_time_minutes=5,
+    cook_time_minutes=10,
+    equipment=("skillet", "pot"),
+    dietary=("vegetarian",),
+    step_timers_seconds=(None, 120),
+  )
+
+  monkeypatch.setattr(
+    "travelplanner.recipe_extract.reconstruct_recipe_for_post",
+    lambda p: mock_recipe,
+  )
+
+  client = TestClient(app)
+
+  # Other user cannot access
+  unauthorized = client.post(
+    "/api/posts/instagram/food123/reconstruct-recipe",
+    headers={"X-User-Id": "other-user"},
+  )
+  assert unauthorized.status_code == 404
+
+  # Owner accesses and successfully reconstructs
+  res = client.post(
+    "/api/posts/instagram/food123/reconstruct-recipe",
+    headers=HEADERS,
+  )
+  assert res.status_code == 200
+  body = res.json()
+  assert body["content_category"] == "food"
+  recipe = body["extracted_recipe"]
+  assert recipe["title"] == "Garlic Noodles"
+  assert recipe["estimated_inferred"] is True
+  assert len(recipe["ingredients"]) == 2
+  assert recipe["step_timers_seconds"] == [None, 120]
+
+  # Verify persisted in DynamoDB
+  from travelplanner.store import load_post
+
+  reloaded = load_post(Platform.INSTAGRAM, "food123")
+  assert reloaded is not None
+  assert reloaded.extracted_recipe is not None
+  assert reloaded.extracted_recipe.estimated_inferred is True
+  assert reloaded.extracted_recipe.title == "Garlic Noodles"
+
+

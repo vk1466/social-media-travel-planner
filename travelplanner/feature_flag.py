@@ -29,6 +29,8 @@ class FeatureFlag:
     "google_geocode_fallback": False,
     # Classify SavedPost.content_category, then dispatch place vs movie close.
     "content_categories": True,
+    # Extract source-grounded, possibly incomplete recipes from food reels.
+    "food_recipes": True,
     "place_facts_ttl_days": 30,
     "place_facts_max_docs": 6,
   }

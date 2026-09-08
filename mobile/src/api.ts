@@ -78,6 +78,30 @@ export interface ResolvedMovie {
   watch_providers?: string[];
 }
 
+export interface RecipeIngredient {
+  name: string;
+  amount?: string | null;
+  unit?: string | null;
+  note?: string | null;
+  aisle?: string | null;
+}
+
+export interface ExtractedRecipe {
+  title?: string | null;
+  summary?: string | null;
+  ingredients: RecipeIngredient[];
+  steps: string[];
+  servings?: string | null;
+  prep_time_minutes?: number | null;
+  cook_time_minutes?: number | null;
+  tags: string[];
+  cuisine?: string | null;
+  meal_type?: string | null;
+  difficulty?: string | null;
+  estimated_inferred?: boolean;
+  tips?: string[];
+}
+
 export interface SavedPost {
   post_id: string;
   post_url: string;
@@ -94,6 +118,7 @@ export interface SavedPost {
   extracted_places: ExtractedPlace[];
   extracted_movies?: ExtractedMovie[];
   resolved_movies?: ResolvedMovie[];
+  extracted_recipe?: ExtractedRecipe | null;
   place_ids: string[];
   thumbnail_url?: string | null;
   fetched_at?: string | null;

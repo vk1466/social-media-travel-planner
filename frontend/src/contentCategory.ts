@@ -30,7 +30,7 @@ export const CONTENT_CATEGORY_KICKERS: Record<ContentCategory, string> = {
 };
 
 /** Categories that have a native browse surface (atlas, movie watchlist, etc.), not only posts. */
-export const CATEGORY_NATIVE_VIEWS: ReadonlySet<ContentCategory> = new Set(["travel", "movies"]);
+export const CATEGORY_NATIVE_VIEWS: ReadonlySet<ContentCategory> = new Set(["travel", "movies", "food"]);
 
 export interface ContentCategoryPost {
   content_category?: string | null;

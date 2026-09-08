@@ -8,6 +8,8 @@ import { DetailModal } from "./DetailModal";
 import { PostReelFace } from "./PostMediaPreview";
 import { PostPlacesMap } from "./PostPlacesMap";
 import { TrailerModal } from "./movies/TrailerModal";
+import { RecipeDetailModal } from "./food/RecipeDetailModal";
+import { GroceryListModal } from "./food/GroceryListModal";
 import {
   buildPlaceSummaries,
   buildReelDetailItems,
@@ -26,6 +28,7 @@ interface PostDetailProps {
   onNavigateToPlace?: (placeId: string) => void;
   onPrevPost?: () => void;
   onNextPost?: () => void;
+  onPostUpdated?: (post: SavedPost) => void;
 }
 
 function DeleteIcon() {
@@ -466,6 +469,7 @@ export function PostDetail({
   onNavigateToPlace,
   onPrevPost,
   onNextPost,
+  onPostUpdated,
 }: PostDetailProps) {
   const [post, setPost] = useState(initialPost);
   const [linkedPlaces, setLinkedPlaces] = useState<LinkedPlace[]>([]);
@@ -473,6 +477,8 @@ export function PostDetail({
   const [activeItemIndex, setActiveItemIndex] = useState(0);
   const [cardsExpanded, setCardsExpanded] = useState(false);
   const [activeTrailerKey, setActiveTrailerKey] = useState<string | null>(null);
+  const [recipeOpen, setRecipeOpen] = useState(false);
+  const [recipeGroceryOpen, setRecipeGroceryOpen] = useState(false);
   const placeListRef = useRef<HTMLUListElement>(null);
 
   useEffect(() => {
@@ -639,6 +645,17 @@ export function PostDetail({
             onPlayTrailer={setActiveTrailerKey}
           />
 
+          {post.extracted_recipe && (
+            <button
+              type="button"
+              className="post-flip-toggle"
+              style={{ bottom: "1rem", right: "1rem", left: "auto" }}
+              onClick={() => setRecipeOpen(true)}
+            >
+              🍳 View recipe
+            </button>
+          )}
+
           {/* ── BACK: reel preview ─────────────────────────────────────── */}
           <section className="post-flip-face post-flip-back" aria-hidden={!flipped}>
             <PostReelFace post={post} active={flipped} />
@@ -693,6 +710,38 @@ export function PostDetail({
           youtubeKey={activeTrailerKey}
           title={activeItem?.name ?? "Trailer"}
           onClose={() => setActiveTrailerKey(null)}
+        />
+      )}
+      {recipeOpen && (post.extracted_recipe || post.content_category === "food") && (
+        <RecipeDetailModal
+          item={{
+            key: post.post_id,
+            post,
+            recipe: post.extracted_recipe ?? {
+              title: post.caption.slice(0, 80) || "Food inspiration",
+              summary: post.caption || null,
+              ingredients: [],
+              steps: [],
+              tags: [],
+              cuisine: null,
+              meal_type: null,
+              difficulty: null,
+              estimated_inferred: false,
+              tips: [],
+            },
+          }}
+          onClose={() => setRecipeOpen(false)}
+          onAddToGrocery={() => { setRecipeOpen(false); setRecipeGroceryOpen(true); }}
+          onPostUpdated={(updated) => {
+            setPost(updated);
+            onPostUpdated?.(updated);
+          }}
+        />
+      )}
+      {recipeGroceryOpen && post.extracted_recipe && (
+        <GroceryListModal
+          recipes={[{ key: post.post_id, post, recipe: post.extracted_recipe }]}
+          onClose={() => setRecipeGroceryOpen(false)}
         />
       )}
     </DetailModal>

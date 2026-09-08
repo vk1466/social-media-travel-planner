@@ -12,6 +12,10 @@ from travelplanner.steps.instagram.persist_thumbnail import PERSIST_THUMBNAIL_ST
 from travelplanner.steps.instagram.seed_instagram_post import SEED_INSTAGRAM_POST_STEP
 from travelplanner.steps.enrich_place_facts import ENRICH_PLACE_FACTS_STEP
 from travelplanner.steps.process_mentions import PROCESS_MENTIONS_STEP
+from travelplanner.steps.fetch_recipe_source import FETCH_RECIPE_SOURCE_STEP
+from travelplanner.steps.extract_recipe_frames import EXTRACT_RECIPE_FRAMES_STEP
+from travelplanner.steps.extract_recipe import EXTRACT_RECIPE_STEP
+from travelplanner.steps.enrich_recipe import ENRICH_RECIPE_STEP
 
 INSTAGRAM_HEAD_STEPS = (
   SEED_INSTAGRAM_POST_STEP,
@@ -28,6 +32,13 @@ PLACE_CLOSE_STEPS = (
 MOVIE_CLOSE_STEPS = (
   EXTRACT_MOVIES_STEP,
   RESOLVE_MOVIES_STEP,
+)
+
+RECIPE_CLOSE_STEPS = (
+  FETCH_RECIPE_SOURCE_STEP,
+  EXTRACT_RECIPE_FRAMES_STEP,
+  EXTRACT_RECIPE_STEP,
+  ENRICH_RECIPE_STEP,
 )
 
 INSTAGRAM_TAIL_BY_RESOURCE_TYPE: dict[str, tuple] = {
@@ -49,5 +60,6 @@ __all__ = [
   "INSTAGRAM_HEAD_STEPS",
   "INSTAGRAM_TAIL_BY_RESOURCE_TYPE",
   "MOVIE_CLOSE_STEPS",
+  "RECIPE_CLOSE_STEPS",
   "PLACE_CLOSE_STEPS",
 ]

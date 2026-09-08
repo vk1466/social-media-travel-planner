@@ -48,8 +48,16 @@ export function PostCard({ post, onPress, onDelete }: PostCardProps) {
           />
         </View>
         <Text style={styles.title} numberOfLines={2}>
-          {getPostTitle(post)}
+          {post.extracted_recipe?.title ?? getPostTitle(post)}
         </Text>
+        {post.extracted_recipe ? (
+          <View style={styles.recipeBadge}>
+            <Ionicons name="restaurant" size={13} color={colors.brand} />
+            <Text style={styles.placesText}>
+              Recipe idea{post.extracted_recipe.cook_time_minutes ? ` · ${post.extracted_recipe.cook_time_minutes} min` : ""}{post.extracted_recipe.ingredients.length ? ` · ${post.extracted_recipe.ingredients.length} ingredients` : ""}
+            </Text>
+          </View>
+        ) : null}
         {placeCount > 0 ? (
           <View style={styles.places}>
             <Ionicons name="location" size={13} color={colors.brand} />
@@ -146,6 +154,7 @@ const styles = StyleSheet.create({
     gap: 4,
     marginTop: 6,
   },
+  recipeBadge: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 6 },
   placesText: {
     color: colors.brand,
     fontSize: 12,

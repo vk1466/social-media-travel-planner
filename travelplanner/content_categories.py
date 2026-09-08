@@ -27,11 +27,12 @@ CONTENT_CATEGORY_TAB_ORDER: tuple[str, ...] = CONTENT_CATEGORIES
 
 CLOSE_PIPELINE_PLACE = "place"
 CLOSE_PIPELINE_MOVIE = "movie"
+CLOSE_PIPELINE_RECIPE = "recipe"
 
 # Categories with no close pipeline yet — save the post, skip place/movie work.
 # Food is recipes / kitchen content (no venue). Restaurant recs classify as travel.
 _SKIP_CLOSE_CATEGORIES: frozenset[str] = frozenset(
-  {"fashion", "hairstyle", "food", "other"}
+  {"fashion", "hairstyle", "other"}
 )
 
 
@@ -65,6 +66,8 @@ def close_pipeline_for_category(category: str | None) -> str | None:
   normalized = normalize_content_category(category)
   if normalized == "movies":
     return CLOSE_PIPELINE_MOVIE
+  if normalized == "food":
+    return CLOSE_PIPELINE_RECIPE
   if normalized in _SKIP_CLOSE_CATEGORIES:
     return None
   return CLOSE_PIPELINE_PLACE

@@ -14,6 +14,7 @@ import {
 import { LibraryShell } from "./LibraryShell";
 import { HomeBento } from "./HomeBento";
 import { MovieLibrary } from "./movies/MovieLibrary";
+import { RecipeLibrary } from "./food/RecipeLibrary";
 
 import "../home-page.css";
 
@@ -168,10 +169,10 @@ export function SavedPage({
             const tone = native || index % 2 === 1 ? "places" : "posts";
             const showingNative = isOn && native && !showRelatedPosts;
             const isMovieTab = tab.key === "movies";
-            const nativeLabel = isMovieTab ? "watchlist" : "atlas";
+            const nativeLabel = isMovieTab ? "watchlist" : tab.key === "food" ? "cookbook" : "atlas";
             const meta = native
               ? authReady
-                ? isMovieTab
+                ? (isMovieTab || tab.key === "food")
                   ? `${tab.count} ${pluralize(tab.count, "save", "saves")}`
                   : `${places.length} ${pluralize(places.length, "place", "places")} · ${tab.count} ${pluralize(tab.count, "save", "saves")}`
                 : "Sign in to open this shelf"
@@ -214,7 +215,7 @@ export function SavedPage({
               className={!showRelatedPosts ? "is-active" : ""}
               onClick={() => setCategoryShow(false)}
             >
-              {selected === "movies" ? "Watchlist" : "Places"}
+              {selected === "movies" ? "Watchlist" : selected === "food" ? "Cookbook" : "Places"}
             </button>
             <button
               type="button"
@@ -238,6 +239,8 @@ export function SavedPage({
               posts={categoryPosts}
               onSelectPost={(p) => onNavigateToPost(p.platform, nativePostId(p))}
             />
+          ) : selected === "food" && !showRelatedPosts ? (
+            <RecipeLibrary posts={categoryPosts} onSelectPost={(post) => onNavigateToPost(post.platform, nativePostId(post))} />
           ) : (
             <LibraryShell
               mode={libraryMode}

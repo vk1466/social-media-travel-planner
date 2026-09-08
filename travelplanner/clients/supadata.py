@@ -17,10 +17,11 @@ RATE_LIMIT_BACKOFF_SECONDS = 5
 MAX_WAIT_SECONDS = 180
 
 _VIDEO_ANALYSIS_PROMPT = (
-  "This is a travel social video. Identify specific real-world places shown or "
-  "named in the VIDEO itself (overlays, landmarks, maps, spoken names). Prefer "
-  "pin-able names (trail, viewpoint, island, village) over countries. Do not "
-  "invent places not supported by the video."
+  "Analyze this social video. Identify specific real-world places shown or "
+  "named in the VIDEO itself (overlays, landmarks, maps, spoken names) if this is "
+  "a travel post. If this is a cooking, recipe, or home food video, summarize the "
+  "cooking actions, ingredients, and any on-screen recipe text, without inventing "
+  "travel places. Extract all readable on-screen text overlays."
 )
 
 _VIDEO_ANALYSIS_SCHEMA: dict[str, Any] = {

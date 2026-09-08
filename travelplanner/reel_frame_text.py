@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import re
 import subprocess
 import tempfile
 from pathlib import Path
@@ -30,6 +31,31 @@ def _ffmpeg_exe() -> str | None:
     logger.warning("imageio-ffmpeg not installed; reel frame OCR unavailable")
     return None
   return imageio_ffmpeg.get_ffmpeg_exe()
+
+
+def _probe_duration_seconds(video_path: Path) -> float | None:
+  ffmpeg = _ffmpeg_exe()
+  if not ffmpeg:
+    return None
+  cmd = [ffmpeg, "-i", str(video_path)]
+  proc = subprocess.run(cmd, capture_output=True, text=True)
+  match = re.search(r"Duration:\s*(\d+):(\d+):(\d+(?:\.\d+)?)", proc.stderr or "")
+  if match:
+    hours = float(match.group(1))
+    minutes = float(match.group(2))
+    seconds = float(match.group(3))
+    return hours * 3600 + minutes * 60 + seconds
+  return None
+
+
+def adaptive_frame_timestamps(duration_s: float, max_frames: int = 5) -> tuple[float, ...]:
+  """Generate timestamps spanning video key moments, especially the ending card."""
+  if duration_s <= 3.0:
+    return (round(max(0.5, duration_s / 2.0), 1),)
+  end_card = max(1.5, duration_s - 1.5)
+  fractions = [1.0, duration_s * 0.3, duration_s * 0.6, end_card]
+  timestamps = sorted({round(max(0.5, min(t, duration_s - 0.2)), 1) for t in fractions})
+  return tuple(timestamps[:max_frames])
 
 
 def _sample_frames(
@@ -72,7 +98,8 @@ def _sample_frames(
 def read_reel_frame_text(
   video_url: str,
   *,
-  timestamps: tuple[float, ...] = DEFAULT_FRAME_TIMESTAMPS_SECONDS,
+  timestamps: tuple[float, ...] | None = None,
+  adaptive: bool = True,
 ) -> str | None:
   """Download a video, OCR sampled frames, return merged on-screen text."""
   if not video_url.strip():
@@ -88,7 +115,19 @@ def read_reel_frame_text(
     video_path = work / "reel.mp4"
     if not _download_video(video_url, video_path):
       return None
-    frames = _sample_frames(video_path, work, timestamps)
+
+    if timestamps is not None:
+      selected_timestamps = timestamps
+    elif adaptive:
+      duration = _probe_duration_seconds(video_path)
+      if duration and duration > 0:
+        selected_timestamps = adaptive_frame_timestamps(duration)
+      else:
+        selected_timestamps = DEFAULT_FRAME_TIMESTAMPS_SECONDS
+    else:
+      selected_timestamps = DEFAULT_FRAME_TIMESTAMPS_SECONDS
+
+    frames = _sample_frames(video_path, work, selected_timestamps)
     if not frames:
       return None
     texts = [

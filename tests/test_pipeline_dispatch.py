@@ -4,6 +4,7 @@ from travelplanner.flow.pipelines.instagram import (
   INSTAGRAM_TAIL_BY_RESOURCE_TYPE,
   MOVIE_CLOSE_STEPS,
   PLACE_CLOSE_STEPS,
+  RECIPE_CLOSE_STEPS,
 )
 
 
@@ -54,8 +55,14 @@ def test_close_steps_dispatch_by_category() -> None:
   assert movie_steps == MOVIE_CLOSE_STEPS
 
   food_name, food_steps = close_steps_for_category("food")
-  assert food_name == "instagram_close_skipped"
-  assert food_steps == ()
+  assert food_name == "instagram_recipe_close"
+  assert [step.name for step in food_steps] == [
+    "fetch_recipe_source",
+    "extract_recipe_frames",
+    "extract_recipe",
+    "enrich_recipe",
+  ]
+  assert food_steps == RECIPE_CLOSE_STEPS
 
   skip_name, skip_steps = close_steps_for_category("fashion")
   assert skip_name == "instagram_close_skipped"

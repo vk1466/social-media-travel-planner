@@ -1,5 +1,6 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
+import * as Clipboard from "expo-clipboard";
 import {
   ActivityIndicator,
   Alert,
@@ -35,6 +36,8 @@ export default function PostDetailScreen() {
   const [placeNames, setPlaceNames] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [recipeMultiplier, setRecipeMultiplier] = useState(1);
+  const [checkedIngredients, setCheckedIngredients] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     let cancelled = false;
@@ -98,6 +101,43 @@ export default function PostDetailScreen() {
 
   const thumb = proxiedMediaUrl(post.thumbnail_url);
   const date = formatPostDate(post);
+  const recipe = post.extracted_recipe;
+  const ingredientText = (
+    amount: string | null | undefined,
+    unit: string | null | undefined,
+    name: string,
+    note: string | null | undefined,
+  ) => {
+    if (!amount || recipeMultiplier === 1) {
+      return [amount, unit, name, note].filter(Boolean).join(" ");
+    }
+    const trimmed = amount.trim();
+    let numeric = Number.NaN;
+    const mixed = trimmed.match(/^(\d+)\s+(\d+)\/(\d+)$/);
+    if (mixed) {
+      numeric = Number(mixed[1]) + Number(mixed[2]) / Number(mixed[3]);
+    } else {
+      const frac = trimmed.match(/^(\d+)\/(\d+)$/);
+      if (frac) {
+        numeric = Number(frac[1]) / Number(frac[2]);
+      } else {
+        const val = Number(trimmed);
+        if (!Number.isNaN(val) && Number.isFinite(val)) {
+          numeric = val;
+        }
+      }
+    }
+    const scaled = Number.isFinite(numeric)
+      ? String(Math.round(numeric * recipeMultiplier * 100) / 100)
+      : amount;
+    return [scaled, unit, name, note].filter(Boolean).join(" ");
+  };
+  const copyIngredients = async () => {
+    if (!recipe) return;
+    const text = recipe.ingredients.map((ingredient) => `- ${ingredientText(ingredient.amount, ingredient.unit, ingredient.name, ingredient.note)}`).join("\n");
+    await Clipboard.setStringAsync(text);
+    Alert.alert("Copied", "Ingredients are ready to paste into your grocery list.");
+  };
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
@@ -120,6 +160,48 @@ export default function PostDetailScreen() {
       <Text style={styles.title}>{getPostTitle(post)}</Text>
       {post.reel_summary ? <Text style={styles.summary}>{post.reel_summary}</Text> : null}
       {post.caption ? <Text style={styles.caption}>{post.caption}</Text> : null}
+
+      {recipe ? (
+        <View style={styles.recipeCard}>
+          <View style={styles.sectionHeader}>
+            <Ionicons name="restaurant" size={16} color={colors.brand} />
+            <Text style={styles.sectionTitle}>Recipe idea</Text>
+          </View>
+          <Text style={styles.recipeTitle}>{recipe.title ?? "Food inspiration"}</Text>
+          {recipe.summary ? <Text style={styles.recipeSummary}>{recipe.summary}</Text> : null}
+          {recipe.estimated_inferred ? <Text style={styles.recipeEstimate}>Chef estimated: some cooking details were filled in.</Text> : null}
+          {(recipe.servings || recipe.prep_time_minutes || recipe.cook_time_minutes) ? (
+            <Text style={styles.recipeMeta}>
+              {[
+                recipe.servings,
+                recipe.prep_time_minutes ? `${recipe.prep_time_minutes} min prep` : null,
+                recipe.cook_time_minutes ? `${recipe.cook_time_minutes} min cook` : null,
+              ].filter(Boolean).join(" · ")}
+            </Text>
+          ) : null}
+          {recipe.ingredients.length > 0 ? (
+            <View style={styles.recipePart}>
+              <View style={styles.recipeRow}><Text style={styles.recipeHeading}>Ingredients</Text><View style={styles.scaler}><Pressable onPress={() => setRecipeMultiplier((value) => Math.max(1, value / 2))}><Text style={styles.scalerButton}>−</Text></Pressable><Text style={styles.scalerText}>{recipeMultiplier}×</Text><Pressable onPress={() => setRecipeMultiplier((value) => Math.min(4, value * 2))}><Text style={styles.scalerButton}>+</Text></Pressable></View></View>
+              {recipe.ingredients.map((ingredient, index) => (
+                <Pressable key={`${ingredient.name}-${index}`} style={styles.ingredientRow} onPress={() => setCheckedIngredients((current) => { const next = new Set(current); next.has(index) ? next.delete(index) : next.add(index); return next; })}>
+                  <Ionicons name={checkedIngredients.has(index) ? "checkbox" : "square-outline"} size={18} color={colors.brand} />
+                  <Text style={[styles.recipeLine, checkedIngredients.has(index) && styles.checkedIngredient]}>{ingredientText(ingredient.amount, ingredient.unit, ingredient.name, ingredient.note)}</Text>
+                </Pressable>
+              ))}
+              <Pressable style={styles.copyIngredients} onPress={() => void copyIngredients()}><Ionicons name="copy-outline" size={14} color={colors.brand} /><Text style={styles.copyIngredientsText}>Copy ingredients</Text></Pressable>
+            </View>
+          ) : null}
+          {recipe.steps.length > 0 ? (
+            <View style={styles.recipePart}>
+              <Text style={styles.recipeHeading}>Steps</Text>
+              {recipe.steps.map((step, index) => (
+                <Text key={`${index}-${step}`} style={styles.recipeLine}>{index + 1}. {step}</Text>
+              ))}
+            </View>
+          ) : null}
+          <Text style={styles.recipeNote}>Only details found in the reel are shown. Rewatch the original for anything missing.</Text>
+        </View>
+      ) : null}
 
       {post.hashtags.length > 0 ? (
         <View style={styles.tags}>
@@ -246,6 +328,23 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     marginBottom: spacing.md,
   },
+  recipeCard: { backgroundColor: colors.brandSoft, borderRadius: radius.lg, padding: spacing.md, marginBottom: spacing.md },
+  recipeTitle: { color: colors.ink, fontSize: 19, fontWeight: "800", marginBottom: 4 },
+  recipeSummary: { color: colors.ink, lineHeight: 20, marginBottom: 8 },
+  recipeEstimate: { color: "#9a4b0c", backgroundColor: "#fff0dc", borderRadius: radius.sm, padding: 8, fontSize: 12, marginBottom: 8 },
+  recipeMeta: { color: colors.muted, fontSize: 13, marginBottom: 8 },
+  recipePart: { marginTop: 8 },
+  recipeHeading: { color: colors.ink, fontSize: 14, fontWeight: "800", marginBottom: 4 },
+  recipeLine: { color: colors.ink, lineHeight: 21, marginBottom: 2 },
+  recipeRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  scaler: { flexDirection: "row", alignItems: "center", gap: 8 },
+  scalerButton: { color: colors.brand, fontSize: 20, fontWeight: "700", paddingHorizontal: 5 },
+  scalerText: { color: colors.ink, fontWeight: "700" },
+  ingredientRow: { flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 3 },
+  checkedIngredient: { textDecorationLine: "line-through", color: colors.muted },
+  copyIngredients: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 10 },
+  copyIngredientsText: { color: colors.brand, fontWeight: "700", fontSize: 13 },
+  recipeNote: { color: colors.muted, fontSize: 12, lineHeight: 17, marginTop: 12 },
   caption: { color: colors.ink, lineHeight: 22, marginBottom: spacing.md },
   tags: { flexDirection: "row", flexWrap: "wrap", marginBottom: spacing.md },
   section: { marginBottom: spacing.lg },

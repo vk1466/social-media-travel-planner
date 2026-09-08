@@ -6,6 +6,7 @@ from travelplanner.content_categories import normalize_content_category
 from travelplanner.models import Platform, SavedPost, make_post_id, parse_post_id
 from travelplanner.movie_hints import ExtractedMovie, ResolvedMovie, normalize_title_kind
 from travelplanner.place_hints import ExtractedPlace, PlatformPlace
+from travelplanner.recipe_hints import ExtractedRecipe, RecipeIngredient
 from travelplanner.db.serialize import from_dynamo, to_dynamo
 from travelplanner.db.tables import get_table
 
@@ -77,6 +78,42 @@ def _platform_place_from_dict(data: dict) -> PlatformPlace:
   )
 
 
+def _extracted_recipe_from_dict(data: dict | None) -> ExtractedRecipe | None:
+  if not isinstance(data, dict):
+    return None
+  ingredients = tuple(
+    RecipeIngredient(
+      name=item["name"],
+      amount=item.get("amount"),
+      amount_numeric=float(item["amount_numeric"]) if item.get("amount_numeric") is not None else None,
+      unit=item.get("unit"),
+      note=item.get("note"),
+      aisle=item.get("aisle"),
+      group=item.get("group"),
+    )
+    for item in data.get("ingredients", [])
+    if isinstance(item, dict) and isinstance(item.get("name"), str) and item["name"].strip()
+  )
+  return ExtractedRecipe(
+    title=data.get("title"),
+    summary=data.get("summary"),
+    ingredients=ingredients,
+    steps=tuple(item for item in data.get("steps", []) if isinstance(item, str)),
+    servings=data.get("servings"),
+    prep_time_minutes=data.get("prep_time_minutes"),
+    cook_time_minutes=data.get("cook_time_minutes"),
+    tags=tuple(item for item in data.get("tags", []) if isinstance(item, str)),
+    cuisine=data.get("cuisine"),
+    meal_type=data.get("meal_type"),
+    difficulty=data.get("difficulty"),
+    estimated_inferred=data.get("estimated_inferred") is True,
+    tips=tuple(item for item in data.get("tips", []) if isinstance(item, str)),
+    equipment=tuple(item for item in data.get("equipment", []) if isinstance(item, str)),
+    dietary=tuple(item for item in data.get("dietary", []) if isinstance(item, str)),
+    step_timers_seconds=tuple(item if isinstance(item, int) else None for item in data.get("step_timers_seconds", [])),
+  )
+
+
 def post_to_dict(post: SavedPost) -> dict:
   data = asdict(post)
   data["platform"] = post.platform.value
@@ -113,6 +150,7 @@ def post_from_dict(data: dict) -> SavedPost:
     resolved_movies=tuple(
       _resolved_movie_from_dict(movie) for movie in data.get("resolved_movies", [])
     ),
+    extracted_recipe=_extracted_recipe_from_dict(data.get("extracted_recipe")),
     place_ids=tuple(data.get("place_ids", [])),
     thumbnail_url=data.get("thumbnail_url"),
     fetched_at=data.get("fetched_at"),

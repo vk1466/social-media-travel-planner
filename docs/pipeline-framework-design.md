@@ -74,8 +74,9 @@ enrichment uses `place_facts`. Post topic classification uses `content_categorie
 then dispatches close by category — **place** pipeline for travel (and unset;
 restaurant/cafe recs classify as travel so they pin on the atlas),
 **movie** pipeline for movies (extract films and TV series, then
-TMDB/OMDb catalog facts). Fashion / hairstyle / food (recipes only) / other
-skip close until they have their own pipelines. A shared Movie table is not live; catalog facts persist on
+TMDB/OMDb catalog facts). Fashion / hairstyle / other skip close until they have
+their own pipelines. Food is recipes only (no visitable venue) and, when the
+`food_recipes` flag is enabled, runs the recipe close step. A shared Movie table is not live; catalog facts persist on
 `SavedPost.resolved_movies`.
 
 When adding a pipeline step that is not ready for all environments, register a
@@ -125,7 +126,8 @@ Resource type is often known only **after** fetch. Dispatch is:
 4. **Close (by content category):**
    - `travel` or unset (classify skipped / failed) → **place pipeline:** extract places → locate → dedupe → upsert. Named restaurants/cafes/bars/markets are travel places; copy dish/order recs onto details and tips.
    - `movies` → **movie pipeline:** extract films and TV series onto `SavedPost.extracted_movies` (`kind` is `movie` or `tv`), then `resolve_movies` (TMDB movie or TV identity + details, OMDb IMDb/RT scores, optional review summary). Snapshot stored on `SavedPost.resolved_movies`. No geocode. Shared Movie upsert is not wired yet.
-   - `fashion` / `hairstyle` / `food` / `other` → skip close (save the post only). `food` is recipes and kitchen content with no visitable venue.
+   - `food` → **recipe pipeline:** `fetch_recipe_source` → `extract_recipe_frames` (adaptive OCR if caption thin) → `extract_recipe` → `enrich_recipe` (timers & numeric scaling). A clearly necessary basic cooking default may be included only when marked `estimated_inferred`; other missing fields remain absent. No place processing.
+   - `fashion` / `hairstyle` / `other` → skip close (save the post only).
 
 Timeline has no fetch head; it starts at locate (coordinates) with optional
 nearby POI fallback, then the place close steps.
@@ -193,6 +195,10 @@ travelplanner/steps/
   classify_content.py        # generic — post topic; flag content_categories
   extract_places.py          # generic — LLM from ContentBundle
   extract_movies.py          # generic — film and TV titles from ContentBundle
+  fetch_recipe_source.py     # generic — parse schema.org/Recipe JSON-LD if blog URL linked
+  extract_recipe_frames.py   # generic — adaptive video frame OCR when caption is thin
+  extract_recipe.py          # generic — recipe extraction from ContentBundle; inferred basics marked
+  enrich_recipe.py           # generic — step timer parsing and numeric amount normalization
   resolve_movies.py          # generic — TMDB movie/TV resolve + OMDb ratings
   process_mentions.py        # generic — locate + upsert mentions
   enrich_place_facts.py      # generic — structured Google/OSM facts + LLM insights

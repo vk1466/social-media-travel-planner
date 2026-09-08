@@ -91,7 +91,7 @@ export function PostCard({
         onClick={() => onSelect(post)}
         aria-label={`View details for ${title}`}
       >
-        <h3 className="post-title">{title}</h3>
+        <h3 className="post-title">{post.extracted_recipe?.title ?? title}</h3>
         <p className="post-description">{description}</p>
 
         {tags.length > 0 && (
@@ -104,6 +104,12 @@ export function PostCard({
           </div>
         )}
       </button>
+
+      {post.extracted_recipe ? (
+        <div className="post-places-row">
+          <span className="post-places-count">🍳 Recipe idea{post.extracted_recipe.ingredients.length ? ` · ${post.extracted_recipe.ingredients.length} ingredients` : ""}</span>
+        </div>
+      ) : null}
 
       {placeCount > 0 && (
         <div className="post-places-row">

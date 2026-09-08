@@ -5,6 +5,7 @@ import logging
 from travelplanner.content_categories import (
   CLOSE_PIPELINE_MOVIE,
   CLOSE_PIPELINE_PLACE,
+  CLOSE_PIPELINE_RECIPE,
   close_pipeline_for_category,
 )
 from travelplanner.flow.context import IngestContext, TimelineContext
@@ -13,6 +14,7 @@ from travelplanner.flow.pipelines.instagram import (
   INSTAGRAM_TAIL_BY_RESOURCE_TYPE,
   MOVIE_CLOSE_STEPS,
   PLACE_CLOSE_STEPS,
+  RECIPE_CLOSE_STEPS,
 )
 from travelplanner.flow.pipelines.timeline import TIMELINE_VISIT_STEPS
 from travelplanner.flow.runner import PipelineResult, PipelineStepError, run_pipeline
@@ -34,6 +36,8 @@ def close_steps_for_category(category: str | None) -> tuple[str, tuple]:
     return "instagram_movie_close", MOVIE_CLOSE_STEPS
   if pipeline == CLOSE_PIPELINE_PLACE:
     return "instagram_place_close", PLACE_CLOSE_STEPS
+  if pipeline == CLOSE_PIPELINE_RECIPE:
+    return "instagram_recipe_close", RECIPE_CLOSE_STEPS
   return "instagram_close_skipped", ()
 
 

@@ -114,36 +114,72 @@ def extract_comment_count(raw: dict[str, Any]) -> int | None:
   return None
 
 
-def extract_top_comments(raw: dict[str, Any]) -> tuple[str, ...]:
-  comments: list[str] = []
+def _comment_author(item: Any) -> str | None:
+  if not isinstance(item, dict):
+    return None
+  for key in ("authorUsername", "username", "owner", "user"):
+    val = item.get(key)
+    if isinstance(val, str) and val.strip():
+      return val.strip().lstrip("@").lower()
+    if isinstance(val, dict):
+      sub = val.get("username")
+      if isinstance(sub, str) and sub.strip():
+        return sub.strip().lstrip("@").lower()
+  return None
+
+
+def extract_top_comments(
+  raw: dict[str, Any],
+  *,
+  author_handle: str | None = None,
+) -> tuple[str, ...]:
+  normalized_author = author_handle.strip().lstrip("@").lower() if author_handle else None
+  priority_comments: list[str] = []
+  normal_comments: list[str] = []
+
+  def _add_comment(text: str | None, item: Any = None) -> None:
+    if not text:
+      return
+    cleaned = text.strip()
+    if not cleaned:
+      return
+    is_priority = False
+    if normalized_author and _comment_author(item) == normalized_author:
+      is_priority = True
+    elif isinstance(item, dict) and bool(item.get("pinned") or item.get("is_pinned")):
+      is_priority = True
+    elif re.search(r"\b(recipe|ingredients?)\b", cleaned, re.IGNORECASE) and len(cleaned) > 25:
+      is_priority = True
+
+    if is_priority:
+      priority_comments.append(cleaned)
+    else:
+      normal_comments.append(cleaned)
 
   first = raw.get("firstComment")
   if isinstance(first, str) and first.strip():
-    comments.append(first.strip())
+    _add_comment(first.strip(), first)
 
   recent = raw.get("recentComments")
   if isinstance(recent, list):
     for item in recent:
-      text = _comment_text(item)
-      if text:
-        comments.append(text)
+      _add_comment(_comment_text(item), item)
 
   raw_comments = raw.get("comments")
   if isinstance(raw_comments, list):
     for comment in raw_comments:
-      text = _comment_text(comment)
-      if text:
-        comments.append(text)
+      _add_comment(_comment_text(comment), comment)
 
   edges = raw.get("edge_media_to_comment", {}).get("edges", [])
   for edge in edges:
-    text = edge.get("node", {}).get("text")
-    if text:
-      comments.append(str(text).strip())
+    node = edge.get("node") if isinstance(edge, dict) else None
+    if isinstance(node, dict):
+      _add_comment(_comment_text(node.get("text")), node)
 
+  all_comments = priority_comments + normal_comments
   deduped: list[str] = []
   seen: set[str] = set()
-  for comment in comments:
+  for comment in all_comments:
     if comment and comment not in seen:
       seen.add(comment)
       deduped.append(comment)
@@ -272,15 +308,16 @@ def extract_slide_image_urls(
 
 
 def trim_post_info(raw: dict[str, Any]) -> dict[str, Any]:
+  author_handle = extract_author_handle(raw)
   caption = extract_caption(raw)
   return {
     "caption": caption,
-    "author_handle": extract_author_handle(raw),
+    "author_handle": author_handle,
     "media_kind": extract_media_kind(raw),
     "posted_at": extract_posted_at(raw),
     "like_count": extract_like_count(raw),
     "comment_count": extract_comment_count(raw),
-    "top_comments": extract_top_comments(raw),
+    "top_comments": extract_top_comments(raw, author_handle=author_handle),
     "places": extract_places(raw),
     "hashtags": extract_hashtags_from_raw(raw, caption),
     "thumbnail_url": extract_thumbnail_url(raw),

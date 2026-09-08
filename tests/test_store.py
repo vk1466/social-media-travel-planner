@@ -3,6 +3,7 @@ from dataclasses import replace
 from travelplanner.models import Platform, SavedPost, make_post_id
 from travelplanner.movie_hints import ExtractedMovie, ResolvedMovie
 from travelplanner.place_hints import ExtractedPlace, PlatformPlace
+from travelplanner.recipe_hints import ExtractedRecipe, RecipeIngredient
 from travelplanner.store import delete_post, has_post, load_all_posts, load_post, post_from_dict, save_post
 
 
@@ -75,6 +76,40 @@ def test_store_round_trip_extracted_movies(dynamodb) -> None:
   loaded = load_post(Platform.INSTAGRAM, post.post_id)
   assert loaded is not None
   assert loaded.extracted_movies == post.extracted_movies
+
+
+def test_store_round_trip_extracted_recipe(dynamodb) -> None:
+  post = replace(
+    _sample_post(), content_category="food",
+    extracted_recipe=ExtractedRecipe(
+      title="Tomato pasta",
+      ingredients=(
+        RecipeIngredient(
+          "tomatoes",
+          "2",
+          amount_numeric=2.0,
+          unit="pcs",
+          note="ripe",
+          aisle="Produce",
+          group="Sauce",
+        ),
+      ),
+      steps=("Blend the tomatoes.",),
+      step_timers_seconds=(900,),
+      cook_time_minutes=15,
+      cuisine="Italian",
+      meal_type="dinner",
+      difficulty="easy",
+      equipment=("Blender", "Saucepan"),
+      dietary=("vegetarian",),
+      estimated_inferred=True,
+      tips=("Use ripe tomatoes.",),
+    ),
+  )
+  save_post(post)
+  loaded = load_post(Platform.INSTAGRAM, post.post_id)
+  assert loaded is not None
+  assert loaded.extracted_recipe == post.extracted_recipe
 
 
 def test_store_round_trip_resolved_movies(dynamodb) -> None:

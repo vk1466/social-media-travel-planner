@@ -407,6 +407,21 @@ export function buildReelDetailItems(
   placeSummaries: PlaceSummary[],
 ): ReelDetailItem[] {
   const category = effectiveContentCategory(post);
+  if (category === "food" && post.extracted_recipe) {
+    const recipe = post.extracted_recipe;
+    return [{
+      key: "recipe",
+      name: recipe.title || "Recipe idea",
+      category: recipe.cuisine || "Food",
+      metaParts: [
+        recipe.meal_type,
+        recipe.difficulty,
+        recipe.ingredients.length ? `${recipe.ingredients.length} ingredients` : null,
+      ].filter((part): part is string => Boolean(part)),
+      details: recipe.summary || undefined,
+      tip: recipe.tips?.[0],
+    }];
+  }
   if (category === "travel") {
     return placeSummaries.map(placeSummaryToDetailItem);
   }

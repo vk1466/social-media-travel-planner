@@ -6,6 +6,7 @@ from enum import Enum
 
 from travelplanner.movie_hints import ExtractedMovie, ResolvedMovie
 from travelplanner.place_hints import ExtractedPlace, PlaceMention, PlatformPlace
+from travelplanner.recipe_hints import ExtractedRecipe
 
 
 class Platform(str, Enum):
@@ -59,6 +60,7 @@ class SavedPost:
   extracted_places: tuple[ExtractedPlace, ...] = ()
   extracted_movies: tuple[ExtractedMovie, ...] = ()
   resolved_movies: tuple[ResolvedMovie, ...] = ()
+  extracted_recipe: ExtractedRecipe | None = None
   place_ids: tuple[str, ...] = ()
   thumbnail_url: str | None = None
   fetched_at: str | None = None

@@ -121,6 +121,35 @@ export interface ResolvedMovie {
   watch_providers?: string[];
 }
 
+export interface RecipeIngredient {
+  name: string;
+  amount?: string | null;
+  amount_numeric?: number | null;
+  unit?: string | null;
+  note?: string | null;
+  aisle?: string | null;
+  group?: string | null;
+}
+
+export interface ExtractedRecipe {
+  title?: string | null;
+  summary?: string | null;
+  ingredients: RecipeIngredient[];
+  steps: string[];
+  servings?: string | null;
+  prep_time_minutes?: number | null;
+  cook_time_minutes?: number | null;
+  tags: string[];
+  cuisine?: string | null;
+  meal_type?: string | null;
+  difficulty?: string | null;
+  estimated_inferred?: boolean;
+  tips?: string[];
+  equipment?: string[];
+  dietary?: string[];
+  step_timers_seconds?: (number | null)[];
+}
+
 export interface SavedPost {
   /** Globally unique primary key: `{platform}:{native_id}`. */
   post_id: string;
@@ -138,6 +167,7 @@ export interface SavedPost {
   extracted_places: ExtractedPlace[];
   extracted_movies?: ExtractedMovie[];
   resolved_movies?: ResolvedMovie[];
+  extracted_recipe?: ExtractedRecipe | null;
   /** Foreign keys → Place.place_id */
   place_ids: string[];
   thumbnail_url?: string | null;
@@ -489,6 +519,12 @@ export async function fetchPost(platform: string, postId: string): Promise<Saved
 
 export async function deletePost(platform: string, postId: string): Promise<void> {
   await request<void>(`/api/posts/${platform}/${postId}`, { method: "DELETE" });
+}
+
+export async function reconstructRecipe(platform: string, postId: string): Promise<SavedPost> {
+  return request<SavedPost>(`/api/posts/${platform}/${postId}/reconstruct-recipe`, {
+    method: "POST",
+  });
 }
 
 export interface PlaceFilters {

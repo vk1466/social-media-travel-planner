@@ -1,6 +1,7 @@
 from travelplanner.content_categories import (
   CLOSE_PIPELINE_MOVIE,
   CLOSE_PIPELINE_PLACE,
+  CLOSE_PIPELINE_RECIPE,
   close_pipeline_for_category,
   inferred_content_category,
   normalize_content_category,
@@ -41,7 +42,7 @@ def test_close_pipeline_for_category() -> None:
   assert close_pipeline_for_category("movies") == CLOSE_PIPELINE_MOVIE
   assert close_pipeline_for_category("fashion") is None
   assert close_pipeline_for_category("hairstyle") is None
-  assert close_pipeline_for_category("food") is None
+  assert close_pipeline_for_category("food") == CLOSE_PIPELINE_RECIPE
   assert close_pipeline_for_category("other") is None
 
 

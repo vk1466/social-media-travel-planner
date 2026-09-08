@@ -358,6 +358,39 @@ def get_post(platform: Platform, post_id: str, user_id: CurrentUserId) -> SavedP
   return _post_to_schema(post)
 
 
+@app.post(
+  "/api/posts/{platform}/{post_id}/reconstruct-recipe",
+  response_model=SavedPostSchema,
+  responses={404: {"model": ErrorResponse}, 502: {"model": ErrorResponse}},
+)
+def reconstruct_recipe_post(
+  platform: Platform,
+  post_id: str,
+  user_id: CurrentUserId,
+) -> SavedPostSchema:
+  from dataclasses import replace
+  from travelplanner.recipe_extract import reconstruct_recipe_for_post
+  from travelplanner.store import save_post
+
+  global_post_id = post_id if ":" in post_id else make_post_id(platform, post_id)
+  if not user_owns_post(user_id, global_post_id):
+    raise HTTPException(status_code=404, detail="Post not found")
+  post = load_post(platform, post_id)
+  if post is None:
+    raise HTTPException(status_code=404, detail="Post not found")
+
+  reconstructed = reconstruct_recipe_for_post(post)
+  if reconstructed is None:
+    raise HTTPException(
+      status_code=502,
+      detail="Recipe reconstruction failed or AI is not configured",
+    )
+
+  updated_post = replace(post, extracted_recipe=reconstructed, content_category="food")
+  save_post(updated_post)
+  return _post_to_schema(updated_post)
+
+
 @app.get("/api/media/proxy")
 def proxy_media(user_id: CurrentUserId, url: str = Query(..., min_length=8)) -> Response:
   """Proxy Instagram CDN images so the browser is not blocked by CORP."""

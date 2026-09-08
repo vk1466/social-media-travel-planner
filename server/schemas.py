@@ -57,6 +57,35 @@ class ResolvedMovieSchema(BaseModel):
   watch_providers: list[str] = Field(default_factory=list)
 
 
+class RecipeIngredientSchema(BaseModel):
+  name: str
+  amount: str | None = None
+  amount_numeric: float | None = None
+  unit: str | None = None
+  note: str | None = None
+  aisle: str | None = None
+  group: str | None = None
+
+
+class ExtractedRecipeSchema(BaseModel):
+  title: str | None = None
+  summary: str | None = None
+  ingredients: list[RecipeIngredientSchema] = Field(default_factory=list)
+  steps: list[str] = Field(default_factory=list)
+  servings: str | None = None
+  prep_time_minutes: int | None = None
+  cook_time_minutes: int | None = None
+  tags: list[str] = Field(default_factory=list)
+  cuisine: str | None = None
+  meal_type: str | None = None
+  difficulty: str | None = None
+  estimated_inferred: bool = False
+  tips: list[str] = Field(default_factory=list)
+  equipment: list[str] = Field(default_factory=list)
+  dietary: list[str] = Field(default_factory=list)
+  step_timers_seconds: list[int | None] = Field(default_factory=list)
+
+
 class SavedPostSchema(BaseModel):
   post_id: str
   post_url: str
@@ -73,6 +102,7 @@ class SavedPostSchema(BaseModel):
   extracted_places: list[ExtractedPlaceSchema] = Field(default_factory=list)
   extracted_movies: list[ExtractedMovieSchema] = Field(default_factory=list)
   resolved_movies: list[ResolvedMovieSchema] = Field(default_factory=list)
+  extracted_recipe: ExtractedRecipeSchema | None = None
   place_ids: list[str] = Field(default_factory=list)
   thumbnail_url: str | None = None
   fetched_at: str | None = None
