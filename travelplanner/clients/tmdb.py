@@ -85,18 +85,18 @@ def search_tv(title: str, year: int | None = None) -> dict[str, Any] | None:
 
 
 def movie_details(tmdb_id: int) -> dict[str, Any] | None:
-  """Movie details with release dates, IMDb id, and reviews."""
+  """Movie details with release dates, IMDb id, reviews, watch providers, videos, and credits."""
   payload = _get_json(
     f"/movie/{tmdb_id}",
-    {"append_to_response": "release_dates,external_ids,reviews"},
+    {"append_to_response": "release_dates,external_ids,reviews,watch/providers,videos,credits"},
   )
   return payload if isinstance(payload, dict) else None
 
 
 def tv_details(tmdb_id: int) -> dict[str, Any] | None:
-  """TV details with content ratings, IMDb id, and reviews."""
+  """TV details with content ratings, IMDb id, reviews, watch providers, videos, and credits."""
   payload = _get_json(
     f"/tv/{tmdb_id}",
-    {"append_to_response": "content_ratings,external_ids,reviews"},
+    {"append_to_response": "content_ratings,external_ids,reviews,watch/providers,videos,credits"},
   )
   return payload if isinstance(payload, dict) else None

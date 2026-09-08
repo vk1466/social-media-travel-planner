@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, type JSX } from "react";
 import { useSearchParams } from "react-router-dom";
 
-import { type Place, type SavedPost } from "../api";
+import { nativePostId, type Place, type SavedPost } from "../api";
 import {
   CATEGORY_NATIVE_VIEWS,
   CONTENT_CATEGORY_KICKERS,
@@ -13,6 +13,7 @@ import {
 } from "../contentCategory";
 import { LibraryShell } from "./LibraryShell";
 import { HomeBento } from "./HomeBento";
+import { MovieLibrary } from "./movies/MovieLibrary";
 
 import "../home-page.css";
 
@@ -166,19 +167,23 @@ export function SavedPage({
             const native = hasNativeView(tab.key);
             const tone = native || index % 2 === 1 ? "places" : "posts";
             const showingNative = isOn && native && !showRelatedPosts;
+            const isMovieTab = tab.key === "movies";
+            const nativeLabel = isMovieTab ? "watchlist" : "atlas";
             const meta = native
               ? authReady
-                ? `${places.length} ${pluralize(places.length, "place", "places")} · ${tab.count} ${pluralize(tab.count, "save", "saves")}`
+                ? isMovieTab
+                  ? `${tab.count} ${pluralize(tab.count, "save", "saves")}`
+                  : `${places.length} ${pluralize(places.length, "place", "places")} · ${tab.count} ${pluralize(tab.count, "save", "saves")}`
                 : "Sign in to open this shelf"
               : authReady
                 ? `${tab.count} ${pluralize(tab.count, "save", "saves")}`
                 : "Sign in to open your saves";
             const cta = native
               ? showingNative
-                ? "Showing atlas ↓"
+                ? `Showing ${nativeLabel} ↓`
                 : isOn
                   ? "Showing saves ↓"
-                  : "Show atlas ↓"
+                  : `Show ${nativeLabel} ↓`
               : isOn
                 ? "Showing saves ↓"
                 : "Show saves ↓";
@@ -209,7 +214,7 @@ export function SavedPage({
               className={!showRelatedPosts ? "is-active" : ""}
               onClick={() => setCategoryShow(false)}
             >
-              Places
+              {selected === "movies" ? "Watchlist" : "Places"}
             </button>
             <button
               type="button"
@@ -228,16 +233,23 @@ export function SavedPage({
           role="tabpanel"
           aria-labelledby={`tab-saved-${selected}`}
         >
-          <LibraryShell
-            mode={libraryMode}
-            authReady={authReady}
-            posts={categoryPosts}
-            places={places}
-            loadingPosts={loadingPosts}
-            onDeleted={onDeleted}
-            onNavigateToPlace={onNavigateToPlace}
-            onNavigateToPost={onNavigateToPost}
-          />
+          {selected === "movies" && !showRelatedPosts ? (
+            <MovieLibrary
+              posts={categoryPosts}
+              onSelectPost={(p) => onNavigateToPost(p.platform, nativePostId(p))}
+            />
+          ) : (
+            <LibraryShell
+              mode={libraryMode}
+              authReady={authReady}
+              posts={categoryPosts}
+              places={places}
+              loadingPosts={loadingPosts}
+              onDeleted={onDeleted}
+              onNavigateToPlace={onNavigateToPlace}
+              onNavigateToPost={onNavigateToPost}
+            />
+          )}
         </div>
       </section>
     </div>

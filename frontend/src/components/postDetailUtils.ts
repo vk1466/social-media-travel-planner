@@ -48,6 +48,14 @@ export interface ReelDetailItem {
   mapUrl?: string | null;
   actionLabel?: string | null;
   actionHref?: string | null;
+  posterUrl?: string | null;
+  backdropUrl?: string | null;
+  trailerKey?: string | null;
+  directors?: string[];
+  cast?: string[];
+  watchProviders?: string[];
+  imdbRating?: number | null;
+  rottenTomatoesPercent?: number | null;
 }
 
 export function locationFromExtracted(place: ExtractedPlace): string | undefined {
@@ -314,6 +322,14 @@ function detailItemFromResolvedMovie(
     tip: movie.review_summary,
     actionHref: catalog.href,
     actionLabel: catalog.label,
+    posterUrl: movie.poster_url,
+    backdropUrl: movie.backdrop_url,
+    trailerKey: movie.trailer_youtube_key,
+    directors: movie.directors,
+    cast: movie.cast,
+    watchProviders: movie.watch_providers,
+    imdbRating: movie.imdb_rating,
+    rottenTomatoesPercent: movie.rotten_tomatoes_percent,
   };
 }
 

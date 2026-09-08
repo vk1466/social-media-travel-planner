@@ -137,6 +137,41 @@ export function PostCard({
         </div>
       )}
 
+      {(post.resolved_movies?.length || post.extracted_movies?.length) ? (
+        <div className="post-movies-row">
+          <span className="post-movies-count">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+              <path d="M0 1a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H1a1 1 0 0 1-1-1V1zm4 0v6h8V1H4zm8 8H4v6h8V9zM3 1H1v2h2V1zm0 3H1v2h2V4zm0 3H1v2h2V7zm0 3H1v2h2v-2zm0 3H1v2h2v-2zm12-12h-2v2h2V1zm0 3h-2v2h2V4zm0 3h-2v2h2V7zm0 3h-2v2h2v-2zm0 3h-2v2h2v-2z" />
+            </svg>
+            {(post.resolved_movies?.length || post.extracted_movies?.length)}{" "}
+            {(post.resolved_movies?.length || post.extracted_movies?.length) === 1 ? "title" : "titles"}
+          </span>
+          <div className="post-view-movies">
+            {(post.resolved_movies && post.resolved_movies.length > 0
+              ? post.resolved_movies.slice(0, 3)
+              : (post.extracted_movies ?? []).slice(0, 3)
+            ).map((m, idx) => {
+              const isResolved = "tmdb_id" in m;
+              const title = m.title;
+              const poster = isResolved ? m.poster_url : undefined;
+              const rating = isResolved ? m.imdb_rating : undefined;
+              const key = isResolved ? `movie-${m.tmdb_id}` : `extracted-${idx}`;
+              return (
+                <span key={key} className="post-movie-badge">
+                  {poster && (
+                    <img src={poster} alt="" className="post-movie-badge-thumb" loading="lazy" />
+                  )}
+                  <span className="post-movie-badge-title">{title}</span>
+                  {rating != null && (
+                    <span className="post-movie-badge-rating">⭐ {rating.toFixed(1)}</span>
+                  )}
+                </span>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
+
       <div className="post-card-footer">
         {dateLabel && <time className="post-date">{dateLabel}</time>}
         <button

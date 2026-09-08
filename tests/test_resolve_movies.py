@@ -150,3 +150,96 @@ def test_resolve_movies_step_stamps_post() -> None:
   assert result.post is not None
   assert result.post.resolved_movies == catalog
   assert result.post == replace(post, resolved_movies=catalog)
+
+
+def test_resolve_extracted_movies_enriches_media_and_providers() -> None:
+  extracted = ExtractedMovie(title="Oppenheimer", year=2023)
+  hit = {
+    "id": 872585,
+    "title": "Oppenheimer",
+    "poster_path": "/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg",
+    "backdrop_path": "/rLb2cw0iwOaxnxGI8Ao0vvugVwh.jpg",
+  }
+  details = {
+    "id": 872585,
+    "title": "Oppenheimer",
+    "release_date": "2023-07-21",
+    "runtime": 181,
+    "poster_path": "/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg",
+    "backdrop_path": "/rLb2cw0iwOaxnxGI8Ao0vvugVwh.jpg",
+    "overview": "The story of J. Robert Oppenheimer.",
+    "videos": {
+      "results": [
+        {"site": "YouTube", "type": "Teaser", "key": "teaser123"},
+        {"site": "YouTube", "type": "Trailer", "key": "uYPbbksJxIg"},
+      ]
+    },
+    "credits": {
+      "cast": [
+        {"name": "Cillian Murphy"},
+        {"name": "Emily Blunt"},
+        {"name": "Matt Damon"},
+        {"name": "Robert Downey Jr."},
+        {"name": "Florence Pugh"},
+      ],
+      "crew": [
+        {"name": "Christopher Nolan", "job": "Director"},
+        {"name": "Emma Thomas", "job": "Producer"},
+      ],
+    },
+    "watch/providers": {
+      "results": {
+        "US": {
+          "flatrate": [
+            {"provider_id": 8, "provider_name": "Netflix"},
+            {"provider_id": 384, "provider_name": "Max"},
+          ]
+        }
+      }
+    },
+  }
+
+  with (
+    patch("travelplanner.movie_resolve.tmdb.api_key", return_value="tmdb"),
+    patch("travelplanner.movie_resolve.tmdb.search_movie", return_value=hit),
+    patch("travelplanner.movie_resolve.tmdb.movie_details", return_value=details),
+    patch("travelplanner.movie_resolve.omdb.by_imdb_id", return_value=None),
+  ):
+    resolved = resolve_extracted_movies((extracted,))
+
+  assert len(resolved) == 1
+  movie = resolved[0]
+  assert movie.poster_url == "https://image.tmdb.org/t/p/w500/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg"
+  assert movie.backdrop_url == "https://image.tmdb.org/t/p/w1280/rLb2cw0iwOaxnxGI8Ao0vvugVwh.jpg"
+  assert movie.trailer_youtube_key == "uYPbbksJxIg"
+  assert movie.directors == ("Christopher Nolan",)
+  assert movie.cast == ("Cillian Murphy", "Emily Blunt", "Matt Damon", "Robert Downey Jr.")
+  assert movie.watch_providers == ("Netflix", "Max")
+
+
+def test_resolve_extracted_movies_cross_search_fallback() -> None:
+  # LLM extracted kind="movie", but it is actually a TV show
+  extracted = ExtractedMovie(title="Chernobyl", year=2019, kind="movie")
+  tv_hit = {"id": 87108, "name": "Chernobyl", "first_air_date": "2019-05-06"}
+  details = {
+    "id": 87108,
+    "name": "Chernobyl",
+    "created_by": [{"name": "Craig Mazin"}],
+    "number_of_seasons": 1,
+    "overview": "The true story of Chernobyl.",
+  }
+
+  with (
+    patch("travelplanner.movie_resolve.tmdb.api_key", return_value="tmdb"),
+    patch("travelplanner.movie_resolve.tmdb.search_movie", return_value=None),
+    patch("travelplanner.movie_resolve.tmdb.search_tv", return_value=tv_hit) as search_tv,
+    patch("travelplanner.movie_resolve.tmdb.tv_details", return_value=details),
+    patch("travelplanner.movie_resolve.omdb.by_imdb_id", return_value=None),
+  ):
+    resolved = resolve_extracted_movies((extracted,))
+
+  search_tv.assert_called_once_with("Chernobyl", 2019)
+  assert len(resolved) == 1
+  assert resolved[0].title == "Chernobyl"
+  assert resolved[0].kind == "tv"
+  assert resolved[0].directors == ("Craig Mazin",)

@@ -70,6 +70,12 @@ export interface ResolvedMovie {
   review_summary?: string | null;
   kind?: string | null;
   number_of_seasons?: number | null;
+  poster_url?: string | null;
+  backdrop_url?: string | null;
+  trailer_youtube_key?: string | null;
+  directors?: string[];
+  cast?: string[];
+  watch_providers?: string[];
 }
 
 export interface SavedPost {

@@ -52,3 +52,9 @@ class ResolvedMovie:
   review_summary: str | None = None
   kind: str = TITLE_KIND_MOVIE
   number_of_seasons: int | None = None
+  poster_url: str | None = None
+  backdrop_url: str | None = None
+  trailer_youtube_key: str | None = None
+  directors: tuple[str, ...] = ()
+  cast: tuple[str, ...] = ()
+  watch_providers: tuple[str, ...] = ()

@@ -57,6 +57,12 @@ def _resolved_movie_from_dict(data: dict) -> ResolvedMovie:
     review_summary=data.get("review_summary"),
     kind=normalize_title_kind(data.get("kind")),
     number_of_seasons=int(seasons) if isinstance(seasons, int) else None,
+    poster_url=data.get("poster_url"),
+    backdrop_url=data.get("backdrop_url"),
+    trailer_youtube_key=data.get("trailer_youtube_key"),
+    directors=tuple(data.get("directors") or []),
+    cast=tuple(data.get("cast") or []),
+    watch_providers=tuple(data.get("watch_providers") or []),
   )
 
 

@@ -160,14 +160,89 @@ def _summarize_reviews(texts: Sequence[str]) -> str | None:
   return summary or None
 
 
+def _find_youtube_trailer(details: dict[str, Any]) -> str | None:
+  videos = (details.get("videos") or {}).get("results") or []
+  if not isinstance(videos, list):
+    return None
+  for item in videos:
+    if not isinstance(item, dict):
+      continue
+    if str(item.get("site") or "").lower() != "youtube":
+      continue
+    if str(item.get("type") or "").lower() == "trailer" and item.get("key"):
+      return str(item["key"]).strip()
+  for item in videos:
+    if not isinstance(item, dict):
+      continue
+    if str(item.get("site") or "").lower() == "youtube" and item.get("key"):
+      return str(item["key"]).strip()
+  return None
+
+
+def _extract_directors(details: dict[str, Any], kind: str) -> tuple[str, ...]:
+  directors: list[str] = []
+  for creator in details.get("created_by") or []:
+    if isinstance(creator, dict) and creator.get("name"):
+      name = str(creator["name"]).strip()
+      if name and name not in directors:
+        directors.append(name)
+  crew = (details.get("credits") or {}).get("crew") or []
+  for member in crew:
+    if not isinstance(member, dict):
+      continue
+    job = str(member.get("job") or "").strip()
+    if job == "Director" or (kind == TITLE_KIND_TV and job in ("Executive Producer", "Director")):
+      name = str(member.get("name") or "").strip()
+      if name and name not in directors:
+        directors.append(name)
+      if len(directors) >= 3:
+        break
+  return tuple(directors)
+
+
+def _extract_cast(details: dict[str, Any]) -> tuple[str, ...]:
+  cast_members: list[str] = []
+  cast_list = (details.get("credits") or {}).get("cast") or []
+  for member in cast_list:
+    if not isinstance(member, dict):
+      continue
+    name = str(member.get("name") or "").strip()
+    if name and name not in cast_members:
+      cast_members.append(name)
+    if len(cast_members) >= 4:
+      break
+  return tuple(cast_members)
+
+
+def _extract_watch_providers(details: dict[str, Any]) -> tuple[str, ...]:
+  providers: list[str] = []
+  results = (details.get("watch/providers") or details.get("watch_providers") or {}).get("results") or {}
+  country_data = results.get("US") if isinstance(results, dict) else None
+  if not country_data and isinstance(results, dict) and results:
+    country_data = next(iter(results.values()))
+  if isinstance(country_data, dict):
+    for item in country_data.get("flatrate") or []:
+      if isinstance(item, dict) and item.get("provider_name"):
+        name = str(item["provider_name"]).strip()
+        if name and name not in providers:
+          providers.append(name)
+    for item in country_data.get("free") or country_data.get("ads") or []:
+      if isinstance(item, dict) and item.get("provider_name"):
+        name = str(item["provider_name"]).strip()
+        if name and name not in providers:
+          providers.append(name)
+  return tuple(providers)
+
+
 def _from_catalog(
   *,
   extracted: ExtractedMovie,
   hit: dict[str, Any],
   details: dict[str, Any],
   omdb_payload: dict[str, Any] | None,
+  resolved_kind: str | None = None,
 ) -> ResolvedMovie:
-  kind = normalize_title_kind(extracted.kind)
+  kind = normalize_title_kind(resolved_kind or extracted.kind)
   tmdb_id = int(hit["id"])
   title = str(
     details.get("title")
@@ -221,6 +296,17 @@ def _from_catalog(
         str(omdb_payload.get("Runtime") or "").split(" ")[0]
       )
 
+  poster_path = details.get("poster_path") or hit.get("poster_path")
+  poster_url = f"https://image.tmdb.org/t/p/w500{poster_path}" if poster_path else None
+
+  backdrop_path = details.get("backdrop_path") or hit.get("backdrop_path")
+  backdrop_url = f"https://image.tmdb.org/t/p/w1280{backdrop_path}" if backdrop_path else None
+
+  trailer_youtube_key = _find_youtube_trailer(details)
+  directors = _extract_directors(details, kind)
+  cast = _extract_cast(details)
+  watch_providers = _extract_watch_providers(details)
+
   review_summary = _summarize_reviews(_review_texts(details))
   return ResolvedMovie(
     tmdb_id=tmdb_id,
@@ -237,17 +323,34 @@ def _from_catalog(
     review_summary=review_summary,
     kind=kind,
     number_of_seasons=number_of_seasons,
+    poster_url=poster_url,
+    backdrop_url=backdrop_url,
+    trailer_youtube_key=trailer_youtube_key,
+    directors=directors,
+    cast=cast,
+    watch_providers=watch_providers,
   )
 
 
 def _tmdb_lookup(
   extracted: ExtractedMovie,
-) -> tuple[dict[str, Any], dict[str, Any]] | None:
+) -> tuple[dict[str, Any], dict[str, Any], str] | None:
   kind = normalize_title_kind(extracted.kind)
   if kind == TITLE_KIND_TV:
     hit = tmdb.search_tv(extracted.title, extracted.year)
+    if (hit is None or hit.get("id") is None) and tmdb.api_key():
+      fallback_hit = tmdb.search_movie(extracted.title, extracted.year)
+      if fallback_hit is not None and fallback_hit.get("id") is not None:
+        hit = fallback_hit
+        kind = TITLE_KIND_MOVIE
   else:
     hit = tmdb.search_movie(extracted.title, extracted.year)
+    if (hit is None or hit.get("id") is None) and tmdb.api_key():
+      fallback_hit = tmdb.search_tv(extracted.title, extracted.year)
+      if fallback_hit is not None and fallback_hit.get("id") is not None:
+        hit = fallback_hit
+        kind = TITLE_KIND_TV
+
   if hit is None or hit.get("id") is None:
     return None
   try:
@@ -257,7 +360,7 @@ def _tmdb_lookup(
   details = tmdb.tv_details(tmdb_id) if kind == TITLE_KIND_TV else tmdb.movie_details(tmdb_id)
   if details is None:
     return None
-  return hit, details
+  return hit, details, kind
 
 
 def resolve_extracted_movies(
@@ -281,12 +384,12 @@ def resolve_extracted_movies(
         kind,
       )
       continue
-    hit, details = lookup
+    hit, details, resolved_kind = lookup
     try:
       tmdb_id = int(hit["id"])
     except (TypeError, ValueError):
       continue
-    seen_key = (kind, tmdb_id)
+    seen_key = (resolved_kind, tmdb_id)
     if seen_key in seen:
       continue
     imdb_id = (details.get("external_ids") or {}).get("imdb_id")
@@ -297,13 +400,14 @@ def resolve_extracted_movies(
         hit=hit,
         details=details,
         omdb_payload=omdb_payload,
+        resolved_kind=resolved_kind,
       )
     )
     seen.add(seen_key)
     logger.info(
       "resolve_movies title=%r kind=%s tmdb_id=%s imdb=%s rt=%s",
       extracted.title,
-      kind,
+      resolved_kind,
       tmdb_id,
       imdb_id,
       resolved[-1].rotten_tomatoes_percent,

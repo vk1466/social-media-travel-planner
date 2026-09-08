@@ -1219,3 +1219,191 @@
     background: transparent;
   }
 }
+
+/* ── Movie Reel Rich Media & UX Enhancements ────────────────────────────────── */
+
+.movie-flip-poster-thumb {
+  width: 32px;
+  height: 48px;
+  object-fit: cover;
+  border-radius: 4px;
+  box-shadow: 0 2px 6px rgb(0 0 0 / 0.4);
+  flex-shrink: 0;
+}
+
+.post-flip-place-item.has-movie-poster .post-flip-place-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.post-flip-place-title-col {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  gap: 0.15rem;
+}
+
+.post-flip-place-compact-meta {
+  margin: 0;
+  font-size: 0.7rem;
+  color: rgb(var(--wf-cream-rgb) / 0.65);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.movie-trailer-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 99px;
+  background: var(--wf-coral);
+  color: #1a1200;
+  font-size: 0.68rem;
+  font-weight: 650;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+.movie-trailer-pill-btn:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.1);
+}
+
+.movie-crew-line {
+  margin: 0.25rem 0 0;
+  font-size: 0.72rem;
+  line-height: 1.35;
+  color: rgb(var(--wf-cream-rgb) / 0.8);
+}
+
+.movie-crew-line strong {
+  color: rgb(var(--wf-cream-rgb) / 0.95);
+  font-weight: 600;
+}
+
+.movie-watch-providers {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.3rem;
+}
+
+.movie-provider-label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: rgb(var(--wf-cream-rgb) / 0.6);
+  text-transform: uppercase;
+}
+
+.movie-provider-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  background: rgb(255 255 255 / 0.12);
+  border: 1px solid rgb(255 255 255 / 0.15);
+  color: rgb(var(--wf-cream-rgb) / 0.9);
+  font-size: 0.68rem;
+  font-weight: 550;
+}
+
+.post-flip-backdrop-wrap {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.post-flip-backdrop-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: brightness(0.85);
+}
+
+.post-flip-backdrop-vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center, transparent 30%, rgb(10 10 10 / 0.85) 100%),
+              linear-gradient(to top, rgb(10 10 10 / 0.95) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+/* ── Movie Trailer Modal ─────────────────────────────────────────────────── */
+
+.movie-trailer-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgb(0 0 0 / 0.82);
+  backdrop-filter: blur(8px);
+  padding: 1.5rem;
+}
+
+.movie-trailer-modal-panel {
+  position: relative;
+  width: min(840px, 92vw);
+  background: #141414;
+  border: 1px solid rgb(255 255 255 / 0.15);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 16px 40px rgb(0 0 0 / 0.7);
+  display: flex;
+  flex-direction: column;
+}
+
+.movie-trailer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1.25rem;
+  background: #1c1c1c;
+  border-bottom: 1px solid rgb(255 255 255 / 0.1);
+}
+
+.movie-trailer-title {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #fff;
+  letter-spacing: 0.02em;
+}
+
+.movie-trailer-close-btn {
+  background: none;
+  border: none;
+  color: rgb(255 255 255 / 0.7);
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  line-height: 1;
+}
+
+.movie-trailer-close-btn:hover {
+  color: #fff;
+  background: rgb(255 255 255 / 0.1);
+}
+
+.movie-trailer-iframe-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #000;
+}
+
+.movie-trailer-iframe-wrap iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+}

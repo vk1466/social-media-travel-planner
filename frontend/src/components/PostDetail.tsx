@@ -7,6 +7,7 @@ import { formatPostDate, getPlatformLabel, proxiedMediaUrl } from "../postDispla
 import { DetailModal } from "./DetailModal";
 import { PostReelFace } from "./PostMediaPreview";
 import { PostPlacesMap } from "./PostPlacesMap";
+import { TrailerModal } from "./movies/TrailerModal";
 import {
   buildPlaceSummaries,
   buildReelDetailItems,
@@ -128,6 +129,7 @@ interface FlipDetailCardProps {
   expanded: boolean;
   onToggleExpand: () => void;
   onNavigateToPlace?: (placeId: string) => void;
+  onPlayTrailer?: (key: string) => void;
 }
 
 function FlipDetailCard({
@@ -136,14 +138,16 @@ function FlipDetailCard({
   expanded,
   onToggleExpand,
   onNavigateToPlace,
+  onPlayTrailer,
 }: FlipDetailCardProps) {
   const canOpenPlace = Boolean(item.placeId && onNavigateToPlace);
   const metaLine = [item.category, ...item.metaParts].filter(Boolean).join(" · ");
-  const hasActions = Boolean(item.mapUrl || item.actionHref || canOpenPlace);
+  const hasActions = Boolean(item.mapUrl || item.actionHref || canOpenPlace || (item.trailerKey && onPlayTrailer));
   const itemClass = [
     "post-flip-place-item",
     isActive ? "is-active" : "",
     expanded ? "is-expanded" : "",
+    item.posterUrl ? "has-movie-poster" : "",
   ]
     .filter(Boolean)
     .join(" ");
@@ -151,16 +155,43 @@ function FlipDetailCard({
   return (
     <li className={itemClass}>
       <div className="post-flip-place-title-row">
-        <button
-          type="button"
-          className="post-flip-place-name"
-          aria-expanded={expanded}
-          onClick={onToggleExpand}
-        >
-          {item.name}
-        </button>
+        {item.posterUrl && (
+          <img
+            src={item.posterUrl}
+            alt=""
+            className="movie-flip-poster-thumb"
+            loading="lazy"
+          />
+        )}
+        <div className="post-flip-place-title-col">
+          <button
+            type="button"
+            className="post-flip-place-name"
+            aria-expanded={expanded}
+            onClick={onToggleExpand}
+          >
+            {item.name}
+          </button>
+          {!expanded && metaLine && (
+            <p className="post-flip-place-compact-meta">{metaLine}</p>
+          )}
+        </div>
         {hasActions && (
           <div className="post-flip-place-actions">
+            {item.trailerKey && onPlayTrailer && (
+              <button
+                type="button"
+                className="text-button movie-trailer-pill-btn"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onPlayTrailer(item.trailerKey!);
+                }}
+                title="Watch trailer"
+              >
+                <PlayIcon />
+                Trailer
+              </button>
+            )}
             {item.mapUrl && (
               <a
                 className="post-flip-icon-btn"
@@ -198,6 +229,25 @@ function FlipDetailCard({
         )}
       </div>
       {expanded && metaLine && <p className="post-flip-place-meta">{metaLine}</p>}
+      {expanded && (Boolean(item.directors?.length) || Boolean(item.cast?.length)) && (
+        <p className="movie-crew-line">
+          {item.directors && item.directors.length > 0 && (
+            <span><strong>Dir:</strong> {item.directors.join(", ")}</span>
+          )}
+          {item.directors && item.directors.length > 0 && item.cast && item.cast.length > 0 && " · "}
+          {item.cast && item.cast.length > 0 && (
+            <span><strong>Cast:</strong> {item.cast.join(", ")}</span>
+          )}
+        </p>
+      )}
+      {expanded && item.watchProviders && item.watchProviders.length > 0 && (
+        <div className="movie-watch-providers">
+          <span className="movie-provider-label">Stream on:</span>
+          {item.watchProviders.map((provider) => (
+            <span key={provider} className="movie-provider-pill">{provider}</span>
+          ))}
+        </div>
+      )}
       {expanded && item.details && <p className="post-flip-place-blurb">{item.details}</p>}
       {expanded && item.tip && <p className="post-flip-place-tip">{item.tip}</p>}
     </li>
@@ -222,6 +272,7 @@ interface PostFlipFrontProps {
   scrollToItemIndex: (index: number) => void;
   onToggleExpand: () => void;
   onNavigateToPlace?: (placeId: string) => void;
+  onPlayTrailer?: (key: string) => void;
 }
 
 function PostFlipFront({
@@ -240,6 +291,7 @@ function PostFlipFront({
   scrollToItemIndex,
   onToggleExpand,
   onNavigateToPlace,
+  onPlayTrailer,
 }: PostFlipFrontProps) {
   const { reelSummary, llmSummary, summaryExcerpt } = buildReelSummary(post);
   const heading = shortHeading(post);
@@ -255,6 +307,8 @@ function PostFlipFront({
   const thumbStyle = thumbUrl ? { backgroundImage: `url("${thumbUrl}")` } : undefined;
   const showMap = mappablePlaces(overviewPlaces).length > 0;
   const showCards = detailItems.length > 0;
+  const activeItem = detailItems[activeItemIndex] ?? detailItems[0];
+  const activeBackdropUrl = activeItem?.backdropUrl;
 
   return (
     <section
@@ -336,6 +390,16 @@ function PostFlipFront({
               }
             }}
           />
+        ) : activeBackdropUrl ? (
+          <div className="post-flip-backdrop-wrap">
+            <img
+              className="post-flip-cover-image post-flip-backdrop-image"
+              src={activeBackdropUrl}
+              alt=""
+              decoding="async"
+            />
+            <div className="post-flip-backdrop-vignette" aria-hidden="true" />
+          </div>
         ) : thumbUrl ? (
           <img
             className="post-flip-cover-image"
@@ -358,6 +422,7 @@ function PostFlipFront({
                   expanded={cardsExpanded}
                   onToggleExpand={onToggleExpand}
                   onNavigateToPlace={onNavigateToPlace}
+                  onPlayTrailer={onPlayTrailer}
                 />
               ))}
             </ul>
@@ -407,6 +472,7 @@ export function PostDetail({
   const [flipped, setFlipped] = useState(false);
   const [activeItemIndex, setActiveItemIndex] = useState(0);
   const [cardsExpanded, setCardsExpanded] = useState(false);
+  const [activeTrailerKey, setActiveTrailerKey] = useState<string | null>(null);
   const placeListRef = useRef<HTMLUListElement>(null);
 
   useEffect(() => {
@@ -570,6 +636,7 @@ export function PostDetail({
             scrollToItemIndex={scrollToItemIndex}
             onToggleExpand={() => setCardsExpanded((open) => !open)}
             onNavigateToPlace={onNavigateToPlace}
+            onPlayTrailer={setActiveTrailerKey}
           />
 
           {/* ── BACK: reel preview ─────────────────────────────────────── */}
@@ -620,6 +687,14 @@ export function PostDetail({
           </button>
         )}
       </div>
+
+      {activeTrailerKey && (
+        <TrailerModal
+          youtubeKey={activeTrailerKey}
+          title={activeItem?.name ?? "Trailer"}
+          onClose={() => setActiveTrailerKey(null)}
+        />
+      )}
     </DetailModal>
   );
 }

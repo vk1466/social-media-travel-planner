@@ -29,8 +29,8 @@ export const CONTENT_CATEGORY_KICKERS: Record<ContentCategory, string> = {
   other: "Shelf",
 };
 
-/** Categories that have a native browse surface (atlas, etc.), not only posts. */
-export const CATEGORY_NATIVE_VIEWS: ReadonlySet<ContentCategory> = new Set(["travel"]);
+/** Categories that have a native browse surface (atlas, movie watchlist, etc.), not only posts. */
+export const CATEGORY_NATIVE_VIEWS: ReadonlySet<ContentCategory> = new Set(["travel", "movies"]);
 
 export interface ContentCategoryPost {
   content_category?: string | null;

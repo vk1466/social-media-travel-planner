@@ -49,6 +49,12 @@ class ResolvedMovieSchema(BaseModel):
   review_summary: str | None = None
   kind: str = "movie"
   number_of_seasons: int | None = None
+  poster_url: str | None = None
+  backdrop_url: str | None = None
+  trailer_youtube_key: str | None = None
+  directors: list[str] = Field(default_factory=list)
+  cast: list[str] = Field(default_factory=list)
+  watch_providers: list[str] = Field(default_factory=list)
 
 
 class SavedPostSchema(BaseModel):
