@@ -240,6 +240,7 @@ class ContentBundle:
   video_summary: str | None = None
   video_analysis: str | None = None
   image_text: str | None = None
+  author_handle: str | None = None
 
 
 ReelBundle = ContentBundle
@@ -254,6 +255,7 @@ class ContentExtraction:
 ReelExtraction = ContentExtraction
 
 _SOURCE_HEADERS: dict[str, str] = {
+  "author_handle": "AUTHOR",
   "caption": "CAPTION",
   "video_summary": "VIDEO SUMMARY",
   "transcript": "VIDEO TRANSCRIPT",
@@ -264,12 +266,18 @@ _SOURCE_HEADERS: dict[str, str] = {
   "top_comments": "TOP COMMENTS",
 }
 
-_INLINE_SOURCES = frozenset({"location_tag", "hashtags"})
+_INLINE_SOURCES = frozenset({"author_handle", "location_tag", "hashtags"})
 
 
 def snippets_from_bundle(bundle: ContentBundle) -> tuple[ContentSnippet, ...]:
   """Flatten a ContentBundle into ordered (source, text) snippets."""
   snippets: list[ContentSnippet] = []
+
+  if bundle.author_handle:
+    author = bundle.author_handle.strip()
+    if author:
+      handle = f"@{author}" if not author.startswith("@") else author
+      snippets.append(ContentSnippet(source="author_handle", text=handle))
 
   caption = bundle.caption.strip()
   if caption:
@@ -327,6 +335,7 @@ def content_bundle_from_post(
   return ContentBundle(
     caption=post.caption,
     hashtags=post.hashtags,
+    author_handle=post.author_handle,
     top_comments=post.top_comments,
     location_tag=post.places[0] if post.places else None,
     transcript=transcript,

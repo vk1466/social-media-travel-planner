@@ -119,6 +119,27 @@ export function aggregateMoviesFromPosts(posts: SavedPost[]): AggregatedMovie[] 
         });
       }
     });
+
+    // Fallback for saved movie posts where titles have not been extracted yet
+    if (extracted.length === 0 && resolved.length === 0) {
+      const fallbackTitle = post.author_handle
+        ? `@${post.author_handle}`
+        : post.caption?.trim()
+          ? post.caption.slice(0, 40)
+          : "Saved Reel";
+      const key = `post-${post.post_id}`;
+      map.set(key, {
+        key,
+        title: fallbackTitle,
+        genres: [],
+        directors: [],
+        cast: [],
+        watch_providers: [],
+        plot_summary: post.reel_summary || post.caption || undefined,
+        poster_url: post.thumbnail_url,
+        source_posts: [post],
+      });
+    }
   }
 
   return Array.from(map.values());

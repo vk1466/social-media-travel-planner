@@ -63,19 +63,22 @@ MOVIE_EXTRACT_SCHEMA: dict[str, Any] = {
 }
 
 MOVIE_EXTRACT_PROMPT = (
-  "Extract the films and TV series this social media post is about.\n\n"
+  "Extract the films and TV series this social media post is about. This post has "
+  "been classified as movie/TV entertainment content.\n\n"
   "Rules:\n"
-  "- Only titles that are the subject of the post (trailer, recap, review, "
-  "scene clip, what-to-watch).\n"
+  "- Identify film or series titles that are the subject of the post (trailers, "
+  "clips, scene highlights, reviews, recaps, what-to-watch, or official show accounts).\n"
+  "- Look for titles across all provided sources: caption, account handle, "
+  "on-screen text overlays, scene descriptions, dialogue/transcripts, or viewer comments.\n"
   "- kind=movie for a film. kind=tv for a TV or streaming series, limited "
-  "series, season, or episode of a show.\n"
-  "- Use the canonical title. Do not append year, season, episode, or "
-  "'trailer' to the title.\n"
-  "- Set year only when the sources name it (film release or series first air). "
-  "Otherwise null.\n"
-  "- details is one sentence copied or lightly paraphrased from the sources. "
-  "Null if there is no extra context.\n"
-  "- Do not invent titles. If sources are thin or mixed, return an empty list.\n"
+  "series, season, or episode.\n"
+  "- Use the clean canonical title (e.g. 'Sacred Games', not 'Sacred Games Season 2' "
+  "or 'Sacred Games Trailer'). Do not append year, season, episode, or 'trailer' to the title.\n"
+  "- Set year only when the sources name it (film release or series first air). Otherwise null.\n"
+  "- details is one concise sentence of context from the sources (e.g. clip highlight, "
+  "premise, or viewer discussion). Null if there is no extra context.\n"
+  "- Do not invent titles that have no basis in the sources. Only return an empty "
+  "list if no movie or TV title can be determined.\n"
   "- Do not extract filming locations, theaters, or trip stops — those are places."
 )
 
