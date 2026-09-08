@@ -25,6 +25,19 @@ function extractTrailer(videos: unknown): string | null {
   const results = (videos as { results?: Array<Record<string, unknown>> }).results;
   if (!Array.isArray(results)) return null;
 
+  // 1. Official YouTube trailer
+  for (const item of results) {
+    if (String(item.site || "").toLowerCase() === "youtube") {
+      if (
+        String(item.type || "").toLowerCase() === "trailer" &&
+        Boolean(item.official) &&
+        item.key
+      ) {
+        return String(item.key).trim();
+      }
+    }
+  }
+  // 2. Any YouTube trailer
   for (const item of results) {
     if (String(item.site || "").toLowerCase() === "youtube") {
       if (String(item.type || "").toLowerCase() === "trailer" && item.key) {
@@ -32,9 +45,12 @@ function extractTrailer(videos: unknown): string | null {
       }
     }
   }
+  // 3. YouTube teaser
   for (const item of results) {
     if (String(item.site || "").toLowerCase() === "youtube" && item.key) {
-      return String(item.key).trim();
+      if (["trailer", "teaser"].includes(String(item.type || "").toLowerCase())) {
+        return String(item.key).trim();
+      }
     }
   }
   return null;
@@ -105,6 +121,9 @@ function extractProviders(details: Record<string, unknown>): string[] {
   return providers;
 }
 
+const VIDEO_LANGUAGES =
+  "en,hi,es,fr,ja,ko,de,it,pt,zh,ru,te,ta,kn,ml,pa,bn,ar,tr,id,th,vi,nl,pl,sv,null";
+
 export async function fetchTmdbExtras(
   tmdbId: number,
   kind?: string | null
@@ -116,10 +135,10 @@ export async function fetchTmdbExtras(
     return memoryCache.get(cacheKey)!;
   }
 
-  // Try sessionStorage
+  // Try sessionStorage (versioned v2 to refresh video languages)
   if (typeof window !== "undefined") {
     try {
-      const stored = window.sessionStorage.getItem(`tmdb_extra_${cacheKey}`);
+      const stored = window.sessionStorage.getItem(`tmdb_extra_v2_${cacheKey}`);
       if (stored) {
         const parsed = JSON.parse(stored) as TmdbEnrichedData;
         memoryCache.set(cacheKey, parsed);
@@ -130,7 +149,7 @@ export async function fetchTmdbExtras(
     }
   }
 
-  const endpoint = `${TMDB_BASE_URL}/${isTv ? "tv" : "movie"}/${tmdbId}?api_key=${TMDB_API_KEY}&append_to_response=videos,credits,watch/providers`;
+  const endpoint = `${TMDB_BASE_URL}/${isTv ? "tv" : "movie"}/${tmdbId}?api_key=${TMDB_API_KEY}&append_to_response=videos,credits,watch/providers&include_video_language=${VIDEO_LANGUAGES}`;
 
   try {
     const res = await fetch(endpoint, { headers: { Accept: "application/json" } });
@@ -165,7 +184,7 @@ export async function fetchTmdbExtras(
     memoryCache.set(cacheKey, enriched);
     if (typeof window !== "undefined") {
       try {
-        window.sessionStorage.setItem(`tmdb_extra_${cacheKey}`, JSON.stringify(enriched));
+        window.sessionStorage.setItem(`tmdb_extra_v2_${cacheKey}`, JSON.stringify(enriched));
       } catch {
         // ignore storage quota errors
       }

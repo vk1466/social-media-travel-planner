@@ -169,12 +169,21 @@ def _find_youtube_trailer(details: dict[str, Any]) -> str | None:
       continue
     if str(item.get("site") or "").lower() != "youtube":
       continue
+    if str(item.get("type") or "").lower() == "trailer" and item.get("official") and item.get("key"):
+      return str(item["key"]).strip()
+  for item in videos:
+    if not isinstance(item, dict):
+      continue
+    if str(item.get("site") or "").lower() != "youtube":
+      continue
     if str(item.get("type") or "").lower() == "trailer" and item.get("key"):
       return str(item["key"]).strip()
   for item in videos:
     if not isinstance(item, dict):
       continue
-    if str(item.get("site") or "").lower() == "youtube" and item.get("key"):
+    if str(item.get("site") or "").lower() != "youtube":
+      continue
+    if str(item.get("type") or "").lower() in ("trailer", "teaser") and item.get("key"):
       return str(item["key"]).strip()
   return None
 
