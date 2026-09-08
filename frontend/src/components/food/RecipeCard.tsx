@@ -58,74 +58,49 @@ export function RecipeCard({ item, onOpen }: RecipeCardProps): JSX.Element {
           </div>
         )}
 
-        {cuisine && (
-          <span className="recipe-cuisine-badge" title={`Cuisine: ${cuisine}`}>
-            {cuisine}
-          </span>
-        )}
-
-        {isChefReconstructed && (
-          <span
-            className="recipe-chef-badge"
-            title="Chef Reconstructed: creator omitted measurements; ingredients estimated"
-          >
-            ⚡ AI Chef
-          </span>
-        )}
-
-        <div className="recipe-poster-overlay">
-          <button
-            type="button"
-            className="recipe-card-action-btn"
-            onClick={(e) => {
-              e.stopPropagation();
-              onOpen();
-            }}
-            aria-label={`View ${recipe.title ?? "recipe"}`}
-          >
-            ▶ View Recipe
-          </button>
-        </div>
       </div>
 
       <div className="recipe-card-content">
+        <h3 className="recipe-card-title">{recipe.title ?? "Food inspiration"}</h3>
+
         <div className="recipe-card-meta-line">
-          {mealType && (
-            <span className="recipe-kind-tag">{mealType}</span>
-          )}
           {durationLabel && (
             <span className="recipe-duration-tag">⏱ {durationLabel}</span>
           )}
           {recipe.difficulty && (
             <span className="recipe-difficulty-tag">{recipe.difficulty}</span>
           )}
+          {mealType && (
+            <span className="recipe-kind-tag">{mealType}</span>
+          )}
         </div>
-
-        <h3 className="recipe-card-title">{recipe.title ?? "Food inspiration"}</h3>
 
         <div className="recipe-metrics-row">
           {hasIngredients ? (
             <span className="recipe-badge recipe-badge-ingredients">
               <span className="recipe-badge-icon" aria-hidden="true">🥬</span>
-              <span className="recipe-badge-value">{ingredientCount} items</span>
+              <span className="recipe-badge-value">
+                {ingredientCount} {ingredientCount === 1 ? "ingredient" : "ingredients"}
+              </span>
             </span>
           ) : (
-            <span className="recipe-badge recipe-badge-ai-needed" title="Click to reconstruct recipe details with AI">
+            <span className="recipe-badge recipe-badge-ai-needed">
               <span className="recipe-badge-icon" aria-hidden="true">✨</span>
-              <span className="recipe-badge-value">Needs AI</span>
+              <span className="recipe-badge-value">Details unavailable</span>
             </span>
           )}
 
           {recipe.servings && (
             <span className="recipe-badge recipe-badge-servings">
               <span className="recipe-badge-icon" aria-hidden="true">🍽️</span>
-              <span className="recipe-badge-value">{recipe.servings} srv</span>
+              <span className="recipe-badge-value">Serves {recipe.servings}</span>
             </span>
           )}
         </div>
 
-        {dietaryTags.length > 0 && (
+        {(cuisine || dietaryTags.length > 0) && (
           <div className="recipe-card-dietary">
+            {cuisine && <span className="recipe-diet-pill">{cuisine}</span>}
             {dietaryTags.slice(0, 2).map((diet) => (
               <span key={diet} className="recipe-diet-pill">{diet}</span>
             ))}
@@ -134,8 +109,15 @@ export function RecipeCard({ item, onOpen }: RecipeCardProps): JSX.Element {
             )}
           </div>
         )}
+
+        {isChefReconstructed && (
+          <span className="recipe-estimated-note">⚡ Estimated recipe</span>
+        )}
+
+        <span className="recipe-card-action" aria-hidden="true">
+          View recipe <span>→</span>
+        </span>
       </div>
     </article>
   );
 }
-

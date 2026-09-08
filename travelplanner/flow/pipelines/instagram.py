@@ -16,6 +16,7 @@ from travelplanner.steps.fetch_recipe_source import FETCH_RECIPE_SOURCE_STEP
 from travelplanner.steps.extract_recipe_frames import EXTRACT_RECIPE_FRAMES_STEP
 from travelplanner.steps.extract_recipe import EXTRACT_RECIPE_STEP
 from travelplanner.steps.enrich_recipe import ENRICH_RECIPE_STEP
+from travelplanner.steps.calculate_recipe_nutrition import CALCULATE_RECIPE_NUTRITION_STEP
 
 INSTAGRAM_HEAD_STEPS = (
   SEED_INSTAGRAM_POST_STEP,
@@ -39,6 +40,7 @@ RECIPE_CLOSE_STEPS = (
   EXTRACT_RECIPE_FRAMES_STEP,
   EXTRACT_RECIPE_STEP,
   ENRICH_RECIPE_STEP,
+  CALCULATE_RECIPE_NUTRITION_STEP,
 )
 
 INSTAGRAM_TAIL_BY_RESOURCE_TYPE: dict[str, tuple] = {

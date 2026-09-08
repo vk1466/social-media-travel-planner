@@ -109,6 +109,43 @@ export function scaledAmount(amount: string, multiplier: number): string {
   return trimmed;
 }
 
+export function formatUnit(unit: string | undefined | null, amountStr: string): string {
+  if (!unit) return "";
+  const trimmed = unit.trim();
+  const isOne = amountStr === "1" || amountStr === "1.0" || amountStr === "1/1";
+
+  if (isOne) {
+    const lower = trimmed.toLowerCase();
+    const singularMap: Record<string, string> = {
+      cups: "cup",
+      tablespoons: "tbsp",
+      tbsp: "tbsp",
+      tbsps: "tbsp",
+      teaspoons: "tsp",
+      tsp: "tsp",
+      tsps: "tsp",
+      cloves: "clove",
+      pieces: "piece",
+      slices: "slice",
+      stalks: "stalk",
+      cans: "can",
+      packages: "package",
+      pkgs: "pkg",
+      bunches: "bunch",
+      pinches: "pinch",
+      ounces: "oz",
+      pounds: "lb",
+      grams: "g",
+    };
+    if (singularMap[lower]) {
+      return /^[A-Z]/.test(trimmed) && !/^[A-Z]+$/.test(trimmed)
+        ? singularMap[lower].charAt(0).toUpperCase() + singularMap[lower].slice(1)
+        : singularMap[lower];
+    }
+  }
+  return trimmed;
+}
+
 export function scaledIngredientAmount(ingredient: RecipeIngredient, multiplier: number): string {
   if (multiplier === 1 && ingredient.amount) {
     return ingredient.amount.trim();
@@ -129,11 +166,116 @@ export function ingredientLabel(ingredient: RecipeIngredient, multiplier = 1): s
     parts.push(amt);
   }
   if (ingredient.unit) {
-    parts.push(ingredient.unit);
+    parts.push(formatUnit(ingredient.unit, amt));
   }
   parts.push(ingredient.name);
   if (ingredient.note) {
     parts.push(`(${ingredient.note})`);
   }
   return parts.filter(Boolean).join(" ");
+}
+
+export function extractSectionFromNote(note: string): string | null {
+  const trimmed = note.trim();
+  const match = trimmed.match(/^for\s+(?:the\s+)?(.+?)(?:\s+ice\s+cream|\s+flavor|\s+recipe)?$/i);
+  if (match && match[1]) {
+    const clean = match[1].trim();
+    return clean.charAt(0).toUpperCase() + clean.slice(1);
+  }
+  return null;
+}
+
+export interface FormattedIngredientItem {
+  originalIndex: number;
+  amount: string;
+  unit: string;
+  name: string;
+  note?: string;
+  section?: string;
+  aisle?: string | null;
+}
+
+export interface RecipeSectionGroup {
+  name: string;
+  ingredients: FormattedIngredientItem[];
+}
+
+export function groupRecipeSections(
+  recipe: ExtractedRecipe,
+  multiplier = 1
+): { sections: RecipeSectionGroup[]; hasMultipleSections: boolean } {
+  const items: FormattedIngredientItem[] = recipe.ingredients.map((ing, idx) => {
+    const rawAmt = scaledIngredientAmount(ing, multiplier);
+    const unit = formatUnit(ing.unit, rawAmt);
+    const note = ing.note?.trim();
+    const section = note ? extractSectionFromNote(note) ?? undefined : undefined;
+    return {
+      originalIndex: idx,
+      amount: rawAmt,
+      unit,
+      name: ing.name,
+      note,
+      section,
+      aisle: ing.aisle,
+    };
+  });
+
+  const sectionCounts = new Map<string, number>();
+  for (const item of items) {
+    if (item.section) {
+      sectionCounts.set(item.section, (sectionCounts.get(item.section) || 0) + 1);
+    }
+  }
+
+  if (sectionCounts.size >= 2) {
+    const groups = new Map<string, RecipeSectionGroup>();
+    for (const item of items) {
+      const secName = item.section || "General";
+      if (!groups.has(secName)) {
+        groups.set(secName, { name: secName, ingredients: [] });
+      }
+
+      // Clean redundant note if it just repeats the section
+      let cleanNote = item.note;
+      if (cleanNote && item.section) {
+        const isStrict = new RegExp(
+          `^for\\s+(?:the\\s+)?${item.section}(?:\\s+ice\\s+cream|\\s+flavor|\\s+recipe)?$`,
+          "i"
+        ).test(cleanNote);
+        if (isStrict) {
+          cleanNote = undefined;
+        } else {
+          cleanNote = cleanNote
+            .replace(
+              new RegExp(
+                `^for\\s+(?:the\\s+)?${item.section}(?:\\s+ice\\s+cream|\\s+flavor|\\s+recipe)?(?:,\\s*)?`,
+                "i"
+              ),
+              ""
+            )
+            .trim() || undefined;
+        }
+      }
+
+      groups.get(secName)!.ingredients.push({
+        ...item,
+        note: cleanNote,
+      });
+    }
+
+    return {
+      sections: Array.from(groups.values()),
+      hasMultipleSections: true,
+    };
+  }
+
+  return {
+    sections: [
+      {
+        name: "Ingredients",
+        ingredients: items,
+      },
+    ],
+    hasMultipleSections: false,
+  };
 }

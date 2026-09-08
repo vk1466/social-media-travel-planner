@@ -40,6 +40,7 @@ class TravelPlannerStack(Stack):
     openai_api_key: str = "",
     tmdb_api_key: str = "",
     omdb_api_key: str = "",
+    usda_fooddata_api_key: str = "",
     **kwargs,
   ) -> None:
     super().__init__(scope, construct_id, **kwargs)
@@ -118,6 +119,7 @@ class TravelPlannerStack(Stack):
       "OPENAI_API_KEY": openai_api_key,
       "TMDB_API_KEY": tmdb_api_key,
       "OMDB_API_KEY": omdb_api_key,
+      "USDA_FOODDATA_API_KEY": usda_fooddata_api_key,
       "LOG_LEVEL": "INFO",
       "TIMELINE_IMPORTS_BUCKET": timeline_bucket.bucket_name,
       "MEDIA_BUCKET": media_bucket.bucket_name,

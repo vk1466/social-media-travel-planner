@@ -100,6 +100,7 @@ export function GroceryListModal({ recipes, onClose }: GroceryListModalProps): J
     }
     return count;
   }, [recipes]);
+  const hasRecipes = recipes.length > 0;
 
   return (
     <div
@@ -125,14 +126,18 @@ export function GroceryListModal({ recipes, onClose }: GroceryListModalProps): J
         <div>
           <span className="recipe-eyebrow-tag">Aisle-Sorted Shopping List</span>
           <h2 style={{ margin: "0.25rem 0 0.5rem", fontSize: "1.6rem", color: "var(--text, #ffffff)" }}>
-            🛒 Grocery List ({totalIngredientsCount} items)
+            {hasRecipes ? `🛒 Grocery List (${totalIngredientsCount} items)` : "🛒 Your grocery list is empty"}
           </h2>
           <p style={{ margin: 0, color: "var(--text-muted, rgb(255 255 255 / 0.7))", fontSize: "0.92rem" }}>
-            Aggregated from {recipes.length} saved {recipes.length === 1 ? "recipe" : "recipes"}:{" "}
-            <span style={{ fontWeight: 600 }}>
-              {recipes.map((r) => r.recipe.title ?? "Recipe").slice(0, 3).join(", ")}
-              {recipes.length > 3 ? ` +${recipes.length - 3} more` : ""}
-            </span>
+            {hasRecipes ? (
+              <>
+                Aggregated from {recipes.length} saved {recipes.length === 1 ? "recipe" : "recipes"}:{" "}
+                <span style={{ fontWeight: 600 }}>
+                  {recipes.map((r) => r.recipe.title ?? "Recipe").slice(0, 3).join(", ")}
+                  {recipes.length > 3 ? ` +${recipes.length - 3} more` : ""}
+                </span>
+              </>
+            ) : "Open a recipe and add its ingredients to build your list."}
           </p>
         </div>
 

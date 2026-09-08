@@ -86,6 +86,26 @@ export interface RecipeIngredient {
   aisle?: string | null;
 }
 
+export interface NutritionMacros {
+  calories_kcal: number;
+  protein_g: number;
+  carbohydrates_g: number;
+  fat_g: number;
+  fiber_g: number;
+  sugar_g: number;
+  sodium_mg: number;
+}
+
+export interface RecipeNutrition {
+  recipe_total: NutritionMacros;
+  per_serving: NutritionMacros;
+  servings: number;
+  matched_ingredient_count: number;
+  ingredient_count: number;
+  is_complete: boolean;
+  source: string;
+}
+
 export interface ExtractedRecipe {
   title?: string | null;
   summary?: string | null;
@@ -100,6 +120,7 @@ export interface ExtractedRecipe {
   difficulty?: string | null;
   estimated_inferred?: boolean;
   tips?: string[];
+  nutrition?: RecipeNutrition | null;
 }
 
 export interface SavedPost {

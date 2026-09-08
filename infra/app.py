@@ -33,6 +33,7 @@ shared = {
   "openai_api_key": _env_str("OPENAI_API_KEY"),
   "tmdb_api_key": _env_str("TMDB_API_KEY"),
   "omdb_api_key": _env_str("OMDB_API_KEY"),
+  "usda_fooddata_api_key": _env_str("USDA_FOODDATA_API_KEY"),
   "env": aws_env,
 }
 

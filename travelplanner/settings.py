@@ -46,6 +46,12 @@ def omdb_api_key() -> str | None:
   return value.strip() if value else None
 
 
+def usda_fooddata_api_key() -> str | None:
+  """Optional USDA FoodData Central key for recipe nutrition estimates."""
+  value = os.getenv("USDA_FOODDATA_API_KEY")
+  return value.strip() if value else None
+
+
 def openai_model() -> str:
   return os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 
@@ -303,4 +309,3 @@ def timeline_routine_visit_count() -> int:
   if value < 0:
     raise RuntimeError("TIMELINE_ROUTINE_VISIT_COUNT must be >= 0")
   return value
-

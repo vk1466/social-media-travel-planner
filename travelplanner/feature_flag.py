@@ -31,6 +31,8 @@ class FeatureFlag:
     "content_categories": True,
     # Extract source-grounded, possibly incomplete recipes from food reels.
     "food_recipes": True,
+    # Estimate recipe macros from weighed ingredients using USDA FoodData Central.
+    "recipe_nutrition": True,
     "place_facts_ttl_days": 30,
     "place_facts_max_docs": 6,
   }

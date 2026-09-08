@@ -35,7 +35,7 @@ Stacks always deploy to **us-west-2** (see `infra/app.py`). Override only with
    run the Vite UI against the dev API.
 
 4. Set GitHub Actions **secrets**: `MINDCASE_API_KEY`, `SUPADATA_API_KEY`,
-   `OPENAI_API_KEY`, `TMDB_API_KEY`, `OMDB_API_KEY`, `AWS_DEPLOY_ROLE_ARN`,
+   `OPENAI_API_KEY`, `TMDB_API_KEY`, `OMDB_API_KEY`, `USDA_FOODDATA_API_KEY`, `AWS_DEPLOY_ROLE_ARN`,
    `VITE_CARTO_BASEMAPS_API_KEY` (frontend Vercel env; not used by CDK).
 
 5. Deploy once manually (optional) to verify:
@@ -50,6 +50,7 @@ export SUPADATA_API_KEY=...
 export OPENAI_API_KEY=...
 export TMDB_API_KEY=...
 export OMDB_API_KEY=...
+export USDA_FOODDATA_API_KEY=...
 cdk deploy TravelPlanner-dev
 # later:
 cdk deploy TravelPlanner-prod

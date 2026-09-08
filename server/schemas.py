@@ -67,6 +67,26 @@ class RecipeIngredientSchema(BaseModel):
   group: str | None = None
 
 
+class NutritionMacrosSchema(BaseModel):
+  calories_kcal: float
+  protein_g: float
+  carbohydrates_g: float
+  fat_g: float
+  fiber_g: float = 0.0
+  sugar_g: float = 0.0
+  sodium_mg: float = 0.0
+
+
+class RecipeNutritionSchema(BaseModel):
+  recipe_total: NutritionMacrosSchema
+  per_serving: NutritionMacrosSchema
+  servings: float
+  matched_ingredient_count: int
+  ingredient_count: int
+  is_complete: bool
+  source: str
+
+
 class ExtractedRecipeSchema(BaseModel):
   title: str | None = None
   summary: str | None = None
@@ -84,6 +104,7 @@ class ExtractedRecipeSchema(BaseModel):
   equipment: list[str] = Field(default_factory=list)
   dietary: list[str] = Field(default_factory=list)
   step_timers_seconds: list[int | None] = Field(default_factory=list)
+  nutrition: RecipeNutritionSchema | None = None
 
 
 class SavedPostSchema(BaseModel):

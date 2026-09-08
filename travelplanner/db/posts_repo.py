@@ -6,7 +6,7 @@ from travelplanner.content_categories import normalize_content_category
 from travelplanner.models import Platform, SavedPost, make_post_id, parse_post_id
 from travelplanner.movie_hints import ExtractedMovie, ResolvedMovie, normalize_title_kind
 from travelplanner.place_hints import ExtractedPlace, PlatformPlace
-from travelplanner.recipe_hints import ExtractedRecipe, RecipeIngredient
+from travelplanner.recipe_hints import ExtractedRecipe, NutritionMacros, RecipeIngredient, RecipeNutrition
 from travelplanner.db.serialize import from_dynamo, to_dynamo
 from travelplanner.db.tables import get_table
 
@@ -94,6 +94,30 @@ def _extracted_recipe_from_dict(data: dict | None) -> ExtractedRecipe | None:
     for item in data.get("ingredients", [])
     if isinstance(item, dict) and isinstance(item.get("name"), str) and item["name"].strip()
   )
+  nutrition_data = data.get("nutrition")
+  nutrition = None
+  if isinstance(nutrition_data, dict):
+    total = nutrition_data.get("recipe_total")
+    per_serving = nutrition_data.get("per_serving")
+    if isinstance(total, dict) and isinstance(per_serving, dict):
+      def macros(values: dict) -> NutritionMacros:
+        return NutritionMacros(
+          calories_kcal=float(values.get("calories_kcal", 0)), protein_g=float(values.get("protein_g", 0)),
+          carbohydrates_g=float(values.get("carbohydrates_g", 0)), fat_g=float(values.get("fat_g", 0)),
+          fiber_g=float(values.get("fiber_g", 0)), sugar_g=float(values.get("sugar_g", 0)),
+          sodium_mg=float(values.get("sodium_mg", 0)),
+        )
+      try:
+        nutrition = RecipeNutrition(
+          recipe_total=macros(total), per_serving=macros(per_serving),
+          servings=float(nutrition_data["servings"]),
+          matched_ingredient_count=int(nutrition_data["matched_ingredient_count"]),
+          ingredient_count=int(nutrition_data["ingredient_count"]),
+          is_complete=nutrition_data.get("is_complete") is True,
+          source=str(nutrition_data["source"]),
+        )
+      except (KeyError, TypeError, ValueError):
+        nutrition = None
   return ExtractedRecipe(
     title=data.get("title"),
     summary=data.get("summary"),
@@ -111,6 +135,7 @@ def _extracted_recipe_from_dict(data: dict | None) -> ExtractedRecipe | None:
     equipment=tuple(item for item in data.get("equipment", []) if isinstance(item, str)),
     dietary=tuple(item for item in data.get("dietary", []) if isinstance(item, str)),
     step_timers_seconds=tuple(item if isinstance(item, int) else None for item in data.get("step_timers_seconds", [])),
+    nutrition=nutrition,
   )
 
 

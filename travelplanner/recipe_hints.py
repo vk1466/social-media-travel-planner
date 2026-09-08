@@ -10,6 +10,32 @@ from dataclasses import dataclass
 
 
 @dataclass(frozen=True)
+class NutritionMacros:
+  """Nutrition amounts in grams, except calories which are kilocalories."""
+
+  calories_kcal: float
+  protein_g: float
+  carbohydrates_g: float
+  fat_g: float
+  fiber_g: float = 0.0
+  sugar_g: float = 0.0
+  sodium_mg: float = 0.0
+
+
+@dataclass(frozen=True)
+class RecipeNutrition:
+  """Estimated nutrition calculated from measured recipe ingredients."""
+
+  recipe_total: NutritionMacros
+  per_serving: NutritionMacros
+  servings: float
+  matched_ingredient_count: int
+  ingredient_count: int
+  is_complete: bool
+  source: str
+
+
+@dataclass(frozen=True)
 class RecipeIngredient:
   name: str
   amount: str | None = None
@@ -38,3 +64,4 @@ class ExtractedRecipe:
   equipment: tuple[str, ...] = ()
   dietary: tuple[str, ...] = ()
   step_timers_seconds: tuple[int | None, ...] = ()
+  nutrition: RecipeNutrition | None = None

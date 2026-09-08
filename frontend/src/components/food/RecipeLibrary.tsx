@@ -94,7 +94,6 @@ export function RecipeLibrary({ posts, onSelectPost, onPostUpdated }: RecipeLibr
 
   const handleAddToGrocery = (recipeKey: string) => {
     setGroceryRecipeKeys((prev) => new Set([...prev, recipeKey]));
-    setGroceryOpen(true);
   };
 
   return (
@@ -212,8 +211,9 @@ export function RecipeLibrary({ posts, onSelectPost, onPostUpdated }: RecipeLibr
           onClose={() => setSelected(null)}
           onAddToGrocery={() => {
             handleAddToGrocery(selected.key);
-            setSelected(null);
           }}
+          isInGroceryList={groceryRecipeKeys.has(selected.key)}
+          onViewGrocery={() => setGroceryOpen(true)}
           onSelectPost={
             onSelectPost
               ? (post) => {
@@ -231,7 +231,7 @@ export function RecipeLibrary({ posts, onSelectPost, onPostUpdated }: RecipeLibr
 
       {groceryOpen && (
         <GroceryListModal
-          recipes={groceryRecipes.length > 0 ? groceryRecipes : (selected ? [selected] : recipes.slice(0, 3))}
+          recipes={groceryRecipes}
           onClose={() => setGroceryOpen(false)}
         />
       )}

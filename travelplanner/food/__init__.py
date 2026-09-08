@@ -1,0 +1,1 @@
+"""Food-only domain helpers."""

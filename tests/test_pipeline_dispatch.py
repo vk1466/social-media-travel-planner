@@ -61,6 +61,7 @@ def test_close_steps_dispatch_by_category() -> None:
     "extract_recipe_frames",
     "extract_recipe",
     "enrich_recipe",
+    "calculate_recipe_nutrition",
   ]
   assert food_steps == RECIPE_CLOSE_STEPS
 

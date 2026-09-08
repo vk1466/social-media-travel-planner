@@ -479,6 +479,7 @@ export function PostDetail({
   const [activeTrailerKey, setActiveTrailerKey] = useState<string | null>(null);
   const [recipeOpen, setRecipeOpen] = useState(false);
   const [recipeGroceryOpen, setRecipeGroceryOpen] = useState(false);
+  const [groceryRecipePostId, setGroceryRecipePostId] = useState<string | null>(null);
   const placeListRef = useRef<HTMLUListElement>(null);
 
   useEffect(() => {
@@ -731,7 +732,9 @@ export function PostDetail({
             },
           }}
           onClose={() => setRecipeOpen(false)}
-          onAddToGrocery={() => { setRecipeOpen(false); setRecipeGroceryOpen(true); }}
+          onAddToGrocery={() => setGroceryRecipePostId(post.post_id)}
+          isInGroceryList={groceryRecipePostId === post.post_id}
+          onViewGrocery={() => setRecipeGroceryOpen(true)}
           onPostUpdated={(updated) => {
             setPost(updated);
             onPostUpdated?.(updated);
