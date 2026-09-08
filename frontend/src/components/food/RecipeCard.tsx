@@ -8,82 +8,134 @@ export interface RecipeCardProps {
   onOpen: () => void;
 }
 
+function formatDuration(minutes: number | null): string | null {
+  if (!minutes || minutes <= 0) return null;
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  if (h === 0) return `${m}m`;
+  if (m === 0) return `${h}h`;
+  return `${h}h ${m}m`;
+}
+
 export function RecipeCard({ item, onOpen }: RecipeCardProps): JSX.Element {
   const { post, recipe } = item;
   const minutes = recipeMinutes(recipe);
+  const durationLabel = formatDuration(minutes);
   const thumbnail = proxiedMediaUrl(post.thumbnail_url);
+  const ingredientCount = recipe.ingredients.length;
+  const hasIngredients = ingredientCount > 0;
+  const dietaryTags = recipe.dietary ?? [];
+  const mealType = recipe.meal_type;
+  const cuisine = recipe.cuisine;
+  const isChefReconstructed = recipe.estimated_inferred;
 
   return (
-    <button
-      type="button"
-      className="recipe-card"
+    <article
+      className="recipe-grid-card"
       onClick={onOpen}
-      aria-label={`Open recipe for ${recipe.title ?? "food post"}`}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onOpen();
+        }
+      }}
+      aria-label={`View recipe for ${recipe.title ?? "food post"}`}
     >
-      <div className="recipe-card-media">
+      <div className="recipe-poster-wrap">
         {thumbnail ? (
           <img
-            className="recipe-card-img"
+            className="recipe-poster-img"
             src={thumbnail}
-            alt={recipe.title ?? "Recipe thumbnail"}
+            alt=""
             loading="lazy"
           />
         ) : (
-          <div className="recipe-card-placeholder" aria-hidden="true">
-            <span>🍳</span>
+          <div className="recipe-poster-placeholder" aria-hidden="true">
+            <span className="recipe-placeholder-icon">🍳</span>
+            <span className="recipe-placeholder-title">{recipe.title ?? "Food Inspiration"}</span>
           </div>
         )}
 
-        <span className="recipe-card-badge-play">
-          ▶ Reel
-        </span>
-
-        {recipe.cuisine && (
-          <span className="recipe-card-badge-cuisine">
-            {recipe.cuisine}
+        {cuisine && (
+          <span className="recipe-cuisine-badge" title={`Cuisine: ${cuisine}`}>
+            {cuisine}
           </span>
         )}
 
-        {recipe.estimated_inferred && (
-          <span className="recipe-card-badge-chef" title="Chef Reconstructed: creator omitted measurements">
-            ⚡ Chef Reconstructed
+        {isChefReconstructed && (
+          <span
+            className="recipe-chef-badge"
+            title="Chef Reconstructed: creator omitted measurements; ingredients estimated"
+          >
+            ⚡ AI Chef
           </span>
         )}
+
+        <div className="recipe-poster-overlay">
+          <button
+            type="button"
+            className="recipe-card-action-btn"
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpen();
+            }}
+            aria-label={`View ${recipe.title ?? "recipe"}`}
+          >
+            ▶ View Recipe
+          </button>
+        </div>
       </div>
 
-      <div className="recipe-card-body">
-        <h3 className="recipe-card-title">{recipe.title ?? "Food inspiration"}</h3>
-        <p className="recipe-card-summary">
-          {recipe.summary ?? (post.caption ? post.caption.slice(0, 120) : "A saved recipe idea from this reel.")}
-        </p>
-
-        <div className="recipe-card-meta-chips">
-          {minutes != null && (
-            <span className="recipe-meta-pill">
-              ⏱ {minutes} min
-            </span>
+      <div className="recipe-card-content">
+        <div className="recipe-card-meta-line">
+          {mealType && (
+            <span className="recipe-kind-tag">{mealType}</span>
           )}
-          {recipe.ingredients.length > 0 ? (
-            <span className="recipe-meta-pill">
-              🥬 {recipe.ingredients.length} ingredients
-            </span>
-          ) : (
-            <span className="recipe-meta-pill" style={{ background: "rgba(245, 158, 11, 0.15)", color: "#f59e0b" }}>
-              ✨ Needs AI details
-            </span>
+          {durationLabel && (
+            <span className="recipe-duration-tag">⏱ {durationLabel}</span>
           )}
           {recipe.difficulty && (
-            <span className="recipe-meta-pill" style={{ textTransform: "capitalize" }}>
-              {recipe.difficulty}
+            <span className="recipe-difficulty-tag">{recipe.difficulty}</span>
+          )}
+        </div>
+
+        <h3 className="recipe-card-title">{recipe.title ?? "Food inspiration"}</h3>
+
+        <div className="recipe-metrics-row">
+          {hasIngredients ? (
+            <span className="recipe-badge recipe-badge-ingredients">
+              <span className="recipe-badge-icon" aria-hidden="true">🥬</span>
+              <span className="recipe-badge-value">{ingredientCount} items</span>
+            </span>
+          ) : (
+            <span className="recipe-badge recipe-badge-ai-needed" title="Click to reconstruct recipe details with AI">
+              <span className="recipe-badge-icon" aria-hidden="true">✨</span>
+              <span className="recipe-badge-value">Needs AI</span>
             </span>
           )}
-          {recipe.meal_type && (
-            <span className="recipe-meta-pill" style={{ textTransform: "capitalize" }}>
-              {recipe.meal_type}
+
+          {recipe.servings && (
+            <span className="recipe-badge recipe-badge-servings">
+              <span className="recipe-badge-icon" aria-hidden="true">🍽️</span>
+              <span className="recipe-badge-value">{recipe.servings} srv</span>
             </span>
           )}
         </div>
+
+        {dietaryTags.length > 0 && (
+          <div className="recipe-card-dietary">
+            {dietaryTags.slice(0, 2).map((diet) => (
+              <span key={diet} className="recipe-diet-pill">{diet}</span>
+            ))}
+            {dietaryTags.length > 2 && (
+              <span className="recipe-more-dietary">+{dietaryTags.length - 2}</span>
+            )}
+          </div>
+        )}
       </div>
-    </button>
+    </article>
   );
 }
+
