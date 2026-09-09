@@ -1,8 +1,24 @@
 from __future__ import annotations
 
 import os
+import threading
 
 import pytest
+from moto.dynamodb.models import DynamoDBBackend
+
+# Moto's in-memory DynamoDB update_item is not thread-safe for concurrent item updates
+# (condition check and mutation are not atomic across OS threads).
+# Synchronize update_item so multi-threaded tests reflect real DynamoDB's atomic condition checks.
+_MOTO_UPDATE_LOCK = threading.Lock()
+_ORIG_MOTO_UPDATE_ITEM = DynamoDBBackend.update_item
+
+
+def _threadsafe_moto_update_item(self, *args, **kwargs):
+  with _MOTO_UPDATE_LOCK:
+    return _ORIG_MOTO_UPDATE_ITEM(self, *args, **kwargs)
+
+
+DynamoDBBackend.update_item = _threadsafe_moto_update_item
 
 
 @pytest.fixture()

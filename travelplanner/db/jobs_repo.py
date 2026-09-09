@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import random
 import time
 import uuid
 from datetime import datetime, timedelta, timezone
@@ -14,7 +15,7 @@ from travelplanner.db.serialize import from_dynamo, to_dynamo
 from travelplanner.db.tables import JOBS_USER_CREATED_INDEX, get_table
 
 JOB_TTL_DAYS = 7
-_ITEM_UPDATE_ATTEMPTS = 8
+_ITEM_UPDATE_ATTEMPTS = 16
 
 JOB_KIND_LINK_INGEST = "link_ingest"
 JOB_KIND_INSTAGRAM_PROFILE_IMPORT = "instagram_profile_import"
@@ -146,8 +147,11 @@ def create_timeline_job(
   return job_id
 
 
-def get_job(job_id: str) -> dict[str, Any] | None:
-  response = get_table("Jobs").get_item(Key={"job_id": job_id})
+def get_job(job_id: str, *, consistent_read: bool = False) -> dict[str, Any] | None:
+  response = get_table("Jobs").get_item(
+    Key={"job_id": job_id},
+    ConsistentRead=consistent_read,
+  )
   item = response.get("Item")
   if item is None:
     return None
@@ -207,7 +211,7 @@ def update_item(
 ) -> None:
   """Optimistic-lock item updates so concurrent Step Functions Map items don't clobber."""
   for attempt in range(_ITEM_UPDATE_ATTEMPTS):
-    job = get_job(job_id)
+    job = get_job(job_id, consistent_read=True)
     if job is None:
       raise KeyError(f"Job not found: {job_id}")
 
@@ -254,7 +258,7 @@ def update_item(
     except ClientError as exc:
       if exc.response.get("Error", {}).get("Code") != "ConditionalCheckFailedException":
         raise
-      time.sleep(0.025 * (attempt + 1))
+      time.sleep(random.uniform(0.015, 0.04 * (attempt + 1)))
 
   raise RuntimeError(f"Could not update item on job {job_id} after concurrent retries")
 
