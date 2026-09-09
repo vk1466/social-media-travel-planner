@@ -65,6 +65,7 @@ class RecipeIngredientSchema(BaseModel):
   note: str | None = None
   aisle: str | None = None
   group: str | None = None
+  estimated_grams: float | None = None
 
 
 class NutritionMacrosSchema(BaseModel):
@@ -85,6 +86,11 @@ class RecipeNutritionSchema(BaseModel):
   ingredient_count: int
   is_complete: bool
   source: str
+  servings_inferred: bool = False
+  matched_ingredients: list[str] = Field(default_factory=list)
+  unmatched_ingredients: list[str] = Field(default_factory=list)
+  macro_highlights: list[str] = Field(default_factory=list)
+  dietary_fit: list[str] = Field(default_factory=list)
 
 
 class ExtractedRecipeSchema(BaseModel):

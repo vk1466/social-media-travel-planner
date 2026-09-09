@@ -1,11 +1,17 @@
-import { useEffect, useMemo, useState, type JSX } from "react";
+import { useEffect, useMemo, useRef, useState, type JSX } from "react";
 import type { ExtractedRecipe, SavedPost } from "../../api";
 import { reconstructRecipe } from "../../api";
 import { proxiedMediaUrl } from "../../postDisplayUtils";
 import { CookModeModal } from "./CookModeModal";
 import { NutritionPanel } from "./NutritionPanel";
 import type { SavedRecipe } from "./recipeUtils";
-import { groupRecipeSections, recipeMinutes } from "./recipeUtils";
+import {
+  getRecipeFoodHeroTheme,
+  getAisleIcon,
+  getSectionEmoji,
+  groupRecipeSections,
+  recipeMinutes,
+} from "./recipeUtils";
 import "./recipe-library.css";
 
 export interface RecipeDetailModalProps {
@@ -27,6 +33,11 @@ export function RecipeDetailModal({
   onSelectPost,
   onPostUpdated,
 }: RecipeDetailModalProps): JSX.Element {
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const dialogTitleId = useMemo(
+    () => `recipe-title-${item.key.replace(/[^a-zA-Z0-9_-]/g, "-")}`,
+    [item.key],
+  );
   const [multiplier, setMultiplier] = useState(1);
   const [checkedIngredients, setCheckedIngredients] = useState<Set<number>>(new Set());
   const [cooking, setCooking] = useState(false);
@@ -35,6 +46,10 @@ export function RecipeDetailModal({
   const [isReconstructing, setIsReconstructing] = useState(false);
   const [reconstructError, setReconstructError] = useState<string | null>(null);
   const [activeSection, setActiveSection] = useState<string>("all");
+  const [ingredientsOpen, setIngredientsOpen] = useState(false);
+  const [methodOpen, setMethodOpen] = useState(false);
+  const [macrosOpen, setMacrosOpen] = useState(false);
+  const [imageFailed, setImageFailed] = useState(false);
 
   useEffect(() => {
     setCurrentPost(item.post);
@@ -43,7 +58,25 @@ export function RecipeDetailModal({
     setCheckedIngredients(new Set());
     setReconstructError(null);
     setActiveSection("all");
+    setIngredientsOpen(false);
+    setMethodOpen(false);
+    setMacrosOpen(false);
+    setImageFailed(false);
   }, [item]);
+
+  useEffect(() => {
+    const previouslyFocused = document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    closeButtonRef.current?.focus();
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      previouslyFocused?.focus();
+    };
+  }, []);
 
   useEffect(() => {
     const handleKey = (event: KeyboardEvent) => {
@@ -57,13 +90,21 @@ export function RecipeDetailModal({
   }, [onClose, cooking]);
 
   const totalMinutes = recipeMinutes(currentRecipe);
-  const thumbnail = proxiedMediaUrl(currentPost.thumbnail_url);
+  const thumbnail = proxiedMediaUrl(currentRecipe.image_url || currentPost.thumbnail_url);
+  const heroTheme = useMemo(() => getRecipeFoodHeroTheme(currentRecipe), [currentRecipe]);
+
+  useEffect(() => {
+    setImageFailed(false);
+  }, [thumbnail]);
   const timeDetails = [
     currentRecipe.prep_time_minutes && `${currentRecipe.prep_time_minutes}m prep`,
     currentRecipe.cook_time_minutes && `${currentRecipe.cook_time_minutes}m cook`,
   ]
     .filter(Boolean)
     .join(" · ");
+  const creator = currentPost.author_handle?.trim()
+    ? (currentPost.author_handle.startsWith("@") ? currentPost.author_handle : `@${currentPost.author_handle}`)
+    : "Original creator";
 
   const { sections, hasMultipleSections } = useMemo(
     () => groupRecipeSections(currentRecipe, multiplier),
@@ -76,29 +117,6 @@ export function RecipeDetailModal({
     }
     return sections.filter((sec) => sec.name === activeSection);
   }, [sections, hasMultipleSections, activeSection]);
-
-  const otherSectionNames = useMemo(() => {
-    if (!hasMultipleSections || activeSection === "all") return [];
-    return sections
-      .filter((sec) => sec.name !== activeSection)
-      .map((sec) => sec.name.toLowerCase());
-  }, [sections, hasMultipleSections, activeSection]);
-
-  const filteredSteps = useMemo(() => {
-    const all = currentRecipe.steps.map((step, idx) => ({ step, stepNum: idx + 1 }));
-    if (!hasMultipleSections || activeSection === "all") {
-      return all;
-    }
-    const currentLow = activeSection.toLowerCase();
-    return all.filter(({ step }) => {
-      const stepLow = step.toLowerCase();
-      if (stepLow.includes(currentLow)) {
-        return true;
-      }
-      const mentionsOther = otherSectionNames.some((other) => stepLow.includes(other));
-      return !mentionsOther;
-    });
-  }, [currentRecipe.steps, hasMultipleSections, activeSection, otherSectionNames]);
 
   const toggleIngredient = (index: number) => {
     setCheckedIngredients((prev) => {
@@ -135,17 +153,18 @@ export function RecipeDetailModal({
   return (
     <>
       <div
-        className="recipe-modal-backdrop"
+        className="recipe-modal-backdrop recipe-modal-backdrop--editorial"
         onClick={onClose}
-        role="dialog"
-        aria-modal="true"
-        aria-label={`${currentRecipe.title ?? "Recipe"} details`}
       >
         <section
-          className="recipe-detail-panel"
+          className="recipe-detail-panel recipe-detail-panel--editorial"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={dialogTitleId}
           onClick={(e) => e.stopPropagation()}
         >
           <button
+            ref={closeButtonRef}
             type="button"
             className="recipe-modal-close"
             aria-label="Close recipe details"
@@ -154,15 +173,36 @@ export function RecipeDetailModal({
             ✕
           </button>
 
-          {thumbnail && (
+          {thumbnail && !imageFailed ? (
             <div className="recipe-modal-hero">
               <img
                 className="recipe-modal-hero-img"
                 src={thumbnail}
-                alt=""
+                alt={currentRecipe.title ?? "Recipe preview"}
                 loading="lazy"
+                onError={() => setImageFailed(true)}
               />
               <div className="recipe-modal-hero-scrim" />
+              <span className="recipe-sheet-source">Saved from {creator}</span>
+            </div>
+          ) : (
+            <div
+              className="recipe-modal-hero recipe-modal-hero-fallback"
+              style={{ background: heroTheme.gradient }}
+            >
+              <div className="recipe-hero-fallback-body">
+                <div className="recipe-hero-fallback-art" aria-hidden="true">
+                  <span className="recipe-hero-art-icon">{heroTheme.emoji}</span>
+                </div>
+                <div className="recipe-hero-fallback-meta">
+                  <span className="recipe-hero-fallback-pill">
+                    {currentRecipe.cuisine ? `${currentRecipe.cuisine} Cuisine` : "Social Food Inspiration"}
+                  </span>
+                  <span className="recipe-hero-fallback-title">{heroTheme.label}</span>
+                </div>
+              </div>
+              <div className="recipe-modal-hero-scrim" />
+              <span className="recipe-sheet-source">Saved from {creator}</span>
             </div>
           )}
 
@@ -170,19 +210,20 @@ export function RecipeDetailModal({
             <div className="recipe-modal-header">
               <div className="recipe-header-meta-row">
                 <span className="recipe-eyebrow-tag">
-                  {currentRecipe.cuisine ? `${currentRecipe.cuisine} Cuisine` : "Recipe Idea"}
-                  {currentRecipe.meal_type ? ` · ${currentRecipe.meal_type}` : ""}
+                  {creator}{currentRecipe.cuisine ? ` · ${currentRecipe.cuisine}` : ""}
                 </span>
                 <div className="recipe-header-links">
-                  <a
-                    className="recipe-link-chip"
-                    href={currentPost.post_url}
-                    target="_blank"
-                    rel="noreferrer"
-                    title="Open original video"
-                  >
-                    ▶ Watch Reel
-                  </a>
+                  {currentPost.post_url && (
+                    <a
+                      className="recipe-link-chip"
+                      href={currentPost.post_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      title="Open original video"
+                    >
+                      Watch reel ↗
+                    </a>
+                  )}
                   {onSelectPost && (
                     <button
                       type="button"
@@ -190,93 +231,49 @@ export function RecipeDetailModal({
                       onClick={() => onSelectPost(currentPost)}
                       title="View post details"
                     >
-                      📄 Saved Post
+                      View saved post ↗
                     </button>
                   )}
                 </div>
               </div>
 
-              <h2 className="recipe-modal-title">
+              <h2 id={dialogTitleId} className="recipe-modal-title">
                 {currentRecipe.title ?? "Food inspiration"}
               </h2>
 
-              {currentRecipe.summary && (
-                <p className="recipe-modal-desc">{currentRecipe.summary}</p>
-              )}
+            </div>
 
-              <div className="recipe-pills-row">
-                {totalMinutes != null && (
-                  <span className="recipe-meta-pill">
-                    ⏱ {totalMinutes}m total{timeDetails ? ` (${timeDetails})` : ""}
-                  </span>
-                )}
-                {currentRecipe.difficulty && (
-                  <span className="recipe-meta-pill" style={{ textTransform: "capitalize" }}>
-                    🎯 {currentRecipe.difficulty}
-                  </span>
-                )}
-                {currentRecipe.servings && (
-                  <span className="recipe-meta-pill">
-                    🍽 {currentRecipe.servings}
-                  </span>
-                )}
-                {currentRecipe.equipment && currentRecipe.equipment.length > 0 && (
-                  <span className="recipe-meta-pill">
-                    🍳 {currentRecipe.equipment.join(", ")}
-                  </span>
-                )}
+            <p className="recipe-editorial-summary">
+              {currentRecipe.summary || "Open the original reel for this recipe's story and preparation."}
+            </p>
+
+            <div className="recipe-editorial-facts">
+              {totalMinutes != null && <span><b>{totalMinutes} min</b><small>Total time{timeDetails ? ` · ${timeDetails}` : ""}</small></span>}
+              {currentRecipe.difficulty && <span><b>{currentRecipe.difficulty}</b><small>Difficulty</small></span>}
+              {currentRecipe.servings && <span><b>{currentRecipe.servings}</b><small>Servings</small></span>}
+            </div>
+
+            {currentRecipe.estimated_inferred && (
+              <div className="recipe-reconstructed-banner">
+                <strong>Estimated recipe</strong> · Some amounts or steps were inferred because the original post was incomplete.
               </div>
+            )}
 
-              {currentRecipe.estimated_inferred && (
-                <div className="recipe-reconstructed-banner">
-                  <span className="recipe-reconstructed-icon">⚡</span>
-                  <div className="recipe-reconstructed-text">
-                    <strong>Estimated recipe</strong> — The original post omitted some details, so amounts or steps were estimated.
-                  </div>
-                </div>
-              )}
-
-              {currentRecipe.nutrition && (
-                <NutritionPanel nutrition={currentRecipe.nutrition} multiplier={multiplier} />
-              )}
-            </div>
-
-            <div className="recipe-action-bar">
-              <button
-                type="button"
-                className="recipe-btn-primary"
-                disabled={currentRecipe.steps.length === 0}
-                onClick={() => setCooking(true)}
-              >
-                🍳 Start cook mode
-              </button>
-
-              <button
-                type="button"
-                className={`recipe-btn-outline ${isInGroceryList ? "is-added" : ""}`}
-                disabled={currentRecipe.ingredients.length === 0}
-                onClick={onAddToGrocery}
-              >
-                {isInGroceryList ? "✓ Added to grocery list" : "🛒 Add to grocery list"}
-              </button>
-
-              {isInGroceryList && (
-                <button
-                  type="button"
-                  className="recipe-btn-outline recipe-btn-view-grocery"
-                  onClick={onViewGrocery}
-                >
-                  View grocery list →
-                </button>
-              )}
-            </div>
-
-            <div className="recipe-columns">
-              <div className="recipe-column-section">
+            <div className={`recipe-editorial-content ${ingredientsOpen || methodOpen || macrosOpen ? "has-expanded-section" : ""}`}>
+              <section className="recipe-column-section recipe-editorial-ingredients">
                 <div className="recipe-column-header">
                   <div className="recipe-column-title-wrap">
-                    <h3>Ingredients</h3>
-                    {checkedIngredients.size > 0 && (
+                    <button
+                      type="button"
+                      className="recipe-editorial-section-toggle"
+                      aria-expanded={ingredientsOpen}
+                      onClick={() => setIngredientsOpen((open) => !open)}
+                    >
+                      <span>Ingredients</span>
+                      <small>{currentRecipe.ingredients.length}</small>
+                      <i aria-hidden="true">⌄</i>
+                    </button>
+                    {ingredientsOpen && checkedIngredients.size > 0 && (
                       <button
                         type="button"
                         className="recipe-clear-checks-btn"
@@ -287,7 +284,7 @@ export function RecipeDetailModal({
                     )}
                   </div>
 
-                  {currentRecipe.ingredients.length > 0 && (
+                  {ingredientsOpen && currentRecipe.ingredients.length > 0 && (
                     <div className="recipe-servings-scale-wrap">
                       <span className="recipe-scale-label">Scale:</span>
                       <div className="recipe-scale-pills">
@@ -306,6 +303,8 @@ export function RecipeDetailModal({
                   )}
                 </div>
 
+                {ingredientsOpen && (
+                  <>
                 {hasMultipleSections && (
                   <div className="recipe-section-tabs">
                     <button
@@ -313,7 +312,7 @@ export function RecipeDetailModal({
                       className={`recipe-section-tab ${activeSection === "all" ? "is-active" : ""}`}
                       onClick={() => setActiveSection("all")}
                     >
-                      All ({sections.length})
+                      🍽️ All ({sections.length})
                     </button>
                     {sections.map((sec) => (
                       <button
@@ -322,7 +321,7 @@ export function RecipeDetailModal({
                         className={`recipe-section-tab ${activeSection === sec.name ? "is-active" : ""}`}
                         onClick={() => setActiveSection(sec.name)}
                       >
-                        {sec.name}
+                        {getSectionEmoji(sec.name)} {sec.name}
                       </button>
                     ))}
                   </div>
@@ -334,23 +333,39 @@ export function RecipeDetailModal({
                       <div key={sec.name} className="recipe-ingredient-subgroup">
                         {hasMultipleSections && activeSection === "all" && (
                           <h4 className="recipe-subgroup-title">
-                            <span className="recipe-subgroup-icon">◆</span>
+                            <span className="recipe-subgroup-icon">{getSectionEmoji(sec.name)}</span>
                             <span>{sec.name}</span>
                           </h4>
                         )}
                         <ul className="recipe-ingredient-list">
                           {sec.ingredients.map((ing) => {
                             const isChecked = checkedIngredients.has(ing.originalIndex);
+                            const aisleIcon = getAisleIcon(ing.aisle);
                             return (
                               <li
                                 key={`${ing.name}-${ing.originalIndex}`}
                                 className={`recipe-ingredient-item ${isChecked ? "is-checked" : ""}`}
-                                onClick={() => toggleIngredient(ing.originalIndex)}
                               >
-                                <div className="recipe-custom-checkbox">
+                                <button
+                                  type="button"
+                                  className="recipe-ingredient-toggle"
+                                  onClick={() => toggleIngredient(ing.originalIndex)}
+                                  aria-pressed={isChecked}
+                                  aria-label={`${isChecked ? "Uncheck" : "Check"} ${ing.name}${ing.aisle ? `, ${ing.aisle}` : ""}`}
+                                >
+                                <span className="recipe-custom-checkbox" aria-hidden="true">
                                   {isChecked && <span className="recipe-checkbox-check">✓</span>}
-                                </div>
-                                <div className="recipe-ingredient-body">
+                                </span>
+                                {aisleIcon && (
+                                  <span
+                                    className="recipe-ingredient-aisle-icon"
+                                    title={ing.aisle ?? undefined}
+                                    aria-hidden="true"
+                                  >
+                                    {aisleIcon}
+                                  </span>
+                                )}
+                                <span className="recipe-ingredient-body">
                                   {(ing.amount || ing.unit) && (
                                     <span className="recipe-ing-amt">
                                       {ing.amount} {ing.unit}
@@ -360,12 +375,8 @@ export function RecipeDetailModal({
                                   {ing.note && (
                                     <span className="recipe-ing-note">({ing.note})</span>
                                   )}
-                                </div>
-                                {ing.aisle && (
-                                  <span className="recipe-ingredient-aisle-tag">
-                                    {ing.aisle}
-                                  </span>
-                                )}
+                                </span>
+                                </button>
                               </li>
                             );
                           })}
@@ -391,48 +402,87 @@ export function RecipeDetailModal({
                     )}
                   </div>
                 )}
-              </div>
+                  </>
+                )}
+              </section>
 
-              <div className="recipe-column-section">
+              <section className="recipe-column-section recipe-editorial-method">
                 <div className="recipe-column-header">
                   <div className="recipe-column-title-wrap">
-                    <h3>Cooking Steps</h3>
+                    <button
+                      type="button"
+                      className="recipe-editorial-section-toggle"
+                      aria-expanded={methodOpen}
+                      onClick={() => setMethodOpen((open) => !open)}
+                    >
+                      <span>Method</span>
+                      <small>{currentRecipe.steps.length}</small>
+                      <i aria-hidden="true">⌄</i>
+                    </button>
                   </div>
-                  {filteredSteps.length > 0 && (
-                    <span className="recipe-step-count-badge">
-                      {filteredSteps.length} {filteredSteps.length === 1 ? "step" : "steps"}
-                    </span>
-                  )}
                 </div>
-
-                {filteredSteps.length > 0 ? (
-                  <div className="recipe-steps-list">
-                    {filteredSteps.map(({ step, stepNum }) => (
-                      <div key={stepNum} className="recipe-step-card">
-                        <div className="recipe-step-badge">{stepNum}</div>
-                        <div className="recipe-step-body">
-                          <p className="recipe-step-text">{step}</p>
-                        </div>
-                      </div>
+                {methodOpen && (currentRecipe.steps.length > 0 ? (
+                  <ol className="recipe-editorial-steps">
+                    {currentRecipe.steps.map((step, index) => (
+                      <li key={`${index + 1}-${step}`}>
+                        <span>{String(index + 1).padStart(2, "0")}</span>
+                        <p>{step}</p>
+                      </li>
                     ))}
-                  </div>
+                  </ol>
                 ) : (
-                  <p className="recipe-empty-state" style={{ padding: "1.5rem" }}>
-                    No step-by-step instructions extracted. Use the AI reconstruction above to generate steps.
-                  </p>
-                )}
-
-                {currentRecipe.tips && currentRecipe.tips.length > 0 && (
-                  <div className="recipe-tips-box" style={{ marginTop: "1.5rem" }}>
-                    <span className="recipe-tips-title">💡 Chef & Creator Tips</span>
-                    <ul className="recipe-tips-list">
-                      {currentRecipe.tips.map((tip, idx) => (
-                        <li key={idx}>{tip}</li>
-                      ))}
-                    </ul>
+                  <p className="recipe-detail-empty">No steps were extracted. Create an estimated recipe to add them.</p>
+                ))}
+                {methodOpen && currentRecipe.tips && currentRecipe.tips.length > 0 && (
+                  <div className="recipe-tips-box">
+                    <span className="recipe-tips-title">Creator tips</span>
+                    <ul className="recipe-tips-list">{currentRecipe.tips.map((tip) => <li key={tip}>{tip}</li>)}</ul>
                   </div>
                 )}
-              </div>
+              </section>
+
+              <section className="recipe-column-section recipe-editorial-macros">
+                <div className="recipe-column-header">
+                  <div className="recipe-column-title-wrap">
+                    <button
+                      type="button"
+                      className="recipe-editorial-section-toggle"
+                      aria-expanded={macrosOpen}
+                      onClick={() => setMacrosOpen((open) => !open)}
+                    >
+                      <span>Macros</span>
+                      {currentRecipe.nutrition && (
+                        <small>{Math.round(currentRecipe.nutrition.per_serving.calories_kcal)} kcal</small>
+                      )}
+                      <i aria-hidden="true">⌄</i>
+                    </button>
+                  </div>
+                </div>
+                {macrosOpen && (
+                  currentRecipe.nutrition
+                    ? <NutritionPanel nutrition={currentRecipe.nutrition} multiplier={multiplier} />
+                    : <p className="recipe-detail-empty">Nutrition has not been estimated for this recipe yet.</p>
+                )}
+              </section>
+            </div>
+
+            <div className="recipe-action-bar">
+              <button
+                type="button"
+                className={`recipe-btn-outline ${isInGroceryList ? "is-added" : ""}`}
+                disabled={currentRecipe.ingredients.length === 0}
+                onClick={isInGroceryList ? onViewGrocery : onAddToGrocery}
+              >
+                {isInGroceryList ? "✓ View grocery list" : "Add ingredients to groceries"}
+              </button>
+              <button
+                type="button"
+                className="recipe-btn-primary"
+                disabled={currentRecipe.steps.length === 0}
+                onClick={() => setCooking(true)}
+              >
+                Start cook mode →
+              </button>
             </div>
           </div>
         </section>

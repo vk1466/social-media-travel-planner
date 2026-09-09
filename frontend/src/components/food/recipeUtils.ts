@@ -279,3 +279,98 @@ export function groupRecipeSections(
     hasMultipleSections: false,
   };
 }
+
+export function getSectionEmoji(name: string): string {
+  const low = name.toLowerCase();
+  if (low.includes("pina colada") || low.includes("pineapple")) return "🍍";
+  if (low.includes("papaya")) return "🍈";
+  if (low.includes("watermelon")) return "🍉";
+  if (low.includes("mango")) return "🥭";
+  if (low.includes("strawberry") || low.includes("berry") || low.includes("cherry")) return "🍓";
+  if (low.includes("chocolate") || low.includes("cocoa")) return "🍫";
+  if (low.includes("banana")) return "🍌";
+  if (low.includes("lemon") || low.includes("lime") || low.includes("citrus")) return "🍋";
+  if (low.includes("coconut")) return "🥥";
+  if (low.includes("matcha")) return "🍵";
+  if (low.includes("coffee") || low.includes("espresso")) return "☕";
+  if (low.includes("sauce") || low.includes("dip")) return "🥣";
+  if (low.includes("salad") || low.includes("dressing")) return "🥗";
+  if (low.includes("crust") || low.includes("dough") || low.includes("pastry")) return "🥧";
+  if (low.includes("filling") || low.includes("frosting")) return "🧁";
+  if (low.includes("topping") || low.includes("garnish")) return "✨";
+  if (low.includes("pasta") || low.includes("spaghetti")) return "🍝";
+  if (low.includes("noodle") || low.includes("ramen")) return "🍜";
+  if (low.includes("rice")) return "🍚";
+  if (low.includes("taco")) return "🌮";
+  if (low.includes("burger") || low.includes("sandwich")) return "🍔";
+  if (low.includes("ice cream") || low.includes("sorbet") || low.includes("gelato")) return "🍨";
+  if (low.includes("cake") || low.includes("dessert")) return "🍰";
+  if (low.includes("cookie") || low.includes("biscuit")) return "🍪";
+  if (low.includes("bread") || low.includes("toast")) return "🍞";
+  if (low.includes("soup") || low.includes("stew")) return "🍲";
+  if (low.includes("steak") || low.includes("beef")) return "🥩";
+  if (low.includes("chicken")) return "🍗";
+  if (low.includes("fish") || low.includes("salmon") || low.includes("seafood")) return "🐟";
+  if (low.includes("drink") || low.includes("smoothie") || low.includes("cocktail")) return "🍹";
+  return "🍽️";
+}
+
+export function getAisleIcon(aisle: string | null | undefined): string | null {
+  if (!aisle) return null;
+  const normalizedAisle = aisle.toLowerCase();
+  if (normalizedAisle.includes("produce")) return "🥬";
+  if (normalizedAisle.includes("meat") || normalizedAisle.includes("seafood")) return "🐟";
+  if (normalizedAisle.includes("dairy") || normalizedAisle.includes("refrigerated")) return "🥛";
+  if (normalizedAisle.includes("pantry") || normalizedAisle.includes("spice")) return "🧂";
+  if (normalizedAisle.includes("bakery")) return "🍞";
+  if (normalizedAisle.includes("frozen")) return "❄️";
+  return "🛒";
+}
+
+export function getRecipeFoodHeroTheme(recipe: ExtractedRecipe): {
+  gradient: string;
+  emoji: string;
+  label: string;
+} {
+  const text = `${recipe.title ?? ""} ${recipe.summary ?? ""} ${recipe.meal_type ?? ""} ${recipe.cuisine ?? ""}`.toLowerCase();
+  if (text.includes("ice cream") || text.includes("sorbet") || text.includes("gelato")) {
+    return {
+      gradient: "linear-gradient(135deg, #4a1936 0%, #2b1636 50%, #151124 100%)",
+      emoji: "🍨",
+      label: "Artisanal Ice Cream & Frozen Treat",
+    };
+  }
+  if (text.includes("dessert") || text.includes("cake") || text.includes("sweet")) {
+    return {
+      gradient: "linear-gradient(135deg, #3d1b28 0%, #261324 50%, #17101e 100%)",
+      emoji: "🍰",
+      label: "Sweet Dessert Creation",
+    };
+  }
+  if (text.includes("cocktail") || text.includes("drink") || text.includes("beverage")) {
+    return {
+      gradient: "linear-gradient(135deg, #182b42 0%, #1a1b38 50%, #101221 100%)",
+      emoji: "🍹",
+      label: "Craft Beverage & Refreshment",
+    };
+  }
+  if (text.includes("breakfast") || text.includes("pancake") || text.includes("egg")) {
+    return {
+      gradient: "linear-gradient(135deg, #4d3319 0%, #302115 50%, #191410 100%)",
+      emoji: "🥞",
+      label: "Morning Breakfast & Brunch",
+    };
+  }
+  if (text.includes("pasta") || text.includes("italian") || text.includes("pizza")) {
+    return {
+      gradient: "linear-gradient(135deg, #422019 0%, #2e1a17 50%, #191212 100%)",
+      emoji: "🍝",
+      label: "Comfort Italian Cuisine",
+    };
+  }
+  return {
+    gradient: "linear-gradient(135deg, #2b3038 0%, #1c2129 50%, #111419 100%)",
+    emoji: "🍳",
+    label: "Fresh Culinary Creation",
+  };
+}

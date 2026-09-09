@@ -31,7 +31,8 @@ RECIPE_EXTRACT_SCHEMA: dict[str, Any] = {
       "note": {"type": ["string", "null"]},
       "aisle": {"type": ["string", "null"], "enum": ["Produce", "Dairy & Refrigerated", "Meat & Seafood", "Pantry & Spices", "Bakery", "Other", None]},
       "group": {"type": ["string", "null"]},
-    }, "required": ["name", "amount", "amount_numeric", "unit", "note", "aisle", "group"], "additionalProperties": False}},
+      "estimated_grams": {"type": ["number", "null"]},
+    }, "required": ["name", "amount", "amount_numeric", "unit", "note", "aisle", "group", "estimated_grams"], "additionalProperties": False}},
     "steps": {"type": "array", "items": {"type": "string"}},
     "step_timers_seconds": {"type": "array", "items": {"type": ["integer", "null"]}},
     "servings": {"type": ["string", "null"]},
@@ -59,8 +60,9 @@ Use facts explicitly present in the supplied caption, transcript, on-screen text
 video analysis, hashtags, or comments. Extract stated ingredients with standard
 units where compatible (g, ml, tbsp, tsp, cups, pieces), assign a grocery aisle,
 identify ingredient component groups (e.g., 'Sauce', 'Marinade', 'Dough', 'Main')
-when multiple components exist, and provide amount_numeric (e.g. 0.5, 2.0) when
-the quantity can be parsed.
+when multiple components exist, provide amount_numeric (e.g. 0.5, 2.0) when
+the quantity can be parsed, and provide estimated_grams (e.g. 14 for 1 tbsp oil,
+125 for 1 cup flour, 50 for 1 egg) when mass can be inferred, or null if unknown.
 
 Formulate clear, ordered, source-grounded steps. For each step, if a specific cooking,
 baking, or resting duration is stated (e.g. 'simmer for 15 minutes' or 'bake 30 min'),
@@ -110,6 +112,7 @@ def _parse_extracted_recipe(data: dict[str, Any] | None) -> ExtractedRecipe | No
         note=_text(item.get("note")),
         aisle=_text(item.get("aisle")),
         group=_text(item.get("group")),
+        estimated_grams=_number(item.get("estimated_grams")),
       )
     )
   steps = tuple(text for item in data.get("steps", []) if (text := _text(item)))

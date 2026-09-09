@@ -84,6 +84,7 @@ export interface RecipeIngredient {
   unit?: string | null;
   note?: string | null;
   aisle?: string | null;
+  estimated_grams?: number | null;
 }
 
 export interface NutritionMacros {
@@ -104,6 +105,11 @@ export interface RecipeNutrition {
   ingredient_count: number;
   is_complete: boolean;
   source: string;
+  servings_inferred?: boolean;
+  matched_ingredients?: string[];
+  unmatched_ingredients?: string[];
+  macro_highlights?: string[];
+  dietary_fit?: string[];
 }
 
 export interface ExtractedRecipe {

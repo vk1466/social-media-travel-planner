@@ -61,6 +61,11 @@ def main() -> None:
     help="Re-run place enrichment on all saved posts without re-fetching links",
   )
   parser.add_argument(
+    "--recalculate-nutrition",
+    action="store_true",
+    help="Recalculate nutrition and macros for all saved food recipes in DynamoDB",
+  )
+  parser.add_argument(
     "--reextract",
     action="store_true",
     help=(
@@ -153,10 +158,16 @@ def main() -> None:
     print("done: reprocessed places for all saved posts")
     return
 
+  if args.recalculate_nutrition:
+    from travelplanner.food.nutrition import recalculate_all_recipe_nutrition
+    res = recalculate_all_recipe_nutrition()
+    print(f"done: recalculated nutrition for {res['updated']} of {res['total_food_posts']} food post(s)")
+    return
+
   if args.links_file is None:
     parser.error(
       "links_file is required unless --reextract, --reprocess-places, "
-      "--retry-place-candidates, or --enrich-place-facts is set"
+      "--recalculate-nutrition, --retry-place-candidates, or --enrich-place-facts is set"
     )
 
   post_urls = _read_links(args.links_file)

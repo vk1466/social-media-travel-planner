@@ -214,3 +214,25 @@ def test_delete_post(dynamodb) -> None:
   assert delete_post(Platform.INSTAGRAM, "CjDN1tzMIjR") is True
   assert has_post(Platform.INSTAGRAM, post.post_id) is False
   assert delete_post(Platform.INSTAGRAM, "CjDN1tzMIjR") is False
+
+
+def test_store_round_trip_extracted_recipe_with_image(dynamodb) -> None:
+  recipe = ExtractedRecipe(
+    title="Pina Colada Ice Cream",
+    summary="Quick frozen fruit dessert",
+    ingredients=(
+      RecipeIngredient(name="Pineapple", amount="1", unit="cup", aisle="Produce"),
+    ),
+    steps=("Blend frozen pineapple and coconut milk.",),
+    cuisine="International",
+    meal_type="dessert",
+    image_url="https://images.unsplash.com/photo-pina-colada.jpg",
+  )
+  post = replace(_sample_post(), extracted_recipe=recipe)
+  save_post(post)
+
+  loaded = load_post(Platform.INSTAGRAM, post.post_id)
+  assert loaded is not None
+  assert loaded.extracted_recipe is not None
+  assert loaded.extracted_recipe.title == "Pina Colada Ice Cream"
+  assert loaded.extracted_recipe.image_url == "https://images.unsplash.com/photo-pina-colada.jpg"

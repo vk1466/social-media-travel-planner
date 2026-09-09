@@ -1,7 +1,7 @@
-import type { JSX } from "react";
+import { useEffect, useState, type JSX } from "react";
 import { proxiedMediaUrl } from "../../postDisplayUtils";
 import type { SavedRecipe } from "./recipeUtils";
-import { recipeMinutes } from "./recipeUtils";
+import { getRecipeFoodHeroTheme, recipeMinutes } from "./recipeUtils";
 
 export interface RecipeCardProps {
   item: SavedRecipe;
@@ -10,112 +10,120 @@ export interface RecipeCardProps {
 
 function formatDuration(minutes: number | null): string | null {
   if (!minutes || minutes <= 0) return null;
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  if (h === 0) return `${m}m`;
-  if (m === 0) return `${h}h`;
-  return `${h}h ${m}m`;
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+  if (hours === 0) return `${remainingMinutes}m`;
+  if (remainingMinutes === 0) return `${hours}h`;
+  return `${hours}h ${remainingMinutes}m`;
+}
+
+function formatCreator(handle: string | null | undefined, platform: string): string {
+  const trimmedHandle = handle?.trim();
+  if (trimmedHandle) {
+    return trimmedHandle.startsWith("@") ? trimmedHandle : `@${trimmedHandle}`;
+  }
+  return platform === "instagram" ? "Instagram creator" : `${platform} creator`;
+}
+
+function formatPlatform(platform: string): string {
+  if (platform === "instagram") return "Reel saved";
+  if (platform === "tiktok") return "TikTok saved";
+  if (platform === "youtube") return "Video saved";
+  return "Post saved";
 }
 
 export function RecipeCard({ item, onOpen }: RecipeCardProps): JSX.Element {
   const { post, recipe } = item;
-  const minutes = recipeMinutes(recipe);
-  const durationLabel = formatDuration(minutes);
-  const thumbnail = proxiedMediaUrl(post.thumbnail_url);
-  const ingredientCount = recipe.ingredients.length;
-  const hasIngredients = ingredientCount > 0;
-  const dietaryTags = recipe.dietary ?? [];
-  const mealType = recipe.meal_type;
-  const cuisine = recipe.cuisine;
-  const isChefReconstructed = recipe.estimated_inferred;
+  const durationLabel = formatDuration(recipeMinutes(recipe));
+  const thumbnail = proxiedMediaUrl(recipe.image_url || post.thumbnail_url);
+  const [imageFailed, setImageFailed] = useState(false);
+  const heroTheme = getRecipeFoodHeroTheme(recipe);
+  const creator = formatCreator(post.author_handle, post.platform);
+  const creatorInitial = creator.replace(/^@/, "").charAt(0).toUpperCase() || "W";
+  const sourceLabel = formatPlatform(post.platform);
+
+  useEffect(() => {
+    setImageFailed(false);
+  }, [thumbnail]);
 
   return (
     <article
-      className="recipe-grid-card"
+      className="recipe-grid-card recipe-grid-card--from-reel"
       onClick={onOpen}
       role="button"
       tabIndex={0}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
           onOpen();
         }
       }}
-      aria-label={`View recipe for ${recipe.title ?? "food post"}`}
+      aria-label={`Open full recipe for ${recipe.title ?? "food post"}`}
     >
       <div className="recipe-poster-wrap">
-        {thumbnail ? (
+        {thumbnail && !imageFailed ? (
           <img
             className="recipe-poster-img"
             src={thumbnail}
-            alt=""
+            alt={recipe.title ?? "Recipe preview"}
             loading="lazy"
+            onError={() => setImageFailed(true)}
           />
         ) : (
-          <div className="recipe-poster-placeholder" aria-hidden="true">
-            <span className="recipe-placeholder-icon">🍳</span>
-            <span className="recipe-placeholder-title">{recipe.title ?? "Food Inspiration"}</span>
+          <div
+            className="recipe-poster-placeholder"
+            style={{ background: heroTheme.gradient }}
+            aria-hidden="true"
+          >
+            <span className="recipe-placeholder-icon">{heroTheme.emoji}</span>
+            <span className="recipe-placeholder-title">{recipe.title ?? "Food inspiration"}</span>
           </div>
         )}
 
+        <span className="recipe-source-chip">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="m9 7 8 5-8 5V7Z" />
+          </svg>
+          {sourceLabel}
+        </span>
+      </div>
+
+      <div className="recipe-creator-row">
+        <span className="recipe-creator-avatar" aria-hidden="true">{creatorInitial}</span>
+        <span className="recipe-creator-copy">
+          <strong>{creator}</strong>
+          <small>Original creator</small>
+        </span>
+        {recipe.estimated_inferred && (
+          <span className="recipe-estimated-chip" title="Some recipe details were estimated">
+            ✦ Estimated
+          </span>
+        )}
       </div>
 
       <div className="recipe-card-content">
         <h3 className="recipe-card-title">{recipe.title ?? "Food inspiration"}</h3>
 
-        <div className="recipe-card-meta-line">
+        <div className="recipe-card-meta-line" aria-label="Recipe overview">
           {durationLabel && (
-            <span className="recipe-duration-tag">⏱ {durationLabel}</span>
+            <span>
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="12" r="8.5" />
+                <path d="M12 7.5v5l3 1.8" />
+              </svg>
+              {durationLabel}
+            </span>
           )}
-          {recipe.difficulty && (
-            <span className="recipe-difficulty-tag">{recipe.difficulty}</span>
-          )}
-          {mealType && (
-            <span className="recipe-kind-tag">{mealType}</span>
-          )}
+          {recipe.servings && <span>Serves {recipe.servings}</span>}
         </div>
 
-        <div className="recipe-metrics-row">
-          {hasIngredients ? (
-            <span className="recipe-badge recipe-badge-ingredients">
-              <span className="recipe-badge-icon" aria-hidden="true">🥬</span>
-              <span className="recipe-badge-value">
-                {ingredientCount} {ingredientCount === 1 ? "ingredient" : "ingredients"}
-              </span>
-            </span>
-          ) : (
-            <span className="recipe-badge recipe-badge-ai-needed">
-              <span className="recipe-badge-icon" aria-hidden="true">✨</span>
-              <span className="recipe-badge-value">Details unavailable</span>
-            </span>
-          )}
-
-          {recipe.servings && (
-            <span className="recipe-badge recipe-badge-servings">
-              <span className="recipe-badge-icon" aria-hidden="true">🍽️</span>
-              <span className="recipe-badge-value">Serves {recipe.servings}</span>
-            </span>
-          )}
-        </div>
-
-        {(cuisine || dietaryTags.length > 0) && (
-          <div className="recipe-card-dietary">
-            {cuisine && <span className="recipe-diet-pill">{cuisine}</span>}
-            {dietaryTags.slice(0, 2).map((diet) => (
-              <span key={diet} className="recipe-diet-pill">{diet}</span>
-            ))}
-            {dietaryTags.length > 2 && (
-              <span className="recipe-more-dietary">+{dietaryTags.length - 2}</span>
-            )}
-          </div>
-        )}
-
-        {isChefReconstructed && (
-          <span className="recipe-estimated-note">⚡ Estimated recipe</span>
-        )}
+        {recipe.summary && <p className="recipe-card-summary">{recipe.summary}</p>}
 
         <span className="recipe-card-action" aria-hidden="true">
-          View recipe <span>→</span>
+          <span>Cook from this reel</span>
+          <svg viewBox="0 0 24 24">
+            <path d="M5 12h13M14 7l5 5-5 5" />
+          </svg>
         </span>
       </div>
     </article>

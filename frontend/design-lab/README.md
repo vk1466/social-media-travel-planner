@@ -105,6 +105,26 @@ http://localhost:5179/home-page/
 
 Reference page: http://localhost:5179/sites/04-volume/index.html
 
+## Food Card Lab
+
+**10 interactive recipe-card directions** — the same recipe data with ten different
+information hierarchies: visual-first, editorial, weeknight decision support, compact
+list, nutrition-led, social provenance, cookbook, bento actions, ingredients-first, and
+reel-to-recipe. Use the recipe dots and card actions to test each state; arrow keys move
+between directions. Opening any card reveals a shared recipe preview with Summary,
+Ingredients, and Macros tabs plus a link back to the saved social post.
+
+http://localhost:5179/food-card/
+
+## Food Detail Lab
+
+**10 interactive recipe-detail directions** — sidecar sheet, editorial spread, cook
+command center, reel storyboard, ingredient workbench, step timeline, nutrition compass,
+mise en place board, compact drawer, and recipe proof. Switch recipes, check ingredients,
+scale servings, and test the primary actions while comparing information hierarchy.
+
+http://localhost:5179/food-detail/
+
 Skins are generated — edit the skin in `home-page/_generate.mjs` (metadata in
 `home-page/shared/options.js`), then rerun:
 

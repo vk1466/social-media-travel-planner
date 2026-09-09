@@ -33,6 +33,11 @@ class RecipeNutrition:
   ingredient_count: int
   is_complete: bool
   source: str
+  servings_inferred: bool = False
+  matched_ingredients: tuple[str, ...] = ()
+  unmatched_ingredients: tuple[str, ...] = ()
+  macro_highlights: tuple[str, ...] = ()
+  dietary_fit: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -44,6 +49,7 @@ class RecipeIngredient:
   note: str | None = None
   aisle: str | None = None
   group: str | None = None
+  estimated_grams: float | None = None
 
 
 @dataclass(frozen=True)
@@ -65,3 +71,4 @@ class ExtractedRecipe:
   dietary: tuple[str, ...] = ()
   step_timers_seconds: tuple[int | None, ...] = ()
   nutrition: RecipeNutrition | None = None
+  image_url: str | None = None

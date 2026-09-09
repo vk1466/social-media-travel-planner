@@ -199,6 +199,36 @@ export default function PostDetailScreen() {
               ))}
             </View>
           ) : null}
+          {recipe.nutrition ? (
+            <View style={styles.recipePart}>
+              <Text style={styles.recipeHeading}>Estimated nutrition (per serving)</Text>
+              <View style={styles.nutritionRow}>
+                <View style={styles.nutritionCol}>
+                  <Text style={styles.nutritionVal}>{Math.round(recipe.nutrition.per_serving.calories_kcal)}</Text>
+                  <Text style={styles.nutritionLabel}>kcal</Text>
+                </View>
+                <View style={styles.nutritionCol}>
+                  <Text style={styles.nutritionVal}>{Math.round(recipe.nutrition.per_serving.protein_g * 10) / 10}g</Text>
+                  <Text style={styles.nutritionLabel}>Protein</Text>
+                </View>
+                <View style={styles.nutritionCol}>
+                  <Text style={styles.nutritionVal}>{Math.round(recipe.nutrition.per_serving.carbohydrates_g * 10) / 10}g</Text>
+                  <Text style={styles.nutritionLabel}>Carbs</Text>
+                </View>
+                <View style={styles.nutritionCol}>
+                  <Text style={styles.nutritionVal}>{Math.round(recipe.nutrition.per_serving.fat_g * 10) / 10}g</Text>
+                  <Text style={styles.nutritionLabel}>Fat</Text>
+                </View>
+              </View>
+              {recipe.nutrition.macro_highlights && recipe.nutrition.macro_highlights.length > 0 ? (
+                <View style={styles.highlightRow}>
+                  {recipe.nutrition.macro_highlights.map((hl, i) => (
+                    <Text key={i} style={styles.highlightPill}>✨ {hl}</Text>
+                  ))}
+                </View>
+              ) : null}
+            </View>
+          ) : null}
           <Text style={styles.recipeNote}>Only details found in the reel are shown. Rewatch the original for anything missing.</Text>
         </View>
       ) : null}
@@ -344,6 +374,12 @@ const styles = StyleSheet.create({
   checkedIngredient: { textDecorationLine: "line-through", color: colors.muted },
   copyIngredients: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 10 },
   copyIngredientsText: { color: colors.brand, fontWeight: "700", fontSize: 13 },
+  nutritionRow: { flexDirection: "row", gap: 8, marginTop: 4 },
+  nutritionCol: { flex: 1, backgroundColor: "rgba(0,0,0,0.05)", borderRadius: radius.sm, padding: 8, alignItems: "center" },
+  nutritionVal: { color: colors.ink, fontWeight: "800", fontSize: 14 },
+  nutritionLabel: { color: colors.muted, fontSize: 11, marginTop: 2 },
+  highlightRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 8 },
+  highlightPill: { backgroundColor: "rgba(56, 189, 248, 0.12)", color: colors.brand, fontSize: 11, fontWeight: "600", paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.sm },
   recipeNote: { color: colors.muted, fontSize: 12, lineHeight: 17, marginTop: 12 },
   caption: { color: colors.ink, lineHeight: 22, marginBottom: spacing.md },
   tags: { flexDirection: "row", flexWrap: "wrap", marginBottom: spacing.md },

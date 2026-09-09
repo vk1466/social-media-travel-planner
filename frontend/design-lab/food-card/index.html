@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f4efe7" />
+    <title>Food Card Lab — 10 recipe-card directions</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;1,9..144,400&family=Manrope:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./shared/food-card.css" />
+  </head>
+  <body>
+    <header class="lab-header">
+      <a class="back-link" href="../index.html" aria-label="Back to Design Lab">
+        <span aria-hidden="true">←</span> Design Lab
+      </a>
+      <div class="lab-heading">
+        <div>
+          <p class="eyebrow">Food card review · 10 alternatives</p>
+          <h1>Choose what matters <em>before</em> dinner.</h1>
+        </div>
+        <p class="intro">
+          Ten card hierarchies built from the same recipe data. Each is interactive,
+          responsive, and intentionally quieter than the current all-chips treatment.
+        </p>
+      </div>
+      <div class="review-note" role="note">
+        <span class="review-note__label">Current card review</span>
+        <p>
+          Strong imagery and useful data, but nine competing labels flatten the hierarchy.
+          Keep title + time visible; reveal nutrition and provenance only when the direction
+          calls for them.
+        </p>
+      </div>
+    </header>
+
+    <main class="lab-shell">
+      <aside class="option-panel" aria-label="Card directions">
+        <div class="option-panel__top">
+          <span>Directions</span>
+          <span id="option-count">01 / 10</span>
+        </div>
+        <div id="option-list" class="option-list" role="tablist" aria-orientation="vertical"></div>
+      </aside>
+
+      <section class="preview-panel" aria-labelledby="preview-title">
+        <div class="preview-toolbar">
+          <div>
+            <p id="preview-kicker" class="preview-kicker"></p>
+            <h2 id="preview-title"></h2>
+            <p id="preview-rationale" class="preview-rationale"></p>
+          </div>
+          <div class="recipe-switcher" aria-label="Preview recipe">
+            <button type="button" class="recipe-dot is-active" data-recipe="0" aria-label="Preview chili noodles"></button>
+            <button type="button" class="recipe-dot" data-recipe="1" aria-label="Preview green shakshuka"></button>
+            <button type="button" class="recipe-dot" data-recipe="2" aria-label="Preview lemon tart"></button>
+          </div>
+        </div>
+
+        <div id="preview-stage" class="preview-stage" aria-live="polite"></div>
+
+        <div class="preview-footer">
+          <p id="preview-best-for"></p>
+          <div class="arrow-controls" aria-label="Change direction">
+            <button id="previous-option" type="button" aria-label="Previous direction">←</button>
+            <span>Use arrow keys</span>
+            <button id="next-option" type="button" aria-label="Next direction">→</button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <div id="recipe-sheet" class="sheet-backdrop" hidden>
+      <section class="recipe-sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title">
+        <div class="sheet-hero">
+          <img id="sheet-image" src="" alt="" />
+          <button id="close-sheet" class="sheet-close" type="button" aria-label="Close recipe preview">×</button>
+          <span class="sheet-source">Saved from a reel</span>
+        </div>
+        <div class="sheet-body">
+          <div class="sheet-heading">
+            <div>
+              <p id="sheet-creator" class="sheet-creator"></p>
+              <h2 id="sheet-title"></h2>
+            </div>
+            <a id="saved-post-link" class="saved-post-link" href="#saved-post" target="_blank" rel="noreferrer">
+              View saved post <span aria-hidden="true">↗</span>
+            </a>
+          </div>
+
+          <div class="sheet-tabs" role="tablist" aria-label="Recipe details">
+            <button type="button" class="sheet-tab is-active" role="tab" aria-selected="true" data-sheet-tab="summary">Summary</button>
+            <button type="button" class="sheet-tab" role="tab" aria-selected="false" data-sheet-tab="ingredients">Ingredients <span id="ingredient-count"></span></button>
+            <button type="button" class="sheet-tab" role="tab" aria-selected="false" data-sheet-tab="macros">Macros</button>
+          </div>
+          <div id="sheet-content" class="sheet-content"></div>
+
+          <div class="sheet-actions">
+            <button type="button" class="sheet-grocery" data-action="bag"></button>
+            <button type="button" class="sheet-cook">Start cook mode <span aria-hidden="true">→</span></button>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <script type="module" src="./shared/food-card.js"></script>
+  </body>
+</html>

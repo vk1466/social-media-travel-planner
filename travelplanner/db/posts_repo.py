@@ -90,6 +90,7 @@ def _extracted_recipe_from_dict(data: dict | None) -> ExtractedRecipe | None:
       note=item.get("note"),
       aisle=item.get("aisle"),
       group=item.get("group"),
+      estimated_grams=float(item["estimated_grams"]) if item.get("estimated_grams") is not None else None,
     )
     for item in data.get("ingredients", [])
     if isinstance(item, dict) and isinstance(item.get("name"), str) and item["name"].strip()
@@ -115,6 +116,11 @@ def _extracted_recipe_from_dict(data: dict | None) -> ExtractedRecipe | None:
           ingredient_count=int(nutrition_data["ingredient_count"]),
           is_complete=nutrition_data.get("is_complete") is True,
           source=str(nutrition_data["source"]),
+          servings_inferred=nutrition_data.get("servings_inferred") is True,
+          matched_ingredients=tuple(str(item) for item in nutrition_data.get("matched_ingredients", []) if isinstance(item, str)),
+          unmatched_ingredients=tuple(str(item) for item in nutrition_data.get("unmatched_ingredients", []) if isinstance(item, str)),
+          macro_highlights=tuple(str(item) for item in nutrition_data.get("macro_highlights", []) if isinstance(item, str)),
+          dietary_fit=tuple(str(item) for item in nutrition_data.get("dietary_fit", []) if isinstance(item, str)),
         )
       except (KeyError, TypeError, ValueError):
         nutrition = None
@@ -136,6 +142,7 @@ def _extracted_recipe_from_dict(data: dict | None) -> ExtractedRecipe | None:
     dietary=tuple(item for item in data.get("dietary", []) if isinstance(item, str)),
     step_timers_seconds=tuple(item if isinstance(item, int) else None for item in data.get("step_timers_seconds", [])),
     nutrition=nutrition,
+    image_url=data.get("image_url"),
   )
 
 
