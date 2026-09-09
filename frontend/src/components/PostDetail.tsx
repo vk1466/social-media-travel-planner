@@ -252,7 +252,23 @@ function FlipDetailCard({
         </div>
       )}
       {expanded && item.details && <p className="post-flip-place-blurb">{item.details}</p>}
-      {expanded && item.tip && <p className="post-flip-place-tip">{item.tip}</p>}
+      {expanded && (item.tips && item.tips.length > 0 ? (
+        <div className="post-flip-tips-wrap">
+          <ul className="post-flip-place-tips-list">
+            {item.tips.map((tipText, tipIdx) => (
+              <li key={tipIdx} className="post-flip-place-tip-item">
+                <span className="post-flip-tip-dot" aria-hidden="true">💡</span>
+                <span>{tipText}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : item.tip ? (
+        <p className="post-flip-place-tip">
+          <span className="post-flip-tip-dot" aria-hidden="true">💡</span>
+          <span>{item.tip}</span>
+        </p>
+      ) : null)}
     </li>
   );
 }
@@ -297,6 +313,7 @@ function PostFlipFront({
   onPlayTrailer,
 }: PostFlipFrontProps) {
   const { reelSummary, llmSummary, summaryExcerpt } = buildReelSummary(post);
+  const [tripTipsOpen, setTripTipsOpen] = useState(false);
   const heading = shortHeading(post);
   const showHeading =
     Boolean(heading) &&
@@ -378,6 +395,31 @@ function PostFlipFront({
             <h2 id="post-detail-title" className="post-flip-heading">
               {heading || "Saved post"}
             </h2>
+          )}
+          {post.trip_tips && post.trip_tips.length > 0 && (
+            <div className="post-flip-trip-tips-wrap">
+              <button
+                type="button"
+                className="post-flip-trip-tips-btn"
+                onClick={() => setTripTipsOpen((prev) => !prev)}
+                aria-expanded={tripTipsOpen}
+              >
+                <span className="post-flip-trip-tips-badge">✈️ Trip Advice ({post.trip_tips.length})</span>
+                <span className="post-flip-trip-tips-chevron" aria-hidden="true">
+                  {tripTipsOpen ? "▲ Hide" : "▼ View"}
+                </span>
+              </button>
+              {tripTipsOpen && (
+                <ul className="post-flip-trip-tips-list">
+                  {post.trip_tips.map((tip, idx) => (
+                    <li key={idx} className="post-flip-trip-tip-item">
+                      <span className="post-flip-trip-tip-bullet">✦</span>
+                      <span>{tip}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           )}
         </div>
 

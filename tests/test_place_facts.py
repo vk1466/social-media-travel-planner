@@ -432,7 +432,7 @@ def test_select_tools_includes_wikipedia_for_park(monkeypatch) -> None:
   monkeypatch.delenv("NPS_API_KEY", raising=False)
   tools = select_tools("park")
   ids = {tool.tool_id for tool in tools}
-  assert ids == {"osm_tags", "wikipedia_summary"}
+  assert ids == {"osm_tags", "wikipedia_summary", "wikivoyage_summary"}
 
 
 def test_select_tools_includes_google_when_mindcase_key_set(monkeypatch) -> None:

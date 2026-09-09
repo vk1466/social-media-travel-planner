@@ -202,6 +202,7 @@ export interface SavedPost {
   fetched_at?: string | null;
   reel_summary?: string | null;
   content_category?: string | null;
+  trip_tips?: string[];
 }
 
 /** Split a global post_id (`platform:native`) for API routes and navigation. */

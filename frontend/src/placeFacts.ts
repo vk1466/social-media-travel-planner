@@ -3,6 +3,7 @@ import type { PlaceFacts } from "./api";
 const SOURCE_LABELS: Record<string, string> = {
   osm: "OpenStreetMap",
   wikipedia: "Wikipedia",
+  wikivoyage: "Wikivoyage",
   google_places: "Google",
   nps: "National Park Service",
 };
@@ -19,7 +20,7 @@ export function factsAttribution(facts: PlaceFacts): string {
   return `Facts from ${names.join(", ")}`;
 }
 
-export function factsRows(facts: PlaceFacts): { label: string; value: string }[] {
+export function factsStructuredRows(facts: PlaceFacts): { label: string; value: string }[] {
   const rows: { label: string; value: string }[] = [];
   if (facts.famous_for) rows.push({ label: "Famous for", value: facts.famous_for });
   if (facts.admission_text) rows.push({ label: "Admission", value: facts.admission_text });
@@ -56,6 +57,11 @@ export function factsRows(facts: PlaceFacts): { label: string; value: string }[]
     rows.push({ label: "Elevation gain", value: `${facts.elevation_gain_m} m` });
   }
   if (facts.difficulty) rows.push({ label: "Difficulty", value: facts.difficulty });
+  return rows;
+}
+
+export function factsRows(facts: PlaceFacts): { label: string; value: string }[] {
+  const rows = factsStructuredRows(facts);
   if (facts.highlights && facts.highlights.length > 0) {
     rows.push({ label: "Highlights", value: facts.highlights.join("; ") });
   }

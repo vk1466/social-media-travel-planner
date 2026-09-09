@@ -159,6 +159,25 @@ def test_parse_reel_extraction_includes_summary() -> None:
   assert result.places[0].category == "viewpoint"
 
 
+def test_parse_reel_extraction_includes_trip_tips() -> None:
+  data = {
+    "reel_summary": "A 3-day Pacific Northwest road trip.",
+    "trip_tips": [
+      "Rent a 4WD car for logging roads",
+      "Best in July through September",
+      "Buy the Northwest Forest Pass in advance",
+    ],
+    "places": [],
+  }
+  result = _parse_reel_extraction(data)
+  assert result.reel_summary == "A 3-day Pacific Northwest road trip."
+  assert result.trip_tips == (
+    "Rent a 4WD car for logging roads",
+    "Best in July through September",
+    "Buy the Northwest Forest Pass in advance",
+  )
+
+
 def test_format_reel_bundle_orders_caption_summary_transcript() -> None:
   bundle = ReelBundle(
     caption="Day 1: Alfama",

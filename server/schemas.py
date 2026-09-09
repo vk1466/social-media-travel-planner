@@ -135,6 +135,7 @@ class SavedPostSchema(BaseModel):
   fetched_at: str | None = None
   reel_summary: str | None = None
   content_category: str | None = None
+  trip_tips: list[str] = Field(default_factory=list)
 
 
 class PlaceLocationSchema(BaseModel):

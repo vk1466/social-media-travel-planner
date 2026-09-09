@@ -35,6 +35,7 @@ def extract_places(ctx: IngestContext) -> IngestContext:
       ctx.post,
       extracted_places=extracted.places,
       reel_summary=extracted.reel_summary,
+      trip_tips=extracted.trip_tips,
     )
   logger.info(
     "extract_places done places=%d has_summary=%s sources=%s",

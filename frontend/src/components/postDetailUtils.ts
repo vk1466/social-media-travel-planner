@@ -44,6 +44,7 @@ export interface ReelDetailItem {
   metaParts: string[];
   details?: string | null;
   tip?: string | null;
+  tips?: string[];
   placeId?: string;
   mapUrl?: string | null;
   actionLabel?: string | null;
@@ -380,6 +381,7 @@ export function placeSummaryToDetailItem(place: PlaceSummary): ReelDetailItem {
     metaParts,
     details: place.details,
     tip: place.tips[0],
+    tips: place.tips,
     placeId: place.placeId,
     mapUrl: place.mapUrl,
   };
@@ -398,6 +400,7 @@ export function buildGenericReelDetailItems(post: SavedPost): ReelDetailItem[] {
       category: contentCategoryLabel(effectiveContentCategory(post)),
       metaParts: post.hashtags.slice(0, 4).map((tag) => tag.replace(/^#/, "")),
       details: reelSummary || undefined,
+      tips: post.trip_tips ?? [],
     },
   ];
 }
@@ -420,6 +423,7 @@ export function buildReelDetailItems(
       ].filter((part): part is string => Boolean(part)),
       details: recipe.summary || undefined,
       tip: recipe.tips?.[0],
+      tips: recipe.tips ?? [],
     }];
   }
   if (category === "travel") {

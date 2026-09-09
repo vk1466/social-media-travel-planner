@@ -188,6 +188,7 @@ def post_from_dict(data: dict) -> SavedPost:
     fetched_at=data.get("fetched_at"),
     reel_summary=data.get("reel_summary"),
     content_category=normalize_content_category(data.get("content_category")),
+    trip_tips=tuple(item for item in data.get("trip_tips", []) if isinstance(item, str)),
   )
 
 

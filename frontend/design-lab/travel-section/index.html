@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Travel Section Lab · 10 complete directions</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *{box-sizing:border-box}body{margin:0;background:#0c1512;color:#f5f7f5;font-family:"DM Sans",sans-serif;-webkit-font-smoothing:antialiased}
+    .hero{min-height:520px;padding:34px max(24px,calc((100vw - 1180px)/2));display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center;background:linear-gradient(90deg,rgba(5,18,14,.96),rgba(5,18,14,.38)),url("./assets/coastal-atlas-hero.png") center/cover}
+    .back{color:#aebcb7;text-decoration:none;font-size:13px}.kicker{margin:60px 0 14px;color:#8cc5b3;font-size:11px;font-weight:700;letter-spacing:.2em;text-transform:uppercase}
+    h1{max-width:760px;margin:0;font:400 clamp(54px,7vw,92px)/.9 "Instrument Serif",serif;letter-spacing:-.04em}.lede{max-width:610px;margin:24px 0 0;color:#c3cdc9;font-size:17px;line-height:1.6}
+    .promise{align-self:end;display:grid;grid-template-columns:repeat(2,1fr);gap:1px;padding:1px;background:rgba(255,255,255,.15)}.promise span{padding:18px;background:rgba(8,24,19,.72);backdrop-filter:blur(10px);font-size:12px}.promise b{display:block;margin-bottom:5px;color:#fff;font:700 24px/1 "Manrope"}
+    main{max-width:1180px;margin:0 auto;padding:70px 24px 100px}.section-head{display:flex;justify-content:space-between;align-items:end;margin-bottom:26px}.section-head h2{margin:0;font:400 42px/1 "Instrument Serif"}.section-head p{max-width:520px;margin:0;color:#8fa19a;font-size:13px;line-height:1.5}
+    .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}.card{position:relative;min-height:255px;display:flex;flex-direction:column;padding:25px;border:1px solid rgba(255,255,255,.11);border-radius:18px;background:#121e1a;color:inherit;text-decoration:none;overflow:hidden;transition:.2s}.card:hover{translate:0 -3px;border-color:var(--accent);background:#17251f}.card::after{content:"";position:absolute;right:-50px;bottom:-70px;width:190px;height:190px;border-radius:50%;background:var(--accent);filter:blur(70px);opacity:.15}
+    .num{color:var(--accent);font:700 10px/1 "Manrope";letter-spacing:.16em}.card h3{margin:44px 0 8px;font:600 27px/1.1 "Manrope";letter-spacing:-.04em}.card p{max-width:430px;margin:0;color:#95a69f;font-size:13px;line-height:1.5}.axis{margin-top:auto;padding-top:24px;color:#c3cdc9;font-size:10px;letter-spacing:.1em;text-transform:uppercase}.open{position:absolute;right:22px;top:20px;width:34px;height:34px;display:grid;place-items:center;border:1px solid rgba(255,255,255,.14);border-radius:50%}
+    .feature-note{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;margin-top:55px;background:rgba(255,255,255,.1)}.feature-note div{padding:20px;background:#101b17}.feature-note b{display:block;margin-bottom:6px;font-size:12px}.feature-note span{color:#81938c;font-size:11px;line-height:1.4}
+    @media(max-width:760px){.hero{grid-template-columns:1fr;min-height:650px}.promise{align-self:auto}.grid{grid-template-columns:1fr}.section-head{align-items:flex-start;flex-direction:column;gap:12px}.feature-note{grid-template-columns:1fr 1fr}}
+  </style>
+</head>
+<body>
+  <section class="hero"><div><a class="back" href="../index.html">← Design Lab</a><p class="kicker">Travel section · 10 directions</p><h1>One travel library.<br><i>Ten clear ways in.</i></h1><p class="lede">Every concept preserves the current travel feature set. The differences are hierarchy, density, navigation, and emotional tone—not missing functionality.</p></div><div class="promise"><span><b>3</b>shared surfaces</span><span><b>10</b>responsive concepts</span><span><b>1</b>live/mock data layer</span><span><b>← →</b>keyboard review</span></div></section>
+  <main><div class="section-head"><h2>Choose a direction</h2><p>Open any demo and test Places, Related posts, History, filters, map/covers, visit logging, import affordances, and detail navigation.</p></div><div class="grid" id="demo-grid"></div>
+  <div class="feature-note"><div><b>Atlas</b><span>Search, map/covers, hierarchy, region/type, visited/inspiration.</span></div><div><b>Inspiration</b><span>Saved social posts, platform filters, details, and place relationships.</span></div><div><b>History</b><span>Visit timeline, manual logging, review queue, and reset controls.</span></div><div><b>Imports</b><span>Instagram and Google Maps Timeline entry points with file states.</span></div></div></main>
+  <script type="module">import{TRAVEL_DEMOS}from"./shared/options.js";document.querySelector("#demo-grid").innerHTML=TRAVEL_DEMOS.map(d=>`<a class="card" style="--accent:${d.accent}" href="demos/${d.id}-${d.slug}.html"><span class="num">DESIGN ${d.id}</span><span class="open">↗</span><h3>${d.title}</h3><p>${d.blurb}</p><span class="axis">${d.axis}</span></a>`).join("");</script>
+</body></html>

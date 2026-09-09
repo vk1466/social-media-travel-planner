@@ -1407,3 +1407,235 @@
   height: 100%;
   border: none;
 }
+
+/* ── Enriched Place Tips & Trip Advice ─────────────────────────────────────── */
+
+.post-flip-place-item.is-expanded .post-flip-place-tip {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  -webkit-line-clamp: unset;
+  overflow: visible;
+  white-space: normal;
+  color: rgb(var(--wf-cream-rgb) / 0.82);
+}
+
+.post-flip-tips-wrap {
+  margin-top: 0.35rem;
+}
+
+.post-flip-place-tips-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.post-flip-place-tip-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.35rem;
+  font-size: 0.76rem;
+  line-height: 1.35;
+  color: rgb(var(--wf-cream-rgb) / 0.85);
+  background: rgb(255 255 255 / 0.05);
+  padding: 0.28rem 0.5rem;
+  border-radius: 6px;
+  border-left: 2px solid var(--wf-coral-soft);
+}
+
+.post-flip-tip-dot {
+  font-size: 0.72rem;
+  flex-shrink: 0;
+  margin-top: 0.05rem;
+}
+
+/* ── Post-level Trip Advice Accordion ──────────────────────────────────────── */
+
+.post-flip-trip-tips-wrap {
+  margin-top: 0.5rem;
+  margin-bottom: 0.35rem;
+}
+
+.post-flip-trip-tips-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.28rem 0.65rem;
+  border-radius: 8px;
+  border: 1px solid rgb(var(--wf-teal-rgb, 45 160 160) / 0.4);
+  background: rgb(var(--wf-teal-rgb, 45 160 160) / 0.12);
+  color: rgb(var(--wf-cream-rgb) / 0.9);
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.post-flip-trip-tips-btn:hover {
+  background: rgb(var(--wf-teal-rgb, 45 160 160) / 0.22);
+  border-color: rgb(var(--wf-teal-rgb, 45 160 160) / 0.6);
+}
+
+.post-flip-trip-tips-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.post-flip-trip-tips-chevron {
+  font-size: 0.65rem;
+  opacity: 0.7;
+}
+
+.post-flip-trip-tips-list {
+  margin: 0.4rem 0 0 0;
+  padding: 0.5rem;
+  list-style: none;
+  background: rgb(0 0 0 / 0.35);
+  border: 1px solid rgb(255 255 255 / 0.08);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.post-flip-trip-tip-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  font-size: 0.76rem;
+  line-height: 1.35;
+  color: rgb(var(--wf-cream-rgb) / 0.88);
+}
+
+.post-flip-trip-tip-bullet {
+  color: var(--wf-coral-soft);
+  font-size: 0.65rem;
+  margin-top: 0.15rem;
+  flex-shrink: 0;
+}
+
+/* ── PlaceDetail Insights & Creator Tips ───────────────────────────────────── */
+
+.place-facts-insights-block {
+  margin-top: 0.85rem;
+  padding: 0.65rem 0.8rem;
+  background: rgb(255 255 255 / 0.04);
+  border: 1px solid rgb(255 255 255 / 0.07);
+  border-radius: 8px;
+}
+
+.place-facts-insights-title {
+  margin: 0 0 0.45rem 0;
+  font-size: 0.78rem;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+  color: rgb(var(--wf-cream-rgb) / 0.95);
+}
+
+.place-facts-insights-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.place-facts-highlight-pill {
+  font-size: 0.74rem;
+  line-height: 1.3;
+  padding: 0.25rem 0.55rem;
+  background: rgb(var(--wf-coral-rgb) / 0.15);
+  border: 1px solid rgb(var(--wf-coral-rgb) / 0.35);
+  color: var(--wf-coral-soft);
+  border-radius: 999px;
+}
+
+.place-facts-insights-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.place-facts-rec-item {
+  font-size: 0.76rem;
+  line-height: 1.35;
+  color: rgb(var(--wf-cream-rgb) / 0.85);
+  padding-left: 0.85rem;
+  position: relative;
+}
+
+.place-facts-rec-item::before {
+  content: "✦";
+  position: absolute;
+  left: 0;
+  color: var(--wf-teal-soft, #4ecdc4);
+  font-size: 0.65rem;
+  top: 0.08rem;
+}
+
+.place-facts-caveats-block {
+  background: rgb(245 158 11 / 0.08);
+  border-color: rgb(245 158 11 / 0.25);
+}
+
+.place-facts-caveats-block .place-facts-insights-title {
+  color: #fbbf24;
+}
+
+.place-facts-caveat-item {
+  font-size: 0.76rem;
+  line-height: 1.35;
+  color: rgb(var(--wf-cream-rgb) / 0.85);
+  padding-left: 0.85rem;
+  position: relative;
+}
+
+.place-facts-caveat-item::before {
+  content: "•";
+  position: absolute;
+  left: 0;
+  color: #fbbf24;
+  font-weight: bold;
+}
+
+.place-flip-tips-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.place-flip-tip-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.5rem 0.7rem;
+  background: rgb(255 255 255 / 0.05);
+  border: 1px solid rgb(255 255 255 / 0.08);
+  border-left: 3px solid var(--wf-coral-soft);
+  border-radius: 8px;
+}
+
+.place-flip-tip-icon {
+  font-size: 0.85rem;
+  flex-shrink: 0;
+  margin-top: 0.05rem;
+}
+
+.place-flip-tip-text {
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: rgb(var(--wf-cream-rgb) / 0.9);
+}

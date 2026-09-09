@@ -34,6 +34,16 @@ PLACE_EXTRACT_SCHEMA: dict[str, Any] = {
         "reel has no usable travel content"
       ),
     },
+    "trip_tips": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": (
+        "Concrete trip-level recommendations and macro travel advice grounded in the sources that apply "
+        "to the broader itinerary or destination area: suggested trip duration or day-by-day pacing, "
+        "best season/months/time to visit, rental car/transport logistics, passes/tickets to book early, "
+        "budget advice, or packing/gear tips. Empty array when none"
+      ),
+    },
     "places": {
       "type": "array",
       "items": {
@@ -126,7 +136,7 @@ PLACE_EXTRACT_SCHEMA: dict[str, Any] = {
       },
     },
   },
-  "required": ["reel_summary", "places"],
+  "required": ["reel_summary", "places", "trip_tips"],
   "additionalProperties": False,
 }
 
@@ -169,6 +179,11 @@ REEL_EXTRACT_PROMPT = (
   "go). Concrete and neutral — no hype, hashtags, or emojis. If VIDEO SUMMARY is "
   "provided, refine it using caption facts; do not invent stops. Null only if "
   "there is no usable travel content.\n\n"
+  "Trip-level tips (trip_tips):\n"
+  "- trip_tips: copy every macro travel recommendation or itinerary tip from the "
+  "sources (suggested trip length/day pacing, best season/months/time to visit, "
+  "transit/car rental logistics, passes/permits to buy in advance, budget or packing advice). "
+  "Use [] if none.\n\n"
   "Location fields (for geocoding):\n"
   "1. place_name — the specific attraction only.\n"
   "2. city — a real city or town only, or null if unknown. Never put mountains, "
@@ -250,6 +265,7 @@ ReelBundle = ContentBundle
 class ContentExtraction:
   places: tuple[ExtractedPlace, ...] = ()
   reel_summary: str | None = None
+  trip_tips: tuple[str, ...] = ()
 
 
 ReelExtraction = ContentExtraction
@@ -445,9 +461,18 @@ def _parse_extracted_places(data: dict[str, Any] | None) -> tuple[ExtractedPlace
 def _parse_content_extraction(data: dict[str, Any] | None) -> ContentExtraction:
   if not data:
     return ContentExtraction()
+  raw_tips = data.get("trip_tips", [])
+  trip_tips: tuple[str, ...] = ()
+  if isinstance(raw_tips, list):
+    trip_tips = tuple(
+      tip
+      for tip in (_optional_str(value) for value in raw_tips)
+      if tip is not None
+    )
   return ContentExtraction(
     places=_dedupe_by_name(_parse_extracted_places(data)),
     reel_summary=_optional_str(data.get("reel_summary")),
+    trip_tips=trip_tips,
   )
 
 

@@ -66,6 +66,7 @@ class SavedPost:
   fetched_at: str | None = None
   reel_summary: str | None = None
   content_category: str | None = None
+  trip_tips: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)

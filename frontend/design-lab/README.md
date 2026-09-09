@@ -125,6 +125,16 @@ scale servings, and test the primary actions while comparing information hierarc
 
 http://localhost:5179/food-detail/
 
+## Travel Section Lab
+
+**10 complete travel-section directions** — atlas split, bento planner, travel journal,
+map canvas, pocket itinerary, command center, journey line, postcard stack, Nordic utility,
+and night flight. Every direction retains Places / Related posts / History switching,
+atlas filters and map/covers, visit logging, Timeline and Instagram imports, review/reset
+states, live-data fallback, and place/post detail navigation.
+
+http://localhost:5179/travel-section/
+
 Skins are generated — edit the skin in `home-page/_generate.mjs` (metadata in
 `home-page/shared/options.js`), then rerun:
 

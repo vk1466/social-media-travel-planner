@@ -9,7 +9,7 @@ import {
   type PlaceDetail as PlaceDetailData,
 } from "../api";
 import { googleMapsUrl } from "../maps";
-import { factsAttribution, factsRows } from "../placeFacts";
+import { factsAttribution, factsStructuredRows } from "../placeFacts";
 import { getPlatformLabel, getPostTitle } from "../postDisplayUtils";
 import { thumbStyle } from "../postBrowseModel";
 import { mappablePlaces } from "../placeMapUtils";
@@ -252,7 +252,7 @@ export function PlaceDetail({
                 {place.facts && place.facts.status !== "empty" && (
                   <>
                     <dl className="place-facts-list">
-                      {factsRows(place.facts).map((row) => (
+                      {factsStructuredRows(place.facts).map((row) => (
                         <div key={row.label} className="place-facts-row">
                           <dt>{row.label}</dt>
                           <dd>
@@ -267,6 +267,40 @@ export function PlaceDetail({
                         </div>
                       ))}
                     </dl>
+
+                    {place.facts.highlights && place.facts.highlights.length > 0 && (
+                      <div className="place-facts-insights-block">
+                        <h4 className="place-facts-insights-title">✨ Highlights</h4>
+                        <ul className="place-facts-insights-pills">
+                          {place.facts.highlights.map((item, idx) => (
+                            <li key={idx} className="place-facts-highlight-pill">{item}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {place.facts.recommendations && place.facts.recommendations.length > 0 && (
+                      <div className="place-facts-insights-block">
+                        <h4 className="place-facts-insights-title">🌐 Guide Recommendations</h4>
+                        <ul className="place-facts-insights-list">
+                          {place.facts.recommendations.map((item, idx) => (
+                            <li key={idx} className="place-facts-rec-item">{item}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {place.facts.caveats && place.facts.caveats.length > 0 && (
+                      <div className="place-facts-insights-block place-facts-caveats-block">
+                        <h4 className="place-facts-insights-title">⚠️ Watch Out</h4>
+                        <ul className="place-facts-insights-list">
+                          {place.facts.caveats.map((item, idx) => (
+                            <li key={idx} className="place-facts-caveat-item">{item}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
                     {factsAttribution(place.facts) && (
                       <p className="place-flip-muted place-facts-attribution">
                         {factsAttribution(place.facts)}
@@ -289,10 +323,13 @@ export function PlaceDetail({
 
               {place.tips.length > 0 && (
                 <section className="place-flip-section">
-                  <h3>Tips</h3>
-                  <ul className="place-flip-list">
-                    {place.tips.map((tip) => (
-                      <li key={tip}>{tip}</li>
+                  <h3>Tips from Creator ({place.tips.length})</h3>
+                  <ul className="place-flip-tips-cards">
+                    {place.tips.map((tip, idx) => (
+                      <li key={idx} className="place-flip-tip-card">
+                        <span className="place-flip-tip-icon" aria-hidden="true">💡</span>
+                        <span className="place-flip-tip-text">{tip}</span>
+                      </li>
                     ))}
                   </ul>
                 </section>

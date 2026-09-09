@@ -8,6 +8,7 @@ from travelplanner.places.facts.tools.google import fetch_google_place_details
 from travelplanner.places.facts.tools.nps import fetch_nps_park
 from travelplanner.places.facts.tools.osm import fetch_osm_tags
 from travelplanner.places.facts.tools.wikipedia import fetch_wikipedia_summary
+from travelplanner.places.facts.tools.wikivoyage import fetch_wikivoyage_summary
 from travelplanner.places.facts.types import FactTool
 
 FACT_TOOLS: tuple[FactTool, ...] = (
@@ -19,6 +20,15 @@ FACT_TOOLS: tuple[FactTool, ...] = (
     cost_class="free",
     requires_setting=None,
     fetch=fetch_osm_tags,
+  ),
+  FactTool(
+    tool_id="wikivoyage_summary",
+    description="Wikivoyage travel guide summary and traveler recommendations",
+    source_name="wikivoyage",
+    categories=frozenset(),  # all travel categories
+    cost_class="free",
+    requires_setting=None,
+    fetch=fetch_wikivoyage_summary,
   ),
   FactTool(
     tool_id="wikipedia_summary",

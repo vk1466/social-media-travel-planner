@@ -45,6 +45,7 @@ def fetch_instagram_post(post_url: str) -> SavedPost:
     platform=Platform.INSTAGRAM,
     extracted_places=extraction.places,
     reel_summary=extraction.reel_summary,
+    trip_tips=extraction.trip_tips,
     fetched_at=datetime.now(tz=UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
     **trimmed,
   )

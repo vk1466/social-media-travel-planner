@@ -352,6 +352,7 @@ def reextract_post(post: SavedPost) -> SavedPost:
     post,
     extracted_places=extraction.places,
     reel_summary=extraction.reel_summary or post.reel_summary,
+    trip_tips=extraction.trip_tips or post.trip_tips,
   )
 
 
