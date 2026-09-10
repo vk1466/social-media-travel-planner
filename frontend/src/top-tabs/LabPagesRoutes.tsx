@@ -36,7 +36,12 @@ export function LabPagesRoutes({
     <>
       {loading && posts.length === 0 ? <p className="empty-copy">Loading your library…</p> : null}
       <Routes>
-        <Route index element={<HomePage posts={posts} places={places} visits={visits} />} />
+        <Route
+          index
+          element={
+            <HomePage posts={posts} places={places} visits={visits} onDeleted={onRefresh} />
+          }
+        />
         <Route path="posts" element={<PostsPage posts={posts} places={places} onDeleted={onRefresh} />} />
         <Route
           path="posts/:platform/:postId"

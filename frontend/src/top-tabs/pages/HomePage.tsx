@@ -1,19 +1,40 @@
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
 import type { Place, SavedPost, VisitDetail } from "../../api";
 import { locationLine } from "../display";
 import { PageHeading } from "../components/Shell";
 import { useLabTheme } from "../theme";
+import { PostDetail, PostMediaCard } from "./PostsPage";
+
+function recency(post: SavedPost): number {
+  const raw = post.fetched_at ?? post.posted_at;
+  if (!raw) return 0;
+  const time = Date.parse(raw);
+  return Number.isNaN(time) ? 0 : time;
+}
 
 export function HomePage({
+  posts,
   places,
+  onDeleted,
 }: {
   posts: SavedPost[];
   places: Place[];
   visits: VisitDetail[];
+  onDeleted: () => void;
 }) {
   const { basePath } = useLabTheme();
   const continuePlace = places[0];
+  const [selected, setSelected] = useState<SavedPost | null>(null);
+  const recentPosts = useMemo(
+    () => [...posts].sort((a, b) => recency(b) - recency(a)).slice(0, 8),
+    [posts],
+  );
+  const placeNames = useMemo(
+    () => Object.fromEntries(places.map((place) => [place.place_id, place.display_name])),
+    [places],
+  );
 
   return (
     <>
@@ -36,6 +57,33 @@ export function HomePage({
             <Link to={`${basePath}/travel/${continuePlace.place_id}`}>Open travel page →</Link>
           </div>
         </section>
+      ) : null}
+      {recentPosts.length > 0 ? (
+        <section className="library-panel slim-panel home-recent">
+          <div className="panel-heading">
+            <div>
+              <p className="eyebrow">Just saved</p>
+              <h2>Recent posts</h2>
+            </div>
+            <Link to={`${basePath}/posts`}>See all →</Link>
+          </div>
+          <div className="cover-grid">
+            {recentPosts.map((post) => (
+              <PostMediaCard key={post.post_id} post={post} onOpen={setSelected} />
+            ))}
+          </div>
+        </section>
+      ) : null}
+      {selected ? (
+        <PostDetail
+          post={selected}
+          placeNames={placeNames}
+          onClose={() => setSelected(null)}
+          onDeleted={() => {
+            setSelected(null);
+            onDeleted();
+          }}
+        />
       ) : null}
     </>
   );

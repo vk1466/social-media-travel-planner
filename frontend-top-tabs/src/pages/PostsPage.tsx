@@ -6,8 +6,7 @@ import {
   nativePostId,
   type Place,
   type SavedPost,
-} from "../../api";
-import { CoverCard } from "../../components/CoverCard";
+} from "../api";
 import {
   formatDate,
   platformLabel,
@@ -17,7 +16,6 @@ import {
 import { DetailSheet } from "../components/DetailSheet";
 import { EmptyState, Toolbar } from "../components/Toolbar";
 import { PageHeading } from "../components/Shell";
-import { useLabTheme } from "../theme";
 
 export function PostsPage({
   posts,
@@ -58,10 +56,42 @@ export function PostsPage({
       {filtered.length === 0 ? (
         <EmptyState>No posts match that filter.</EmptyState>
       ) : (
-        <div className="cover-grid">
-          {filtered.map((post) => (
-            <PostMediaCard key={post.post_id} post={post} onOpen={setSelected} />
-          ))}
+        <div className="media-grid">
+          {filtered.map((post) => {
+            const image = proxiedMediaUrl(post.thumbnail_url);
+            const meta = [
+              platformLabel(post.platform),
+              formatDate(post.posted_at ?? post.fetched_at),
+            ]
+              .filter(Boolean)
+              .join(" · ");
+            return (
+              <article
+                key={post.post_id}
+                className="media-card"
+                tabIndex={0}
+                onClick={() => setSelected(post)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    setSelected(post);
+                  }
+                }}
+              >
+                <div
+                  className="photo"
+                  style={image ? { backgroundImage: `url('${image}')` } : undefined}
+                >
+                  <span>{post.media_kind || "post"}</span>
+                </div>
+                <div>
+                  <h2>{postTitle(post)}</h2>
+                  <p>{meta}</p>
+                  <button type="button">Open post →</button>
+                </div>
+              </article>
+            );
+          })}
         </div>
       )}
       {selected ? (
@@ -79,30 +109,7 @@ export function PostsPage({
   );
 }
 
-export function PostMediaCard({
-  post,
-  onOpen,
-}: {
-  post: SavedPost;
-  onOpen: (post: SavedPost) => void;
-}) {
-  const handle = post.author_handle?.trim();
-  return (
-    <CoverCard
-      title={postTitle(post)}
-      category={post.media_kind || "post"}
-      kicker={platformLabel(post.platform)}
-      location={handle ? (handle.startsWith("@") ? handle : `@${handle}`) : platformLabel(post.platform)}
-      meta={formatDate(post.posted_at ?? post.fetched_at) ?? "Saved"}
-      action="Open ↗"
-      imageUrl={proxiedMediaUrl(post.thumbnail_url)}
-      onOpen={() => onOpen(post)}
-      ariaLabel={`Open post ${postTitle(post)}`}
-    />
-  );
-}
-
-export function PostDetail({
+function PostDetail({
   post,
   placeNames,
   onClose,
@@ -114,7 +121,6 @@ export function PostDetail({
   onDeleted: () => void;
 }) {
   const navigate = useNavigate();
-  const { basePath } = useLabTheme();
   const image = proxiedMediaUrl(post.thumbnail_url);
   const [busy, setBusy] = useState(false);
 
@@ -132,7 +138,7 @@ export function PostDetail({
         <ul className="sheet-list">
           {post.place_ids.map((placeId) => (
             <li key={placeId}>
-              <button type="button" onClick={() => navigate(`${basePath}/travel/${placeId}`)}>
+              <button type="button" onClick={() => navigate(`/travel/${placeId}`)}>
                 {placeNames[placeId] ?? "Place"}
               </button>
             </li>

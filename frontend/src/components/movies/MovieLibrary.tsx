@@ -370,7 +370,7 @@ export function MovieLibrary({ posts, onSelectPost }: MovieLibraryProps): JSX.El
 
       {/* Poster Grid */}
       {filteredMovies.length > 0 ? (
-        <div className="movie-library-grid">
+        <div className="movie-library-grid cover-grid">
           {filteredMovies.map((movie) => (
             <MovieCard
               key={movie.key}

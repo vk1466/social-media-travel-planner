@@ -184,7 +184,7 @@ export function RecipeLibrary({ posts, onSelectPost, onPostUpdated }: RecipeLibr
       </div>
 
       {filtered.length > 0 ? (
-        <div className="recipe-grid">
+        <div className="recipe-grid cover-grid">
           {filtered.map((item) => (
             <RecipeCard
               key={item.key}

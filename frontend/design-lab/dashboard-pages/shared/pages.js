@@ -89,7 +89,7 @@ function mediaCards(items, kind) {
 }
 
 function homePage() {
-  return `${pageHeading("Your library", "Everything you saved, ready when you are.", "Start from a category. Each one now has its own predictable page and URL.")}<section class="home-hero"><div><p class="eyebrow">Continue planning</p><h2>Amalfi Coast</h2><p>12 places · 4 days · updated yesterday</p><a href="travel.html">Open travel page →</a></div></section><section class="portal-grid">${PAGE_CATEGORIES.filter((item) => !["home"].includes(item.key)).map((item, index) => `<a href="${item.key}.html"><span>${item.icon}</span><b>${item.label}</b><small>${item.count} ${index === 4 ? "visits" : "saves"}</small><em>Open page →</em></a>`).join("")}</section>`;
+  return `${pageHeading("Your library", "Everything you saved, ready when you are.", "Start from a category. Each one now has its own predictable page and URL.")}<section class="home-hero"><div><p class="eyebrow">Continue planning</p><h2>Amalfi Coast</h2><p>12 places · 4 days · updated yesterday</p><a href="travel.html">Open travel page →</a></div></section><section class="portal-grid">${PAGE_CATEGORIES.filter((item) => !["home"].includes(item.key)).map((item, index) => `<a href="${item.key}.html"><span>${item.icon}</span><b>${item.label}</b><small>${item.count} ${index === 4 ? "visits" : "saves"}</small><em>Open page →</em></a>`).join("")}</section><section class="library-panel slim-panel home-recent"><div class="panel-heading"><div><p class="eyebrow">Just saved</p><h2>Recent posts</h2></div><a href="posts.html">See all →</a></div>${mediaCards(content.posts, "posts")}</section>`;
 }
 
 function postsPage() {

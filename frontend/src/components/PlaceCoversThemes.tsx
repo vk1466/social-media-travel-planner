@@ -57,23 +57,23 @@ export function PlaceMagazineCovers({ scope, trail, children, onOpenNode }: Plac
         <div><span>The travel edit</span><h3>{scope.name}</h3></div>
         <small>{children.length} {children.length === 1 ? "story" : "stories"}</small>
       </header>
-      <div className="magazine-grid">
+      <div className="cover-grid">
         {children.map((node, index) => {
           const location = node.place?.trail.slice(-2).join(" · ") || `${levelLabel(node.level)} · ${scope.name}`;
           const category = node.place?.categoryLabel || levelLabel(node.level);
           return (
-            <button key={node.key} type="button" className="magazine-card" onClick={() => onOpenNode(node)} aria-label={`${actionLabel(node)}: ${node.name}`}>
-              <span className="magazine-card-media" style={coverStyle(node, index)}>
-                <span className="magazine-card-category">{category}</span>
-                <span className="magazine-card-save" aria-hidden="true">
+            <button key={node.key} type="button" className="cover-card" onClick={() => onOpenNode(node)} aria-label={`${actionLabel(node)}: ${node.name}`}>
+              <span className="cover-card-media" style={coverStyle(node, index)}>
+                <span className="cover-card-category">{category}</span>
+                <span className="cover-card-mark" aria-hidden="true">
                   <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M6 3h12v18l-6-4-6 4V3Z" /></svg>
                 </span>
-                <span className="magazine-card-kicker">The {scope.name} edit · {String(index + 1).padStart(2, "0")}</span>
+                <span className="cover-card-kicker">The {scope.name} edit · {String(index + 1).padStart(2, "0")}</span>
               </span>
-              <span className="magazine-card-copy">
-                <span className="magazine-card-location">⌖ {location}</span>
+              <span className="cover-card-copy">
+                <span className="cover-card-location">⌖ {location}</span>
                 <strong>{node.name}</strong>
-                <span className="magazine-card-foot">
+                <span className="cover-card-foot">
                   <span>{node.level === "place" ? `${node.saves} saved ${node.saves === 1 ? "post" : "posts"}` : `${node.total} saved places`}</span>
                   <span>View ↗</span>
                 </span>

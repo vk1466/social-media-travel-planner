@@ -1,7 +1,8 @@
 import type { JSX } from "react";
+
 import type { SavedPost } from "../../api";
+import { CoverCard } from "../CoverCard";
 import { proxiedMediaUrl } from "../../postDisplayUtils";
-import { ImdbRatingBadge, RottenTomatoesBadge, StreamingProviderPill } from "./MovieBadges";
 
 export interface AggregatedMovie {
   key: string;
@@ -52,89 +53,44 @@ export function MovieCard({ movie, onSelect, onPlayTrailer }: MovieCardProps): J
     (movie.source_posts[0]?.thumbnail_url
       ? proxiedMediaUrl(movie.source_posts[0].thumbnail_url)
       : null);
+  const location = [movie.year ? String(movie.year) : null, duration].filter(Boolean).join(" · ");
+  const ratings = [
+    movie.imdb_rating != null ? `IMDb ${movie.imdb_rating.toFixed(1)}` : null,
+    movie.rotten_tomatoes_percent != null ? `${movie.rotten_tomatoes_percent}% RT` : null,
+    reelCount > 1 ? `${reelCount} reels` : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+  const kicker =
+    movie.watch_providers.slice(0, 2).join(" · ") || movie.genres.slice(0, 2).join(" · ") || (isTv ? "Series" : "Feature");
 
   return (
-    <article
-      className="movie-grid-card"
-      onClick={() => onSelect(movie)}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          onSelect(movie);
-        }
-      }}
-      aria-label={`View details for ${movie.title}`}
-    >
-      <div className="movie-poster-wrap">
-        {displayPoster ? (
-          <img
-            src={displayPoster}
-            alt=""
-            className="movie-poster-img"
-            loading="lazy"
-          />
-        ) : (
-          <div className="movie-poster-placeholder">
-            <span className="movie-placeholder-icon">🎬</span>
-            <span className="movie-placeholder-title">{movie.title}</span>
-          </div>
-        )}
-
-        <div className="movie-poster-overlay">
-          {movie.trailer_youtube_key && onPlayTrailer && (
-            <button
-              type="button"
-              className="movie-card-play-btn"
-              onClick={(e) => {
-                e.stopPropagation();
-                onPlayTrailer(movie.trailer_youtube_key!, movie.title);
-              }}
-              aria-label={`Watch ${movie.title} trailer`}
-              title="Watch trailer"
-            >
-              ▶ Trailer
-            </button>
-          )}
-        </div>
-
-        {reelCount > 1 && (
-          <span className="movie-reel-count-badge" title={`Saved in ${reelCount} reels`}>
-            {reelCount} reels
-          </span>
-        )}
-      </div>
-
-      <div className="movie-card-content">
-        <div className="movie-card-meta-line">
-          <span className="movie-kind-tag">{isTv ? "TV Series" : "Movie"}</span>
-          {movie.year && <span className="movie-year-tag">{movie.year}</span>}
-          {duration && <span className="movie-duration-tag">{duration}</span>}
-        </div>
-
-        <h3 className="movie-card-title">{movie.title}</h3>
-
-        {(movie.imdb_rating != null || movie.rotten_tomatoes_percent != null) && (
-          <div className="movie-ratings-row">
-            {movie.imdb_rating != null && <ImdbRatingBadge rating={movie.imdb_rating} />}
-            {movie.rotten_tomatoes_percent != null && (
-              <RottenTomatoesBadge percent={movie.rotten_tomatoes_percent} />
-            )}
-          </div>
-        )}
-
-        {movie.watch_providers.length > 0 && (
-          <div className="movie-card-providers">
-            {movie.watch_providers.slice(0, 2).map((provider) => (
-              <StreamingProviderPill key={provider} provider={provider} />
-            ))}
-            {movie.watch_providers.length > 2 && (
-              <span className="movie-more-providers">+{movie.watch_providers.length - 2}</span>
-            )}
-          </div>
-        )}
-      </div>
-    </article>
+    <CoverCard
+      className="cover-card--movie"
+      title={movie.title}
+      category={isTv ? "TV Series" : "Movie"}
+      kicker={kicker}
+      location={location || (isTv ? "TV Series" : "Movie")}
+      meta={ratings || "Saved to watch"}
+      action="Watch ↗"
+      imageUrl={displayPoster}
+      onOpen={() => onSelect(movie)}
+      ariaLabel={`View details for ${movie.title}`}
+      badge={
+        movie.trailer_youtube_key && onPlayTrailer ? (
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              onPlayTrailer(movie.trailer_youtube_key!, movie.title);
+            }}
+            aria-label={`Watch ${movie.title} trailer`}
+            title="Watch trailer"
+          >
+            ▶
+          </button>
+        ) : undefined
+      }
+    />
   );
 }

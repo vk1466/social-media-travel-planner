@@ -39,6 +39,7 @@ import "./visit-form.css";
 import "./admin-tools.css";
 import "./category-chip.css";
 import "./site-chrome.css";
+import "./cover-card.css";
 
 // Seed shipped themes, then apply stored/default brand before first paint.
 seedBrandThemes();
