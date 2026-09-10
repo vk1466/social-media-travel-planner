@@ -44,6 +44,7 @@ export function PlaceDetail({
   visited = false,
   onClose,
   onNavigateToPlace,
+  onNavigateToPost,
   onVisitedChange,
 }: PlaceDetailProps) {
   const [detail, setDetail] = useState<PlaceDetailData | null>(null);
@@ -122,13 +123,16 @@ export function PlaceDetail({
       return {
         key: post.post_id,
         to: `/posts/${post.platform}/${nativePostId(post)}`,
+        onSelect: onNavigateToPost
+          ? () => onNavigateToPost(post.platform, nativePostId(post))
+          : undefined,
         label: getPostTitle(post),
         sublabel: getPlatformLabel(post),
         background,
         shape: "tile" as const,
       };
     });
-  }, [sourcePosts]);
+  }, [onNavigateToPost, sourcePosts]);
 
   const handleToggleVisited = async () => {
     setVisitedError(null);
@@ -149,67 +153,83 @@ export function PlaceDetail({
     }
   };
 
+  const heroBackground = savedFromItems[0]?.background ?? coverFallback(0);
+
   return (
-    <DetailModal titleId="place-detail-title" onClose={onClose} panelClassName="detail-panel-flip">
-      <div className="post-flip">
-        <div className="post-flip-inner">
-          <section className="post-flip-face post-flip-front place-flip-face">
-            <div className="post-flip-front-wash" aria-hidden="true" />
-            <div className="post-flip-front-glow" aria-hidden="true" />
+    <DetailModal
+      titleId="place-detail-title"
+      onClose={onClose}
+      panelClassName="place-cover-panel"
+      overlayClassName="place-cover-overlay"
+    >
+      <div className="place-cover-detail">
+        <aside className="place-cover-hero" style={{ backgroundImage: heroBackground }}>
+          <button
+            type="button"
+            className="place-cover-close"
+            onClick={onClose}
+            aria-label="Close"
+          >
+            <span aria-hidden="true">×</span>
+          </button>
+          <div className="place-cover-hero-caption">
+            <span>{place.category || "Saved place"}</span>
+            <p>{locationBreadcrumb(place)}</p>
+          </div>
+        </aside>
 
-            <header className="post-flip-header">
-              <div className="post-flip-meta">
-                {parent && (
-                  <p className="post-flip-eyebrow">
-                    Part of{" "}
-                    <button
-                      type="button"
-                      className="place-flip-inline"
-                      onClick={() => onNavigateToPlace?.(parent)}
-                    >
-                      {parent.display_name}
-                    </button>
-                  </p>
-                )}
-                <p className="post-flip-eyebrow">{locationBreadcrumb(place)}</p>
-                <div className="detail-badges">
-                  <CategoryChip category={place.category} small />
-                  {(place.attributes ?? []).map((attr) => (
-                    <span key={attr} className="tag-chip tag-chip-small">
-                      {attr}
-                    </span>
-                  ))}
-                  <button
-                    type="button"
-                    className={isVisited ? "post-flip-reel-pill is-visited" : "post-flip-reel-pill"}
-                    onClick={() => void handleToggleVisited()}
-                    disabled={visitedSaving}
-                    aria-pressed={isVisited}
-                  >
-                    {visitedSaving ? "Saving…" : isVisited ? "Visited" : "Mark visited"}
-                  </button>
-                </div>
-              </div>
-              <div className="post-flip-header-actions">
-                <button
-                  type="button"
-                  className="icon-button icon-button-close post-flip-front-close"
-                  onClick={onClose}
-                  aria-label="Close"
-                />
-              </div>
-            </header>
-
-            <div className="place-flip-body">
-              <h2 id="place-detail-title" className="post-flip-heading">
-                {place.display_name}
-              </h2>
+        <section className="place-cover-content">
+          <header className="place-cover-header">
+            <div>
+              <p className="place-cover-location">{locationBreadcrumb(place)}</p>
+              <h2 id="place-detail-title">{place.display_name}</h2>
               {place.aliases.length > 0 && (
-                <p className="place-flip-muted">also known as {place.aliases.join(", ")}</p>
+                <p className="place-flip-muted">Also known as {place.aliases.join(", ")}</p>
               )}
-              {isVisited && <p className="place-flip-muted">In your travel history</p>}
-              {visitedError && <p className="banner-error">{visitedError}</p>}
-              {loading && <p className="place-flip-muted">Loading latest saved data…</p>}
+            </div>
+            <div className="place-cover-actions">
+              {mapUrl && (
+                <a href={mapUrl} target="_blank" rel="noreferrer">
+                  Maps ↗
+                </a>
+              )}
+              <button
+                type="button"
+                className={isVisited ? "is-visited" : ""}
+                onClick={() => void handleToggleVisited()}
+                disabled={visitedSaving}
+                aria-pressed={isVisited}
+              >
+                {visitedSaving ? "Saving…" : isVisited ? "✓ Visited" : "Mark visited"}
+              </button>
+            </div>
+          </header>
+
+          <div className="place-cover-tags">
+            <CategoryChip category={place.category} small />
+            {(place.attributes ?? []).map((attr) => (
+              <span key={attr} className="tag-chip tag-chip-small">
+                {attr}
+              </span>
+            ))}
+          </div>
+
+          {parent && (
+            <p className="place-cover-parent">
+              Part of{" "}
+              <button
+                type="button"
+                className="place-flip-inline"
+                onClick={() => onNavigateToPlace?.(parent)}
+              >
+                {parent.display_name}
+              </button>
+            </p>
+          )}
+          {visitedError && <p className="banner-error">{visitedError}</p>}
+          {loading && <p className="place-flip-muted">Loading latest saved data…</p>}
+
+          <div className="place-flip-body place-cover-scroll">
 
               {children.length > 0 && (
                 <section className="place-flip-section">
@@ -357,9 +377,8 @@ export function PlaceDetail({
                   )}
                 </section>
               )}
-            </div>
-          </section>
-        </div>
+          </div>
+        </section>
       </div>
     </DetailModal>
   );

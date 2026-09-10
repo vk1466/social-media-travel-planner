@@ -13,6 +13,12 @@ const concepts = [
   { id: "12", slug: "portrait-guide", name: "Pocket guide", note: "Portrait proportions with practical trip signals layered into the image.", location: "Dolomites · Italy", category: "Field guide", stat: "Moderate · 2h", image: "dolomites", format: "portrait" },
   { id: "13", slug: "portrait-ticket", name: "Journey ticket", note: "A vertical keepsake that blends itinerary utility with ticket details.", location: "Amalfi Coast · Italy", category: "Day 04", stat: "07:30 departure", image: "amalfi", format: "portrait" },
   { id: "14", slug: "portrait-night", name: "Night portrait", note: "A dark, cinematic portrait card for atmospheric saved places.", location: "Dolomites · Italy", category: "Alpine", stat: "1,925 m", image: "dolomites", format: "portrait" },
+  { id: "15", slug: "plan-ready", name: "Plan ready", note: "The next useful action leads: add the place to a trip in one tap.", location: "Amalfi Coast · Italy", category: "Trip ready", stat: "Fits Italy · Day 04", image: "amalfi" },
+  { id: "16", slug: "live-window", name: "Live window", note: "Conditions and timing answer the practical “should I go now?” question.", location: "Dolomites · Italy", category: "Good now", stat: "Quiet until 10 AM", image: "dolomites" },
+  { id: "17", slug: "nearby-cluster", name: "Nearby cluster", note: "The place sits inside a small, useful neighborhood rather than in isolation.", location: "Amalfi Coast · Italy", category: "3 nearby", stat: "Nocelle · 1.2 km", image: "amalfi" },
+  { id: "18", slug: "guide-chapters", name: "Guide chapters", note: "Progressive disclosure keeps a rich place record calm and navigable.", location: "Dolomites · Italy", category: "Guide", stat: "Overview · Tips · Route", image: "dolomites" },
+  { id: "19", slug: "one-screen", name: "One screen", note: "A compact desktop card keeps every decision-making detail above the fold.", location: "Amalfi Coast · Italy", category: "Essential", stat: "7.8 km · 3–4 hr", image: "amalfi" },
+  { id: "20", slug: "calm-default", name: "Calm default", note: "A restrained, accessible production candidate with an obvious hierarchy.", location: "Dolomites · Italy", category: "Saved place", stat: "8 sources · Visited", image: "dolomites" },
 ];
 
 const places = {
@@ -68,6 +74,12 @@ function cardMarkup(concept) {
     "portrait-guide": `<div class="portrait-signal"><span>${icon("sun", 14)} 14°</span><span>${icon("mountain-snow", 14)} 1,925 m</span></div>`,
     "portrait-ticket": `<span class="ticket-code">BOM → NOC<br><b>07:30</b></span>`,
     "portrait-night": `<div class="portrait-compass">${icon("compass", 17)}<span>46.538° N</span></div>`,
+    "plan-ready": `<div class="plan-chip">${icon("calendar-plus", 14)} Italy · Day 04</div>`,
+    "live-window": `<div class="live-chip"><i></i><span>Quiet now</span><b>14°</b></div>`,
+    "nearby-cluster": `<div class="cluster-dots"><span>1</span><span>2</span><span>3</span></div>`,
+    "guide-chapters": `<div class="chapter-index">01 <i></i> 04</div>`,
+    "one-screen": `<div class="essential-stamp">ESSENTIAL<br><b>01</b></div>`,
+    "calm-default": `<div class="calm-status">${icon("check", 13)} Visited</div>`,
   }[concept.slug] || "";
 
   return `
@@ -93,8 +105,12 @@ function detailSections(concept) {
   const route = concept.slug === "route-stop" ? `<section class="route-line"><span class="route-node is-done"></span><div><small>08:00 · Start</small><b>Cortina d'Ampezzo</b></div><span class="route-node is-current"></span><div><small>09:30 · Current stop</small><b>Lago di Sorapis</b></div><span class="route-node"></span><div><small>13:00 · Next</small><b>Rifugio Vandelli</b></div></section>` : "";
   const sources = concept.slug === "social-proof" ? `<section class="source-feature"><div class="avatar-stack"><span>AV</span><span>MK</span><span>JL</span></div><div><b>Loved by your travel circle</b><p>${place.socialProof}</p></div></section>` : "";
   const journal = concept.slug === "postcard" ? `<blockquote>“${place.journal}”</blockquote>` : "";
+  const plan = concept.slug === "plan-ready" ? `<section class="plan-callout"><div><small>Your Italy trip</small><b>Day 04 has room for this</b><span>Near Positano · 35 min from your last stop</span></div><button type="button" data-action="trip">${icon("plus", 15)} Add</button></section>` : "";
+  const conditions = concept.slug === "live-window" ? `<section class="conditions-strip"><div><span>Now</span><b>14°</b><small>Clear</small></div><div><span>Trail</span><b>Quiet</b><small>Bus at 07:20</small></div><div><span>Light</span><b>Good</b><small>Until 10 AM</small></div></section>` : "";
+  const nearby = concept.slug === "nearby-cluster" ? `<section class="nearby-list"><header><h3>Pair it with</h3><span>Within 3 km</span></header><button type="button" data-action="nearby"><i>1</i><span><b>Nocelle</b><small>Village · 1.2 km</small></span>${icon("chevron-right", 14)}</button><button type="button" data-action="nearby"><i>2</i><span><b>Arienzo Beach</b><small>Beach · 2.8 km</small></span>${icon("chevron-right", 14)}</button></section>` : "";
+  const chapters = concept.slug === "guide-chapters" ? `<nav class="chapter-tabs" aria-label="Place guide sections"><button class="is-active" type="button" data-action="chapter">Overview</button><button type="button" data-action="chapter">Tips</button><button type="button" data-action="chapter">Route</button><button type="button" data-action="chapter">Sources</button></nav>` : "";
 
-  return `${route}${sources}${journal}
+  return `${route}${sources}${journal}${plan}${conditions}${nearby}${chapters}
     <section class="facts-grid" aria-label="Key facts">
       <div><i data-lucide="clock"></i><span>Best time</span><b>${place.bestTime}</b></div>
       <div><i data-lucide="footprints"></i><span>Effort</span><b>${place.effort}</b></div>
@@ -158,6 +174,13 @@ function showToast(message) {
 
 function handleModalAction(button) {
   const action = button.dataset.action;
+  if (action === "chapter") {
+    button.parentElement.querySelectorAll("button").forEach((tab) => {
+      tab.classList.toggle("is-active", tab === button);
+    });
+    showToast(`${button.textContent.trim()} chapter selected`);
+    return;
+  }
   if (action === "save") {
     const isSaved = button.getAttribute("aria-pressed") === "true";
     button.setAttribute("aria-pressed", String(!isSaved));
@@ -173,6 +196,7 @@ function handleModalAction(button) {
     trip: "Added to your Italy trip",
     share: "Share link ready",
     sources: "Source posts preview opened",
+    nearby: `${button.querySelector("b")?.textContent || "Nearby place"} preview opened`,
   };
   if (messages[action]) showToast(messages[action]);
 }

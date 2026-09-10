@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
 import { fetchPlaceDetail, type Place } from "../api";
@@ -17,13 +17,13 @@ import {
   childLevelLabel,
   countByCategory,
   leafPlaces,
-  levelLabel,
   resolveScopeKey,
   searchAtlas,
   type AtlasGrouping,
   type AtlasNode,
 } from "../placeAtlasModel";
 import { AtlasMapPanel } from "./AtlasMapPanel";
+import { PlaceMagazineCovers } from "./PlaceCoversThemes";
 import { PlaceDetail } from "./PlaceDetail";
 
 import "../place-covers.css";
@@ -41,32 +41,7 @@ interface PlaceLibraryProps {
 type StatusFilter = PlacesStatusFilter;
 type ViewMode = PlacesViewMode;
 
-function vars(entries: Record<string, string | number>): CSSProperties {
-  return entries as CSSProperties;
-}
-
-function hashHue(value: string): number {
-  let hash = 0;
-  for (let index = 0; index < value.length; index += 1) hash = (hash * 33 + value.charCodeAt(index)) % 360;
-  return hash;
-}
-
-function coverArt(name: string): CSSProperties {
-  const forests = [
-    "linear-gradient(145deg, #243d32 0%, #0f1a14 100%)",
-    "linear-gradient(155deg, #1f3a2c 0%, #0d1510 100%)",
-    "linear-gradient(160deg, #2a4538 0%, #101c16 100%)",
-    "linear-gradient(150deg, #1a3328 0%, #0a1210 100%)",
-    "linear-gradient(148deg, #274438 0%, #0e1813 100%)",
-  ];
-  return { backgroundImage: forests[hashHue(name) % forests.length] };
-}
-
-/**
- * Production places page — Country Covers atlas.
- * Region covers with a visited meter; open a cover for city chips, drill
- * down through the hierarchy, or flip to the scoped map.
- */
+/** Production places page — switchable cover themes plus the full scoped map. */
 export function PlaceLibrary({
   authReady,
   onNavigateToPost,
@@ -87,8 +62,7 @@ export function PlaceLibrary({
   const [localStatusFilter, setLocalStatusFilter] = useState<StatusFilter>("all");
   const [localTypeFilter, setLocalTypeFilter] = useState<string[]>([]);
   const [localGrouping, setLocalGrouping] = useState<AtlasGrouping>("region");
-  const [localViewMode, setLocalViewMode] = useState<ViewMode>("map");
-  const [expandedKeys, setExpandedKeys] = useState<string[]>([]);
+  const [localViewMode, setLocalViewMode] = useState<ViewMode>("covers");
   const [localSearchQuery, setLocalSearchQuery] = useState("");
 
   const statusFilter = filters?.statusFilter ?? localStatusFilter;
@@ -198,11 +172,6 @@ export function PlaceLibrary({
       return;
     }
     setScopeKey(node.key);
-    setExpandedKeys([]);
-  }
-
-  function toggleExpanded(key: string) {
-    setExpandedKeys((keys) => keys.includes(key) ? keys.filter((entry) => entry !== key) : [...keys, key]);
   }
 
   function toggleType(category: string) {
@@ -218,13 +187,11 @@ export function PlaceLibrary({
       setLocalGrouping(nextGrouping);
     }
     setScopeKey("world");
-    setExpandedKeys([]);
   }
 
   useEffect(() => {
     if (!controlled) return;
     setScopeKey("world");
-    setExpandedKeys([]);
   }, [controlled, grouping]);
 
   function closePlace() {
@@ -242,7 +209,6 @@ export function PlaceLibrary({
     // Drop a deep scope if filters emptied its branch.
     if (!atlas.index.has(rawScopeKey) && rawScopeKey !== "world") {
       setScopeKey("world");
-      setExpandedKeys([]);
     }
   }, [atlas, rawScopeKey]);
 
@@ -475,24 +441,12 @@ export function PlaceLibrary({
                 onOpenPlace={(placeId) => navigate(`/places/${placeId}`)}
               />
             ) : (
-              <div className="pl2-covers">
-                {children.map((child) => {
-                  const ratio = child.total ? child.visited / child.total : 0;
-                  const open = expandedKeys.includes(child.key);
-                  const isPlace = child.level === "place";
-                  return (
-                    <article key={child.key} className={`pl2-cover ${open ? "is-open" : ""}`}>
-                      <button type="button" className="pl2-cover-art" style={coverArt(child.name)} onClick={() => (isPlace ? openNode(child) : toggleExpanded(child.key))}>
-                        <span className="pl2-cover-kicker">{levelLabel(child.level)}</span>
-                        <h3>{child.name}</h3>
-                        <span className="pl2-cover-meter" style={vars({ "--ratio": `${ratio * 100}%` })}><i /></span>
-                        <span className="pl2-cover-stats">{isPlace ? (child.place?.visited ? "Visited" : "Inspiration") : `${child.visited} visited · ${child.total} saved`}</span>
-                      </button>
-                      {open && !isPlace && <div className="pl2-cover-chips">{child.children.slice(0, 16).map((grandchild) => <button key={grandchild.key} type="button" onClick={() => openNode(grandchild)}>{grandchild.level === "place" && <i className={`pl2-dot ${grandchild.place?.visited ? "visited" : "dream"}`} />}{grandchild.name}{grandchild.level !== "place" && <span>{grandchild.total}</span>}</button>)}</div>}
-                    </article>
-                  );
-                })}
-              </div>
+              <PlaceMagazineCovers
+                scope={scope}
+                trail={trail}
+                children={children}
+                onOpenNode={openNode}
+              />
             )}
           </div>
         </div>
@@ -500,6 +454,7 @@ export function PlaceLibrary({
 
       {selectedApiPlace && (
         <PlaceDetail
+          key={selectedApiPlace.place_id}
           place={selectedApiPlace}
           visited={visitedIds.has(selectedApiPlace.place_id)}
           onClose={closePlace}

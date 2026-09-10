@@ -5,6 +5,7 @@ import "../relation-rail.css";
 export interface RelationRailItem {
   key: string;
   to: string;
+  onSelect?: () => void;
   label: string;
   sublabel?: string;
   background: string;
@@ -29,6 +30,10 @@ export function RelationRail({ heading, emptyText, items }: RelationRailProps) {
             <Link
               key={item.key}
               to={item.to}
+              onClick={item.onSelect ? (event) => {
+                event.preventDefault();
+                item.onSelect?.();
+              } : undefined}
               className="rr-item"
               data-shape={item.shape}
               style={{ background: item.background }}

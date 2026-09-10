@@ -137,10 +137,11 @@ http://localhost:5179/travel-section/
 
 ## Travel Card + Detail Lab
 
-**14 paired place-card and detail-modal directions** — ten landscape and adaptive concepts,
-plus four portrait formats: magazine cover, pocket guide, journey ticket, and night portrait.
+**20 paired place-card and detail-modal directions** — landscape, adaptive, planning-first,
+map-aware, compact, and portrait concepts. The four portrait formats are magazine cover,
+pocket guide, journey ticket, and night portrait.
 Each card opens its matching responsive detail treatment with save and quick-action states.
-Add `?open=1` through `?open=14` to link directly to an open concept.
+Add `?open=1` through `?open=20` to link directly to an open concept.
 
 http://localhost:5179/travel-card-modal/
 
