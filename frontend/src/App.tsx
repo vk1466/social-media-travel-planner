@@ -1,14 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import {
-  Link,
-  Navigate,
-  Outlet,
-  Route,
-  Routes,
-  useLocation,
-  useNavigate,
-  useParams,
-} from "react-router-dom";
+import { Navigate, Route, Routes, useLocation, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@clerk/react";
 
 import {
@@ -17,124 +8,33 @@ import {
   fetchPosts,
   fetchVisits,
   getViewAsUserId,
-  postRouteParts,
   setViewAsUserId,
   type Place,
   type SavedPost,
+  type VisitDetail,
 } from "./api";
-import { AddLinksPage } from "./components/AddLinksPage";
 import { FlipCollapsedVariations } from "./components/FlipCollapsedVariations";
 import { FlipDetailCardDemos } from "./components/FlipDetailCardDemos";
-import { AdminPage } from "./components/AdminPage";
-import { PageHeader } from "./components/PageHeader";
-import { PlaceLibrary } from "./components/PlaceLibrary";
-import { PostLibrary } from "./components/PostLibrary";
-import { SavedPage } from "./components/SavedPage";
-import { SearchPage } from "./components/SearchPage";
-import { SiteLayout } from "./components/SiteLayout";
-import { TravelHistory } from "./components/TravelHistory";
 import { clerkEnabled } from "./authMode";
+import { TopTabsApp } from "./top-tabs/TopTabsApp";
 
-function RedirectMapPlaceToPlaces() {
+function RedirectMapPlaceToTravel() {
   const { placeId } = useParams<{ placeId: string }>();
-  return <Navigate to={placeId ? `/places/${placeId}` : "/places"} replace />;
+  return <Navigate to={placeId ? `/travel/${placeId}` : "/travel"} replace />;
 }
 
-function RedirectToDashboard() {
-  const location = useLocation();
-  return <Navigate to={{ pathname: "/", search: location.search }} replace />;
-}
-
-function PlacesRoutes({ authReady }: { authReady: boolean }) {
-  const navigate = useNavigate();
-  return (
-    <PlaceLibrary
-      authReady={authReady}
-      onNavigateToPost={(platform, postId) => {
-        const { platform: routePlatform, nativeId } = postRouteParts(platform, postId);
-        navigate(`/posts/${routePlatform}/${nativeId}`);
-      }}
-    />
-  );
-}
-
-function NotFoundPage() {
-  return (
-    <div className="wf-container wf-page-pad">
-      <PageHeader
-        eyebrow="404"
-        title="Page not found"
-        lede={
-          <>
-            That route doesn’t exist. <Link to="/">Back to home</Link>
-          </>
-        }
-      />
-    </div>
-  );
-}
-
-interface ChromeOutletProps {
-  isAdmin: boolean;
-  isSuperAdmin: boolean;
-  postCount: number;
-  placeCount: number;
-  onViewAsChange: (userId: string | null) => void;
-}
-
-function ChromeOutlet({
-  isAdmin,
-  isSuperAdmin,
-  postCount,
-  placeCount,
-  onViewAsChange,
-}: ChromeOutletProps) {
-  return (
-    <SiteLayout
-      isAdmin={isAdmin}
-      isSuperAdmin={isSuperAdmin}
-      postCount={postCount}
-      placeCount={placeCount}
-      onViewAsChange={onViewAsChange}
-    >
-      <Outlet />
-    </SiteLayout>
-  );
-}
-
-function PostsRoute({
-  loadingPosts,
-  posts,
-  places,
-  onDeleted,
-  onNavigateToPlace,
-}: {
-  loadingPosts: boolean;
-  posts: SavedPost[];
-  places: Place[];
-  onDeleted: () => void;
-  onNavigateToPlace: (placeId: string) => void;
-}) {
-  if (loadingPosts) {
-    return <p className="loading-copy">Loading saved posts…</p>;
-  }
-  return (
-    <PostLibrary
-      posts={posts}
-      places={places}
-      onDeleted={onDeleted}
-      onNavigateToPlace={onNavigateToPlace}
-    />
-  );
+function RedirectSplatToRoot() {
+  const { "*": rest } = useParams();
+  return <Navigate to={rest ? `/${rest}` : "/"} replace />;
 }
 
 function AppRoutes({ authReady }: { authReady: boolean }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const [posts, setPosts] = useState<SavedPost[]>([]);
   const [places, setPlaces] = useState<Place[]>([]);
-  const [visitCount, setVisitCount] = useState(0);
+  const [visits, setVisits] = useState<VisitDetail[]>([]);
   const [loadingPosts, setLoadingPosts] = useState(true);
-  const [libraryVersion, setLibraryVersion] = useState(0);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
@@ -148,7 +48,7 @@ function AppRoutes({ authReady }: { authReady: boolean }) {
       ]);
       setPosts(nextPosts);
       setPlaces(nextPlaces);
-      setVisitCount(nextVisits.length);
+      setVisits(nextVisits);
     } finally {
       setLoadingPosts(false);
     }
@@ -156,13 +56,11 @@ function AppRoutes({ authReady }: { authReady: boolean }) {
 
   const handleLibraryChanged = useCallback(() => {
     void refresh();
-    setLibraryVersion((version) => version + 1);
   }, [refresh]);
 
   const handleViewAsChange = useCallback(
     (_userId: string | null) => {
       void refresh();
-      setLibraryVersion((version) => version + 1);
     },
     [refresh],
   );
@@ -193,7 +91,6 @@ function AppRoutes({ authReady }: { authReady: boolean }) {
       }
       if (!cancelled) {
         await refresh();
-        setLibraryVersion((version) => version + 1);
       }
     })();
     return () => {
@@ -220,104 +117,57 @@ function AppRoutes({ authReady }: { authReady: boolean }) {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [navigate]);
-
-  const navigateToPlace = (placeId: string) => {
-    navigate(`/places/${placeId}`);
-  };
-
-  const chromeShared = {
-    isAdmin,
-    isSuperAdmin,
-    postCount: posts.length,
-    placeCount: places.length,
-    onViewAsChange: handleViewAsChange,
-  };
+  }, [location.pathname, navigate]);
 
   return (
     <Routes>
-      <Route path="/map" element={<Navigate to="/places" replace />} />
-      <Route path="/map/:placeId" element={<RedirectMapPlaceToPlaces />} />
-      <Route path="/places/demos" element={<Navigate to="/places" replace />} />
-      <Route path="/places/demos/:demoId" element={<Navigate to="/places" replace />} />
-      <Route path="/places/demos-v2" element={<Navigate to="/places" replace />} />
-      <Route path="/places/demos-v2/:demoId" element={<Navigate to="/places" replace />} />
-      <Route path="/places/demos-v3" element={<Navigate to="/places" replace />} />
-      <Route path="/places/demos-v3/:demoId" element={<Navigate to="/places" replace />} />
+      <Route path="/map" element={<Navigate to="/travel" replace />} />
+      <Route path="/map/:placeId" element={<RedirectMapPlaceToTravel />} />
+      <Route path="/places" element={<Navigate to="/travel" replace />} />
+      <Route path="/places/:placeId" element={<RedirectMapPlaceToTravel />} />
+      <Route path="/saved" element={<Navigate to="/" replace />} />
+      <Route path="/themes/*" element={<Navigate to="/" replace />} />
+      <Route path="/top-tabs" element={<Navigate to="/" replace />} />
+      <Route path="/top-tabs/*" element={<RedirectSplatToRoot />} />
+      <Route path="/floating-dock" element={<Navigate to="/" replace />} />
+      <Route path="/floating-dock/*" element={<RedirectSplatToRoot />} />
+      <Route path="/shelf-first" element={<Navigate to="/" replace />} />
+      <Route path="/shelf-first/*" element={<RedirectSplatToRoot />} />
+      <Route path="/category-bento" element={<Navigate to="/" replace />} />
+      <Route path="/category-bento/*" element={<RedirectSplatToRoot />} />
+      <Route path="/places/demos" element={<Navigate to="/travel" replace />} />
+      <Route path="/places/demos/:demoId" element={<Navigate to="/travel" replace />} />
+      <Route path="/places/demos-v2" element={<Navigate to="/travel" replace />} />
+      <Route path="/places/demos-v2/:demoId" element={<Navigate to="/travel" replace />} />
+      <Route path="/places/demos-v3" element={<Navigate to="/travel" replace />} />
+      <Route path="/places/demos-v3/:demoId" element={<Navigate to="/travel" replace />} />
       <Route path="/posts/demos" element={<Navigate to="/posts" replace />} />
       <Route path="/posts/demos/:demoId" element={<Navigate to="/posts" replace />} />
       <Route path="/posts/demos-v2" element={<Navigate to="/posts" replace />} />
       <Route path="/posts/demos-v2/:demoId" element={<Navigate to="/posts" replace />} />
-      <Route path="/map/demos" element={<Navigate to="/places" replace />} />
-      <Route path="/map/demos/:themeId" element={<Navigate to="/places" replace />} />
-      <Route path="/map/demos/:themeId/:placeId" element={<Navigate to="/places" replace />} />
+      <Route path="/map/demos" element={<Navigate to="/travel" replace />} />
+      <Route path="/map/demos/:themeId" element={<Navigate to="/travel" replace />} />
+      <Route path="/map/demos/:themeId/:placeId" element={<RedirectMapPlaceToTravel />} />
       <Route path="/site/demos" element={<Navigate to="/" replace />} />
       <Route path="/site/demos/:demoId" element={<Navigate to="/" replace />} />
       <Route path="/dev/flip-cards/collapsed" element={<FlipCollapsedVariations />} />
       <Route path="/dev/flip-cards" element={<FlipDetailCardDemos />} />
-
-      <Route element={<ChromeOutlet {...chromeShared} />}>
-        <Route
-          path="/"
-          element={
-            <SavedPage
-              posts={posts}
-              places={places}
-              visitCount={visitCount}
-              authReady={authReady}
-              loadingPosts={loadingPosts}
-              onDeleted={refresh}
-              onNavigateToPlace={navigateToPlace}
-              onNavigateToPost={(platform, postId) => {
-                const { platform: routePlatform, nativeId } = postRouteParts(platform, postId);
-                navigate(`/posts/${routePlatform}/${nativeId}`);
-              }}
-            />
-          }
-        />
-        <Route path="/saved" element={<RedirectToDashboard />} />
-        <Route path="/posts" element={<Navigate to="/?open=posts" replace />} />
-        <Route
-          path="/posts/:platform/:postId"
-          element={
-            <PostsRoute
-              loadingPosts={loadingPosts}
-              posts={posts}
-              places={places}
-              onDeleted={refresh}
-              onNavigateToPlace={navigateToPlace}
-            />
-          }
-        />
-        <Route path="/places" element={<Navigate to="/?open=places" replace />} />
-        <Route path="/places/:placeId" element={<PlacesRoutes authReady={authReady} />} />
-        <Route path="/search" element={<SearchPage posts={posts} places={places} />} />
-        <Route
-          path="/add"
-          element={
-            <AddLinksPage authReady={authReady} onIngestComplete={handleLibraryChanged} />
-          }
-        />
-        <Route
-          path="/history"
-          element={
-            <TravelHistory
-              refreshToken={libraryVersion}
-              jobRunning={false}
-              onChanged={handleLibraryChanged}
-              onNavigateToPlace={navigateToPlace}
-              onImportStarted={(nextJobId) => {
-                navigate("/add", { state: { resumeJobId: nextJobId } });
-              }}
-            />
-          }
-        />
-        <Route
-          path="/admin"
-          element={isAdmin ? <AdminPage /> : <Navigate to="/" replace />}
-        />
-        <Route path="*" element={<NotFoundPage />} />
-      </Route>
+      <Route
+        path="/*"
+        element={
+          <TopTabsApp
+            authReady={authReady}
+            loading={loadingPosts}
+            posts={posts}
+            places={places}
+            visits={visits}
+            onRefresh={handleLibraryChanged}
+            isAdmin={isAdmin}
+            isSuperAdmin={isSuperAdmin}
+            onViewAsChange={handleViewAsChange}
+          />
+        }
+      />
     </Routes>
   );
 }
@@ -331,8 +181,6 @@ export default function App() {
 
 function AppWithClerkAuth() {
   const { isLoaded, isSignedIn } = useAuth();
-  // Wait until Clerk has a session so api.ts can attach a bearer token.
-  // AuthTokenBridge also sets the getter in an effect; give it one tick after load.
   const [authReady, setAuthReady] = useState(false);
 
   useEffect(() => {

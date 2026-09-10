@@ -10,6 +10,10 @@ frontend/node_modules/
 frontend/dist/
 frontend/.env.local
 frontend/.env.*.local
+frontend-top-tabs/node_modules/
+frontend-top-tabs/dist/
+frontend-top-tabs/.env.local
+frontend-top-tabs/.env.*.local
 mobile/node_modules/
 mobile/.env
 mobile/.env.*.local

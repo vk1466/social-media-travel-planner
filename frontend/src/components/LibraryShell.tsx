@@ -31,6 +31,8 @@ export interface LibraryShellProps {
   onDeleted: () => void;
   onNavigateToPlace: (placeId: string) => void;
   onNavigateToPost: (platform: string, postId: string) => void;
+  placeBasePath?: string;
+  placeListPath?: string;
 }
 
 function visiblePills(
@@ -76,6 +78,8 @@ export function LibraryShell({
   onDeleted,
   onNavigateToPlace,
   onNavigateToPost,
+  placeBasePath,
+  placeListPath,
 }: LibraryShellProps): JSX.Element {
   const [placesFilters, setPlacesFilters] = useState<PlacesShellFilters>(DEFAULT_PLACES_FILTERS);
   const [postsFilters, setPostsFilters] = useState<PostsShellFilters>(DEFAULT_POSTS_FILTERS);
@@ -500,6 +504,8 @@ export function LibraryShell({
             filters={placesFilters}
             onMeta={handleMeta}
             onNavigateToPost={onNavigateToPost}
+            placeBasePath={placeBasePath}
+            listPath={placeListPath}
           />
         ) : loadingPosts ? (
           <p className="loading-copy" style={{ padding: "1rem 24px" }}>

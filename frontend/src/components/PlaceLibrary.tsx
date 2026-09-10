@@ -36,6 +36,10 @@ interface PlaceLibraryProps {
   omitChrome?: boolean;
   filters?: PlacesShellFilters;
   onMeta?: (meta: LibraryShellMeta) => void;
+  /** Detail URLs, e.g. `/places` or `/top-tabs/travel`. */
+  placeBasePath?: string;
+  /** Where to go when closing a place. Defaults match the original home/atlas routes. */
+  listPath?: string;
 }
 
 type StatusFilter = PlacesStatusFilter;
@@ -48,11 +52,16 @@ export function PlaceLibrary({
   omitChrome = false,
   filters,
   onMeta,
+  placeBasePath = "/places",
+  listPath,
 }: PlaceLibraryProps) {
   useBrandVersion();
   const dark = readBrandMode() === "dark";
   const { placeId: routePlaceId } = useParams();
   const navigate = useNavigate();
+  const placeRoot = placeBasePath.replace(/\/$/, "") || "/places";
+  const placesListPath = listPath ?? (omitChrome ? "/?open=places" : placeRoot);
+  const placeHref = (placeId: string) => `${placeRoot}/${placeId}`;
   const { places, apiPlaces, posts, visitedIds, loading, refresh } = usePlaceAtlas(authReady, {
     allowSample: false,
   });
@@ -115,13 +124,13 @@ export function PlaceLibrary({
       .catch(() => {
         if (!cancelled) {
           setRoutedPlace(null);
-          navigate(omitChrome ? "/?open=places" : "/places", { replace: true });
+          navigate(placesListPath, { replace: true });
         }
       });
     return () => {
       cancelled = true;
     };
-  }, [routePlaceId, placesById, loading, navigate, omitChrome]);
+  }, [routePlaceId, placesById, loading, navigate, placesListPath]);
 
   const selectedApiPlace = routedPlace;
 
@@ -168,7 +177,7 @@ export function PlaceLibrary({
 
   function openNode(node: AtlasNode) {
     if (node.level === "place" && node.place) {
-      navigate(`/places/${node.place.placeId}`);
+      navigate(placeHref(node.place.placeId));
       return;
     }
     setScopeKey(node.key);
@@ -195,13 +204,13 @@ export function PlaceLibrary({
   }, [controlled, grouping]);
 
   function closePlace() {
-    navigate(omitChrome ? "/?open=places" : "/places");
+    navigate(placesListPath);
   }
 
   function handleVisitedChange(_placeId: string, visited: boolean) {
     void refresh();
     if (!visited && statusFilter === "visited") {
-      navigate(omitChrome ? "/?open=places" : "/places");
+      navigate(placesListPath);
     }
   }
 
@@ -423,7 +432,7 @@ export function PlaceLibrary({
                       <Link
                         key={place.placeId}
                         className="wf-search-row"
-                        to={`/places/${place.placeId}`}
+                        to={placeHref(place.placeId)}
                       >
                         <i className={`pl2-dot ${place.visited ? "visited" : "dream"}`} />
                         <span className="wf-search-row-name">{place.name}</span>
@@ -438,7 +447,7 @@ export function PlaceLibrary({
                 scope={scope}
                 posts={posts}
                 onOpenNode={openNode}
-                onOpenPlace={(placeId) => navigate(`/places/${placeId}`)}
+                onOpenPlace={(placeId) => navigate(placeHref(placeId))}
               />
             ) : (
               <PlaceMagazineCovers
@@ -458,7 +467,7 @@ export function PlaceLibrary({
           place={selectedApiPlace}
           visited={visitedIds.has(selectedApiPlace.place_id)}
           onClose={closePlace}
-          onNavigateToPlace={(place) => navigate(`/places/${place.place_id}`)}
+          onNavigateToPlace={(place) => navigate(placeHref(place.place_id))}
           onNavigateToPost={onNavigateToPost}
           onVisitedChange={handleVisitedChange}
         />

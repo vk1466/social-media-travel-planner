@@ -29,6 +29,33 @@ Posts and Places match the live app browse UI (lantern timeline / country-covers
 
 Core product patterns are shared across all sites. Everything else — chrome, typography, color, layout — is rethought per site.
 
+## Dashboard Lab
+
+**10 interactive dashboard structures** for making Posts, Travel, Food, Movies, and
+History feel like one library. Unlike the Home Skins Lab, these vary information
+architecture and navigation: shelf-first, returning-user summary, adaptive rail, category
+bento, universal search, activity stream, split workspace, horizontal shelves, compact
+index, and mobile dock.
+
+http://localhost:5179/dashboard/
+
+All concepts use the same sample data, support category switching and search where
+applicable, adapt to narrow screens, honor reduced motion, and can be reviewed with the
+left/right arrow keys. Option 01, Shelf first, is the recommended production direction.
+
+### Category Pages Lab
+
+**10 additional navigation systems** built around dedicated category pages rather than a
+single dashboard panel. Every system includes separate Home, Posts, Travel, Food, Movies,
+and History documents—60 generated pages total—with category-specific content and tools.
+
+http://localhost:5179/dashboard-pages/
+
+Option 01, Top tabs, is the recommended hybrid: a light dashboard overview plus stable
+category routes. Other systems test sidebars, an icon rail, portal cards, editorial
+mastheads, command navigation, a dense workspace bar, floating navigation, breadcrumbs,
+and mobile bottom tabs.
+
 ## Shared assets
 
 - `sites/shared/mock.js` — places, posts, visits, Unsplash imagery (fallback)
