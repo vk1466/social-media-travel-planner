@@ -175,7 +175,35 @@ html.top-tabs-active,
   font-weight: 700;
   cursor: pointer;
 }
-.lab-pages .toolbar { display: flex; align-items: center; gap: 9px; margin-bottom: 22px; }
+.lab-pages .toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 9px; margin-bottom: 12px; }
+.lab-pages .filter-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 22px;
+}
+.lab-pages .filter-pills button {
+  min-height: 32px;
+  padding: 0 11px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--muted);
+  font-size: 10px;
+  cursor: pointer;
+}
+.lab-pages .filter-pills button span {
+  margin-left: 6px;
+  color: var(--ink);
+  font-weight: 700;
+}
+.lab-pages .filter-pills button.is-on {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: #fff;
+}
+.lab-pages .filter-pills button.is-on span { color: #fff; }
+.lab-pages .filter-pills button.is-soft { background: var(--soft); }
 .lab-pages .toolbar label {
   min-width: 250px;
   flex: 1;
