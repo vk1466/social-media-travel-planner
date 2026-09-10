@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 
 import { createVisit, startInstagramImport, type Place, type VisitDetail } from "../../api";
 import { formatDate, locationLine } from "../display";
+import { SearchField } from "../../components/library";
 import { EmptyState } from "../components/Toolbar";
 import { PageHeading } from "../components/Shell";
 import { useLabTheme } from "../theme";
@@ -63,12 +64,12 @@ export function HistoryPage({
             }
           }}
         >
-          <input
+          <SearchField
             value={username}
-            onChange={(event) => setUsername(event.target.value)}
+            onChange={setUsername}
             placeholder="Instagram username"
           />
-          <button type="submit" disabled={busy}>
+          <button type="submit" className="lib-filters-action" disabled={busy}>
             Import Instagram
           </button>
         </form>
@@ -86,9 +87,9 @@ export function HistoryPage({
             }
           }}
         >
-          <input
+          <SearchField
             value={placeQuery}
-            onChange={(event) => setPlaceQuery(event.target.value)}
+            onChange={setPlaceQuery}
             placeholder="Log a visit"
             list="known-places"
           />
@@ -97,7 +98,7 @@ export function HistoryPage({
               <option key={place.place_id} value={place.display_name} />
             ))}
           </datalist>
-          <button type="submit" disabled={busy}>
+          <button type="submit" className="lib-filters-action" disabled={busy}>
             Log visit
           </button>
         </form>

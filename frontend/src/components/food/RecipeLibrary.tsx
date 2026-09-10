@@ -1,5 +1,6 @@
 import { useMemo, useState, type JSX } from "react";
 import type { SavedPost } from "../../api";
+import { FilterBar, FilterChrome, FilterPills } from "../library";
 import { GroceryListModal } from "./GroceryListModal";
 import { RecipeCard } from "./RecipeCard";
 import { RecipeDetailModal } from "./RecipeDetailModal";
@@ -98,84 +99,54 @@ export function RecipeLibrary({ posts, onSelectPost, onPostUpdated }: RecipeLibr
 
   return (
     <div className="recipe-library-shelf">
-      <div className="recipe-toolbar">
-        <div className="recipe-search-row">
-          <div className="recipe-search-wrap">
-            <span className="recipe-search-icon" aria-hidden="true">🔍</span>
-            <input
-              className="recipe-search-input"
-              type="search"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search by dish or pantry ingredient (e.g. garlic, salmon, pasta)..."
-              aria-label="Search recipes"
-            />
-          </div>
-
-          <button
-            type="button"
-            className="recipe-grocery-btn"
-            onClick={() => setGroceryOpen(true)}
-            aria-label="Open Grocery List"
-          >
-            🛒 Grocery list
-            {groceryRecipeKeys.size > 0 && (
-              <span className="recipe-grocery-badge">
-                {groceryRecipeKeys.size}
-              </span>
-            )}
-          </button>
-        </div>
-
-        <div className="recipe-filter-group">
-          <div className="recipe-filter-segment">
-            <span className="recipe-filter-label">Meal:</span>
-            {MEAL_TYPES.map((value) => (
-              <button
-                key={value}
-                type="button"
-                className={`recipe-chip${meal === value ? " is-active" : ""}`}
-                onClick={() => setMeal(value)}
-              >
-                {value === "all" ? "All meals" : value.charAt(0).toUpperCase() + value.slice(1)}
-              </button>
-            ))}
-          </div>
-
-          <div className="recipe-filter-segment">
-            <span className="recipe-filter-label">Time:</span>
-            {(["any", "20", "45"] as TimeFilter[]).map((value) => (
-              <button
-                key={value}
-                type="button"
-                className={`recipe-chip${time === value ? " is-active" : ""}`}
-                onClick={() => setTime(value)}
-              >
-                {value === "any" ? "Any time" : `< ${value} min`}
-              </button>
-            ))}
-          </div>
-
-          {cuisines.length > 0 && (
-            <div className="recipe-filter-segment">
-              <span className="recipe-filter-label">Cuisine:</span>
-              <select
-                className="recipe-select"
-                value={cuisine}
-                onChange={(e) => setCuisine(e.target.value)}
-                aria-label="Filter by cuisine"
-              >
-                <option value="all">All cuisines</option>
-                {cuisines.map((name) => (
-                  <option key={name} value={name}>
-                    {name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-        </div>
-      </div>
+      <FilterChrome>
+        <FilterBar
+          placeholder="Search by dish or pantry ingredient (e.g. garlic, salmon, pasta)..."
+          query={query}
+          onQuery={setQuery}
+          groups={[
+            {
+              ariaLabel: "Meal",
+              selected: meal,
+              onSelect: (value) => setMeal(value as MealTypeFilter),
+              options: MEAL_TYPES.map((value) => ({
+                value,
+                label: value === "all" ? "All meals" : value.charAt(0).toUpperCase() + value.slice(1),
+              })),
+            },
+            {
+              ariaLabel: "Time",
+              selected: time,
+              onSelect: (value) => setTime(value as TimeFilter),
+              options: [
+                { value: "any", label: "Any time" },
+                { value: "20", label: "< 20 min" },
+                { value: "45", label: "< 45 min" },
+              ],
+            },
+          ]}
+          trailing={
+            <button
+              type="button"
+              className="lib-filters-action"
+              onClick={() => setGroceryOpen(true)}
+              aria-label="Open Grocery List"
+            >
+              Grocery list
+              {groceryRecipeKeys.size > 0 ? <span>{groceryRecipeKeys.size}</span> : null}
+            </button>
+          }
+        />
+        {cuisines.length > 0 ? (
+          <FilterPills
+            allLabel="All cuisines"
+            pills={cuisines.map((name) => ({ key: name, label: name }))}
+            selectedKeys={[cuisine]}
+            ariaLabel="Cuisine"
+            onSelect={(key) => setCuisine(key === cuisine ? "all" : key)}
+          />
+        ) : null}
+      </FilterChrome>
 
       <div className="recipe-meta-strip">
         <span className="recipe-count-text">

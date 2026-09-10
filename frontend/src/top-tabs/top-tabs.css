@@ -204,6 +204,26 @@ html.top-tabs-active,
 }
 .lab-pages .filter-pills button.is-on span { color: #fff; }
 .lab-pages .filter-pills button.is-soft { background: var(--soft); }
+.lab-pages .recipe-toolbar .filter-pills button,
+.lab-pages .movie-library-toolbar .filter-pills button {
+  min-height: 32px;
+  padding: 0 11px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 400;
+  box-shadow: none;
+}
+.lab-pages .recipe-toolbar .filter-pills button.is-on,
+.lab-pages .recipe-toolbar .filter-pills button.is-on.is-soft,
+.lab-pages .movie-library-toolbar .filter-pills button.is-active {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: #fff;
+  font-weight: 400;
+}
 .lab-pages .toolbar label {
   min-width: 250px;
   flex: 1;
@@ -229,6 +249,266 @@ html.top-tabs-active,
   cursor: pointer;
 }
 .lab-pages .toolbar > div button.is-on { background: var(--ink); color: #fff; }
+
+/* Shared filter chrome — Travel, Food, and Movies match Posts. */
+.lab-pages .lib-shell-facets {
+  margin: 0 0 22px;
+  padding: 0;
+  gap: 12px;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+}
+.lab-pages .lib-shell-toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-bottom: 0;
+}
+.lab-pages .lib-shell-search {
+  min-width: 250px;
+  flex: 1;
+  height: 42px;
+  padding: 0 13px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: var(--panel);
+}
+.lab-pages .lib-shell-search input {
+  font-size: inherit;
+  color: var(--ink);
+}
+.lab-pages .lib-shell-aside .wf-seg--view {
+  right: auto;
+  margin-top: 0;
+  opacity: 1;
+}
+.lab-pages .wf-seg,
+.lab-pages .wf-seg--soft,
+.lab-pages .wf-seg--view,
+.lab-pages .recipe-filter-segment,
+.lab-pages .movie-seg-control {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: var(--panel);
+  gap: 0;
+}
+.lab-pages .wf-seg button,
+.lab-pages .wf-seg button:not(.wf-seg-btn),
+.lab-pages .recipe-chip,
+.lab-pages .movie-seg-control button {
+  height: 34px;
+  padding: 0 11px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  box-shadow: none;
+  cursor: pointer;
+}
+.lab-pages .wf-seg button.is-active,
+.lab-pages .wf-seg button:not(.wf-seg-btn).is-active,
+.lab-pages .wf-seg-btn.is-active,
+.lab-pages .recipe-chip.is-active,
+.lab-pages .movie-seg-control button.is-active {
+  background: var(--ink);
+  color: #fff;
+  border-color: transparent;
+  box-shadow: none;
+}
+.lab-pages .lib-shell-pills,
+.lab-pages .movie-provider-filter-row,
+.lab-pages .pl2-types {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.lab-pages .lib-shell-pill,
+.lab-pages .lib-shell-pill-more,
+.lab-pages .movie-provider-filter-chip,
+.lab-pages .pl2-type,
+.lab-pages .wf-pill {
+  min-height: 32px;
+  padding: 0 11px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 400;
+  cursor: pointer;
+}
+.lab-pages .lib-shell-pill.is-soft:not(.is-active),
+.lab-pages .lib-shell-pill-more {
+  background: var(--soft);
+  border-style: solid;
+}
+.lab-pages .movie-provider-filter-chip.is-active.is-soft,
+.lab-pages .filter-pills button.is-on.is-soft {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: #fff;
+}
+.lab-pages .lib-shell-pill.is-active,
+.lab-pages .lib-shell-pill.is-active.is-soft,
+.lab-pages .movie-provider-filter-chip.is-active,
+.lab-pages .pl2-type.is-active,
+.lab-pages .wf-pill.is-active {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: #fff;
+}
+.lab-pages .lib-shell-pill .count,
+.lab-pages .pl2-type span {
+  margin-left: 6px;
+  color: var(--ink);
+  font-weight: 700;
+  font-size: 10px;
+}
+.lab-pages .lib-shell-pill.is-active .count,
+.lab-pages .pl2-type.is-active span {
+  color: #fff;
+}
+
+.lab-pages .food-library .recipe-toolbar,
+.lab-pages .movie-library .movie-library-toolbar {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  padding: 0;
+  border-radius: 0;
+  gap: 12px;
+  margin-bottom: 22px;
+}
+.lab-pages .recipe-toolbar .filter-pills,
+.lab-pages .movie-library-toolbar .filter-pills {
+  margin-bottom: 0;
+}
+.lab-pages .recipe-search-row,
+.lab-pages .movie-search-wrap,
+.lab-pages .movie-filters-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+.lab-pages .recipe-search-wrap,
+.lab-pages .movie-search-wrap {
+  position: relative;
+  min-width: 250px;
+  flex: 1;
+}
+.lab-pages .recipe-search-input,
+.lab-pages .movie-search-input {
+  height: 42px;
+  width: 100%;
+  padding: 0 13px 0 36px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: var(--panel);
+  color: var(--ink);
+  font-size: inherit;
+  box-shadow: none;
+}
+.lab-pages .recipe-search-input:focus,
+.lab-pages .movie-search-input:focus,
+.lab-pages .recipe-select:focus,
+.lab-pages .movie-sort-select:focus {
+  outline: 0;
+  box-shadow: none;
+  border-color: var(--ink);
+}
+.lab-pages .recipe-search-icon,
+.lab-pages .movie-search-icon {
+  left: 12px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.lab-pages .recipe-filter-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 9px;
+  padding: 0;
+  border: 0;
+}
+.lab-pages .recipe-filter-label,
+.lab-pages .movie-sort-label,
+.lab-pages .movie-filter-lead {
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--muted);
+  margin: 0 2px 0 0;
+}
+.lab-pages .recipe-select,
+.lab-pages .movie-sort-select {
+  height: 42px;
+  padding: 0 13px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: var(--panel);
+  color: var(--ink);
+  font-size: 10px;
+}
+.lab-pages .recipe-grocery-btn {
+  height: 42px;
+  padding: 0 17px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--dark);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+}
+.lab-pages .history-toolbar input,
+.lab-pages .history-toolbar button,
+.lab-pages .links-input {
+  height: 42px;
+  padding: 0 13px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: var(--panel);
+  font-size: 10px;
+}
+.lab-pages .history-toolbar button[type="submit"] {
+  border: 0;
+  border-radius: 999px;
+  background: var(--dark);
+  color: #fff;
+  font-weight: 700;
+  padding: 0 17px;
+}
+.lab-pages .pl2-filters {
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: var(--panel);
+}
+.lab-pages .pl2-filters button {
+  height: 34px;
+  padding: 0 11px;
+  border-radius: 8px;
+  font-size: 10px;
+  color: var(--muted);
+}
+.lab-pages .pl2-filters button.is-active {
+  background: var(--ink);
+  color: #fff;
+}
 .lab-pages .child-list { margin: 0 0 12px; padding-left: 16px; color: var(--muted); font-size: 10px; }
 .lab-pages .home-hero {
   min-height: 330px;
@@ -310,14 +590,13 @@ html.top-tabs-active,
 .lab-pages .history-stats article { padding: 22px; border: 1px solid var(--line); border-radius: 16px; background: var(--panel); }
 .lab-pages .history-stats b { display: block; font: 400 42px/1 "Instrument Serif"; }
 .lab-pages .history-stats span { color: var(--muted); font-size: 10px; }
-.lab-pages .history-toolbar { display: flex; flex-wrap: wrap; gap: 7px; margin: 15px 0 28px; }
-.lab-pages .history-toolbar form { display: flex; gap: 7px; }
-.lab-pages .history-toolbar input, .lab-pages .history-toolbar button, .lab-pages .links-input {
-  padding: 10px 13px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: var(--panel);
-  font-size: 10px;
+.lab-pages .history-toolbar { display: flex; flex-wrap: wrap; gap: 9px; margin: 15px 0 28px; }
+.lab-pages .history-toolbar form {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex: 1;
+  min-width: 240px;
 }
 .lab-pages .history-toolbar button, .lab-pages .job-list button { cursor: pointer; }
 .lab-pages .visit-timeline { max-width: 850px; margin: auto; }
@@ -494,15 +773,6 @@ html.top-tabs-active,
   color: var(--ink);
 }
 
-.lab-pages-light .wf-seg button.is-active,
-.lab-pages-light .wf-seg button:not(.wf-seg-btn).is-active,
-.lab-pages-light .lib-shell-pill.is-active,
-.lab-pages-light .wf-pill.is-active {
-  background: var(--soft);
-  color: var(--accent);
-  border-color: transparent;
-}
-
 .lab-pages-light .pl2,
 .lab-pages-light .pl2--dark {
   min-height: 0;
@@ -523,39 +793,6 @@ html.top-tabs-active,
   border-color: var(--line);
   color: var(--ink);
   box-shadow: var(--shadow);
-}
-
-.lab-pages-light .food-library .recipe-toolbar,
-.lab-pages-light .movie-library .movie-library-toolbar {
-  background: var(--panel);
-  border: 1px solid var(--line);
-  box-shadow: var(--shadow);
-}
-
-.lab-pages-light .food-library .recipe-search-input,
-.lab-pages-light .food-library .recipe-select,
-.lab-pages-light .movie-library .movie-search-input,
-.lab-pages-light .movie-library .movie-sort-select {
-  background: var(--bg);
-  color: var(--ink);
-  border-color: var(--line);
-}
-
-.lab-pages-light .food-library .recipe-chip,
-.lab-pages-light .movie-library .movie-seg-control,
-.lab-pages-light .movie-library .movie-provider-filter-chip {
-  background: var(--bg);
-  border-color: var(--line);
-  color: var(--muted);
-}
-
-.lab-pages-light .food-library .recipe-chip.is-active,
-.lab-pages-light .movie-library .movie-seg-control button.is-active,
-.lab-pages-light .movie-library .movie-provider-filter-chip.is-active {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #fff;
-  box-shadow: none;
 }
 
 .lab-pages-light .food-library .recipe-grocery-btn {
@@ -624,34 +861,8 @@ html.top-tabs-active,
   color: var(--ink);
 }
 
-.lab-pages-light .pl2--dark .pl2-filters {
-  background: var(--fog, var(--wf-fog));
-}
-
-.lab-pages-light .pl2-type.is-active,
-.lab-pages-light .pl2-filters button.is-active {
-  background: var(--dark);
-  border-color: var(--dark);
-  color: #fff;
-}
-
-.lab-pages-light .pl2--dark .pl2-type.is-active,
-.lab-pages-light .pl2--dark .pl2-filters button.is-active {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #fff;
-}
-
-.lab-pages-light .pl2--dark .pl2-type.is-active span {
-  color: #fff;
-}
-
 .lab-pages-light .lib-shell-banner button {
   background: var(--accent);
-  color: #fff;
-}
-
-.lab-pages-light .recipe-chip.is-active {
   color: #fff;
 }
 
@@ -672,8 +883,7 @@ html.top-tabs-active,
   border-color: color-mix(in srgb, var(--accent) 28%, var(--line));
 }
 
-.lab-pages-light .movie-empty-reset-btn,
-.lab-pages-light .movie-provider-filter-chip:hover {
+.lab-pages-light .movie-empty-reset-btn {
   color: var(--ink);
 }
 

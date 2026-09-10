@@ -1,0 +1,155 @@
+.lib-filters {
+  margin-bottom: 22px;
+}
+
+.lib-filters-toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-bottom: 12px;
+}
+
+.lib-filters-toolbar:last-child {
+  margin-bottom: 0;
+}
+
+.lib-filters-search {
+  min-width: 250px;
+  flex: 1;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 13px;
+  border: 1px solid var(--line, #dfe3df);
+  border-radius: 11px;
+  background: var(--panel, #fff);
+}
+
+.lib-filters-search svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  color: var(--muted, #6d7772);
+}
+
+.lib-filters-search input {
+  min-width: 0;
+  flex: 1;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+}
+
+.lib-filters-seg {
+  display: flex;
+  flex-wrap: wrap;
+  padding: 3px;
+  border: 1px solid var(--line, #dfe3df);
+  border-radius: 11px;
+  background: var(--panel, #fff);
+}
+
+.lib-filters-seg button {
+  height: 34px;
+  padding: 0 11px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted, #6d7772);
+  font: inherit;
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.lib-filters-seg button.is-on {
+  background: var(--ink, #17211d);
+  color: #fff;
+}
+
+.lib-filters-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.lib-filters-pills button {
+  min-height: 32px;
+  padding: 0 11px;
+  border: 1px solid var(--line, #dfe3df);
+  border-radius: 999px;
+  background: var(--panel, #fff);
+  color: var(--muted, #6d7772);
+  font: inherit;
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.lib-filters-pills button span {
+  margin-left: 6px;
+  color: var(--ink, #17211d);
+  font-weight: 700;
+}
+
+.lib-filters-pills button.is-soft {
+  background: var(--soft, #f2e3dd);
+}
+
+.lib-filters-pills button.is-on {
+  background: var(--ink, #17211d);
+  border-color: var(--ink, #17211d);
+  color: #fff;
+}
+
+.lib-filters-pills button.is-on span {
+  color: #fff;
+}
+
+.lib-filters-select {
+  height: 42px;
+  padding: 0 13px;
+  border: 1px solid var(--line, #dfe3df);
+  border-radius: 11px;
+  background: var(--panel, #fff);
+  color: inherit;
+  font: inherit;
+  font-size: 10px;
+}
+
+.lib-filters-action {
+  height: 42px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 17px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--dark, #173e32);
+  color: #fff;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.lib-filters-action span {
+  min-width: 18px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--soft, #f2e3dd);
+  color: var(--accent, #e76548);
+  font-size: 10px;
+}
+
+@media (max-width: 700px) {
+  .lib-filters-search {
+    min-width: 100%;
+  }
+}

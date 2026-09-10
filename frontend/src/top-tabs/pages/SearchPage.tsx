@@ -5,6 +5,7 @@ import type { Place, SavedPost } from "../../api";
 import { postTitle } from "../display";
 import { recipesFromPosts } from "../recipes";
 import { aggregateMovies } from "../movies";
+import { FilterBar } from "../../components/library";
 import { PageHeading } from "../components/Shell";
 import { useLabTheme } from "../theme";
 
@@ -45,23 +46,15 @@ export function SearchPage({ posts, places }: { posts: SavedPost[]; places: Plac
   return (
     <>
       <PageHeading kicker="Jump" title="Search" lede="Find a post, place, recipe, or title without leaving the library." />
-      <div className="toolbar">
-        <label>
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <circle cx="11" cy="11" r="7" />
-            <path d="m16 16 4 4" />
-          </svg>
-          <input
-            autoFocus
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search or jump to a page"
-            onKeyDown={(event) => {
-              if (event.key === "Enter" && results[0]) navigate(results[0].to);
-            }}
-          />
-        </label>
-      </div>
+      <FilterBar
+        placeholder="Search or jump to a page"
+        query={query}
+        onQuery={setQuery}
+        autoFocus
+        onSearchKeyDown={(event) => {
+          if (event.key === "Enter" && results[0]) navigate(results[0].to);
+        }}
+      />
       <nav className="jump-links">
         <Link to={`${basePath}/posts`}>Posts</Link>
         <Link to={`${basePath}/travel`}>Travel</Link>

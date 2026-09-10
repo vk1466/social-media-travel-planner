@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type JSX } from "react";
 import type { SavedPost } from "../../api";
+import { FilterBar, FilterChrome, FilterPills } from "../library";
 import { MovieCard, type AggregatedMovie } from "./MovieCard";
 import { MovieDetailModal } from "./MovieDetailModal";
 import { fetchTmdbExtras, type TmdbEnrichedData } from "./tmdbClient";
@@ -264,101 +265,49 @@ export function MovieLibrary({ posts, onSelectPost }: MovieLibraryProps): JSX.El
 
   return (
     <div className="movie-library-shelf">
-      {/* Search and Filter Controls */}
-      <div className="movie-library-toolbar">
-        <div className="movie-search-wrap">
-          <svg className="movie-search-icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
-            <path
-              d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"
-              fill="currentColor"
-            />
-          </svg>
-          <input
-            type="search"
-            className="movie-search-input"
-            placeholder="Search titles, directors, actors, genres..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            aria-label="Search titles"
-          />
-          {searchQuery && (
-            <button
-              type="button"
-              className="movie-search-clear"
-              onClick={() => setSearchQuery("")}
-              aria-label="Clear search"
-            >
-              ✕
-            </button>
-          )}
-        </div>
-
-        <div className="movie-filters-row">
-          {/* Format / Kind toggle */}
-          <div className="movie-seg-control" role="group" aria-label="Format filter">
-            <button
-              type="button"
-              className={kindFilter === "all" ? "is-active" : ""}
-              onClick={() => setKindFilter("all")}
-            >
-              All
-            </button>
-            <button
-              type="button"
-              className={kindFilter === "movie" ? "is-active" : ""}
-              onClick={() => setKindFilter("movie")}
-            >
-              Movies
-            </button>
-            <button
-              type="button"
-              className={kindFilter === "tv" ? "is-active" : ""}
-              onClick={() => setKindFilter("tv")}
-            >
-              TV Series
-            </button>
-          </div>
-
-          {/* Sort selector */}
-          <div className="movie-sort-wrap">
-            <span className="movie-sort-label">Sort:</span>
+      <FilterChrome>
+        <FilterBar
+          placeholder="Search titles, directors, actors, genres..."
+          query={searchQuery}
+          onQuery={setSearchQuery}
+          groups={[
+            {
+              ariaLabel: "Format filter",
+              selected: kindFilter,
+              onSelect: (value) => setKindFilter(value as KindFilter),
+              options: [
+                { value: "all", label: "All" },
+                { value: "movie", label: "Movies" },
+                { value: "tv", label: "TV Series" },
+              ],
+            },
+          ]}
+          trailing={
             <select
-              className="movie-sort-select"
+              className="lib-filters-select"
               value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as SortOption)}
+              onChange={(event) => setSortBy(event.target.value as SortOption)}
               aria-label="Sort movies"
             >
-              <option value="rating">Top Rated (IMDb)</option>
-              <option value="year">Release Year</option>
-              <option value="recent">Most Recommended</option>
+              <option value="rating">Top rated</option>
+              <option value="year">Release year</option>
+              <option value="recent">Most recommended</option>
             </select>
-          </div>
-        </div>
-
-        {/* Streaming platform pills */}
-        {availableProviders.length > 0 && (
-          <div className="movie-provider-filter-row" role="group" aria-label="Filter by streaming service">
-            <span className="movie-filter-lead">Stream:</span>
-            <button
-              type="button"
-              className={`movie-provider-filter-chip${providerFilter === "all" ? " is-active" : ""}`}
-              onClick={() => setProviderFilter("all")}
-            >
-              All Platforms
-            </button>
-            {availableProviders.slice(0, 6).map((provider) => (
-              <button
-                key={provider}
-                type="button"
-                className={`movie-provider-filter-chip${providerFilter === provider ? " is-active" : ""}`}
-                onClick={() => setProviderFilter(provider === providerFilter ? "all" : provider)}
-              >
-                {provider}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
+          }
+        />
+        {availableProviders.length > 0 ? (
+          <FilterPills
+            allLabel="All platforms"
+            pills={availableProviders.slice(0, 6).map((provider) => ({
+              key: provider,
+              label: provider,
+            }))}
+            selectedKeys={[providerFilter]}
+            ariaLabel="Filter by streaming service"
+            onSelect={(key) => setProviderFilter(key === providerFilter ? "all" : key)}
+          />
+        ) : null}
+      </FilterChrome>
 
       {/* Stats Summary Bar */}
       <div className="movie-library-summary-bar">

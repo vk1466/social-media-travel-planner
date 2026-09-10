@@ -7,10 +7,8 @@ import {
   DEFAULT_POSTS_FILTERS,
   EMPTY_LIBRARY_META,
   LIBRARY_SHELL_COPY,
-  PILL_PREVIEW_COUNT,
   type LibraryMode,
   type LibraryShellMeta,
-  type LibraryShellPill,
   type PlacesShellFilters,
   type PostsShellFilters,
 } from "../libraryShellModel";
@@ -19,6 +17,14 @@ import { contentCategoryTabs } from "../contentCategory";
 import { clerkEnabled } from "../authMode";
 import { PlaceLibrary } from "./PlaceLibrary";
 import { PostLibrary } from "./PostLibrary";
+import {
+  FilterBar,
+  FilterChrome,
+  FilterPills,
+  PILL_PREVIEW_COUNT,
+  SegmentGroup,
+  previewPills,
+} from "./library";
 
 import "../library-shell.css";
 
@@ -33,22 +39,6 @@ export interface LibraryShellProps {
   onNavigateToPost: (platform: string, postId: string) => void;
   placeBasePath?: string;
   placeListPath?: string;
-}
-
-function visiblePills(
-  pills: LibraryShellPill[],
-  selectedKeys: string[],
-  expanded: boolean,
-): LibraryShellPill[] {
-  if (expanded || pills.length <= PILL_PREVIEW_COUNT) {
-    return pills;
-  }
-  const top = pills.slice(0, PILL_PREVIEW_COUNT);
-  const topKeys = new Set(top.map((pill) => pill.key));
-  const selectedExtra = pills.filter(
-    (pill) => selectedKeys.includes(pill.key) && !topKeys.has(pill.key),
-  );
-  return [...top, ...selectedExtra];
 }
 
 function metaEqual(a: LibraryShellMeta, b: LibraryShellMeta): boolean {
@@ -100,16 +90,19 @@ export function LibraryShell({
   const topicTabs = contentCategoryTabs(posts);
   const travelPostFilters = mode === "posts" && postsFilters.contentCategory === "travel";
 
-  const placePills = meta.pills;
+  const placePills = meta.pills.filter((pill) => pill.key !== "all");
   const placeSelected = travelPostFilters ? postsFilters.placeTypes : placesFilters.typeFilter;
-  const postLead = meta.pills.filter((pill) => pill.key === "all");
   const postRest = meta.pills.filter((pill) => pill.key !== "all");
-  const postVisibleRest = visiblePills(
+  const postVisibleRest = previewPills(
     postRest,
     postsFilters.ringKey !== "all" ? [postsFilters.ringKey] : [],
     pillsExpanded,
   );
-  const placeVisible = visiblePills(placePills, placeSelected, pillsExpanded);
+  const placeVisible = previewPills(placePills, placeSelected, pillsExpanded);
+  const typePills = mode === "places" || travelPostFilters ? placeVisible : postVisibleRest;
+  const typePool = mode === "places" || travelPostFilters ? placePills : postRest;
+  const selectedFacetKeys =
+    mode === "places" || travelPostFilters ? placeSelected : [postsFilters.ringKey];
 
   function setSearch(value: string) {
     if (mode === "places") {
@@ -118,6 +111,95 @@ export function LibraryShell({
       setPostsFilters((current) => ({ ...current, query: value }));
     }
   }
+
+  const placeGroups = [
+    {
+      ariaLabel: "Status filter",
+      selected: placesFilters.statusFilter,
+      onSelect: (value: string) =>
+        setPlacesFilters((current) => ({
+          ...current,
+          statusFilter: value as PlacesShellFilters["statusFilter"],
+        })),
+      options: [
+        { value: "all", label: "Everything" },
+        { value: "visited", label: "Visited" },
+        { value: "inspiration", label: "Inspiration" },
+      ],
+    },
+    {
+      ariaLabel: "Grouping",
+      selected: placesFilters.grouping,
+      onSelect: (value: string) =>
+        setPlacesFilters((current) => ({
+          ...current,
+          grouping: value as PlacesShellFilters["grouping"],
+        })),
+      options: [
+        { value: "region", label: "Region" },
+        { value: "type", label: "Type" },
+      ],
+    },
+  ];
+
+  const postGroups = [
+    {
+      ariaLabel: "Category filter",
+      selected: postsFilters.contentCategory,
+      onSelect: (value: string) =>
+        setPostsFilters((current) => ({
+          ...current,
+          contentCategory: value,
+          ringKey: "all",
+          placeStatus: "all" as const,
+          placeTypes: [],
+        })),
+      options: [
+        { value: "all", label: "All" },
+        ...topicTabs.map((tab) => ({ value: tab.key, label: tab.label })),
+      ],
+    },
+    {
+      ariaLabel: "Platform filter",
+      selected: postsFilters.platform,
+      onSelect: (value: string) => setPostsFilters((current) => ({ ...current, platform: value })),
+      options: BROWSE_PLATFORMS.map((key) => ({
+        value: key,
+        label: key === "all" ? "Everything" : key,
+      })),
+    },
+    {
+      ariaLabel: "Timeline",
+      selected: postsFilters.dateMode,
+      onSelect: (value: string) =>
+        setPostsFilters((current) => ({
+          ...current,
+          dateMode: value as PostsShellFilters["dateMode"],
+        })),
+      options: [
+        { value: "saved", label: "Saved" },
+        { value: "posted", label: "Posted" },
+      ],
+    },
+    ...(travelPostFilters
+      ? [
+          {
+            ariaLabel: "Place status",
+            selected: postsFilters.placeStatus,
+            onSelect: (value: string) =>
+              setPostsFilters((current) => ({
+                ...current,
+                placeStatus: value as PostsShellFilters["placeStatus"],
+              })),
+            options: [
+              { value: "all", label: "Everything" },
+              { value: "visited", label: "Visited" },
+              { value: "inspiration", label: "Inspiration" },
+            ],
+          },
+        ]
+      : []),
+  ];
 
   return (
     <div className="lib-shell" data-mode={mode}>
@@ -128,51 +210,37 @@ export function LibraryShell({
           <p className="lib-shell-lede">{copy.lede}</p>
         </div>
         <div className="lib-shell-aside">
-          <div className="wf-seg wf-seg--view" role="group" aria-label="View mode">
-            {mode === "places" ? (
-              <>
-                <button
-                  type="button"
-                  className={placesFilters.viewMode === "covers" ? "is-active" : ""}
-                  onClick={() =>
-                    setPlacesFilters((current) => ({ ...current, viewMode: "covers" }))
-                  }
-                >
-                  Covers
-                </button>
-                <button
-                  type="button"
-                  className={placesFilters.viewMode === "map" ? "is-active" : ""}
-                  onClick={() =>
-                    setPlacesFilters((current) => ({ ...current, viewMode: "map" }))
-                  }
-                >
-                  Map
-                </button>
-              </>
-            ) : (
-              <>
-                <button
-                  type="button"
-                  className={postsFilters.deckMode === "deck" ? "is-active" : ""}
-                  onClick={() =>
-                    setPostsFilters((current) => ({ ...current, deckMode: "deck" }))
-                  }
-                >
-                  Deck
-                </button>
-                <button
-                  type="button"
-                  className={postsFilters.deckMode === "grid" ? "is-active" : ""}
-                  onClick={() =>
-                    setPostsFilters((current) => ({ ...current, deckMode: "grid" }))
-                  }
-                >
-                  Grid
-                </button>
-              </>
-            )}
-          </div>
+          {mode === "places" ? (
+            <SegmentGroup
+              ariaLabel="View mode"
+              selected={placesFilters.viewMode}
+              onSelect={(value) =>
+                setPlacesFilters((current) => ({
+                  ...current,
+                  viewMode: value as PlacesShellFilters["viewMode"],
+                }))
+              }
+              options={[
+                { value: "covers", label: "Covers" },
+                { value: "map", label: "Map" },
+              ]}
+            />
+          ) : (
+            <SegmentGroup
+              ariaLabel="View mode"
+              selected={postsFilters.deckMode}
+              onSelect={(value) =>
+                setPostsFilters((current) => ({
+                  ...current,
+                  deckMode: value as PostsShellFilters["deckMode"],
+                }))
+              }
+              options={[
+                { value: "deck", label: "Deck" },
+                { value: "grid", label: "Grid" },
+              ]}
+            />
+          )}
           <div className="lib-shell-count">
             <span className="lib-shell-count-value">{meta.count || "—"}</span>
             <span className="lib-shell-count-label">{meta.countLabel}</span>
@@ -193,308 +261,60 @@ export function LibraryShell({
         </div>
       ) : null}
 
-      <div className="lib-shell-facets">
-        <div className="lib-shell-toolbar">
-          <label className="lib-shell-search">
-            <input
-              type="search"
-              value={searchValue}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder={copy.searchPlaceholder}
-              aria-label={copy.searchLabel}
-            />
-          </label>
-
-          {mode === "places" ? (
-            <>
-              <div
-                className="wf-seg wf-seg--soft"
-                role="group"
-                aria-label="Status filter"
-              >
-                {(["all", "visited", "inspiration"] as const).map((key) => (
-                  <button
-                    key={key}
-                    type="button"
-                    className={placesFilters.statusFilter === key ? "is-active" : ""}
-                    onClick={() =>
-                      setPlacesFilters((current) => ({ ...current, statusFilter: key }))
-                    }
-                  >
-                    {key === "all" ? "Everything" : key === "visited" ? "Visited" : "Inspiration"}
-                  </button>
-                ))}
-              </div>
-              <div
-                className="wf-seg wf-seg--soft"
-                role="group"
-                aria-label="Grouping"
-              >
-                <button
-                  type="button"
-                  className={placesFilters.grouping === "region" ? "is-active" : ""}
-                  onClick={() =>
-                    setPlacesFilters((current) => ({ ...current, grouping: "region" }))
-                  }
-                >
-                  Region
-                </button>
-                <button
-                  type="button"
-                  className={placesFilters.grouping === "type" ? "is-active" : ""}
-                  onClick={() =>
-                    setPlacesFilters((current) => ({ ...current, grouping: "type" }))
-                  }
-                >
-                  Type
-                </button>
-              </div>
-            </>
-          ) : (
-            <>
-              <div
-                className="wf-seg wf-seg--soft"
-                role="group"
-                aria-label="Category filter"
-              >
-                <button
-                  type="button"
-                  className={postsFilters.contentCategory === "all" ? "is-active" : ""}
-                  onClick={() =>
-                    setPostsFilters((current) => ({
-                      ...current,
-                      contentCategory: "all",
-                      ringKey: "all",
-                      placeStatus: "all",
-                      placeTypes: [],
-                    }))
-                  }
-                >
-                  All
-                </button>
-                {topicTabs.map((tab) => (
-                  <button
-                    key={tab.key}
-                    type="button"
-                    className={postsFilters.contentCategory === tab.key ? "is-active" : ""}
-                    onClick={() =>
-                      setPostsFilters((current) => ({
-                        ...current,
-                        contentCategory: tab.key,
-                        ringKey: "all",
-                        placeStatus: "all",
-                        placeTypes: [],
-                      }))
-                    }
-                  >
-                    {tab.label}
-                  </button>
-                ))}
-              </div>
-              <div
-                className="wf-seg wf-seg--soft"
-                role="group"
-                aria-label="Platform filter"
-              >
-                {BROWSE_PLATFORMS.map((key) => (
-                  <button
-                    key={key}
-                    type="button"
-                    className={postsFilters.platform === key ? "is-active" : ""}
-                    onClick={() =>
-                      setPostsFilters((current) => ({ ...current, platform: key }))
-                    }
-                  >
-                    {key === "all" ? "Everything" : key}
-                  </button>
-                ))}
-              </div>
-              <div
-                className="wf-seg wf-seg--soft"
-                role="group"
-                aria-label="Timeline"
-              >
-                <button
-                  type="button"
-                  className={postsFilters.dateMode === "saved" ? "is-active" : ""}
-                  onClick={() =>
-                    setPostsFilters((current) => ({ ...current, dateMode: "saved" }))
-                  }
-                >
-                  Saved
-                </button>
-                <button
-                  type="button"
-                  className={postsFilters.dateMode === "posted" ? "is-active" : ""}
-                  onClick={() =>
-                    setPostsFilters((current) => ({ ...current, dateMode: "posted" }))
-                  }
-                >
-                  Posted
-                </button>
-              </div>
-              {travelPostFilters ? (
-                <div
-                  className="wf-seg wf-seg--soft"
-                  role="group"
-                  aria-label="Place status"
-                >
-                  {(["all", "visited", "inspiration"] as const).map((key) => (
-                    <button
-                      key={key}
-                      type="button"
-                      className={postsFilters.placeStatus === key ? "is-active" : ""}
-                      onClick={() =>
-                        setPostsFilters((current) => ({ ...current, placeStatus: key }))
-                      }
-                    >
-                      {key === "all" ? "Everything" : key === "visited" ? "Visited" : "Inspiration"}
-                    </button>
-                  ))}
-                </div>
-              ) : null}
-            </>
-          )}
-        </div>
-
-        <div className="lib-shell-pills" role="group" aria-label="Library filters">
-          {mode === "places" ? (
-            <>
-              <button
-                type="button"
-                className={`lib-shell-pill ${
-                  placesFilters.typeFilter.length === 0 ? "is-active is-soft" : ""
-                }`}
-                onClick={() =>
-                  setPlacesFilters((current) => ({ ...current, typeFilter: [] }))
-                }
-              >
-                {copy.pillAll}
-              </button>
-              {placeVisible.map((pill) => (
-                <button
-                  key={pill.key}
-                  type="button"
-                  className={`lib-shell-pill ${
-                    placesFilters.typeFilter.includes(pill.key) ? "is-active" : ""
-                  }`}
-                  onClick={() =>
-                    setPlacesFilters((current) => ({
-                      ...current,
-                      typeFilter: current.typeFilter.includes(pill.key)
-                        ? current.typeFilter.filter((entry) => entry !== pill.key)
-                        : [...current.typeFilter, pill.key],
-                    }))
-                  }
-                >
-                  {pill.label}
-                  {pill.count != null ? <span className="count">{pill.count}</span> : null}
-                </button>
-              ))}
-              {placePills.length > PILL_PREVIEW_COUNT ? (
-                <button
-                  type="button"
-                  className="lib-shell-pill lib-shell-pill-more"
-                  onClick={() => setPillsExpanded((value) => !value)}
-                >
-                  {pillsExpanded
-                    ? "Show less"
-                    : `+${Math.max(placePills.length - placeVisible.length, 0)} more`}
-                </button>
-              ) : null}
-            </>
-          ) : travelPostFilters ? (
-            <>
-              <button
-                type="button"
-                className={`lib-shell-pill ${
-                  postsFilters.placeTypes.length === 0 ? "is-active is-soft" : ""
-                }`}
-                onClick={() =>
-                  setPostsFilters((current) => ({ ...current, placeTypes: [] }))
-                }
-              >
-                All types
-              </button>
-              {placeVisible.map((pill) => (
-                <button
-                  key={pill.key}
-                  type="button"
-                  className={`lib-shell-pill ${
-                    postsFilters.placeTypes.includes(pill.key) ? "is-active" : ""
-                  }`}
-                  onClick={() =>
-                    setPostsFilters((current) => ({
-                      ...current,
-                      placeTypes: current.placeTypes.includes(pill.key)
-                        ? current.placeTypes.filter((entry) => entry !== pill.key)
-                        : [...current.placeTypes, pill.key],
-                    }))
-                  }
-                >
-                  {pill.label}
-                  {pill.count != null ? <span className="count">{pill.count}</span> : null}
-                </button>
-              ))}
-              {placePills.length > PILL_PREVIEW_COUNT ? (
-                <button
-                  type="button"
-                  className="lib-shell-pill lib-shell-pill-more"
-                  onClick={() => setPillsExpanded((value) => !value)}
-                >
-                  {pillsExpanded
-                    ? "Show less"
-                    : `+${Math.max(placePills.length - placeVisible.length, 0)} more`}
-                </button>
-              ) : null}
-            </>
-          ) : (
-            <>
-              {postLead.map((pill) => (
-                <button
-                  key={pill.key}
-                  type="button"
-                  className={`lib-shell-pill is-soft ${
-                    postsFilters.ringKey === pill.key ? "is-active" : ""
-                  }`}
-                  onClick={() =>
-                    setPostsFilters((current) => ({ ...current, ringKey: pill.key }))
-                  }
-                >
-                  {pill.label}
-                  {pill.count != null ? <span className="count">{pill.count}</span> : null}
-                </button>
-              ))}
-              {postVisibleRest.map((pill) => (
-                <button
-                  key={pill.key}
-                  type="button"
-                  className={`lib-shell-pill ${
-                    postsFilters.ringKey === pill.key ? "is-active" : ""
-                  }`}
-                  onClick={() =>
-                    setPostsFilters((current) => ({ ...current, ringKey: pill.key }))
-                  }
-                >
-                  {pill.label}
-                  {pill.count != null ? <span className="count">{pill.count}</span> : null}
-                </button>
-              ))}
-              {postRest.length > PILL_PREVIEW_COUNT ? (
-                <button
-                  type="button"
-                  className="lib-shell-pill lib-shell-pill-more"
-                  onClick={() => setPillsExpanded((value) => !value)}
-                >
-                  {pillsExpanded
-                    ? "Show less"
-                    : `+${Math.max(postRest.length - postVisibleRest.length, 0)} more`}
-                </button>
-              ) : null}
-            </>
-          )}
-        </div>
-      </div>
+      <FilterChrome>
+        <FilterBar
+          placeholder={copy.searchPlaceholder}
+          query={searchValue}
+          onQuery={setSearch}
+          groups={mode === "places" ? placeGroups : postGroups}
+        />
+        <FilterPills
+          allLabel={
+            mode === "places" ? copy.pillAll : travelPostFilters ? "All types" : "All saves"
+          }
+          pills={typePills}
+          selectedKeys={selectedFacetKeys}
+          multi={mode === "places" || travelPostFilters}
+          ariaLabel="Library filters"
+          moreLabel={
+            typePool.length > PILL_PREVIEW_COUNT
+              ? pillsExpanded
+                ? "Show less"
+                : `+${Math.max(typePool.length - typePills.length, 0)} more`
+              : undefined
+          }
+          onMore={() => setPillsExpanded((value) => !value)}
+          onSelect={(key) => {
+            if (mode === "places") {
+              if (key === "all") {
+                setPlacesFilters((current) => ({ ...current, typeFilter: [] }));
+                return;
+              }
+              setPlacesFilters((current) => ({
+                ...current,
+                typeFilter: current.typeFilter.includes(key)
+                  ? current.typeFilter.filter((entry) => entry !== key)
+                  : [...current.typeFilter, key],
+              }));
+              return;
+            }
+            if (travelPostFilters) {
+              if (key === "all") {
+                setPostsFilters((current) => ({ ...current, placeTypes: [] }));
+                return;
+              }
+              setPostsFilters((current) => ({
+                ...current,
+                placeTypes: current.placeTypes.includes(key)
+                  ? current.placeTypes.filter((entry) => entry !== key)
+                  : [...current.placeTypes, key],
+              }));
+              return;
+            }
+            setPostsFilters((current) => ({ ...current, ringKey: key }));
+          }}
+        />
+      </FilterChrome>
 
       <div className="lib-shell-core">
         {mode === "places" ? (

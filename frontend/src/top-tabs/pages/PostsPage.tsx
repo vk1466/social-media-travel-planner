@@ -22,7 +22,7 @@ import {
   proxiedMediaUrl,
 } from "../display";
 import { DetailSheet } from "../components/DetailSheet";
-import { EmptyState, FilterPills, Toolbar } from "../components/Toolbar";
+import { EmptyState, FilterChrome, FilterPills, Toolbar } from "../components/Toolbar";
 import { PageHeading } from "../components/Shell";
 import { useLabTheme } from "../theme";
 
@@ -154,6 +154,7 @@ export function PostsPage({
         title="Posts"
         lede="Every social save in one feed. Filter here without changing the other category pages."
       />
+      <FilterChrome>
       <Toolbar
         placeholder="Title, place, tag…"
         query={query}
@@ -233,6 +234,7 @@ export function PostsPage({
           }}
         />
       ) : null}
+      </FilterChrome>
       {filtered.length === 0 ? (
         <EmptyState>No posts match that filter.</EmptyState>
       ) : (

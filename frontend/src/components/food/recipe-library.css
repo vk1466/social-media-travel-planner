@@ -163,6 +163,31 @@
   border-color: var(--wf-coral, #ffb648);
 }
 
+.recipe-toolbar .filter-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.recipe-toolbar .filter-pills button {
+  border: 1px solid var(--border-subtle, rgb(255 255 255 / 0.1));
+  background: var(--surface-subtle, rgb(255 255 255 / 0.05));
+  color: var(--text-muted, rgb(255 255 255 / 0.75));
+  border-radius: 999px;
+  padding: 0.35rem 0.8rem;
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.recipe-toolbar .filter-pills button.is-on,
+.recipe-toolbar .filter-pills button.is-soft.is-on {
+  background: var(--wf-coral, #ffb648);
+  border-color: var(--wf-coral, #ffb648);
+  color: #181206;
+  font-weight: 700;
+}
+
 /* ── Recipe Count & Header ─────────────────────────────────────────────── */
 .recipe-meta-strip {
   display: flex;
