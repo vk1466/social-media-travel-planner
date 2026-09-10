@@ -140,6 +140,7 @@ export function RecipeLibrary({ posts, onSelectPost, onPostUpdated }: RecipeLibr
         {cuisines.length > 0 ? (
           <FilterPills
             allLabel="All cuisines"
+            allCount={recipes.length}
             pills={cuisines.map((name) => ({ key: name, label: name }))}
             selectedKeys={[cuisine]}
             ariaLabel="Cuisine"

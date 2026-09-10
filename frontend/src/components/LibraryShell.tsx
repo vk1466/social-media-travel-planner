@@ -17,14 +17,7 @@ import { contentCategoryTabs } from "../contentCategory";
 import { clerkEnabled } from "../authMode";
 import { PlaceLibrary } from "./PlaceLibrary";
 import { PostLibrary } from "./PostLibrary";
-import {
-  FilterBar,
-  FilterChrome,
-  FilterPills,
-  PILL_PREVIEW_COUNT,
-  SegmentGroup,
-  previewPills,
-} from "./library";
+import { FilterBar, FilterChrome, FilterPills, SegmentGroup } from "./library";
 
 import "../library-shell.css";
 
@@ -74,10 +67,8 @@ export function LibraryShell({
   const [placesFilters, setPlacesFilters] = useState<PlacesShellFilters>(DEFAULT_PLACES_FILTERS);
   const [postsFilters, setPostsFilters] = useState<PostsShellFilters>(DEFAULT_POSTS_FILTERS);
   const [meta, setMeta] = useState<LibraryShellMeta>(EMPTY_LIBRARY_META);
-  const [pillsExpanded, setPillsExpanded] = useState(false);
 
   useEffect(() => {
-    setPillsExpanded(false);
     setMeta(EMPTY_LIBRARY_META);
   }, [mode, postsFilters.contentCategory]);
 
@@ -90,17 +81,8 @@ export function LibraryShell({
   const topicTabs = contentCategoryTabs(posts);
   const travelPostFilters = mode === "posts" && postsFilters.contentCategory === "travel";
 
-  const placePills = meta.pills.filter((pill) => pill.key !== "all");
+  const typePills = meta.pills.filter((pill) => pill.key !== "all");
   const placeSelected = travelPostFilters ? postsFilters.placeTypes : placesFilters.typeFilter;
-  const postRest = meta.pills.filter((pill) => pill.key !== "all");
-  const postVisibleRest = previewPills(
-    postRest,
-    postsFilters.ringKey !== "all" ? [postsFilters.ringKey] : [],
-    pillsExpanded,
-  );
-  const placeVisible = previewPills(placePills, placeSelected, pillsExpanded);
-  const typePills = mode === "places" || travelPostFilters ? placeVisible : postVisibleRest;
-  const typePool = mode === "places" || travelPostFilters ? placePills : postRest;
   const selectedFacetKeys =
     mode === "places" || travelPostFilters ? placeSelected : [postsFilters.ringKey];
 
@@ -272,18 +254,11 @@ export function LibraryShell({
           allLabel={
             mode === "places" ? copy.pillAll : travelPostFilters ? "All types" : "All saves"
           }
+          allCount={meta.count}
           pills={typePills}
           selectedKeys={selectedFacetKeys}
           multi={mode === "places" || travelPostFilters}
           ariaLabel="Library filters"
-          moreLabel={
-            typePool.length > PILL_PREVIEW_COUNT
-              ? pillsExpanded
-                ? "Show less"
-                : `+${Math.max(typePool.length - typePills.length, 0)} more`
-              : undefined
-          }
-          onMore={() => setPillsExpanded((value) => !value)}
           onSelect={(key) => {
             if (mode === "places") {
               if (key === "all") {

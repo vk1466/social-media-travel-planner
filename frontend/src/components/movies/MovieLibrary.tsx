@@ -298,7 +298,8 @@ export function MovieLibrary({ posts, onSelectPost }: MovieLibraryProps): JSX.El
         {availableProviders.length > 0 ? (
           <FilterPills
             allLabel="All platforms"
-            pills={availableProviders.slice(0, 6).map((provider) => ({
+            allCount={moviesWithEnrichment.length}
+            pills={availableProviders.map((provider) => ({
               key: provider,
               label: provider,
             }))}

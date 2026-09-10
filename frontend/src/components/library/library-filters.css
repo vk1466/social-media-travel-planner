@@ -74,42 +74,73 @@
   color: #fff;
 }
 
-.lib-filters-pills {
+.lib-filters-cats {
   display: flex;
-  flex-wrap: wrap;
   gap: 6px;
+  margin-bottom: 0.8rem;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: thin;
 }
 
-.lib-filters-pills button {
-  min-height: 32px;
-  padding: 0 11px;
+.lib-filters .lib-filters-cats {
+  margin-bottom: 0;
+}
+
+.lib-filters-cats button {
+  --category-color: var(--dark, #173e32);
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 4px 10px 4px 5px;
   border: 1px solid var(--line, #dfe3df);
   border-radius: 999px;
   background: var(--panel, #fff);
-  color: var(--muted, #6d7772);
+  color: var(--ink, #17211d);
   font: inherit;
-  font-size: 10px;
   cursor: pointer;
 }
 
-.lib-filters-pills button span {
-  margin-left: 6px;
-  color: var(--ink, #17211d);
+.lib-filters-cats button i {
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--category-color);
+  color: #fff;
+  font-size: 10px;
+  font-style: normal;
   font-weight: 700;
 }
 
-.lib-filters-pills button.is-soft {
-  background: var(--soft, #f2e3dd);
+.lib-filters-cats button i svg {
+  width: 12px;
+  height: 12px;
+  display: block;
 }
 
-.lib-filters-pills button.is-on {
-  background: var(--ink, #17211d);
-  border-color: var(--ink, #17211d);
-  color: #fff;
+.lib-filters-cats button span,
+.lib-filters-cats button b,
+.lib-filters-cats button em {
+  font-size: 10px;
+  font-style: normal;
 }
 
-.lib-filters-pills button.is-on span {
-  color: #fff;
+.lib-filters-cats button b {
+  color: var(--muted, #6d7772);
+  font-weight: 700;
+}
+
+.lib-filters-cats button.is-on {
+  border-color: var(--category-color);
+  box-shadow: inset 0 0 0 1px var(--category-color);
+}
+
+.lib-filters-cats button.is-on span {
+  font-weight: 700;
 }
 
 .lib-filters-select {

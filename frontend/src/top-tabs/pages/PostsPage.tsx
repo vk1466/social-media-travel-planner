@@ -52,7 +52,6 @@ export function PostsPage({
   const [facetKeys, setFacetKeys] = useState<string[]>([]);
   const [selected, setSelected] = useState<SavedPost | null>(null);
   const [visitedIds, setVisitedIds] = useState<Set<string>>(new Set());
-  const [pillsExpanded, setPillsExpanded] = useState(false);
 
   const names = useMemo(
     () => Object.fromEntries(places.map((place) => [place.place_id, place.display_name])),
@@ -145,8 +144,6 @@ export function PostsPage({
     dateMode,
   ]);
 
-  const visiblePills = previewPills(secondLevel.pills, facetKeys, pillsExpanded);
-
   return (
     <>
       <PageHeading
@@ -167,7 +164,6 @@ export function PostsPage({
               setContentCategory(value);
               setPlaceStatus("all");
               setFacetKeys([]);
-              setPillsExpanded(false);
             },
             options: [
               { value: "all", label: "All" },
@@ -211,18 +207,11 @@ export function PostsPage({
       {secondLevel.pills.length > 0 ? (
         <FilterPills
           allLabel={secondLevel.allLabel}
-          pills={visiblePills}
+          allCount={platformPosts.length}
+          pills={secondLevel.pills}
           selectedKeys={facetKeys}
           multi
           ariaLabel={secondLevel.ariaLabel}
-          moreLabel={
-            secondLevel.pills.length > 5
-              ? pillsExpanded
-                ? "Show less"
-                : `+${secondLevel.pills.length - visiblePills.length} more`
-              : undefined
-          }
-          onMore={() => setPillsExpanded((value) => !value)}
           onSelect={(key) => {
             if (key === "all") {
               setFacetKeys([]);
@@ -356,18 +345,6 @@ function buildSecondLevel(
     .slice(0, 12);
 
   return { ...copy, pills };
-}
-
-function previewPills(
-  pills: { key: string; label: string; count: number }[],
-  selectedKeys: string[],
-  expanded: boolean,
-) {
-  if (expanded || pills.length <= 5) return pills;
-  const top = pills.slice(0, 5);
-  const topKeys = new Set(top.map((pill) => pill.key));
-  const extra = pills.filter((pill) => selectedKeys.includes(pill.key) && !topKeys.has(pill.key));
-  return [...top, ...extra];
 }
 
 function postTimestamp(post: SavedPost, dateMode: DateMode): number {
