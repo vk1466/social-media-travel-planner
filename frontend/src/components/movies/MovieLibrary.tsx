@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type JSX } from "react";
 import type { SavedPost } from "../../api";
 import { FilterBar, FilterChrome, FilterPills } from "../library";
+import { postsForPlatforms, useLibraryPlatform } from "../../libraryPlatform";
 import { MovieCard, type AggregatedMovie } from "./MovieCard";
 import { MovieDetailModal } from "./MovieDetailModal";
 import { fetchTmdbExtras, type TmdbEnrichedData } from "./tmdbClient";
@@ -147,6 +148,7 @@ export function aggregateMoviesFromPosts(posts: SavedPost[]): AggregatedMovie[] 
 }
 
 export function MovieLibrary({ posts, onSelectPost }: MovieLibraryProps): JSX.Element {
+  const { platforms } = useLibraryPlatform();
   const [searchQuery, setSearchQuery] = useState("");
   const [kindFilter, setKindFilter] = useState<KindFilter>("all");
   const [providerFilter, setProviderFilter] = useState<string>("all");
@@ -155,7 +157,10 @@ export function MovieLibrary({ posts, onSelectPost }: MovieLibraryProps): JSX.El
   const [activeTrailer, setActiveTrailer] = useState<{ key: string; title: string } | null>(null);
   const [enrichedDataMap, setEnrichedDataMap] = useState<Record<string, TmdbEnrichedData>>({});
 
-  const allMovies = useMemo(() => aggregateMoviesFromPosts(posts), [posts]);
+  const allMovies = useMemo(
+    () => aggregateMoviesFromPosts(postsForPlatforms(posts, platforms)),
+    [posts, platforms],
+  );
 
   // Client-side enrichment for saved movies that lack posters or streaming details
   useEffect(() => {

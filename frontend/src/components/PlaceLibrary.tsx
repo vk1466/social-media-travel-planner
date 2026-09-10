@@ -11,6 +11,7 @@ import type {
   PlacesStatusFilter,
   PlacesViewMode,
 } from "../libraryShellModel";
+import { placeMatchesPlatform } from "../libraryPlatform";
 import {
   atlasTrail,
   buildAtlas,
@@ -79,6 +80,7 @@ export function PlaceLibrary({
   const grouping = filters?.grouping ?? localGrouping;
   const viewMode = filters?.viewMode ?? localViewMode;
   const searchQuery = filters?.query ?? localSearchQuery;
+  const platforms = filters?.platforms ?? [];
 
   const setStatusFilter = (value: StatusFilter) => {
     if (!controlled) setLocalStatusFilter(value);
@@ -134,15 +136,21 @@ export function PlaceLibrary({
 
   const selectedApiPlace = routedPlace;
 
+  const platformPlaces = useMemo(
+    () =>
+      places.filter((place) => placeMatchesPlatform(place.sourcePostIds, posts, platforms)),
+    [places, posts, platforms],
+  );
+
   const statusPlaces = useMemo(() => {
     if (statusFilter === "visited") {
-      return places.filter((place) => place.visited);
+      return platformPlaces.filter((place) => place.visited);
     }
     if (statusFilter === "inspiration") {
-      return places.filter((place) => !place.visited);
+      return platformPlaces.filter((place) => !place.visited);
     }
-    return places;
-  }, [places, statusFilter]);
+    return platformPlaces;
+  }, [platformPlaces, statusFilter]);
 
   const filteredPlaces = useMemo(() => {
     if (typeFilter.length === 0) {

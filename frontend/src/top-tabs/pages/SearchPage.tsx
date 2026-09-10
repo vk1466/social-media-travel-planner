@@ -6,26 +6,30 @@ import { postTitle } from "../display";
 import { recipesFromPosts } from "../recipes";
 import { aggregateMovies } from "../movies";
 import { FilterBar } from "../../components/library";
+import { placeMatchesPlatform, postsForPlatforms, useLibraryPlatform } from "../../libraryPlatform";
 import { PageHeading } from "../components/Shell";
 import { useLabTheme } from "../theme";
 
 export function SearchPage({ posts, places }: { posts: SavedPost[]; places: Place[] }) {
   const navigate = useNavigate();
   const { basePath } = useLabTheme();
+  const { platforms } = useLibraryPlatform();
   const [query, setQuery] = useState("");
   const q = query.trim().toLowerCase();
-  const recipes = recipesFromPosts(posts);
-  const movies = aggregateMovies(posts);
+  const scopedPosts = postsForPlatforms(posts, platforms);
+  const recipes = recipesFromPosts(scopedPosts);
+  const movies = aggregateMovies(scopedPosts);
 
   const results = useMemo(() => {
     if (!q) return [];
     const hits: { to: string; label: string; meta: string }[] = [];
-    for (const post of posts) {
+    for (const post of scopedPosts) {
       if (`${postTitle(post)} ${post.caption}`.toLowerCase().includes(q)) {
         hits.push({ to: `${basePath}/posts`, label: postTitle(post), meta: "Post" });
       }
     }
     for (const place of places) {
+      if (!placeMatchesPlatform(place.source_post_ids, posts, platforms)) continue;
       if (place.display_name.toLowerCase().includes(q)) {
         hits.push({ to: `${basePath}/travel/${place.place_id}`, label: place.display_name, meta: "Place" });
       }
@@ -41,7 +45,7 @@ export function SearchPage({ posts, places }: { posts: SavedPost[]; places: Plac
       }
     }
     return hits.slice(0, 30);
-  }, [q, posts, places, recipes, movies, basePath]);
+  }, [q, scopedPosts, places, recipes, movies, basePath, posts, platforms]);
 
   return (
     <>

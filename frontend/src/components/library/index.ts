@@ -10,7 +10,8 @@ export {
 } from "./FilterBar";
 export {
   FilterPills,
+  PILL_CHIP_LIMIT,
   PILL_PREVIEW_COUNT,
-  previewPills,
   type FilterPill,
 } from "./FilterPills";
+export { PlatformMenu } from "./PlatformMenu";

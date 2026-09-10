@@ -47,6 +47,84 @@
   stroke-linecap: round;
 }
 
+.lab-pages .lab-utility .lab-platform-menu {
+  position: relative;
+}
+
+.lab-pages .lab-utility .lab-platform-trigger {
+  min-width: 42px;
+  padding: 0 10px;
+}
+
+.lab-pages .lab-utility .lab-platform-trigger.is-on {
+  border-color: var(--dark);
+}
+
+.lab-pages .lab-utility .lab-platform-stack {
+  display: flex;
+  align-items: center;
+}
+
+.lab-pages .lab-utility .lab-platform-stack span {
+  display: flex;
+  width: 20px;
+  margin-left: -12px;
+  padding: 1px;
+  border-radius: 999px;
+  background: var(--panel);
+  box-shadow: 0 0 0 1px var(--line);
+}
+
+.lab-pages .lab-utility .lab-platform-stack span:first-child {
+  margin-left: 0;
+}
+
+.lab-pages .lab-utility .lab-platform-panel {
+  position: absolute;
+  z-index: 60;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 200px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel);
+  box-shadow: 0 14px 38px rgba(25, 39, 33, 0.12);
+}
+
+.lab-pages .lab-utility .lab-platform-panel label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 4px 8px;
+  border-radius: 8px;
+  color: var(--ink);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.lab-pages .lab-utility .lab-platform-panel label:hover,
+.lab-pages .lab-utility .lab-platform-panel label.is-on {
+  background: var(--soft);
+}
+
+.lab-pages .lab-utility .lab-platform-panel input {
+  margin: 0;
+}
+
+.lab-pages .lab-utility .lab-platform-menu svg.lab-platform-icon {
+  width: 20px;
+  height: 20px;
+  fill: currentColor;
+  stroke: none;
+}
+
+.lab-pages .lab-utility .lab-platform-panel svg.lab-platform-icon {
+  width: 18px;
+  height: 18px;
+}
+
 .lab-pages .lab-utility-tabs {
   max-width: 1260px;
   margin: 0 auto;

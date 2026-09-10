@@ -13,10 +13,11 @@ export interface PlacesShellFilters {
   typeFilter: string[];
   query: string;
   viewMode: PlacesViewMode;
+  platforms: string[];
 }
 
 export interface PostsShellFilters {
-  platform: string;
+  platforms: string[];
   ringKey: string;
   query: string;
   deckMode: PostsDeckMode;
@@ -45,10 +46,11 @@ export const DEFAULT_PLACES_FILTERS: PlacesShellFilters = {
   typeFilter: [],
   query: "",
   viewMode: "covers",
+  platforms: [],
 };
 
 export const DEFAULT_POSTS_FILTERS: PostsShellFilters = {
-  platform: "all",
+  platforms: [],
   ringKey: "all",
   query: "",
   deckMode: "deck",

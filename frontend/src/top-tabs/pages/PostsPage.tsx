@@ -14,7 +14,7 @@ import {
   contentCategoryTabs,
   effectiveContentCategory,
 } from "../../contentCategory";
-import { BROWSE_PLATFORMS } from "../../postBrowseModel";
+import { postsForPlatforms, useLibraryPlatform } from "../../libraryPlatform";
 import {
   formatDate,
   platformLabel,
@@ -45,7 +45,7 @@ export function PostsPage({
   onDeleted: () => void;
 }) {
   const [query, setQuery] = useState("");
-  const [platform, setPlatform] = useState("all");
+  const { platforms } = useLibraryPlatform();
   const [contentCategory, setContentCategory] = useState("all");
   const [dateMode, setDateMode] = useState<DateMode>("saved");
   const [placeStatus, setPlaceStatus] = useState<PlaceStatus>("all");
@@ -87,10 +87,10 @@ export function PostsPage({
     return posts.filter((post) => effectiveContentCategory(post) === contentCategory);
   }, [posts, contentCategory]);
 
-  const platformPosts = useMemo(() => {
-    if (platform === "all") return topicPosts;
-    return topicPosts.filter((post) => post.platform === platform);
-  }, [topicPosts, platform]);
+  const platformPosts = useMemo(
+    () => postsForPlatforms(topicPosts, platforms),
+    [topicPosts, platforms],
+  );
 
   const secondLevel = useMemo(() => {
     const eligible = travelFilters
@@ -149,7 +149,7 @@ export function PostsPage({
       <PageHeading
         kicker="All sources"
         title="Posts"
-        lede="Every social save in one feed. Filter here without changing the other category pages."
+        lede="Every social save in one feed."
       />
       <FilterChrome>
       <Toolbar
@@ -169,15 +169,6 @@ export function PostsPage({
               { value: "all", label: "All" },
               ...topicTabs.map((tab) => ({ value: tab.key, label: tab.label })),
             ],
-          },
-          {
-            ariaLabel: "Platform filter",
-            selected: platform,
-            onSelect: setPlatform,
-            options: BROWSE_PLATFORMS.map((key) => ({
-              value: key,
-              label: key === "all" ? "Everything" : platformLabel(key),
-            })),
           },
           {
             ariaLabel: "Timeline",
@@ -341,8 +332,7 @@ function buildSecondLevel(
 
   const pills = Array.from(counts.entries())
     .map(([key, entry]) => ({ key, label: entry.label, count: entry.count }))
-    .sort((left, right) => right.count - left.count || left.label.localeCompare(right.label))
-    .slice(0, 12);
+    .sort((left, right) => right.count - left.count || left.label.localeCompare(right.label));
 
   return { ...copy, pills };
 }

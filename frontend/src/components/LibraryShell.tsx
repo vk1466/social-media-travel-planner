@@ -12,12 +12,12 @@ import {
   type PlacesShellFilters,
   type PostsShellFilters,
 } from "../libraryShellModel";
-import { BROWSE_PLATFORMS } from "../postBrowseModel";
 import { contentCategoryTabs } from "../contentCategory";
 import { clerkEnabled } from "../authMode";
 import { PlaceLibrary } from "./PlaceLibrary";
 import { PostLibrary } from "./PostLibrary";
 import { FilterBar, FilterChrome, FilterPills, SegmentGroup } from "./library";
+import { useLibraryPlatform } from "../libraryPlatform";
 
 import "../library-shell.css";
 
@@ -67,6 +67,7 @@ export function LibraryShell({
   const [placesFilters, setPlacesFilters] = useState<PlacesShellFilters>(DEFAULT_PLACES_FILTERS);
   const [postsFilters, setPostsFilters] = useState<PostsShellFilters>(DEFAULT_POSTS_FILTERS);
   const [meta, setMeta] = useState<LibraryShellMeta>(EMPTY_LIBRARY_META);
+  const { platforms } = useLibraryPlatform();
 
   useEffect(() => {
     setMeta(EMPTY_LIBRARY_META);
@@ -140,15 +141,6 @@ export function LibraryShell({
         { value: "all", label: "All" },
         ...topicTabs.map((tab) => ({ value: tab.key, label: tab.label })),
       ],
-    },
-    {
-      ariaLabel: "Platform filter",
-      selected: postsFilters.platform,
-      onSelect: (value: string) => setPostsFilters((current) => ({ ...current, platform: value })),
-      options: BROWSE_PLATFORMS.map((key) => ({
-        value: key,
-        label: key === "all" ? "Everything" : key,
-      })),
     },
     {
       ariaLabel: "Timeline",
@@ -296,7 +288,7 @@ export function LibraryShell({
           <PlaceLibrary
             authReady={authReady}
             omitChrome
-            filters={placesFilters}
+            filters={{ ...placesFilters, platforms }}
             onMeta={handleMeta}
             onNavigateToPost={onNavigateToPost}
             placeBasePath={placeBasePath}
@@ -311,7 +303,7 @@ export function LibraryShell({
             posts={posts}
             places={places}
             omitChrome
-            filters={postsFilters}
+            filters={{ ...postsFilters, platforms }}
             onMeta={handleMeta}
             onDeleted={onDeleted}
             onNavigateToPlace={onNavigateToPlace}

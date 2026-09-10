@@ -81,7 +81,11 @@ export function PostLibrary({
   const [localPlaceTypes] = useState<string[]>([]);
   const [visitedIds, setVisitedIds] = useState<Set<string>>(new Set());
 
-  const platformFilter = filters?.platform ?? localPlatformFilter;
+  const selectedPlatforms = useMemo(() => {
+    if (filters?.platforms) return filters.platforms;
+    return localPlatformFilter === "all" ? [] : [localPlatformFilter];
+  }, [filters?.platforms, localPlatformFilter]);
+  const platformFilter = localPlatformFilter;
   const ringKey = filters?.ringKey ?? localRingKey;
   const deckMode = filters?.deckMode ?? localDeckMode;
   const dateMode = filters?.dateMode ?? localDateMode;
@@ -152,11 +156,11 @@ export function PostLibrary({
   }, [topicPosts]);
 
   const platformPosts = useMemo(() => {
-    if (platformFilter === "all") {
+    if (selectedPlatforms.length === 0) {
       return browsePosts;
     }
-    return browsePosts.filter((post) => post.platform === platformFilter);
-  }, [browsePosts, platformFilter]);
+    return browsePosts.filter((post) => selectedPlatforms.includes(post.platform));
+  }, [browsePosts, selectedPlatforms]);
 
   const placeRings = useMemo<PlaceRing[]>(() => {
     const tally = new Map<
@@ -338,7 +342,7 @@ export function PostLibrary({
   // Latest month opens by default; re-open latest when filters change the set.
   useEffect(() => {
     setOpenEraKey(null);
-  }, [platformFilter, ringKey, searchQuery, contentCategory, placeStatus, placeTypes, dateMode]);
+  }, [selectedPlatforms, ringKey, searchQuery, contentCategory, placeStatus, placeTypes, dateMode]);
 
   useEffect(() => {
     if (eras.length === 0) {

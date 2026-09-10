@@ -1,6 +1,7 @@
 import { useMemo, useState, type JSX } from "react";
 import type { SavedPost } from "../../api";
 import { FilterBar, FilterChrome, FilterPills } from "../library";
+import { postsForPlatforms, useLibraryPlatform } from "../../libraryPlatform";
 import { GroceryListModal } from "./GroceryListModal";
 import { RecipeCard } from "./RecipeCard";
 import { RecipeDetailModal } from "./RecipeDetailModal";
@@ -22,6 +23,7 @@ export interface RecipeLibraryProps {
 type TimeFilter = "any" | "20" | "45";
 
 export function RecipeLibrary({ posts, onSelectPost, onPostUpdated }: RecipeLibraryProps): JSX.Element {
+  const { platforms } = useLibraryPlatform();
   const [meal, setMeal] = useState<MealTypeFilter>("all");
   const [time, setTime] = useState<TimeFilter>("any");
   const [query, setQuery] = useState("");
@@ -32,8 +34,11 @@ export function RecipeLibrary({ posts, onSelectPost, onPostUpdated }: RecipeLibr
   const [updatedPosts, setUpdatedPosts] = useState<Record<string, SavedPost>>({});
 
   const effectivePosts = useMemo(() => {
-    return posts.map((p) => updatedPosts[p.post_id] ?? p);
-  }, [posts, updatedPosts]);
+    return postsForPlatforms(
+      posts.map((p) => updatedPosts[p.post_id] ?? p),
+      platforms,
+    );
+  }, [posts, updatedPosts, platforms]);
 
   const recipes = useMemo(() => recipesFromPosts(effectivePosts), [effectivePosts]);
 
