@@ -14,7 +14,7 @@
  * keeps every count consistent without each concept re-deriving totals.
  */
 
-import type { Place } from "./api";
+import type { Place, SavedPost } from "./api";
 import { categoryLabel, categoryTone } from "./categoryLabels";
 import { ATLAS_SEED } from "./placeAtlasDemoData";
 
@@ -71,6 +71,12 @@ export interface AtlasPlace {
   lng: number | null;
   /** Ancestor names, continent first, excluding the place itself. */
   trail: string[];
+  details: string[];
+  tips: string[];
+  attributes: string[];
+  bestTimeToVisit: string | null;
+  imageUrl: string | null;
+  sourcePostIds: string[];
 }
 
 export interface AtlasNode {
@@ -354,7 +360,11 @@ export function visitedRatio(node: AtlasNode): number {
   return node.total === 0 ? 0 : node.visited / node.total;
 }
 
-function toAtlasPlace(place: Place, visitedIds: Set<string>): AtlasPlace {
+function toAtlasPlace(
+  place: Place,
+  visitedIds: Set<string>,
+  thumbnailByPostId: ReadonlyMap<string, string>,
+): AtlasPlace {
   const { continent, country, state_province: stateProvince, city, latitude, longitude } =
     place.location;
   const trail = [
@@ -380,6 +390,13 @@ function toAtlasPlace(place: Place, visitedIds: Set<string>): AtlasPlace {
     lat: latitude ?? null,
     lng: longitude ?? null,
     trail,
+    details: place.details,
+    tips: place.tips,
+    attributes: place.attributes,
+    bestTimeToVisit: place.facts?.best_time_to_visit ?? null,
+    imageUrl:
+      place.source_post_ids.map((postId) => thumbnailByPostId.get(postId)).find(Boolean) ?? null,
+    sourcePostIds: place.source_post_ids,
   };
 }
 
@@ -413,6 +430,12 @@ export function sampleAtlasPlaces(): AtlasPlace[] {
           trail: [country.continent, country.country, city.state, city.city].filter(
             (value): value is string => Boolean(value),
           ),
+          details: [],
+          tips: [],
+          attributes: [],
+          bestTimeToVisit: null,
+          imageUrl: null,
+          sourcePostIds: [],
         });
       });
     }
@@ -424,14 +447,19 @@ export function sampleAtlasPlaces(): AtlasPlace[] {
 export function toAtlasPlaces(
   apiPlaces: Place[],
   visitedIds: Set<string>,
-  options: { allowSample?: boolean } = {},
+  options: { allowSample?: boolean; posts?: SavedPost[] } = {},
 ): { places: AtlasPlace[]; usingSampleData: boolean } {
   const allowSample = options.allowSample !== false;
   if (allowSample && apiPlaces.length < SAMPLE_ATLAS_THRESHOLD) {
     return { places: sampleAtlasPlaces(), usingSampleData: true };
   }
+  const thumbnailByPostId = new Map(
+    (options.posts ?? [])
+      .filter((post): post is SavedPost & { thumbnail_url: string } => Boolean(post.thumbnail_url))
+      .map((post) => [post.post_id, post.thumbnail_url]),
+  );
   return {
-    places: apiPlaces.map((place) => toAtlasPlace(place, visitedIds)),
+    places: apiPlaces.map((place) => toAtlasPlace(place, visitedIds, thumbnailByPostId)),
     usingSampleData: false,
   };
 }

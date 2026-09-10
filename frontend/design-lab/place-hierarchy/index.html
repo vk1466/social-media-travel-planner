@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#13231d" />
+    <title>Place Hierarchy Lab</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="hero">
+      <a href="../index.html">← Design lab</a>
+      <div>
+        <p class="eyebrow">Places · hierarchy study · research refresh V2</p>
+        <h1>From the whole world<br />to one saved place.</h1>
+        <p class="lede">Ten ways to browse the same flexible geography: World → Continent → Country → Region → City → Place. Select any row, card, dot, or branch to drill in.</p>
+      </div>
+      <aside><b>10</b><span>interactive<br />directions</span></aside>
+    </header>
+
+    <main>
+      <div class="gallery-intro">
+        <div><p class="eyebrow">Same data · different mental models</p><h2>Which hierarchy feels clearest?</h2></div>
+        <div class="gallery-actions"><a href="../place-hierarchy-v3/index.html">Open experimental V3 →</a><button id="reset-all" type="button">Reset all to World</button></div>
+      </div>
+      <section class="demo-grid" id="demo-grid" aria-label="Place hierarchy design concepts"></section>
+      <section class="research-notes" aria-labelledby="research-title">
+        <p class="eyebrow">Research notes</p>
+        <h2 id="research-title">Patterns behind the directions</h2>
+        <div>
+          <a href="https://www.apple.com/maps/" target="_blank" rel="noreferrer"><b>Apple Maps</b><span>Interactive globe, place cards, Guides, and Places Library</span></a>
+          <a href="https://support.google.com/maps/answer/9948049?hl=en" target="_blank" rel="noreferrer"><b>Google Maps</b><span>Saved lists and recognizable pins held in spatial context</span></a>
+          <a href="https://support.alltrails.com/hc/en-us/articles/37227554831124-How-to-use-Parks-in-Collections" target="_blank" rel="noreferrer"><b>AllTrails</b><span>Curated collections layered over map and list results</span></a>
+          <a href="https://whc.unesco.org/en/list" target="_blank" rel="noreferrer"><b>UNESCO</b><span>Large place corpus with list, table, map, region, and country views</span></a>
+          <a href="https://support.apple.com/guide/mac-help/change-how-folders-are-displayed-mchldaafb302/mac" target="_blank" rel="noreferrer"><b>macOS Finder</b><span>Columns that preserve parent, sibling, and preview context</span></a>
+          <a href="https://www.w3.org/WAI/ARIA/apg/patterns/breadcrumb/" target="_blank" rel="noreferrer"><b>W3C WAI</b><span>Breadcrumb and tree patterns for location and accessible navigation</span></a>
+        </div>
+      </section>
+    </main>
+
+    <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+    <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

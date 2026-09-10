@@ -135,6 +135,44 @@ states, live-data fallback, and place/post detail navigation.
 
 http://localhost:5179/travel-section/
 
+## Travel Card + Detail Lab
+
+**14 paired place-card and detail-modal directions** — ten landscape and adaptive concepts,
+plus four portrait formats: magazine cover, pocket guide, journey ticket, and night portrait.
+Each card opens its matching responsive detail treatment with save and quick-action states.
+Add `?open=1` through `?open=14` to link directly to an open concept.
+
+http://localhost:5179/travel-card-modal/
+
+## Place Hierarchy Lab
+
+**10 interactive ways to browse the place tree** — guided shelves, focus + siblings,
+column browser, globe + guides, functional multi-view index, proportional atlas,
+map + bottom rail, universal search, geographic index, and adaptive bottom sheets.
+Every concept uses the same flexible
+World → Continent → Country → Region → City → Place model and supports drilling in,
+backtracking through ancestors, and resetting to World.
+
+http://localhost:5179/place-hierarchy/
+
+### Place Hierarchy V3
+
+**10 deliberately experimental hierarchy metaphors** — destination constellation,
+nested worlds, geography metro, living passport, atlas bookshelf, geographic sentence,
+destination solar system, travel filmstrip, cartographic strata, and atlas conversation.
+V3 is additive; the practical, research-led V2 remains available for comparison.
+
+http://localhost:5179/place-hierarchy-v3/
+
+## Travel Map Experience Lab
+
+**10 interactive map directions beyond the current cluster-and-pin implementation** —
+editorial atlas, immersive terrain, trail heat and weather layers, collaborative field
+map, journey replay, day route planner, community photo highlights, time-aware preview,
+saved-versus-visited comparison, and mobile “search this area.”
+
+http://localhost:5179/map-experiences/
+
 Skins are generated — edit the skin in `home-page/_generate.mjs` (metadata in
 `home-page/shared/options.js`), then rerun:
 

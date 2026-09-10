@@ -62,8 +62,20 @@ export const CARTO_BASEMAP_ATTR =
 
 /** Voyager raster tiles. CARTO now requires `key` on every request. */
 export function cartoVoyagerTileUrl(): string {
+  return cartoTileUrl("voyager");
+}
+
+export function cartoLightNoLabelsTileUrl(): string {
+  return cartoTileUrl("light_nolabels");
+}
+
+export function cartoDarkTileUrl(): string {
+  return cartoTileUrl("dark_all");
+}
+
+function cartoTileUrl(style: "voyager" | "light_nolabels" | "dark_all"): string {
   const key = import.meta.env.VITE_CARTO_BASEMAPS_API_KEY?.trim() ?? "";
-  const base = "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png";
+  const base = `https://{s}.basemaps.cartocdn.com/rastertiles/${style}/{z}/{x}/{y}{r}.png`;
   return key ? `${base}?key=${encodeURIComponent(key)}` : base;
 }
 

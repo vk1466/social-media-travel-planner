@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#13231d" />
+    <title>Travel Card + Detail Modal Lab</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="lab-header">
+      <a class="back-link" href="../index.html">Design lab</a>
+      <div class="header-copy">
+        <p class="eyebrow">Travel surface study · 14 directions</p>
+        <h1>A place should feel worth opening.</h1>
+        <p class="lede">Fourteen card-and-detail systems using the same destination data, including four new portrait formats. Open every card; each modal carries its visual language through the full experience.</p>
+      </div>
+      <div class="header-meta" aria-label="Prototype scope">
+        <span><b>14</b> interactive concepts</span>
+        <span><b>2</b> responsive breakpoints</span>
+        <span><b>1</b> shared content model</span>
+      </div>
+    </header>
+
+    <main>
+      <div class="gallery-head">
+        <div>
+          <p class="eyebrow">Card → details</p>
+          <h2>Compare the whole interaction</h2>
+        </div>
+        <p>Click a card to open its modal. Press <kbd>Esc</kbd> or click outside to close.</p>
+      </div>
+      <section class="demo-grid" id="demo-grid" aria-label="Travel card design concepts"></section>
+    </main>
+
+    <div class="modal-root" id="modal-root" hidden></div>
+    <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+    <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

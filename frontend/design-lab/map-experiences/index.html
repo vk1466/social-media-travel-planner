@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#102119" />
+  <title>Travel Map Experience Lab</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <header class="hero">
+    <a href="../index.html">← Design lab</a>
+    <div><p class="eyebrow">Map experience study · researched 2026</p><h1>Ten maps.<br />Ten reasons to open one.</h1><p>New directions beyond the current cluster-and-pin map: terrain, heat, layers, stories, routes, time, comparison, and discovery.</p></div>
+    <aside><b>10</b><span>interactive<br />map concepts</span></aside>
+  </header>
+  <main>
+    <div class="intro"><div><p class="eyebrow">Same Italy trip · different jobs</p><h2>Maps should answer a question.</h2></div><p>Try the controls, pins, sliders, layers, days, and playback in each concept.</p></div>
+    <section class="grid" id="grid" aria-label="Travel map design concepts"></section>
+    <section class="research"><p class="eyebrow">Research sources</p><h2>What informed the map directions</h2><div id="sources"></div></section>
+  </main>
+  <div class="toast" id="toast" hidden role="status" aria-live="polite"></div>
+  <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

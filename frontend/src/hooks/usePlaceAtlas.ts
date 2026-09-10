@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { fetchPlaces, fetchVisitedPlaceIds, type Place } from "../api";
+import {
+  fetchPlaces,
+  fetchPosts,
+  fetchVisitedPlaceIds,
+  type Place,
+  type SavedPost,
+} from "../api";
 import { toAtlasPlaces, type AtlasPlace } from "../placeAtlasModel";
 
 interface PlaceAtlasOptions {
@@ -11,6 +17,7 @@ interface PlaceAtlasOptions {
 interface PlaceAtlasResult {
   places: AtlasPlace[];
   apiPlaces: Place[];
+  posts: SavedPost[];
   visitedIds: Set<string>;
   loading: boolean;
   usingSampleData: boolean;
@@ -30,6 +37,7 @@ export function usePlaceAtlas(
   const allowSample = options.allowSample !== false;
   const [apiPlaces, setApiPlaces] = useState<Place[]>([]);
   const [visitedIds, setVisitedIds] = useState<Set<string>>(new Set());
+  const [posts, setPosts] = useState<SavedPost[]>([]);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(
@@ -37,6 +45,7 @@ export function usePlaceAtlas(
       if (!authReady) {
         setApiPlaces([]);
         setVisitedIds(new Set());
+        setPosts([]);
         setLoading(false);
         return;
       }
@@ -44,15 +53,18 @@ export function usePlaceAtlas(
         setLoading(true);
       }
       try {
-        const [nextPlaces, visited] = await Promise.all([
+        const [nextPlaces, visited, nextPosts] = await Promise.all([
           fetchPlaces(),
           fetchVisitedPlaceIds(),
+          fetchPosts().catch(() => []),
         ]);
         setApiPlaces(nextPlaces);
         setVisitedIds(new Set(visited));
+        setPosts(nextPosts);
       } catch {
         setApiPlaces([]);
         setVisitedIds(new Set());
+        setPosts([]);
       } finally {
         if (opts.showLoading) {
           setLoading(false);
@@ -71,9 +83,9 @@ export function usePlaceAtlas(
   }, [load]);
 
   const { places, usingSampleData } = useMemo(
-    () => toAtlasPlaces(apiPlaces, visitedIds, { allowSample }),
-    [apiPlaces, visitedIds, allowSample],
+    () => toAtlasPlaces(apiPlaces, visitedIds, { allowSample, posts }),
+    [apiPlaces, visitedIds, allowSample, posts],
   );
 
-  return { places, apiPlaces, visitedIds, loading, usingSampleData, refresh };
+  return { places, apiPlaces, posts, visitedIds, loading, usingSampleData, refresh };
 }

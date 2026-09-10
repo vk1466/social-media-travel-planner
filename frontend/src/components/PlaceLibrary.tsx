@@ -47,9 +47,7 @@ function vars(entries: Record<string, string | number>): CSSProperties {
 
 function hashHue(value: string): number {
   let hash = 0;
-  for (let index = 0; index < value.length; index += 1) {
-    hash = (hash * 33 + value.charCodeAt(index)) % 360;
-  }
+  for (let index = 0; index < value.length; index += 1) hash = (hash * 33 + value.charCodeAt(index)) % 360;
   return hash;
 }
 
@@ -61,9 +59,7 @@ function coverArt(name: string): CSSProperties {
     "linear-gradient(150deg, #1a3328 0%, #0a1210 100%)",
     "linear-gradient(148deg, #274438 0%, #0e1813 100%)",
   ];
-  return {
-    backgroundImage: forests[hashHue(name) % forests.length],
-  };
+  return { backgroundImage: forests[hashHue(name) % forests.length] };
 }
 
 /**
@@ -82,7 +78,7 @@ export function PlaceLibrary({
   const dark = readBrandMode() === "dark";
   const { placeId: routePlaceId } = useParams();
   const navigate = useNavigate();
-  const { places, apiPlaces, visitedIds, loading, refresh } = usePlaceAtlas(authReady, {
+  const { places, apiPlaces, posts, visitedIds, loading, refresh } = usePlaceAtlas(authReady, {
     allowSample: false,
   });
 
@@ -179,10 +175,7 @@ export function PlaceLibrary({
   const scope = atlas.index.get(scopeKey) ?? atlas.root;
   const trail = useMemo(() => atlasTrail(atlas, scope.key), [atlas, scope.key]);
 
-  const children = useMemo(
-    () => scope.children.filter((child) => child.total > 0),
-    [scope],
-  );
+  const children = useMemo(() => scope.children.filter((child) => child.total > 0), [scope]);
 
   const typeOptions = useMemo(() => {
     const typeScope = typeAtlas.index.get(resolveScopeKey(typeAtlas, scopeKey)) ?? typeAtlas.root;
@@ -209,9 +202,7 @@ export function PlaceLibrary({
   }
 
   function toggleExpanded(key: string) {
-    setExpandedKeys((keys) =>
-      keys.includes(key) ? keys.filter((entry) => entry !== key) : [...keys, key],
-    );
+    setExpandedKeys((keys) => keys.includes(key) ? keys.filter((entry) => entry !== key) : [...keys, key]);
   }
 
   function toggleType(category: string) {
@@ -477,7 +468,12 @@ export function PlaceLibrary({
                 </div>
               )
             ) : viewMode === "map" ? (
-              <AtlasMapPanel scope={scope} onOpenNode={openNode} />
+              <AtlasMapPanel
+                scope={scope}
+                posts={posts}
+                onOpenNode={openNode}
+                onOpenPlace={(placeId) => navigate(`/places/${placeId}`)}
+              />
             ) : (
               <div className="pl2-covers">
                 {children.map((child) => {
@@ -486,49 +482,13 @@ export function PlaceLibrary({
                   const isPlace = child.level === "place";
                   return (
                     <article key={child.key} className={`pl2-cover ${open ? "is-open" : ""}`}>
-                      <button
-                        type="button"
-                        className="pl2-cover-art"
-                        style={coverArt(child.name)}
-                        onClick={() => (isPlace ? openNode(child) : toggleExpanded(child.key))}
-                      >
+                      <button type="button" className="pl2-cover-art" style={coverArt(child.name)} onClick={() => (isPlace ? openNode(child) : toggleExpanded(child.key))}>
                         <span className="pl2-cover-kicker">{levelLabel(child.level)}</span>
                         <h3>{child.name}</h3>
-                        <span
-                          className="pl2-cover-meter"
-                          style={vars({ "--ratio": `${ratio * 100}%` })}
-                        >
-                          <i />
-                        </span>
-                        <span className="pl2-cover-stats">
-                          {isPlace
-                            ? child.place?.visited
-                              ? "Visited"
-                              : "Inspiration"
-                            : `${child.visited} visited · ${child.total} saved`}
-                        </span>
+                        <span className="pl2-cover-meter" style={vars({ "--ratio": `${ratio * 100}%` })}><i /></span>
+                        <span className="pl2-cover-stats">{isPlace ? (child.place?.visited ? "Visited" : "Inspiration") : `${child.visited} visited · ${child.total} saved`}</span>
                       </button>
-                      {open && !isPlace && (
-                        <div className="pl2-cover-chips">
-                          {child.children.slice(0, 16).map((grandchild) => (
-                            <button
-                              key={grandchild.key}
-                              type="button"
-                              onClick={() => openNode(grandchild)}
-                            >
-                              {grandchild.level === "place" && (
-                                <i
-                                  className={`pl2-dot ${
-                                    grandchild.place?.visited ? "visited" : "dream"
-                                  }`}
-                                />
-                              )}
-                              {grandchild.name}
-                              {grandchild.level !== "place" && <span>{grandchild.total}</span>}
-                            </button>
-                          ))}
-                        </div>
-                      )}
+                      {open && !isPlace && <div className="pl2-cover-chips">{child.children.slice(0, 16).map((grandchild) => <button key={grandchild.key} type="button" onClick={() => openNode(grandchild)}>{grandchild.level === "place" && <i className={`pl2-dot ${grandchild.place?.visited ? "visited" : "dream"}`} />}{grandchild.name}{grandchild.level !== "place" && <span>{grandchild.total}</span>}</button>)}</div>}
                     </article>
                   );
                 })}
