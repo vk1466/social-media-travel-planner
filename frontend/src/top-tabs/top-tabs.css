@@ -2,73 +2,81 @@
 
 html.top-tabs-active,
 html.top-tabs-active body {
-  background: #f5f5f1;
-  color: #17211d;
+  background: #ebece6;
+  color: #17231e;
   color-scheme: light;
 }
 
 html.top-tabs-active,
 .top-tabs-root {
   color-scheme: light;
-  --bg: #f5f5f1;
-  --panel: #fff;
-  --ink: #17211d;
-  --muted: #6d7772;
-  --line: #dfe3df;
-  --accent: #e76548;
-  --soft: #f2e3dd;
+  /* Trail guide — Newsreader + Source Sans 3, sage paper, terracotta accent. */
+  --bg: #ebece6;
+  --panel: #fffefa;
+  --ink: #17231e;
+  --muted: #68736e;
+  --line: #d9ddd8;
+  --accent: #d75f43;
+  --soft: #f5e3dc;
   --dark: #173e32;
   --radius: 18px;
-  --shadow: 0 14px 38px rgba(25, 39, 33, 0.07);
+  --shadow: 0 14px 38px rgba(23, 35, 30, 0.07);
+  --hero: clamp(3.5rem, 7vw, 5.5rem);
+  --body-size: 16px;
+  --label: 12px;
+  --tracking: 0.13em;
 
-  /* Original libraries inherit these — keep them on the same cream / coral / forest set. */
   --wf-forest: #173e32;
   --wf-forest-mid: #2a5246;
-  --wf-forest-deep: #f5f5f1;
+  --wf-forest-deep: #ebece6;
   --wf-forest-hover: #0f2c24;
   --wf-sage: #2a705c;
-  --wf-mint: #e76548;
+  --wf-mint: #d75f43;
   --wf-forest-rgb: 23 62 50;
   --wf-forest-mid-rgb: 42 82 70;
-  --wf-forest-deep-rgb: 245 245 241;
+  --wf-forest-deep-rgb: 235 236 230;
   --wf-forest-hover-rgb: 15 44 36;
   --wf-sage-rgb: 42 112 92;
-  --wf-mint-rgb: 231 101 72;
-  --wf-cream: #f5f5f1;
-  --wf-cream-rgb: 245 245 241;
-  --wf-ink: #17211d;
-  --wf-ink-rgb: 23 33 29;
-  --wf-quiet: #6d7772;
-  --wf-on-brand: #fff;
-  --wf-on-dark: #6d7772;
+  --wf-mint-rgb: 215 95 67;
+  --wf-cream: #fffefa;
+  --wf-cream-rgb: 255 254 250;
+  --wf-ink: #17231e;
+  --wf-ink-rgb: 23 35 30;
+  --wf-quiet: #68736e;
+  --wf-on-brand: #fffefa;
+  --wf-on-dark: #68736e;
   --forest: var(--dark);
   --forest-hover: var(--wf-forest-hover);
   --forest-soft: var(--soft);
-  --wf-bg: #f5f5f1;
-  --wf-surface: #fff;
-  --wf-surface-muted: #f2e3dd;
-  --wf-soft: #f2e3dd;
-  --wf-fog: #eef0ec;
-  --wf-border: #dfe3df;
-  --wf-border-subtle: #dfe3df;
-  --wf-border-dark: #dfe3df;
-  --wf-panel-dark: #fff;
-  --wf-panel-dark-hover: #f5f5f1;
-  --wf-copy: #17211d;
-  --wf-copy-muted: #6d7772;
-  --wf-copy-accent: #e76548;
-  --wf-chrome-bg: #f5f5f1;
-  --wf-chrome-panel: #fff;
-  --wf-chrome-panel-muted: #f8f8f4;
-  --wf-chrome-border: #dfe3df;
-  --wf-coral: #e76548;
-  --wf-coral-soft: #f2e3dd;
-  --wf-coral-deep: #c45238;
-  --wf-coral-rgb: 231 101 72;
-  --wf-font-serif: "Instrument Serif", "Fraunces Variable", serif;
-  --wf-font-sans: "DM Sans Variable", "DM Sans", system-ui, sans-serif;
-  --wf-font-headline: "Instrument Serif", "Fraunces Variable", serif;
-  --wf-font-body: "DM Sans Variable", "DM Sans", system-ui, sans-serif;
+  --wf-bg: #ebece6;
+  --wf-surface: #fffefa;
+  --wf-surface-muted: #f5e3dc;
+  --wf-soft: #f5e3dc;
+  --wf-fog: #e4e6e0;
+  --wf-border: #d9ddd8;
+  --wf-border-subtle: #d9ddd8;
+  --wf-border-dark: #d9ddd8;
+  --wf-panel-dark: #fffefa;
+  --wf-panel-dark-hover: #ebece6;
+  --wf-copy: #17231e;
+  --wf-copy-muted: #68736e;
+  --wf-copy-accent: #d75f43;
+  --wf-chrome-bg: #ebece6;
+  --wf-chrome-panel: #fffefa;
+  --wf-chrome-panel-muted: #f4f5ef;
+  --wf-chrome-border: #d9ddd8;
+  --wf-coral: #d75f43;
+  --wf-coral-soft: #f5e3dc;
+  --wf-coral-deep: #c24e36;
+  --wf-coral-rgb: 215 95 67;
+  --wf-font-serif: "Newsreader Variable", "Newsreader", Georgia, serif;
+  --wf-font-sans: "Source Sans 3 Variable", "Source Sans 3", system-ui, sans-serif;
+  --wf-font-headline: var(--wf-font-serif);
+  --wf-font-body: var(--wf-font-sans);
+  --wf-font-muted: var(--wf-font-sans);
+  --wf-font-on-brand: var(--wf-font-sans);
+  --wf-eyebrow-size: 0.75rem;
+  --wf-eyebrow-tracking: 0.13em;
 
   --text: var(--ink);
   --text-muted: var(--muted);
@@ -80,7 +88,7 @@ html.top-tabs-active,
   --surface-raised: var(--soft);
   --border: var(--line);
   --border-subtle: var(--line);
-  --accent-hover: #c45238;
+  --accent-hover: #c24e36;
 }
 .lab-pages, .lab-pages * { box-sizing: border-box; }
 .lab-pages { scroll-behavior: smooth; }
@@ -88,7 +96,9 @@ html.top-tabs-active,
   margin: 0;
   background: var(--bg);
   color: var(--ink);
-  font-family: "DM Sans Variable", "DM Sans", system-ui, sans-serif;
+  font-family: var(--wf-font-body);
+  font-size: var(--body-size);
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
 }
 .lab-pages button, .lab-pages input, .lab-pages textarea { font: inherit; }
@@ -128,7 +138,7 @@ html.top-tabs-active,
   border-bottom: 1px solid var(--line);
   background: var(--panel);
 }
-.lab-pages .wordmark { font-family: "Instrument Serif"; font-size: 23px; text-decoration: none; }
+.lab-pages .wordmark { font-family: var(--wf-font-headline); font-size: 22px; font-weight: 600; letter-spacing: -0.02em; text-decoration: none; }
 .lab-pages .top-navigation nav { display: flex; gap: 3px; }
 .lab-pages .top-navigation nav a {
   position: relative;
@@ -159,9 +169,9 @@ html.top-tabs-active,
 .lab-pages .top-navigation .add-button { border-color: var(--dark); background: var(--dark); color: #fff; }
 .lab-pages .page-content { max-width: 1260px; margin: auto; padding: 55px 34px 100px; }
 .lab-pages .page-heading { display: flex; align-items: end; justify-content: space-between; gap: 30px; margin-bottom: 34px; }
-.lab-pages .eyebrow { margin: 0 0 10px; color: var(--accent); font: 700 9px "DM Sans Variable", "Manrope", sans-serif; letter-spacing: 0.17em; text-transform: uppercase; }
-.lab-pages .page-heading h1 { margin: 0; font: 400 clamp(52px, 6vw, 78px)/0.92 "Instrument Serif"; letter-spacing: -0.04em; }
-.lab-pages .page-heading > div > p:last-child { max-width: 570px; margin: 15px 0 0; color: var(--muted); font-size: 13px; line-height: 1.55; }
+.lab-pages .eyebrow { margin: 0 0 10px; color: var(--accent); font: 700 var(--label)/1 var(--wf-font-body); letter-spacing: var(--tracking); text-transform: uppercase; }
+.lab-pages .page-heading h1 { margin: 0; font: 400 var(--hero)/0.9 var(--wf-font-headline); letter-spacing: -0.045em; }
+.lab-pages .page-heading > div > p:last-child { max-width: 660px; margin: 20px 0 0; color: var(--muted); font-size: 1.05em; line-height: 1.55; }
 .lab-pages .primary {
   min-height: 43px;
   display: inline-flex;
@@ -183,13 +193,13 @@ html.top-tabs-active,
   margin: 0 0 22px;
 }
 .lab-pages .filter-pills button {
-  min-height: 32px;
-  padding: 0 11px;
+  min-height: 36px;
+  padding: 0 13px;
   border: 1px solid var(--line);
   border-radius: 999px;
   background: var(--panel);
   color: var(--muted);
-  font-size: 10px;
+  font-size: 13px;
   cursor: pointer;
 }
 .lab-pages .filter-pills button span {
@@ -206,13 +216,13 @@ html.top-tabs-active,
 .lab-pages .filter-pills button.is-soft { background: var(--soft); }
 .lab-pages .recipe-toolbar .filter-pills button,
 .lab-pages .movie-library-toolbar .filter-pills button {
-  min-height: 32px;
-  padding: 0 11px;
+  min-height: 36px;
+  padding: 0 13px;
   border: 1px solid var(--line);
   border-radius: 999px;
   background: var(--panel);
   color: var(--muted);
-  font-size: 10px;
+  font-size: 13px;
   font-weight: 400;
   box-shadow: none;
 }
@@ -245,7 +255,7 @@ html.top-tabs-active,
   border-radius: 8px;
   background: transparent;
   color: var(--muted);
-  font-size: 10px;
+  font-size: 13px;
   cursor: pointer;
 }
 .lab-pages .toolbar > div button.is-on { background: var(--ink); color: #fff; }
@@ -520,8 +530,8 @@ html.top-tabs-active,
     url("https://images.unsplash.com/photo-1533104816931-20fa691ff6ca?w=1600&h=800&fit=crop&auto=format&q=82") center/cover;
   color: #fff;
 }
-.lab-pages .home-hero h2 { margin: 45px 0 5px; font: 400 47px/1 "Instrument Serif"; }
-.lab-pages .home-hero p { color: #cbd9d4; font-size: 10px; }
+.lab-pages .home-hero h2 { margin: 45px 0 5px; font: 400 47px/1 var(--wf-font-headline); }
+.lab-pages .home-hero p { color: #cbd9d4; font-size: 13px; }
 .lab-pages .home-hero a { font-size: 11px; font-weight: 700; }
 .lab-pages .home-recent { margin-top: 14px; }
 .lab-pages .home-recent .cover-grid { margin-top: 0; }
@@ -561,7 +571,7 @@ html.top-tabs-active,
 }
 .lab-pages .feature-strip > div { background-size: cover; background-position: center; }
 .lab-pages .feature-strip article { display: flex; flex-direction: column; justify-content: center; padding: 35px; }
-.lab-pages .feature-strip h2 { margin: 15px 0 8px; font: 400 42px/1 "Instrument Serif"; }
+.lab-pages .feature-strip h2 { margin: 15px 0 8px; font: 400 42px/1 var(--wf-font-headline); }
 .lab-pages .feature-strip p { color: #c9dad3; font-size: 11px; }
 .lab-pages .feature-strip button, .lab-pages .movie-hero button {
   align-self: start;
@@ -584,12 +594,12 @@ html.top-tabs-active,
   background-position: center;
   color: #fff;
 }
-.lab-pages .movie-hero h2 { margin: 15px 0 10px; font: 400 52px/0.9 "Instrument Serif"; }
+.lab-pages .movie-hero h2 { margin: 15px 0 10px; font: 400 52px/0.9 var(--wf-font-headline); }
 .lab-pages .movie-hero > p:not(.eyebrow) { color: #bdc8c4; font-size: 10px; }
 .lab-pages .history-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
 .lab-pages .history-stats article { padding: 22px; border: 1px solid var(--line); border-radius: 16px; background: var(--panel); }
-.lab-pages .history-stats b { display: block; font: 400 42px/1 "Instrument Serif"; }
-.lab-pages .history-stats span { color: var(--muted); font-size: 10px; }
+.lab-pages .history-stats b { display: block; font: 400 42px/1 var(--wf-font-headline); }
+.lab-pages .history-stats span { color: var(--muted); font-size: 13px; }
 .lab-pages .history-toolbar { display: flex; flex-wrap: wrap; gap: 9px; margin: 15px 0 28px; }
 .lab-pages .history-toolbar form {
   display: flex;
@@ -620,7 +630,7 @@ html.top-tabs-active,
   background: var(--line);
 }
 .lab-pages .visit-timeline article:last-child i:after { display: none; }
-.lab-pages .visit-timeline h2 { margin: 0; font: 400 26px/1 "Instrument Serif"; }
+.lab-pages .visit-timeline h2 { margin: 0; font: 400 26px/1 var(--wf-font-headline); }
 .lab-pages .visit-timeline p { margin: 5px 0 0; color: var(--muted); font-size: 9px; }
 .lab-pages .visit-timeline button { border: 0; background: none; font-size: 10px; cursor: pointer; }
 .lab-pages .links-input {
@@ -679,10 +689,10 @@ html.top-tabs-active,
 }
 .lab-pages .sheet-hero { height: 220px; margin: -28px -28px 22px; border-radius: 22px 22px 0 0; background: var(--dark) center/cover; }
 .lab-pages .sheet-hero.is-poster { height: 320px; }
-.lab-pages .sheet-title { margin: 0 0 8px; font: 400 42px/0.95 "Instrument Serif"; }
+.lab-pages .sheet-title { margin: 0 0 8px; font: 400 42px/0.95 var(--wf-font-headline); }
 .lab-pages .sheet-meta { color: var(--muted); font-size: 12px; }
 .lab-pages .sheet-copy { font-size: 14px; line-height: 1.55; }
-.lab-pages .sheet-section { margin: 22px 0 10px; font: 700 9px "DM Sans Variable", "Manrope", sans-serif; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); }
+.lab-pages .sheet-section { margin: 22px 0 10px; font: 700 var(--label)/1 var(--wf-font-body); letter-spacing: var(--tracking); text-transform: uppercase; color: var(--accent); }
 .lab-pages .sheet-list { margin: 0; padding-left: 18px; }
 .lab-pages .sheet-list button, .lab-pages .sheet-list a { background: none; border: 0; padding: 0; cursor: pointer; text-align: left; }
 .lab-pages .sheet-steps { padding-left: 18px; }
@@ -727,7 +737,7 @@ html.top-tabs-active,
   margin: 12vh auto;
   padding: 0 24px;
 }
-.lab-pages .signed-out h1 { font: 400 56px/0.95 "Instrument Serif"; }
+.lab-pages .signed-out h1 { font: 400 56px/0.95 var(--wf-font-headline); }
 @media (max-width: 950px) {.lab-pages .top-navigation { grid-template-columns: auto 1fr auto; }.lab-pages .top-navigation nav { justify-content: center; }.lab-pages .top-navigation nav a small { display: none; }.lab-pages .media-grid, .lab-pages .media-grid.is-places { grid-template-columns: repeat(2, 1fr); }.lab-pages .portal-grid { grid-template-columns: repeat(3, 1fr); }.lab-pages .feature-strip { grid-template-columns: 1fr; }.lab-pages .feature-strip > div { min-height: 220px; }
 }
 @media (max-width: 700px) {.lab-pages .top-navigation { height: 62px; padding: 0 14px; }.lab-pages .top-navigation nav {
@@ -762,13 +772,13 @@ html.top-tabs-active,
 .lab-pages .lib-shell-eyebrow,
 .lab-pages .wf-browse-eyebrow {
   color: var(--accent);
-  font-family: "DM Sans Variable", "DM Sans", sans-serif;
+  font-family: var(--wf-font-body);
 }
 
 .lab-pages .lib-shell-masthead h3,
 .lab-pages .lib-shell-count-value,
 .lab-pages .wf-browse-title {
-  font-family: "Instrument Serif", serif;
+  font-family: var(--wf-font-headline);
   font-style: normal;
   color: var(--ink);
 }
@@ -832,7 +842,7 @@ html.top-tabs-active,
 }
 
 .lab-pages-light .recipe-modal-title {
-  font-family: "Instrument Serif", serif;
+  font-family: var(--wf-font-headline);
   color: var(--ink);
 }
 

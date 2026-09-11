@@ -36,9 +36,9 @@ export function wanderfileClerkAppearance(mode: BrandMode = "dark"): Appearance 
       colorSuccess: BrandCss.sage,
       colorModalBackdrop: "rgb(var(--wf-forest-deep-rgb) / 0.55)",
       borderRadius: "0.75rem",
-      fontFamily: 'var(--wf-font-body, "DM Sans Variable", system-ui, sans-serif)',
-      fontFamilyButtons: 'var(--wf-font-body, "DM Sans Variable", system-ui, sans-serif)',
-      fontSize: "0.875rem",
+      fontFamily: 'var(--wf-font-body, "Source Sans 3 Variable", system-ui, sans-serif)',
+      fontFamilyButtons: 'var(--wf-font-body, "Source Sans 3 Variable", system-ui, sans-serif)',
+      fontSize: "1rem",
     },
     elements: {
       // Hide Clerk marketing / "Secured by" chrome in account modal.

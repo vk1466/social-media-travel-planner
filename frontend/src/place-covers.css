@@ -2762,47 +2762,6 @@
   background: var(--pl2-panel);
 }
 
-/* Magazine cover — production counterpart to design-lab direction 11. */
-.place-theme--magazine {
-  padding-bottom: 1.5rem;
-  background: #f7f3ea;
-  color: #253029;
-}
-
-.magazine-heading {
-  display: flex;
-  align-items: end;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 1.25rem 1.35rem 1rem;
-}
-
-.magazine-heading span {
-  color: #888b85;
-  font-size: 0.58rem;
-  font-weight: 800;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-}
-
-.magazine-heading h3 {
-  margin: 0.2rem 0 0;
-  font-family: var(--wf-font-serif);
-  font-size: clamp(1.8rem, 3vw, 2.6rem);
-  font-style: italic;
-  font-weight: 450;
-  line-height: 1;
-}
-
-.magazine-heading small {
-  color: #7b817c;
-  font-size: 0.65rem;
-}
-
-.place-theme--magazine .cover-grid {
-  padding: 0 1.35rem;
-}
-
 .place-theme-hierarchy {
   min-width: 0;
   display: flex;
@@ -2817,7 +2776,7 @@
 .place-theme-hierarchy span { display: inline-flex; align-items: center; white-space: nowrap; }
 .place-theme-hierarchy i { margin: 0 0.35rem; opacity: 0.45; font-style: normal; }
 .place-theme-hierarchy button { padding: 0; border: 0; background: transparent; color: inherit; cursor: pointer; font: inherit; font-size: 0.62rem; }
-.place-theme-hierarchy button[aria-current="page"] { color: #17231e; font-weight: 800; }
+.place-theme-hierarchy button[aria-current="page"] { color: var(--ink, var(--wf-copy)); font-weight: 800; }
 .place-theme-hierarchy .place-theme-up { flex: 0 0 auto; padding: 0.35rem 0.6rem; border: 1px solid rgb(35 58 48 / 0.2); border-radius: 999px; font-weight: 800; }
 .place-theme-hierarchy.is-inverse { border-color: rgb(255 255 255 / 0.14); color: rgb(255 255 255 / 0.62); }
 .place-theme-hierarchy.is-inverse button[aria-current="page"] { color: white; }
@@ -4197,9 +4156,6 @@
 
 @media (max-width: 760px) {
   .place-theme { border-radius: 0; }
-  .magazine-heading { padding-inline: 0.9rem; }
-  .cover-grid { grid-template-columns: minmax(0, 1fr); padding-inline: 0.75rem; }
-  .cover-card { width: min(100%, 380px); min-height: 500px; justify-self: center; }
   .place-theme-hierarchy { align-items: start; flex-direction: column; gap: 0.45rem; }
   .place-theme-hierarchy .place-theme-up { min-height: 36px; }
   .saved-map-view-tabs { display: none; }

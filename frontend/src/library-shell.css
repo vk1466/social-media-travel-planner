@@ -269,9 +269,10 @@
   padding-bottom: 0;
 }
 
+.lib-shell-core .cover-grid,
 .lib-shell-core .pl2-covers {
   /* Fixed card width — leftover space stays as background, not stretched cards. */
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 240px));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 280px));
   justify-content: start;
   width: 100%;
 }

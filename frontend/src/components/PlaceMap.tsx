@@ -176,7 +176,7 @@ export function PlaceMap({
               <span className="place-map-marker place-map-marker-inspiration place-map-legend-swatch">
                 <span className="place-map-marker-dot" />
               </span>
-              Inspiration
+              Want to go
             </span>
             <span className="place-map-legend-item">
               <span className="place-map-marker place-map-marker-visited place-map-legend-swatch">

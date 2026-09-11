@@ -41,6 +41,13 @@ export function RecipeCard({ item, onOpen }: RecipeCardProps): JSX.Element {
   const thumbnail = proxiedMediaUrl(recipe.image_url || post.thumbnail_url);
   const [imageFailed, setImageFailed] = useState(false);
   const creator = formatCreator(post.author_handle, post.platform);
+  const meal = recipe.meal_type?.trim();
+  const cuisine = recipe.cuisine?.trim();
+  const category = meal
+    ? meal.charAt(0).toUpperCase() + meal.slice(1)
+    : recipe.estimated_inferred
+      ? "Estimated"
+      : "Recipe";
   const location = [durationLabel, recipe.servings ? `Serves ${recipe.servings}` : null]
     .filter(Boolean)
     .join(" · ");
@@ -59,10 +66,10 @@ export function RecipeCard({ item, onOpen }: RecipeCardProps): JSX.Element {
   return (
     <CoverCard
       title={title}
-      category={recipe.estimated_inferred ? "Estimated" : formatPlatform(post.platform)}
-      kicker={creator}
-      location={location || "From your saves"}
-      meta={recipe.summary?.trim() || "Recipe from a saved reel"}
+      category={category}
+      kicker={cuisine || formatPlatform(post.platform)}
+      location={location || creator}
+      meta={location ? creator : formatPlatform(post.platform)}
       action="Cook ↗"
       imageUrl={thumbnail && !imageFailed ? thumbnail : null}
       onOpen={onOpen}

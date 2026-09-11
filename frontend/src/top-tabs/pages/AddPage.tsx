@@ -75,9 +75,9 @@ export function AddPage({
   return (
     <>
       <PageHeading
-        kicker="Inbox"
-        title="Add links"
-        lede="Paste Instagram reels, blogs, or articles. One URL per line."
+        kicker="Add to Wanderfile"
+        title="Bring your inspiration together"
+        lede="Paste links from Instagram, TikTok, YouTube, or the web. Use one link per line."
       />
       <textarea
         className="links-input"
@@ -109,13 +109,13 @@ export function AddPage({
             }
           }}
         >
-          Save {parsed.valid.length} URL{parsed.valid.length === 1 ? "" : "s"}
+          Save {parsed.valid.length} link{parsed.valid.length === 1 ? "" : "s"}
         </button>
       </div>
       {error ? <p className="inline-errors">{error}</p> : null}
       {job ? (
         <section className="job-list">
-          <h3 className="sheet-section">{job.status === "running" ? "Ingesting…" : "Done"}</h3>
+          <h3 className="sheet-section">{job.status === "running" ? "Saving…" : "Done"}</h3>
           {job.links.map((link) => (
             <article key={link.post_url}>
               <b>{link.status}</b>

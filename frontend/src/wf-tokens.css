@@ -152,9 +152,9 @@
   --wf-bp-md: 760px;
   --wf-bp-lg: 960px;
 
-  /* Type — Volume: Fraunces headlines, DM Sans body */
-  --wf-font-sans: "DM Sans Variable", "Inter", system-ui, sans-serif;
-  --wf-font-serif: "Fraunces Variable", "Fraunces", "Instrument Serif", Georgia, "Times New Roman", serif;
+  /* Type — Trail guide: Newsreader headlines, Source Sans 3 body */
+  --wf-font-sans: "Source Sans 3 Variable", "Source Sans 3", system-ui, sans-serif;
+  --wf-font-serif: "Newsreader Variable", "Newsreader", Georgia, "Times New Roman", serif;
   --wf-font-mono: ui-monospace, "SF Mono", Menlo, Monaco, Consolas, monospace;
   --wf-font-body: var(--wf-font-sans);
   --wf-font-muted: var(--wf-font-sans);
@@ -164,6 +164,6 @@
   --wf-size-muted: 0.875rem;
   --wf-size-on-brand: 0.875rem;
   --wf-size-headline: 1;
-  --wf-eyebrow-size: 0.66rem;
-  --wf-eyebrow-tracking: 0.14em;
+  --wf-eyebrow-size: 0.75rem;
+  --wf-eyebrow-tracking: 0.13em;
 }

@@ -32,9 +32,9 @@ export function HistoryPage({
   return (
     <>
       <PageHeading
-        kicker="Where you have been"
-        title="History"
-        lede="Visits and imports live on a stable personal timeline, separate from inspiration."
+        kicker="Places you’ve been"
+        title="Travel history"
+        lede="Keep a personal record of past trips, then use it to shape what comes next."
       />
       <section className="history-stats">
         <article>

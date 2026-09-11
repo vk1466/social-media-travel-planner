@@ -1,0 +1,67 @@
+.category-nav {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 10px;
+  width: 100%;
+  margin-bottom: 26px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity;
+  scrollbar-width: thin;
+  padding: 8px 0 10px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.category-nav-card {
+  flex: 1 1 0;
+  min-width: 160px;
+  scroll-snap-align: start;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 10px;
+  min-height: 96px;
+  padding: 14px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel);
+  color: inherit;
+  text-align: left;
+  text-decoration: none;
+}
+
+.category-nav-index {
+  font: italic 400 1.05rem var(--wf-font-serif);
+  color: var(--muted);
+}
+
+.category-nav-card b {
+  display: block;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.category-nav-card small {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.category-nav-card em {
+  font: 500 12px ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-style: normal;
+}
+
+.category-nav-card.is-on {
+  background: var(--dark);
+  border-color: var(--dark);
+  color: #fff;
+}
+
+.category-nav-card.is-on .category-nav-index,
+.category-nav-card.is-on small {
+  color: color-mix(in srgb, #fff 60%, var(--accent));
+}

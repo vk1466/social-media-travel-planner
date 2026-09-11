@@ -49,9 +49,13 @@ export function SearchPage({ posts, places }: { posts: SavedPost[]; places: Plac
 
   return (
     <>
-      <PageHeading kicker="Jump" title="Search" lede="Find a post, place, recipe, or title without leaving the library." />
+      <PageHeading
+        kicker="Search Wanderfile"
+        title="Find anything you saved"
+        lede="Search posts, places, recipes, movies, and travel history from one place."
+      />
       <FilterBar
-        placeholder="Search or jump to a page"
+        placeholder="Search saves"
         query={query}
         onQuery={setQuery}
         autoFocus

@@ -205,15 +205,15 @@
 /* ── Recipe Grid ───────────────────────────────────────────────────────── */
 .recipe-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr));
-  align-items: stretch;
-  gap: 1.25rem;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 280px));
+  justify-content: start;
+  gap: 1.5rem;
   width: 100%;
 }
 
 @media (max-width: 600px) {
   .recipe-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: 0.85rem;
   }
 

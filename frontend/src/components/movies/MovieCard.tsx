@@ -66,7 +66,6 @@ export function MovieCard({ movie, onSelect, onPlayTrailer }: MovieCardProps): J
 
   return (
     <CoverCard
-      className="cover-card--movie"
       title={movie.title}
       category={isTv ? "TV Series" : "Movie"}
       kicker={kicker}

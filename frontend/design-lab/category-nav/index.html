@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Category Nav Lab — cards below the header</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Fraunces:ital,opsz,wght@0,9..144,400;1,9..144,400&family=IBM+Plex+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&family=Syne:wght@600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./shared/category-nav.css" />
+  </head>
+  <body>
+    <header class="lab-header">
+      <a class="back-link" href="../index.html"><span aria-hidden="true">←</span> Design Lab</a>
+      <div class="lab-heading">
+        <div>
+          <p class="eyebrow">Nav cards · below the header</p>
+          <h1>Destinations, not decorated tabs.</h1>
+        </div>
+        <p class="intro">
+          The strip under Wanderfile is how you enter Posts, Travel, and Food. Today
+          that’s a row of identical bordered tiles: glyph, title, count. These ten
+          treatments keep the same destinations and the same header — only the
+          cards change. Extra shelves stay in one row and scroll sideways.
+        </p>
+      </div>
+      <div class="review-note" role="note">
+        <span class="review-note__label">What’s in production</span>
+        <p>
+          <code>CategoryStrip</code> in the top-tabs shell: 108px-tall panel cards,
+          one accent on hover/active. Posts / Travel / Food don’t look like different
+          rooms. The cover-card lab is separate — this is only the navigator.
+        </p>
+      </div>
+    </header>
+
+    <main class="lab-shell">
+      <aside class="option-panel" aria-label="Card directions">
+        <div class="option-panel__top">
+          <span>Directions</span>
+          <span id="option-count">01 / 10</span>
+        </div>
+        <div id="option-list" class="option-list" role="tablist" aria-orientation="vertical"></div>
+      </aside>
+      <section class="preview-panel">
+        <div class="preview-toolbar">
+          <div>
+            <p id="preview-kicker" class="preview-kicker"></p>
+            <h2 id="preview-title"></h2>
+            <p id="preview-rationale" class="preview-rationale"></p>
+            <p id="preview-inspired" class="preview-inspired"></p>
+          </div>
+        </div>
+        <div id="preview-stage" class="preview-stage"></div>
+        <div class="preview-footer">
+          <p id="preview-best-for"></p>
+          <div class="arrow-controls">
+            <button id="previous-option" type="button" aria-label="Previous">←</button>
+            <span>Arrow keys · click a card</span>
+            <button id="next-option" type="button" aria-label="Next">→</button>
+          </div>
+        </div>
+      </section>
+    </main>
+    <script type="module" src="./shared/category-nav.js"></script>
+  </body>
+</html>

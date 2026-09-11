@@ -18,17 +18,23 @@ import {
   childLevelLabel,
   countByCategory,
   leafPlaces,
+  levelLabel,
   resolveScopeKey,
   searchAtlas,
   type AtlasGrouping,
   type AtlasNode,
 } from "../placeAtlasModel";
 import { AtlasMapPanel } from "./AtlasMapPanel";
-import { PlaceMagazineCovers } from "./PlaceCoversThemes";
+import { CoverCard } from "./CoverCard";
 import { PlaceDetail } from "./PlaceDetail";
 
+import "../cover-card.css";
 import "../place-covers.css";
 import "../wf-browse.css";
+
+function atlasNodeImage(node: AtlasNode): string | null {
+  return leafPlaces(node).find((place) => place.imageUrl)?.imageUrl ?? null;
+}
 
 interface PlaceLibraryProps {
   authReady: boolean;
@@ -46,7 +52,7 @@ interface PlaceLibraryProps {
 type StatusFilter = PlacesStatusFilter;
 type ViewMode = PlacesViewMode;
 
-/** Production places page — switchable cover themes plus the full scoped map. */
+/** Production places page — cover cards or the scoped map. */
 export function PlaceLibrary({
   authReady,
   onNavigateToPost,
@@ -57,7 +63,9 @@ export function PlaceLibrary({
   listPath,
 }: PlaceLibraryProps) {
   useBrandVersion();
-  const dark = readBrandMode() === "dark";
+  const dark =
+    readBrandMode() === "dark" &&
+    !document.documentElement.classList.contains("top-tabs-active");
   const { placeId: routePlaceId } = useParams();
   const navigate = useNavigate();
   const placeRoot = placeBasePath.replace(/\/$/, "") || "/places";
@@ -458,12 +466,34 @@ export function PlaceLibrary({
                 onOpenPlace={(placeId) => navigate(placeHref(placeId))}
               />
             ) : (
-              <PlaceMagazineCovers
-                scope={scope}
-                trail={trail}
-                children={children}
-                onOpenNode={openNode}
-              />
+              <div className="cover-grid">
+                {children.map((node) => {
+                  const isPlace = node.level === "place";
+                  return (
+                    <CoverCard
+                      key={node.key}
+                      title={node.name}
+                      category={node.place?.categoryLabel || levelLabel(node.level)}
+                      location={
+                        node.place?.trail.slice(-2).join(" · ") ||
+                        `${levelLabel(node.level)} · ${scope.name}`
+                      }
+                      meta={
+                        isPlace
+                          ? `${node.saves} saved ${node.saves === 1 ? "post" : "posts"}`
+                          : `${node.total} saved places`
+                      }
+                      imageUrl={atlasNodeImage(node)}
+                      onOpen={() => openNode(node)}
+                      ariaLabel={
+                        isPlace
+                          ? `Open place: ${node.name}`
+                          : `Explore ${node.total} places: ${node.name}`
+                      }
+                    />
+                  );
+                })}
+              </div>
             )}
           </div>
         </div>

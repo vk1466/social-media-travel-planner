@@ -132,6 +132,38 @@ http://localhost:5179/home-page/
 
 Reference page: http://localhost:5179/sites/04-volume/index.html
 
+## Category Nav Lab
+
+**10 treatments of the cards under the header** — the `CategoryStrip` that routes to
+Posts, Travel, Food, Movies, and History. Cover portals, type monuments, color rooms,
+a sliding dock, folder tabs, index plaques, board stacks, terminal signs, metric
+tickets, and night glass. Click a card to change the page stub; arrow keys change
+direction. The earlier [library cover-card lab](library-cards/index.html) is unchanged.
+
+http://localhost:5179/category-nav/
+
+## Content System Lab
+
+**10 complete typography and product-language systems** for Home, Posts, Travel, Food,
+Movies, History, Add, and Search. Each direction pairs a deliberate type scale with a
+distinct voice, while keeping the vocabulary for saves, places, plans, and visits coherent.
+Option 01, Trail guide, is the recommended direction. Arrow keys move across systems and pages.
+
+http://localhost:5179/content-system/
+
+Research findings and the page-by-page recommendation live in
+[`docs/design/content-system-audit.md`](../../docs/design/content-system-audit.md).
+
+## Library Card Lab
+
+**10 shared cover-card directions** for Posts, Travel, and Food — the three libraries
+that currently share `CoverCard`. Each option renders the same three saves in one
+system: cinema overlay, editorial folio, Pinterest pin, journey ticket, Polaroid,
+glass dock, horizon listing, index row, stacked folio, and night reel. Arrow keys
+move between directions; click a card to preview the open action.
+
+http://localhost:5179/library-cards/
+
 ## Food Card Lab
 
 **10 interactive recipe-card directions** — the same recipe data with ten different

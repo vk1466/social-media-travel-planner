@@ -73,7 +73,7 @@ export function Shell({
               {icon("search")}
             </button>
             <button type="button" className="add-button" onClick={() => navigate("/add")}>
-              {icon("plus")} Add
+              {icon("plus")} Add inspiration
             </button>
             {clerkEnabled ? <UserButton appearance={clerkLight} /> : null}
           </div>

@@ -3,10 +3,10 @@ import {
   syncBrandHexFromTokens,
 } from "./brandColors";
 
-/** Default Wanderfile brand — Midnight Reel from the home skins lab. */
-export const DEFAULT_BRAND_COLOR = "#ffb648";
+/** Default Wanderfile brand — Trail guide from the content-system lab. */
+export const DEFAULT_BRAND_COLOR = "#173e32";
 
-export const DEFAULT_BRAND_SHIFT = 1.1;
+export const DEFAULT_BRAND_SHIFT = 1;
 
 export const BRAND_COLOR_STORAGE_KEY = "wf-brand-color";
 export const BRAND_LAB_STORAGE_KEY = "wf-brand-lab-v2";
@@ -133,10 +133,10 @@ export const TEXT_ROLES = [
 ] as const;
 
 export const DEFAULT_TEXT_STYLES: TextRoleStyles = {
-  body: { face: "dm-sans", size: "md" },
-  muted: { face: "dm-sans", size: "sm" },
-  headline: { face: "fraunces", size: "md" },
-  onBrand: { face: "dm-sans", size: "sm" },
+  body: { face: "source-sans", size: "md" },
+  muted: { face: "source-sans", size: "sm" },
+  headline: { face: "newsreader", size: "md" },
+  onBrand: { face: "source-sans", size: "sm" },
 };
 
 /** Base brand directions — travel-named seeds for the palette. */
@@ -215,14 +215,13 @@ export const EDITABLE_BRAND_SWATCHES = [
 export type EditableBrandKey = (typeof EDITABLE_BRAND_SWATCHES)[number]["key"];
 export type EditableSwatchGroup = (typeof EDITABLE_BRAND_SWATCHES)[number]["group"];
 
-/** Hand-tuned swatches — Midnight Reel on near-black. */
+/** Hand-tuned swatches — Trail guide on sage paper. */
 export const DEFAULT_BRAND_OVERRIDES: Partial<Record<EditableBrandKey, string>> = {
-  forestDeep: "#0e1013",
-  sage: "#f0a02a",
-  mint: "#ffd79a",
-  /* Muted-on-dark only — light-paper muted lives in --wf-quiet (derived). */
-  quiet: "#98a1ac",
-  onBrand: "#f2f3f5",
+  forestDeep: "#ebece6",
+  sage: "#2a705c",
+  mint: "#d75f43",
+  quiet: "#68736e",
+  onBrand: "#fffefa",
 };
 
 export type BrandMode = "dark" | "light";
@@ -704,7 +703,7 @@ function applyTextStylesToDom(styles: TextRoleStyles): void {
   root.style.setProperty("--wf-font-serif", headlineFace);
 }
 
-export const DEFAULT_BRAND_MODE: BrandMode = "dark";
+export const DEFAULT_BRAND_MODE: BrandMode = "light";
 
 export function defaultBrandLabState(): BrandLabState {
   return {
@@ -995,7 +994,7 @@ export function deleteSavedBrandPalette(id: string): SavedBrandPalette[] {
 export const BRAND_THEME_SEED_KEY = "wf-brand-theme-seed";
 
 /** Bump to re-seed shipped themes after editing the list below. */
-const BRAND_THEME_SEED_VERSION = "themes-v7";
+const BRAND_THEME_SEED_VERSION = "themes-v8";
 
 /** Fixed savedAt base so shipped themes keep their order under user saves. */
 const BRAND_THEME_SEED_EPOCH = Date.UTC(2026, 0, 1);
@@ -1035,6 +1034,29 @@ function typeSet(spec: {
  * set spans travel today plus the food, film, and fashion reels coming later.
  */
 const BRAND_THEME_SPECS: BrandThemeSpec[] = [
+  {
+    id: "theme-trail-guide",
+    name: "Trail Guide",
+    note: "Editorial warmth for inspiration, quiet utility for planning.",
+    base: "#173e32",
+    shift: 1,
+    mode: "light",
+    overrides: {
+      forestDeep: "#ebece6",
+      sage: "#2a705c",
+      mint: "#d75f43",
+      quiet: "#68736e",
+      onBrand: "#fffefa",
+    },
+    textStyles: typeSet({
+      headlineFace: "newsreader",
+      headlineSize: "md",
+      copyFace: "source-sans",
+      bodySize: "md",
+      mutedSize: "sm",
+      buttonSize: "sm",
+    }),
+  },
   {
     id: "theme-midnight-reel",
     name: "Midnight Reel",

@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#ece8df" />
+    <title>Library Card Lab — 10 cover directions</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=IBM+Plex+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&family=Syne:wght@500;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./shared/library-cards.css" />
+  </head>
+  <body>
+    <header class="lab-header">
+      <a class="back-link" href="../index.html">
+        <span aria-hidden="true">←</span> Design Lab
+      </a>
+      <div class="lab-heading">
+        <div>
+          <p class="eyebrow">Library card review · 10 alternatives</p>
+          <h1>Same save. Three libraries. Ten new objects.</h1>
+        </div>
+        <p class="intro">
+          Today’s post, travel, and food tiles share one cream magazine cover: photo,
+          chip, bookmark, italic title, “View”. These directions keep that shared
+          language — but borrow from Pinterest pins, Airbnb listings, Kinfolk spreads,
+          airline tickets, and night-mode reels.
+        </p>
+      </div>
+      <div class="review-note" role="note">
+        <span class="review-note__label">What’s wrong with now</span>
+        <p>
+          The current <code>CoverCard</code> is a polite poster. Hierarchy is even, the
+          cream footer eats the photo, and Posts / Travel / Food don’t telegraph
+          different jobs (watch, go, cook). Pick a system that still works as a grid.
+        </p>
+      </div>
+    </header>
+
+    <main class="lab-shell">
+      <aside class="option-panel" aria-label="Card directions">
+        <div class="option-panel__top">
+          <span>Directions</span>
+          <span id="option-count">01 / 10</span>
+        </div>
+        <div id="option-list" class="option-list" role="tablist" aria-orientation="vertical"></div>
+      </aside>
+
+      <section class="preview-panel">
+        <div class="preview-toolbar">
+          <div>
+            <p id="preview-kicker" class="preview-kicker"></p>
+            <h2 id="preview-title"></h2>
+            <p id="preview-rationale" class="preview-rationale"></p>
+            <p id="preview-inspired" class="preview-inspired"></p>
+          </div>
+        </div>
+        <div id="preview-stage" class="preview-stage" aria-live="polite"></div>
+        <div class="preview-footer">
+          <p id="preview-best-for"></p>
+          <div class="arrow-controls" aria-label="Change direction">
+            <button id="previous-option" type="button" aria-label="Previous direction">←</button>
+            <span>Use arrow keys</span>
+            <button id="next-option" type="button" aria-label="Next direction">→</button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <script type="module" src="./shared/library-cards.js"></script>
+  </body>
+</html>

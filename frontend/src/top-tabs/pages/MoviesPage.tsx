@@ -12,10 +12,10 @@ export function MoviesPage({ posts }: { posts: SavedPost[] }) {
   return (
     <div className="movie-library">
       <PageHeading
-        kicker="Your watchlist"
-        title="Movies"
-        lede="A cinematic page foregrounds title, year, genre, and filming destinations."
-        action={{ label: "Add links", onClick: () => navigate(`${basePath}/add`) }}
+        kicker="Titles from your saves"
+        title="Titles worth watching"
+        lede="Keep films, series, and documentaries together, with streaming details and filming places when available."
+        action={{ label: "Add inspiration", onClick: () => navigate(`${basePath}/add`) }}
       />
       <MovieLibrary
         posts={posts}

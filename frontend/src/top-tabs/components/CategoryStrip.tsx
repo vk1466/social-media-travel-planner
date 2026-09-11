@@ -1,39 +1,44 @@
+import { useEffect, useRef } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 
+import { CATEGORY_NAV_ITEMS } from "../categoryNavStyle";
 import { useLabTheme } from "../theme";
 
-const ITEMS = [
-  { key: "posts", label: "Posts", icon: "▦", note: "Every save" },
-  { key: "travel", label: "Travel", icon: "⌖", note: "Places + trips" },
-  { key: "food", label: "Food", icon: "◒", note: "Your cookbook" },
-  { key: "movies", label: "Movies", icon: "▶", note: "Your watchlist" },
-  { key: "history", label: "History", icon: "◷", note: "Visits" },
-] as const;
+import "../category-nav.css";
 
-export function CategoryStrip({
-  counts,
-  compact = false,
-}: {
-  counts: Record<string, number | string>;
-  compact?: boolean;
-}) {
+export function CategoryStrip({ counts }: { counts: Record<string, number | string> }) {
   const { basePath } = useLabTheme();
   const location = useLocation();
+  const navRef = useRef<HTMLElement>(null);
+  const activeKey = CATEGORY_NAV_ITEMS.find((item) => {
+    const to = `${basePath}/${item.key}`;
+    return location.pathname === to || location.pathname.startsWith(`${to}/`);
+  })?.key;
+
+  useEffect(() => {
+    const active = navRef.current?.querySelector<HTMLElement>(".is-on");
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    active?.scrollIntoView({
+      inline: "nearest",
+      block: "nearest",
+      behavior: reduceMotion ? "auto" : "smooth",
+    });
+  }, [activeKey]);
 
   return (
-    <nav className={compact ? "category-tabs compact-tabs" : "category-tabs"} aria-label="Library type">
-      {ITEMS.map((item) => {
+    <nav ref={navRef} className="category-nav" aria-label="Library type">
+      {CATEGORY_NAV_ITEMS.map((item, index) => {
         const to = `${basePath}/${item.key}`;
-        const active = location.pathname === to || location.pathname.startsWith(`${to}/`);
+        const active = item.key === activeKey;
+        const count = counts[item.key] ?? 0;
         return (
-          <NavLink key={item.key} to={to} className={active ? "is-on" : ""}>
-            <span className="category-icon">{item.icon}</span>
+          <NavLink key={item.key} to={to} className={`category-nav-card${active ? " is-on" : ""}`}>
+            <span className="category-nav-index">{String(index + 1).padStart(2, "0")}</span>
             <span>
               <b>{item.label}</b>
-              <small>
-                {counts[item.key] ?? 0} · {item.note}
-              </small>
+              <small>{item.hint}</small>
             </span>
+            <em>{count}</em>
           </NavLink>
         );
       })}

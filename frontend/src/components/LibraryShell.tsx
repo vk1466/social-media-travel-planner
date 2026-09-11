@@ -107,7 +107,7 @@ export function LibraryShell({
       options: [
         { value: "all", label: "Everything" },
         { value: "visited", label: "Visited" },
-        { value: "inspiration", label: "Inspiration" },
+        { value: "inspiration", label: "Want to go" },
       ],
     },
     {
@@ -168,7 +168,7 @@ export function LibraryShell({
             options: [
               { value: "all", label: "Everything" },
               { value: "visited", label: "Visited" },
-              { value: "inspiration", label: "Inspiration" },
+              { value: "inspiration", label: "Want to go" },
             ],
           },
         ]

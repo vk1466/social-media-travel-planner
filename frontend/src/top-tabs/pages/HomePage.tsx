@@ -39,14 +39,14 @@ export function HomePage({
   return (
     <>
       <PageHeading
-        kicker="Your library"
-        title="Everything you saved, ready when you are."
-        lede="Pick a category below. Each one has its own page and URL."
+        kicker="Your travel library"
+        title="Save the spark. Plan the trip."
+        lede="Turn reels, posts, and guides into places you can map, plan, and remember."
       />
       {continuePlace ? (
         <section className="home-hero">
           <div>
-            <p className="eyebrow">Continue planning</p>
+            <p className="eyebrow">Pick up where you left off</p>
             <h2>{continuePlace.display_name}</h2>
             <p>
               {locationLine(continuePlace)}
@@ -54,7 +54,7 @@ export function HomePage({
                 ? ` · ${continuePlace.source_post_ids.length} saves`
                 : ""}
             </p>
-            <Link to={`${basePath}/travel/${continuePlace.place_id}`}>Open travel page →</Link>
+            <Link to={`${basePath}/travel/${continuePlace.place_id}`}>View map →</Link>
           </div>
         </section>
       ) : null}

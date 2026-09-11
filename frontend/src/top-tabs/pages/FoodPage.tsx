@@ -18,10 +18,10 @@ export function FoodPage({
   return (
     <div className="food-library">
       <PageHeading
-        kicker="Your cookbook"
-        title="Food"
-        lede="Recipes get cooking time, meal context, and actions instead of generic post metadata."
-        action={{ label: "Add links", onClick: () => navigate(`${basePath}/add`) }}
+        kicker="Recipes from your saves"
+        title="Food worth making"
+        lede="Find a dish, check the ingredients, and cook from the post that inspired you."
+        action={{ label: "Add inspiration", onClick: () => navigate(`${basePath}/add`) }}
       />
       <RecipeLibrary
         posts={posts}
