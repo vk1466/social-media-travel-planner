@@ -19,6 +19,7 @@ import { wanderfileClerkAppearance } from "./clerkAppearance";
 import { SignedOutGate } from "./components/SignedOutGate";
 import { FlipCollapsedVariations } from "./components/FlipCollapsedVariations";
 import { FlipDetailCardDemos } from "./components/FlipDetailCardDemos";
+import { TravelViewToggleDemos } from "./components/TravelViewToggleDemos";
 import { useBrandVersion } from "./hooks/useBrandVersion";
 import {
   applyBrandLab,
@@ -136,6 +137,7 @@ function Root() {
           <Routes>
             <Route path="/dev/flip-cards/collapsed" element={<FlipCollapsedVariations />} />
             <Route path="/dev/flip-cards" element={<FlipDetailCardDemos />} />
+            <Route path="/dev/travel-view-toggle" element={<TravelViewToggleDemos />} />
             <Route
               path="*"
               element={

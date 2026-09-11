@@ -15,6 +15,7 @@ import {
 } from "./api";
 import { FlipCollapsedVariations } from "./components/FlipCollapsedVariations";
 import { FlipDetailCardDemos } from "./components/FlipDetailCardDemos";
+import { TravelViewToggleDemos } from "./components/TravelViewToggleDemos";
 import { clerkEnabled } from "./authMode";
 import { TopTabsApp } from "./top-tabs/TopTabsApp";
 
@@ -152,6 +153,7 @@ function AppRoutes({ authReady }: { authReady: boolean }) {
       <Route path="/site/demos/:demoId" element={<Navigate to="/" replace />} />
       <Route path="/dev/flip-cards/collapsed" element={<FlipCollapsedVariations />} />
       <Route path="/dev/flip-cards" element={<FlipDetailCardDemos />} />
+      <Route path="/dev/travel-view-toggle" element={<TravelViewToggleDemos />} />
       <Route
         path="/*"
         element={

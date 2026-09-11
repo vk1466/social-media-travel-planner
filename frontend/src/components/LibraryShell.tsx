@@ -52,6 +52,25 @@ function metaEqual(a: LibraryShellMeta, b: LibraryShellMeta): boolean {
   );
 }
 
+function MapViewIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M19 10c0 5-7 11-7 11S5 15 5 10a7 7 0 1 1 14 0Z" />
+      <circle cx="12" cy="10" r="2.25" />
+    </svg>
+  );
+}
+
+function CoversViewIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <rect x="4" y="5" width="6" height="14" rx="1.5" />
+      <rect x="12" y="5" width="8" height="6" rx="1.5" />
+      <rect x="12" y="13" width="8" height="6" rx="1.5" />
+    </svg>
+  );
+}
+
 /** Shared Places/Posts chrome — only the atlas/lantern core swaps. */
 export function LibraryShell({
   mode,
@@ -184,22 +203,7 @@ export function LibraryShell({
         lede={copy.lede}
         count={{ value: meta.count || "—", label: meta.countLabel }}
         aside={
-          mode === "places" ? (
-            <SegmentGroup
-              ariaLabel="View mode"
-              selected={placesFilters.viewMode}
-              onSelect={(value) =>
-                setPlacesFilters((current) => ({
-                  ...current,
-                  viewMode: value as PlacesShellFilters["viewMode"],
-                }))
-              }
-              options={[
-                { value: "covers", label: "Covers" },
-                { value: "map", label: "Map" },
-              ]}
-            />
-          ) : (
+          mode === "posts" ? (
             <SegmentGroup
               ariaLabel="View mode"
               selected={postsFilters.deckMode}
@@ -214,7 +218,7 @@ export function LibraryShell({
                 { value: "grid", label: "Grid" },
               ]}
             />
-          )
+          ) : null
         }
       />
 
@@ -281,15 +285,31 @@ export function LibraryShell({
 
       <div className="lib-shell-core">
         {mode === "places" ? (
-          <PlaceLibrary
-            authReady={authReady}
-            omitChrome
-            filters={{ ...placesFilters, platforms }}
-            onMeta={handleMeta}
-            onNavigateToPost={onNavigateToPost}
-            placeBasePath={placeBasePath}
-            listPath={placeListPath}
-          />
+          <>
+            <button
+              type="button"
+              className="lib-shell-map-peek"
+              onClick={() =>
+                setPlacesFilters((current) => ({
+                  ...current,
+                  query: "",
+                  viewMode: current.viewMode === "covers" ? "map" : "covers",
+                }))
+              }
+            >
+              {placesFilters.viewMode === "covers" ? <MapViewIcon /> : <CoversViewIcon />}
+              <span>{placesFilters.viewMode === "covers" ? "View map" : "View covers"}</span>
+            </button>
+            <PlaceLibrary
+              authReady={authReady}
+              omitChrome
+              filters={{ ...placesFilters, platforms }}
+              onMeta={handleMeta}
+              onNavigateToPost={onNavigateToPost}
+              placeBasePath={placeBasePath}
+              listPath={placeListPath}
+            />
+          </>
         ) : loadingPosts ? (
           <p className="loading-copy" style={{ padding: "1rem 24px" }}>
             Loading saved posts…
