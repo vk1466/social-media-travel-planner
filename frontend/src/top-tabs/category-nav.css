@@ -32,9 +32,17 @@
   text-decoration: none;
 }
 
-.category-nav-index {
-  font: italic 400 1.05rem var(--wf-font-serif);
+.category-nav-logo {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
   color: var(--muted);
+}
+
+.category-nav-logo svg {
+  width: 24px;
+  height: 24px;
 }
 
 .category-nav-card b {
@@ -61,7 +69,7 @@
   color: #fff;
 }
 
-.category-nav-card.is-on .category-nav-index,
+.category-nav-card.is-on .category-nav-logo,
 .category-nav-card.is-on small {
   color: color-mix(in srgb, #fff 60%, var(--accent));
 }

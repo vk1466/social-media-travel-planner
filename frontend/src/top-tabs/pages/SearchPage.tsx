@@ -68,7 +68,7 @@ export function SearchPage({ posts, places }: { posts: SavedPost[]; places: Plac
         <Link to={`${basePath}/posts`}>Posts</Link>
         <Link to={`${basePath}/travel`}>Travel</Link>
         <Link to={`${basePath}/food`}>Food</Link>
-        <Link to={`${basePath}/movies`}>Movies</Link>
+        <Link to={`${basePath}/movies`}>Watch</Link>
         <Link to={`${basePath}/history`}>History</Link>
       </nav>
       <ul className="sheet-list">
