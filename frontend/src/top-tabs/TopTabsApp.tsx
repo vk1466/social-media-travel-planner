@@ -51,6 +51,7 @@ export function TopTabsApp({
           isAdmin={isAdmin}
           isSuperAdmin={isSuperAdmin}
           onViewAsChange={onViewAsChange}
+          onIngestComplete={onRefresh}
         >
           <LabPagesRoutes
             authReady={authReady}

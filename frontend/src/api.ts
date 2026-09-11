@@ -362,6 +362,7 @@ export interface JobCounts {
 export interface Job {
   job_id: string;
   status: "running" | "done";
+  created_at?: string | null;
   refresh: boolean;
   kind?: string;
   mark_visited?: boolean;
@@ -515,6 +516,10 @@ export async function deleteVisitsBySource(source: "manual" | "instagram" | "tim
 
 export async function fetchJob(jobId: string): Promise<Job> {
   return request<Job>(`/api/jobs/${jobId}`);
+}
+
+export async function fetchJobs(): Promise<Job[]> {
+  return request<Job[]>("/api/jobs");
 }
 
 export async function fetchActiveJob(kind?: string): Promise<Job | null> {

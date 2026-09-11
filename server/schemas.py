@@ -281,6 +281,7 @@ class JobCountsSchema(BaseModel):
 class JobSchema(BaseModel):
   job_id: str
   status: Literal["running", "done"]
+  created_at: str | None = None
   refresh: bool
   kind: str = "link_ingest"
   mark_visited: bool = False

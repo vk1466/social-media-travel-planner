@@ -32,6 +32,32 @@
   cursor: pointer;
 }
 
+.lab-pages .lab-utility .add-button,
+.lab-pages .lab-utility .queue-button {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--ink);
+  text-decoration: none;
+  font-size: 12px;
+}
+
+.lab-pages .lab-utility .queue-button {
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 12px;
+}
+
+.lab-pages .lab-utility .queue-button.active,
+.lab-pages .lab-utility .queue-button[aria-current="page"] {
+  border-color: var(--dark);
+  background: var(--dark);
+  color: #fff;
+}
+
 .lab-pages .lab-utility .add-button {
   border-color: var(--dark);
   background: var(--dark);

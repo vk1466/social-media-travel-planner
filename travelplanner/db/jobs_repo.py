@@ -188,6 +188,21 @@ def get_active_job_for_user(
   return job
 
 
+def list_jobs_for_user(user_id: str, limit: int = 25) -> list[dict[str, Any]]:
+  """Newest jobs for this user, hydrated to the current item shape."""
+  response = get_table("Jobs").query(
+    IndexName=JOBS_USER_CREATED_INDEX,
+    KeyConditionExpression=Key("user_id").eq(user_id),
+    ScanIndexForward=False,
+    Limit=limit,
+  )
+  jobs = [from_dynamo(item) for item in response.get("Items") or []]
+  for job in jobs:
+    if not job.get("items"):
+      job["items"] = _items_from_job(job)
+  return jobs
+
+
 def set_execution_arn(job_id: str, execution_arn: str) -> None:
   get_table("Jobs").update_item(
     Key={"job_id": job_id},

@@ -1,21 +1,29 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import { UserButton } from "@clerk/react";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 import { clerkEnabled } from "../../authMode";
 import { wanderfileClerkAppearance } from "../../clerkAppearance";
 import { ViewAsSwitcher } from "../../components/ViewAsSwitcher";
 import { TOP_TABS_BASE } from "../paths";
+import { AddLinkSheet } from "./AddLinkSheet";
 import { CategoryStrip } from "./CategoryStrip";
 
 const clerkLight = wanderfileClerkAppearance("light");
 
-function icon(name: "search" | "plus") {
+function icon(name: "search" | "plus" | "queue") {
   if (name === "search") {
     return (
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <circle cx="11" cy="11" r="7" />
         <path d="m16 16 4 4" />
+      </svg>
+    );
+  }
+  if (name === "queue") {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M4 6h16M4 12h16M4 18h10" />
       </svg>
     );
   }
@@ -33,6 +41,7 @@ export function Shell({
   isAdmin = false,
   isSuperAdmin = false,
   onViewAsChange,
+  onIngestComplete,
 }: {
   children: ReactNode;
   counts: Record<string, number | string>;
@@ -40,9 +49,11 @@ export function Shell({
   isAdmin?: boolean;
   isSuperAdmin?: boolean;
   onViewAsChange?: (userId: string | null) => void;
+  onIngestComplete: () => void;
 }) {
   const navigate = useNavigate();
   const homeTo = TOP_TABS_BASE || "/";
+  const [addOpen, setAddOpen] = useState(false);
 
   useEffect(() => {
     document.documentElement.classList.add("top-tabs-active");
@@ -66,9 +77,10 @@ export function Shell({
             <button type="button" aria-label="Search" onClick={() => navigate("/search")}>
               {icon("search")}
             </button>
-            <button type="button" className="add-button" onClick={() => navigate("/add")}>
-              {icon("plus")} Add inspiration
-            </button>
+            <NavLink to="/add" className="queue-button" aria-label="Open processing">
+              {icon("queue")}
+              Processing
+            </NavLink>
             {clerkEnabled ? <UserButton appearance={clerkLight} /> : null}
           </div>
         </header>
@@ -76,6 +88,17 @@ export function Shell({
           <CategoryStrip counts={counts} loading={loading} />
         </div>
         <main className="page-content">{children}</main>
+        <button
+          type="button"
+          className="processing-fab"
+          aria-label="Add a link"
+          onClick={() => setAddOpen(true)}
+        >
+          {icon("plus")}
+        </button>
+        {addOpen ? (
+          <AddLinkSheet onClose={() => setAddOpen(false)} onComplete={onIngestComplete} />
+        ) : null}
       </div>
     </div>
   );

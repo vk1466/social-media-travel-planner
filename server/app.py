@@ -161,6 +161,14 @@ def get_active_job(
   return jobs.get_active_job_for_user(user_id, kind=kind)
 
 
+@app.get("/api/jobs", response_model=list[JobSchema])
+def list_user_jobs(
+  user_id: CurrentUserId,
+  limit: int = Query(default=25, ge=1, le=100),
+) -> list[JobSchema]:
+  return jobs.list_jobs_for_user(user_id, limit=limit)
+
+
 @app.get("/api/jobs/{job_id}", response_model=JobSchema, responses={404: {"model": ErrorResponse}})
 def get_job(job_id: str, user_id: CurrentUserId) -> JobSchema:
   job = jobs.get_job_for_user(job_id, user_id)

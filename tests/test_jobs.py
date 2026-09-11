@@ -76,6 +76,39 @@ def test_get_active_job_for_user(dynamodb) -> None:
   assert schema.kind == jobs_repo.JOB_KIND_INSTAGRAM_PROFILE_IMPORT
 
 
+def test_list_jobs_for_user_is_newest_first_and_hydrates_legacy(dynamodb) -> None:
+  from travelplanner.db.serialize import to_dynamo
+  from travelplanner.db.tables import get_table
+
+  table = get_table("Jobs")
+  for job_id, user_id, created_at in (
+    ("older", "user-a", "2026-01-01T00:00:00Z"),
+    ("newer", "user-a", "2026-01-02T00:00:00Z"),
+    ("other-user", "user-b", "2026-01-03T00:00:00Z"),
+  ):
+    table.put_item(
+      Item=to_dynamo(
+        {
+          "job_id": job_id,
+          "user_id": user_id,
+          "status": "done",
+          "refresh": False,
+          "links": [{"post_url": f"https://example.com/{job_id}", "status": "saved"}],
+          "created_at": created_at,
+          "ttl": 9999999999,
+        }
+      )
+    )
+
+  listed = jobs_repo.list_jobs_for_user("user-a", limit=1)
+  assert [job["job_id"] for job in listed] == ["newer"]
+  assert listed[0]["items"][0]["item_ref"] == "https://example.com/newer"
+
+  schemas = jobs.list_jobs_for_user("user-a")
+  assert [job.job_id for job in schemas] == ["newer", "older"]
+  assert schemas[0].created_at == "2026-01-02T00:00:00Z"
+
+
 def test_jobs_repo_concurrent_item_updates(dynamodb) -> None:
   urls = [f"https://a.example/{i}" for i in range(6)]
   job_id = jobs_repo.create_job(urls, user_id="user-a", refresh=False)

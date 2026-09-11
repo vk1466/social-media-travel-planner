@@ -112,6 +112,26 @@ def test_get_job_not_found(dynamodb) -> None:
   assert response.status_code == 404
 
 
+def test_list_jobs_scoped_to_owner(dynamodb) -> None:
+  from travelplanner.db import jobs_repo
+
+  own_job_id = jobs_repo.create_job(
+    ["https://example.com/own"],
+    user_id="user-a",
+    refresh=False,
+  )
+  jobs_repo.create_job(
+    ["https://example.com/other"],
+    user_id="user-b",
+    refresh=False,
+  )
+
+  response = TestClient(app).get("/api/jobs", headers=HEADERS)
+  assert response.status_code == 200
+  assert [job["job_id"] for job in response.json()] == [own_job_id]
+  assert response.json()[0]["created_at"]
+
+
 def test_list_and_get_place(dynamodb) -> None:
   post = SavedPost(
     post_id="instagram:reelA",

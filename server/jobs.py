@@ -70,6 +70,13 @@ def get_active_job_for_user(user_id: str, *, kind: str | None = None) -> JobSche
   return _to_schema(job)
 
 
+def list_jobs_for_user(user_id: str, *, limit: int = 25) -> list[JobSchema]:
+  return [
+    _to_schema(job)
+    for job in jobs_repo.list_jobs_for_user(user_id, limit=limit)
+  ]
+
+
 def _item_to_schema(item: dict[str, Any]) -> JobItemSchema:
   item_ref = item.get("item_ref") or item.get("post_url") or ""
   return JobItemSchema(
@@ -101,6 +108,7 @@ def _to_schema(job: dict) -> JobSchema:
   return JobSchema(
     job_id=job["job_id"],
     status=job.get("status", "running"),
+    created_at=job.get("created_at"),
     refresh=bool(job.get("refresh", False)),
     kind=job.get("kind") or jobs_repo.JOB_KIND_LINK_INGEST,
     mark_visited=bool(job.get("mark_visited", False)),

@@ -806,6 +806,104 @@ html.top-tabs-active,
 }
 .lab-pages .job-list b { text-transform: capitalize; }
 .lab-pages .job-list span { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lab-pages .processing-fab {
+  position: fixed;
+  z-index: 70;
+  right: 30px;
+  bottom: 28px;
+  width: 58px;
+  height: 58px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 2px solid var(--panel);
+  border-radius: 50%;
+  background: var(--dark);
+  color: #fff;
+  box-shadow: var(--shadow), 0 8px 24px rgb(23 35 30 / 0.22);
+  cursor: pointer;
+  transition: background 120ms ease, transform 120ms ease;
+}
+.lab-pages .processing-fab:hover { background: var(--accent); transform: translateY(-2px); }
+.lab-pages .processing-fab:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 45%, transparent); outline-offset: 3px; }
+.lab-pages .processing-fab svg {
+  width: 24px;
+  height: 24px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+.lab-pages .processing-layout {
+  display: grid;
+  grid-template-columns: minmax(300px, 0.85fr) minmax(0, 1.35fr);
+  align-items: start;
+  gap: 18px;
+}
+.lab-pages .processing-jobs { display: grid; gap: 18px; }
+.lab-pages .queue-panel {
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+}
+.lab-pages .draft-panel { position: sticky; top: 82px; }
+.lab-pages .queue-panel > h2,
+.lab-pages .queue-section-heading h2 {
+  margin: 0;
+  font: 400 30px/1 var(--wf-font-headline);
+}
+.lab-pages .queue-panel > p:first-of-type { margin: 7px 0 16px; color: var(--muted); font-size: 12px; }
+.lab-pages .queue-section-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.lab-pages .queue-section-heading span { color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: var(--tracking); }
+.lab-pages .queue-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.lab-pages .queue-actions button,
+.lab-pages .draft-list button,
+.lab-pages .job-list button {
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--ink);
+  font-size: 11px;
+  cursor: pointer;
+}
+.lab-pages .queue-actions .primary { border-color: var(--dark); background: var(--dark); color: #fff; }
+.lab-pages .queue-actions button:disabled { cursor: not-allowed; opacity: 0.45; }
+.lab-pages .draft-list { display: grid; gap: 7px; }
+.lab-pages .draft-list article {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 11px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--bg);
+  font-size: 11px;
+}
+.lab-pages .draft-list span { overflow: hidden; color: var(--muted); text-overflow: ellipsis; white-space: nowrap; }
+.lab-pages .draft-list button { min-height: 28px; padding: 0 9px; }
+.lab-pages .job-card { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--line); }
+.lab-pages .job-card > header { display: flex; align-items: start; justify-content: space-between; gap: 12px; }
+.lab-pages .job-card > header div { display: grid; gap: 3px; }
+.lab-pages .job-card > header b { font-size: 13px; }
+.lab-pages .job-card > header span,
+.lab-pages .job-card time { color: var(--muted); font-size: 10px; }
+.lab-pages .job-card .job-list { margin-top: 10px; }
+.lab-pages .job-card .job-list article { grid-template-columns: 78px minmax(0, 1fr) auto; }
+.lab-pages .job-card .job-list small { grid-column: 2 / 4; color: var(--accent); }
+@media (max-width: 850px) {
+  .lab-pages .processing-layout { grid-template-columns: 1fr; }
+  .lab-pages .draft-panel { position: static; }
+}
+@media (max-width: 700px) {
+  .lab-pages .processing-fab { right: 18px; bottom: 22px; width: 52px; height: 52px; }
+  .lab-pages .queue-panel { padding: 18px; }
+  .lab-pages .job-card .job-list article { grid-template-columns: 68px minmax(0, 1fr) auto; }
+}
 .lab-pages .sheet-backdrop {
   position: fixed;
   inset: 0;
