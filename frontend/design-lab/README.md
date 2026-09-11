@@ -152,6 +152,15 @@ Arrow keys move between concepts.
 
 http://localhost:5179/page-headers/
 
+## Posts Archive Lab
+
+**20 layouts for a library of hundreds to thousands of saved posts.** Time rails,
+Photos-style timelines, year zoom, collection hubs, Pinterest masonry, Are.na channels,
+Letterboxd diaries, map + filmstrip, trip chapters, heat calendars, and more. Arrow keys
+move between concepts.
+
+http://localhost:5179/posts-archive/
+
 ## Content System Lab
 
 **10 complete typography and product-language systems** for Home, Posts, Travel, Food,

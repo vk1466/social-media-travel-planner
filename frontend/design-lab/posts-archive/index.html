@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Posts Archive Lab — 20 ways to browse hundreds of saves</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <aside class="lab-rail">
+      <a href="../index.html" class="back">← Design Lab</a>
+      <div class="rail-copy">
+        <p class="lab-kicker">Posts archive study</p>
+        <h1>How a library of 1,000 saves should feel.</h1>
+        <p>
+          Drawn from Google Photos, Immich, Apple Photos, Netflix, Letterboxd, Are.na, Pinterest, Cosmos, Raindrop, and a few originals. Arrow keys compare.
+        </p>
+      </div>
+      <nav id="options" aria-label="Archive concepts"></nav>
+      <p class="key-hint"><kbd>←</kbd><kbd>→</kbd> to compare</p>
+    </aside>
+
+    <main class="stage">
+      <div class="stage-meta">
+        <div>
+          <span id="option-number">Option 01</span>
+          <h2 id="option-name">Month rails</h2>
+        </div>
+        <p id="option-note"></p>
+      </div>
+
+      <section class="browser" aria-label="Archive layout preview">
+        <header class="site-bar">
+          <a href="#">Wanderfile</a>
+          <nav><span>Home</span><span class="is-active">Saved posts</span><span>Travel</span><span>Food</span><span>Movies</span><span>History</span></nav>
+          <div class="site-actions"><button aria-label="Search">⌕</button><button class="add">＋ Add inspiration</button><span class="avatar">V</span></div>
+        </header>
+        <div class="category-strip" aria-hidden="true">
+          <span class="selected"><i>01</i><b>Saved posts</b><small>148</small></span>
+          <span><i>02</i><b>Travel</b><small>57</small></span>
+          <span><i>03</i><b>Food</b><small>36</small></span>
+          <span><i>04</i><b>Movies</b><small>22</small></span>
+          <span><i>05</i><b>History</b><small>14</small></span>
+        </div>
+        <div class="page">
+          <header class="page-head">
+            <h1>Saved posts</h1>
+            <p class="lede">148 ideas. Filters stay above every layout.</p>
+          </header>
+          <div class="filters">
+            <label><span>⌕</span><input value="" placeholder="Title, place, tag…" /></label>
+            <button class="active">All</button><button>Travel</button><button>Food</button><button>Movies</button>
+            <span class="filter-spacer"></span><button>Saved ⌄</button>
+          </div>
+          <div id="archive-demo"></div>
+        </div>
+      </section>
+    </main>
+    <script type="module" src="app.js"></script>
+  </body>
+</html>

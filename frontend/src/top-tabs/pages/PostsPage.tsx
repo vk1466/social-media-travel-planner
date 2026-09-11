@@ -30,6 +30,16 @@ import { useLabTheme } from "../theme";
 type PlaceStatus = "all" | "visited" | "inspiration";
 type DateMode = "saved" | "posted";
 
+const UNDATED_MONTH = "undated";
+
+interface MonthGroup {
+  key: string;
+  year: string;
+  label: string;
+  short: string;
+  posts: SavedPost[];
+}
+
 interface FacetPill {
   key: string;
   label: string;
@@ -56,6 +66,7 @@ export function PostsPage({
   const [facetKeys, setFacetKeys] = useState<string[]>([]);
   const [selected, setSelected] = useState<SavedPost | null>(null);
   const [visitedIds, setVisitedIds] = useState<Set<string>>(new Set());
+  const [monthKey, setMonthKey] = useState<string | null>(null);
 
   useEffect(() => {
     if (!routePlatform || !routePostId) {
@@ -170,6 +181,28 @@ export function PostsPage({
     dateMode,
   ]);
 
+  const monthGroups = useMemo(() => groupPostsByMonth(filtered, dateMode), [filtered, dateMode]);
+  const yearBuckets = useMemo(() => bucketMonthsByYear(monthGroups), [monthGroups]);
+  const activeMonth = monthGroups.find((group) => group.key === monthKey) ?? monthGroups[0];
+
+  useEffect(() => {
+    if (monthGroups.length === 0) {
+      setMonthKey(null);
+      return;
+    }
+    if (!monthKey || !monthGroups.some((group) => group.key === monthKey)) {
+      setMonthKey(monthGroups[0].key);
+    }
+  }, [monthGroups, monthKey]);
+
+  useEffect(() => {
+    if (!selected) return;
+    const key = monthKeyForPost(selected, dateMode);
+    if (monthGroups.some((group) => group.key === key)) {
+      setMonthKey(key);
+    }
+  }, [selected?.post_id, dateMode, monthGroups]);
+
   return (
     <>
       <PageHeading
@@ -242,18 +275,47 @@ export function PostsPage({
         />
       ) : null}
       </FilterChrome>
-      {filtered.length === 0 ? (
+      {filtered.length === 0 || !activeMonth ? (
         <EmptyState>No posts match that filter.</EmptyState>
       ) : (
-        <div className="cover-grid">
-          {filtered.map((post) => (
-            <PostMediaCard
-              key={post.post_id}
-              post={post}
-              dateMode={dateMode}
-              onOpen={openPost}
-            />
-          ))}
+        <div className="book-spine">
+          <nav className="book-spine-index" aria-label="Jump by month">
+            {yearBuckets.map((bucket) => (
+              <div key={bucket.year} className="book-spine-year-block">
+                <p className="book-spine-year">{bucket.year}</p>
+                {bucket.months.map((group) => (
+                  <button
+                    key={group.key}
+                    type="button"
+                    className={group.key === activeMonth.key ? "is-on" : undefined}
+                    aria-current={group.key === activeMonth.key ? "true" : undefined}
+                    onClick={() => setMonthKey(group.key)}
+                  >
+                    <span>{group.short}</span>
+                    <small>{group.posts.length}</small>
+                  </button>
+                ))}
+              </div>
+            ))}
+          </nav>
+          <div className="book-spine-page">
+            <p className="book-spine-open">
+              {activeMonth.label}{" "}
+              <span>
+                {activeMonth.posts.length} {activeMonth.posts.length === 1 ? "save" : "saves"}
+              </span>
+            </p>
+            <div className="cover-grid">
+              {activeMonth.posts.map((post) => (
+                <PostMediaCard
+                  key={post.post_id}
+                  post={post}
+                  dateMode={dateMode}
+                  onOpen={openPost}
+                />
+              ))}
+            </div>
+          </div>
         </div>
       )}
       {selected ? (
@@ -365,11 +427,73 @@ function buildSecondLevel(
   return { ...copy, pills };
 }
 
+function postDateRaw(post: SavedPost, dateMode: DateMode): string | null {
+  return dateMode === "posted" ? post.posted_at ?? null : post.fetched_at ?? post.posted_at ?? null;
+}
+
 function postTimestamp(post: SavedPost, dateMode: DateMode): number {
-  const raw = dateMode === "posted" ? post.posted_at : post.fetched_at ?? post.posted_at;
+  const raw = postDateRaw(post, dateMode);
   if (!raw) return 0;
   const time = new Date(raw).getTime();
   return Number.isNaN(time) ? 0 : time;
+}
+
+function monthKeyForPost(post: SavedPost, dateMode: DateMode): string {
+  const raw = postDateRaw(post, dateMode);
+  const date = raw ? new Date(raw) : null;
+  if (!date || Number.isNaN(date.getTime())) return UNDATED_MONTH;
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+  return `${year}-${month}`;
+}
+
+function groupPostsByMonth(posts: SavedPost[], dateMode: DateMode): MonthGroup[] {
+  const groups = new Map<string, MonthGroup>();
+  for (const post of posts) {
+    const key = monthKeyForPost(post, dateMode);
+    const existing = groups.get(key);
+    if (existing) {
+      existing.posts.push(post);
+      continue;
+    }
+    if (key === UNDATED_MONTH) {
+      groups.set(key, {
+        key,
+        year: "Other",
+        label: "Undated",
+        short: "—",
+        posts: [post],
+      });
+      continue;
+    }
+    const [year, month] = key.split("-");
+    const date = new Date(Date.UTC(Number(year), Number(month) - 1, 1));
+    groups.set(key, {
+      key,
+      year,
+      label: date.toLocaleDateString(undefined, { month: "long", year: "numeric", timeZone: "UTC" }),
+      short: date.toLocaleDateString(undefined, { month: "short", timeZone: "UTC" }),
+      posts: [post],
+    });
+  }
+  return Array.from(groups.values()).sort((left, right) => {
+    if (left.key === UNDATED_MONTH) return 1;
+    if (right.key === UNDATED_MONTH) return -1;
+    return right.key.localeCompare(left.key);
+  });
+}
+
+function bucketMonthsByYear(groups: MonthGroup[]): { year: string; months: MonthGroup[] }[] {
+  const buckets: { year: string; months: MonthGroup[] }[] = [];
+  for (const group of groups) {
+    const last = buckets[buckets.length - 1];
+    if (last && last.year === group.year) {
+      last.months.push(group);
+    } else {
+      buckets.push({ year: group.year, months: [group] });
+    }
+  }
+  return buckets;
 }
 
 export function PostMediaCard({
