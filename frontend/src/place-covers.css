@@ -3594,39 +3594,6 @@
   color: var(--wf-on-brand);
 }
 
-/* —— Saved-place map: five focused browse options —— */
-.saved-map-view-picker {
-  display: flex;
-  align-items: end;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 0.8rem;
-}
-
-.saved-map-view-picker > div > * {
-  display: block;
-}
-
-.saved-map-view-picker small,
-.saved-map-view-picker label span {
-  color: var(--pl2-accent);
-  font-size: 0.58rem;
-  font-weight: 800;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-
-.saved-map-view-picker strong {
-  margin-top: 0.15rem;
-  font-family: var(--wf-font-serif);
-  font-size: clamp(1.2rem, 2.5vw, 1.8rem);
-  font-weight: 450;
-}
-
-.saved-map-view-picker label {
-  display: none;
-}
-
 .saved-map-view-tabs {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -3731,6 +3698,25 @@
   overflow: hidden;
   border-radius: 14px;
   background: var(--wf-forest-deep);
+}
+
+.saved-map-view .pl2-map-scope-rail {
+  position: absolute;
+  top: 0.85rem;
+  right: 0.85rem;
+  z-index: 500;
+  max-width: min(42rem, calc(100% - 1.7rem));
+  margin: 0;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid rgb(var(--wf-cream-rgb) / 0.55);
+  border-radius: 10px;
+  background: rgb(var(--wf-cream-rgb) / 0.94);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.16);
+  backdrop-filter: blur(8px);
+}
+
+.saved-map-view .pl2-map-scope-rail > span {
+  color: var(--pl2-accent);
 }
 
 .saved-map-view--paper .pl2-map-canvas {
@@ -4150,25 +4136,11 @@
 .saved-map-index small { margin-top: 0.15rem; color: var(--pl2-quiet); font-size: 0.55rem; }
 .saved-map-index em { color: var(--pl2-accent); font-size: 0.65rem; font-style: normal; font-weight: 800; }
 
-.saved-map-view .pl2-hint {
-  margin-top: 0.65rem;
-}
-
 @media (max-width: 760px) {
   .place-theme { border-radius: 0; }
   .place-theme-hierarchy { align-items: start; flex-direction: column; gap: 0.45rem; }
   .place-theme-hierarchy .place-theme-up { min-height: 36px; }
   .saved-map-view-tabs { display: none; }
-  .saved-map-view-picker label { display: grid; gap: 0.2rem; }
-  .saved-map-view-picker select {
-    max-width: 145px;
-    padding: 0.45rem;
-    border: 1px solid var(--pl2-border);
-    border-radius: 7px;
-    background: var(--pl2-panel);
-    color: inherit;
-    font-size: 0.72rem;
-  }
   .saved-map-editorial-title strong { font-size: 2.15rem; }
   .saved-map-story-card { width: min(245px, calc(100% - 2rem)); }
   .saved-map-gallery { justify-content: flex-start; }

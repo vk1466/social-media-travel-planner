@@ -10,7 +10,6 @@ import {
 import { leafPlaces, type AtlasNode, type AtlasPlace } from "../placeAtlasModel";
 import { visualForCategory } from "../placeCategoryVisuals";
 import { getPostTitle } from "../postDisplayUtils";
-import { FilterPills } from "./library";
 
 import "leaflet/dist/leaflet.css";
 
@@ -77,7 +76,6 @@ interface AtlasMapPanelProps {
 }
 
 export function AtlasMapPanel({ scope, posts, onOpenNode, onOpenPlace }: AtlasMapPanelProps) {
-  const [category, setCategory] = useState("all");
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
   const [mapBounds, setMapBounds] = useState<L.LatLngBounds | null>(null);
@@ -86,29 +84,12 @@ export function AtlasMapPanel({ scope, posts, onOpenNode, onOpenPlace }: AtlasMa
     () => leafPlaces(scope).filter((place) => place.lat !== null && place.lng !== null),
     [scope],
   );
-  const categoryOptions = useMemo(() => {
-    const byCategory = new Map<string, { label: string; tone: string; count: number }>();
-    for (const place of places) {
-      const key = place.category ?? "uncategorized";
-      const current = byCategory.get(key);
-      byCategory.set(key, {
-        label: place.categoryLabel,
-        tone: place.categoryTone,
-        count: (current?.count ?? 0) + 1,
-      });
-    }
-    return Array.from(byCategory, ([key, value]) => ({ key, ...value }))
-      .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
-  }, [places]);
-  const filteredPlaces = category === "all"
-    ? places
-    : places.filter((place) => (place.category ?? "uncategorized") === category);
   const mapPlaces = selectedPostId
-    ? filteredPlaces.filter((place) => place.sourcePostIds.includes(selectedPostId))
-    : filteredPlaces;
+    ? places.filter((place) => place.sourcePostIds.includes(selectedPostId))
+    : places;
   const rankedPlaces = useMemo(
-    () => [...filteredPlaces].sort((a, b) => b.saves - a.saves || a.name.localeCompare(b.name)),
-    [filteredPlaces],
+    () => [...places].sort((a, b) => b.saves - a.saves || a.name.localeCompare(b.name)),
+    [places],
   );
   const postsById = useMemo(() => new Map(posts.map((post) => [post.post_id, post])), [posts]);
   const photoEntries = useMemo(
@@ -135,7 +116,6 @@ export function AtlasMapPanel({ scope, posts, onOpenNode, onOpenPlace }: AtlasMa
 
   useEffect(() => {
     setSelectedPlaceId(null);
-    setCategory("all");
     setSelectedPostId(null);
     setMapBounds(null);
   }, [scope.key]);
@@ -149,41 +129,16 @@ export function AtlasMapPanel({ scope, posts, onOpenNode, onOpenPlace }: AtlasMa
 
   return (
     <section className="saved-map-view saved-map-view--photos" style={mapStyle}>
-      <header className="saved-map-view-picker saved-map-view-picker--single">
-        <div>
-          <small>Photo atlas · your processed saves</small>
-          <strong>Places, remembered through the posts that saved them</strong>
-        </div>
-      </header>
-
-      {scope.children.some((node) => node.level !== "place") && (
-        <div className="pl2-map-scope-rail" aria-label={`Destinations in ${scope.name}`}>
-          <span>Zoom to</span>
-          {scope.children.filter((node) => node.level !== "place").slice(0, 12).map((node) => (
-            <button key={node.key} type="button" onClick={() => onOpenNode(node)}>{node.name}<small>{node.total}</small></button>
-          ))}
-        </div>
-      )}
-
-      <FilterPills
-        allLabel="All places"
-        allCount={places.length}
-        pills={categoryOptions.map((option) => ({
-          key: option.key,
-          label: option.label,
-          count: option.count,
-          ...visualForCategory(option.key === "uncategorized" ? null : option.key, option.tone),
-        }))}
-        selectedKeys={[category]}
-        ariaLabel="Filter places by type"
-        onSelect={(key) => {
-          setCategory(key);
-          setSelectedPostId(null);
-          setMapBounds(null);
-        }}
-      />
-
       <div className="saved-map-stage">
+        {scope.children.some((node) => node.level !== "place") && (
+          <div className="pl2-map-scope-rail" aria-label={`Destinations in ${scope.name}`}>
+            <span>Zoom to</span>
+            {scope.children.filter((node) => node.level !== "place").slice(0, 12).map((node) => (
+              <button key={node.key} type="button" onClick={() => onOpenNode(node)}>{node.name}<small>{node.total}</small></button>
+            ))}
+          </div>
+        )}
+
         <MapContainer className="pl2-map-canvas" center={[20, 0]} zoom={2} scrollWheelZoom worldCopyJump>
           <TileLayer
             url={cartoVoyagerTileUrl()}
@@ -230,7 +185,6 @@ export function AtlasMapPanel({ scope, posts, onOpenNode, onOpenPlace }: AtlasMa
           </div>
         </div>
 
-      <p className="pl2-hint">Showing {filteredPlaces.length} saved place{filteredPlaces.length === 1 ? "" : "s"} in {scope.name}. Colors and symbols represent place type; numbers represent saved posts.</p>
     </section>
   );
 }
