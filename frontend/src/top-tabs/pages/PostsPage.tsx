@@ -29,12 +29,14 @@ import { useLabTheme } from "../theme";
 
 type PlaceStatus = "all" | "visited" | "inspiration";
 type DateMode = "saved" | "posted";
+type SpineGrain = "month" | "day";
 
-const UNDATED_MONTH = "undated";
+const UNDATED_SPINE = "undated";
 
-interface MonthGroup {
+interface SpinePeriod {
   key: string;
-  year: string;
+  section: string;
+  sectionLabel: string;
   label: string;
   short: string;
   posts: SavedPost[];
@@ -62,6 +64,8 @@ export function PostsPage({
   const { platforms } = useLibraryPlatform();
   const [contentCategory, setContentCategory] = useState("all");
   const [dateMode, setDateMode] = useState<DateMode>("saved");
+  const [spineGrain, setSpineGrain] = useState<SpineGrain>("month");
+  const [focusedMonth, setFocusedMonth] = useState<string | null>(null);
   const [placeStatus, setPlaceStatus] = useState<PlaceStatus>("all");
   const [facetKeys, setFacetKeys] = useState<string[]>([]);
   const [selected, setSelected] = useState<SavedPost | null>(null);
@@ -185,27 +189,32 @@ export function PostsPage({
     dateMode,
   ]);
 
-  const monthGroups = useMemo(() => groupPostsByMonth(filtered, dateMode), [filtered, dateMode]);
-  const yearBuckets = useMemo(() => bucketMonthsByYear(monthGroups), [monthGroups]);
-  const activeMonth = monthGroups.find((group) => group.key === monthKey) ?? monthGroups[0];
+  const spineGroups = useMemo(() => {
+    const groups = groupPostsByPeriod(filtered, dateMode, spineGrain);
+    if (spineGrain !== "day" || !focusedMonth) return groups;
+    return groups.filter((group) => group.key.startsWith(`${focusedMonth}-`) || group.key === focusedMonth);
+  }, [filtered, dateMode, spineGrain, focusedMonth]);
+  const sectionBuckets = useMemo(() => bucketSpineSections(spineGroups), [spineGroups]);
+  const activePeriod = spineGroups.find((group) => group.key === monthKey) ?? spineGroups[0];
 
   useEffect(() => {
-    if (monthGroups.length === 0) {
-      setMonthKey(null);
-      return;
-    }
-    if (!monthKey || !monthGroups.some((group) => group.key === monthKey)) {
-      setMonthKey(monthGroups[0].key);
-    }
-  }, [monthGroups, monthKey]);
+    setMonthKey((current) => mappedSpineKey(current, spineGrain, spineGroups));
+  }, [spineGroups, spineGrain]);
+
+  useEffect(() => {
+    if (spineGrain !== "day" || spineGroups.length > 0 || !focusedMonth) return;
+    setSpineGrain("month");
+    setMonthKey(focusedMonth);
+    setFocusedMonth(null);
+  }, [spineGrain, spineGroups.length, focusedMonth]);
 
   useEffect(() => {
     if (!selected) return;
-    const key = monthKeyForPost(selected, dateMode);
-    if (monthGroups.some((group) => group.key === key)) {
+    const key = periodKeyForPost(selected, dateMode, spineGrain);
+    if (spineGroups.some((group) => group.key === key)) {
       setMonthKey(key);
     }
-  }, [selected?.post_id, dateMode, monthGroups]);
+  }, [selected?.post_id, dateMode, spineGrain, spineGroups]);
 
   useEffect(() => {
     const nav = monthIndexRef.current;
@@ -226,13 +235,13 @@ export function PostsPage({
       nav.removeEventListener("scroll", onScroll);
       observer.disconnect();
     };
-  }, [monthGroups]);
+  }, [spineGroups]);
 
   useEffect(() => {
     const nav = monthIndexRef.current;
-    const active = nav?.querySelector<HTMLElement>(`[data-month="${activeMonth?.key ?? ""}"]`);
+    const active = nav?.querySelector<HTMLElement>(`[data-month="${activePeriod?.key ?? ""}"]`);
     if (!nav || !active) return;
-    if (nearestMonthButton(nav)?.dataset.month === activeMonth.key) {
+    if (nearestMonthButton(nav)?.dataset.month === activePeriod.key) {
       paintSpineWheel(nav);
       return;
     }
@@ -243,9 +252,26 @@ export function PostsPage({
       spineSyncing.current = false;
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [activeMonth?.key, monthGroups]);
+  }, [activePeriod?.key, spineGroups]);
 
-  function chooseMonth(button: HTMLButtonElement) {
+  function zoomIntoMonth(group: SpinePeriod) {
+    if (group.key === UNDATED_SPINE) return;
+    setFocusedMonth(group.key);
+    setSpineGrain("day");
+  }
+
+  function zoomOutToMonths() {
+    const month = focusedMonth;
+    setSpineGrain("month");
+    setFocusedMonth(null);
+    if (month) setMonthKey(month);
+  }
+
+  function onSpineItemClick(group: SpinePeriod, button: HTMLButtonElement) {
+    if (spineGrain === "month" && group.key === activePeriod?.key) {
+      zoomIntoMonth(group);
+      return;
+    }
     const nav = monthIndexRef.current;
     if (nav) scrollSpineToElement(nav, button, true);
   }
@@ -322,39 +348,69 @@ export function PostsPage({
         />
       ) : null}
       </FilterChrome>
-      {filtered.length === 0 || !activeMonth ? (
+      {filtered.length === 0 || !activePeriod ? (
         <EmptyState>No posts match that filter.</EmptyState>
       ) : (
         <div className="book-spine">
-          <nav ref={monthIndexRef} className="book-spine-index" aria-label="Jump by month">
-            {yearBuckets.map((bucket) => (
-              <div key={bucket.year} className="book-spine-year-block">
-                <p className="book-spine-year">{bucket.year}</p>
-                {bucket.months.map((group) => (
-                  <button
-                    key={group.key}
-                    type="button"
-                    data-month={group.key}
-                    className={group.key === activeMonth.key ? "is-on" : undefined}
-                    aria-current={group.key === activeMonth.key ? "true" : undefined}
-                    onClick={(event) => chooseMonth(event.currentTarget)}
-                  >
-                    <span>{group.short}</span>
-                    <small>{group.posts.length}</small>
-                  </button>
-                ))}
-              </div>
-            ))}
-          </nav>
+          <div className="book-spine-rail">
+            {spineGrain === "day" ? (
+              <button type="button" className="book-spine-back" onClick={zoomOutToMonths}>
+                {sectionBuckets[0]?.sectionLabel ?? "Months"}
+              </button>
+            ) : null}
+            <nav ref={monthIndexRef} className="book-spine-index" aria-label="Jump by date">
+              {sectionBuckets.map((bucket) => (
+                <div key={bucket.section} className="book-spine-year-block">
+                  {spineGrain === "month" ? <p className="book-spine-year">{bucket.sectionLabel}</p> : null}
+                  {bucket.periods.map((group) => (
+                    <button
+                      key={group.key}
+                      type="button"
+                      data-month={group.key}
+                      className={group.key === activePeriod.key ? "is-on" : undefined}
+                      aria-current={group.key === activePeriod.key ? "true" : undefined}
+                      aria-label={
+                        spineGrain === "month" && group.key === activePeriod.key
+                          ? `${group.label}, ${group.posts.length} saves. Open days.`
+                          : undefined
+                      }
+                      onClick={(event) => onSpineItemClick(group, event.currentTarget)}
+                    >
+                      <span>{group.short}</span>
+                      {spineGrain === "month" && group.key === activePeriod.key ? (
+                        <small className="book-spine-hint">Days</small>
+                      ) : (
+                        <small>{group.posts.length}</small>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              ))}
+            </nav>
+          </div>
           <div className="book-spine-page">
-            <p className="book-spine-open" key={activeMonth.key}>
-              {activeMonth.label}{" "}
-              <span>
-                {activeMonth.posts.length} {activeMonth.posts.length === 1 ? "save" : "saves"}
-              </span>
-            </p>
+            {spineGrain === "month" ? (
+              <button
+                type="button"
+                className="book-spine-open"
+                key={activePeriod.key}
+                onClick={() => zoomIntoMonth(activePeriod)}
+              >
+                {activePeriod.label}{" "}
+                <span>
+                  {activePeriod.posts.length} {activePeriod.posts.length === 1 ? "save" : "saves"} · View days
+                </span>
+              </button>
+            ) : (
+              <p className="book-spine-open" key={activePeriod.key}>
+                {activePeriod.label}{" "}
+                <span>
+                  {activePeriod.posts.length} {activePeriod.posts.length === 1 ? "save" : "saves"}
+                </span>
+              </p>
+            )}
             <div className="cover-grid">
-              {activeMonth.posts.map((post) => (
+              {activePeriod.posts.map((post) => (
                 <PostMediaCard
                   key={post.post_id}
                   post={post}
@@ -486,62 +542,125 @@ function postTimestamp(post: SavedPost, dateMode: DateMode): number {
   return Number.isNaN(time) ? 0 : time;
 }
 
-function monthKeyForPost(post: SavedPost, dateMode: DateMode): string {
+function periodKeyForPost(post: SavedPost, dateMode: DateMode, grain: SpineGrain): string {
   const raw = postDateRaw(post, dateMode);
   const date = raw ? new Date(raw) : null;
-  if (!date || Number.isNaN(date.getTime())) return UNDATED_MONTH;
+  if (!date || Number.isNaN(date.getTime())) return UNDATED_SPINE;
   const year = date.getUTCFullYear();
   const month = String(date.getUTCMonth() + 1).padStart(2, "0");
-  return `${year}-${month}`;
+  if (grain === "month") return `${year}-${month}`;
+  const day = String(date.getUTCDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
-function groupPostsByMonth(posts: SavedPost[], dateMode: DateMode): MonthGroup[] {
-  const groups = new Map<string, MonthGroup>();
+function groupPostsByPeriod(
+  posts: SavedPost[],
+  dateMode: DateMode,
+  grain: SpineGrain,
+): SpinePeriod[] {
+  const groups = new Map<string, SpinePeriod>();
   for (const post of posts) {
-    const key = monthKeyForPost(post, dateMode);
+    const key = periodKeyForPost(post, dateMode, grain);
     const existing = groups.get(key);
     if (existing) {
       existing.posts.push(post);
       continue;
     }
-    if (key === UNDATED_MONTH) {
-      groups.set(key, {
-        key,
-        year: "Other",
-        label: "Undated",
-        short: "—",
-        posts: [post],
-      });
-      continue;
-    }
-    const [year, month] = key.split("-");
-    const date = new Date(Date.UTC(Number(year), Number(month) - 1, 1));
-    groups.set(key, {
-      key,
-      year,
-      label: date.toLocaleDateString(undefined, { month: "long", year: "numeric", timeZone: "UTC" }),
-      short: date.toLocaleDateString(undefined, { month: "short", timeZone: "UTC" }),
-      posts: [post],
-    });
+    groups.set(key, makeSpinePeriod(key, grain, post));
   }
   return Array.from(groups.values()).sort((left, right) => {
-    if (left.key === UNDATED_MONTH) return 1;
-    if (right.key === UNDATED_MONTH) return -1;
+    if (left.key === UNDATED_SPINE) return 1;
+    if (right.key === UNDATED_SPINE) return -1;
     return right.key.localeCompare(left.key);
   });
 }
 
-function bucketMonthsByYear(groups: MonthGroup[]): { year: string; months: MonthGroup[] }[] {
-  const buckets: { year: string; months: MonthGroup[] }[] = [];
+function makeSpinePeriod(key: string, grain: SpineGrain, post: SavedPost): SpinePeriod {
+  if (key === UNDATED_SPINE) {
+    return {
+      key,
+      section: "other",
+      sectionLabel: "Other",
+      label: "Undated",
+      short: "—",
+      posts: [post],
+    };
+  }
+  const [year, month, day] = key.split("-");
+  const monthDate = new Date(Date.UTC(Number(year), Number(month) - 1, 1));
+  if (grain === "month") {
+    return {
+      key,
+      section: year,
+      sectionLabel: year,
+      label: monthDate.toLocaleDateString(undefined, {
+        month: "long",
+        year: "numeric",
+        timeZone: "UTC",
+      }),
+      short: monthDate.toLocaleDateString(undefined, { month: "short", timeZone: "UTC" }),
+      posts: [post],
+    };
+  }
+  const dayDate = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)));
+  return {
+    key,
+    section: `${year}-${month}`,
+    sectionLabel: monthDate.toLocaleDateString(undefined, {
+      month: "short",
+      year: "numeric",
+      timeZone: "UTC",
+    }),
+    label: dayDate.toLocaleDateString(undefined, {
+      weekday: "short",
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+      timeZone: "UTC",
+    }),
+    short: String(Number(day)),
+    posts: [post],
+  };
+}
+
+function bucketSpineSections(
+  groups: SpinePeriod[],
+): { section: string; sectionLabel: string; periods: SpinePeriod[] }[] {
+  const buckets: { section: string; sectionLabel: string; periods: SpinePeriod[] }[] = [];
   for (const group of groups) {
     const last = buckets[buckets.length - 1];
-    if (last && last.year === group.year) {
-      last.months.push(group);
+    if (last && last.section === group.section) {
+      last.periods.push(group);
     } else {
-      buckets.push({ year: group.year, months: [group] });
+      buckets.push({
+        section: group.section,
+        sectionLabel: group.sectionLabel,
+        periods: [group],
+      });
     }
   }
   return buckets;
+}
+
+function mappedSpineKey(
+  current: string | null,
+  grain: SpineGrain,
+  groups: SpinePeriod[],
+): string | null {
+  if (groups.length === 0) return null;
+  if (current && groups.some((group) => group.key === current)) return current;
+  if (current && current !== UNDATED_SPINE) {
+    if (grain === "month") {
+      const monthKey = current.slice(0, 7);
+      const match = groups.find((group) => group.key === monthKey);
+      if (match) return match.key;
+    }
+    if (grain === "day" && current.length === 7) {
+      const match = groups.find((group) => group.key.startsWith(`${current}-`));
+      if (match) return match.key;
+    }
+  }
+  return groups[0].key;
 }
 
 function spineAxis(nav: HTMLElement): "x" | "y" {

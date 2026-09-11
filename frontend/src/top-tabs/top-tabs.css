@@ -1070,11 +1070,36 @@ html.top-tabs-active,
   align-items: start;
 }
 
+.lab-pages .book-spine-rail {
+  position: sticky;
+  top: 16px;
+  display: grid;
+  gap: 8px;
+}
+
+.lab-pages .book-spine-back {
+  width: 100%;
+  padding: 7px 8px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--soft);
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-align: left;
+  cursor: pointer;
+}
+
+.lab-pages .book-spine-back::before {
+  content: "← ";
+  color: var(--muted);
+}
+
 .lab-pages .book-spine-index {
   --spine-month-count: 7;
   --spine-month-row: 2rem;
-  position: sticky;
-  top: 16px;
+  position: static;
   display: grid;
   align-content: start;
   gap: 2px;
@@ -1101,11 +1126,14 @@ html.top-tabs-active,
 
 .lab-pages .book-spine-year {
   margin: 12px 0 4px;
+  overflow: hidden;
   color: var(--muted);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   opacity: calc(0.95 - var(--spine-abs, 0) * 0.75);
 }
 
@@ -1153,10 +1181,31 @@ html.top-tabs-active,
   color: color-mix(in srgb, #fff 72%, transparent);
 }
 
+.lab-pages .book-spine-index button.is-on .book-spine-hint {
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #fff;
+}
+
 .lab-pages .book-spine-open {
+  display: block;
+  width: max-content;
+  max-width: 100%;
   margin: 0 0 14px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
   font: 500 1.05rem/1.2 var(--wf-font-headline);
+  text-align: left;
+  cursor: pointer;
   animation: book-spine-title 320ms ease;
+}
+
+p.book-spine-open {
+  cursor: default;
 }
 
 @keyframes book-spine-title {
@@ -1175,6 +1224,10 @@ html.top-tabs-active,
   font-family: var(--wf-font-body);
   font-size: 0.82rem;
   font-weight: 400;
+}
+
+button.book-spine-open:hover span {
+  color: var(--accent);
 }
 
 .lab-pages .book-spine .cover-grid {
@@ -1238,6 +1291,19 @@ html.top-tabs-active,
   .lab-pages .book-spine {
     grid-template-columns: 1fr;
     gap: 16px;
+  }
+
+  .lab-pages .book-spine-rail {
+    position: static;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 8px;
+  }
+
+  .lab-pages .book-spine-back {
+    flex: 0 0 auto;
+    width: auto;
+    white-space: nowrap;
   }
 
   .lab-pages .book-spine .cover-grid {
