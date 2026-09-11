@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import {
@@ -67,6 +67,10 @@ export function PostsPage({
   const [selected, setSelected] = useState<SavedPost | null>(null);
   const [visitedIds, setVisitedIds] = useState<Set<string>>(new Set());
   const [monthKey, setMonthKey] = useState<string | null>(null);
+  const monthIndexRef = useRef<HTMLElement>(null);
+  const monthKeyRef = useRef<string | null>(null);
+  const spineSyncing = useRef(false);
+  monthKeyRef.current = monthKey;
 
   useEffect(() => {
     if (!routePlatform || !routePostId) {
@@ -203,6 +207,49 @@ export function PostsPage({
     }
   }, [selected?.post_id, dateMode, monthGroups]);
 
+  useEffect(() => {
+    const nav = monthIndexRef.current;
+    if (!nav) return;
+    const onScroll = () => {
+      paintSpineWheel(nav);
+      if (spineSyncing.current) return;
+      const key = nearestMonthButton(nav)?.dataset.month;
+      if (key && key !== monthKeyRef.current) {
+        setMonthKey(key);
+      }
+    };
+    onScroll();
+    nav.addEventListener("scroll", onScroll, { passive: true });
+    const observer = new ResizeObserver(onScroll);
+    observer.observe(nav);
+    return () => {
+      nav.removeEventListener("scroll", onScroll);
+      observer.disconnect();
+    };
+  }, [monthGroups]);
+
+  useEffect(() => {
+    const nav = monthIndexRef.current;
+    const active = nav?.querySelector<HTMLElement>(`[data-month="${activeMonth?.key ?? ""}"]`);
+    if (!nav || !active) return;
+    if (nearestMonthButton(nav)?.dataset.month === activeMonth.key) {
+      paintSpineWheel(nav);
+      return;
+    }
+    spineSyncing.current = true;
+    scrollSpineToElement(nav, active, false);
+    paintSpineWheel(nav);
+    const frame = window.requestAnimationFrame(() => {
+      spineSyncing.current = false;
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [activeMonth?.key, monthGroups]);
+
+  function chooseMonth(button: HTMLButtonElement) {
+    const nav = monthIndexRef.current;
+    if (nav) scrollSpineToElement(nav, button, true);
+  }
+
   return (
     <>
       <PageHeading
@@ -279,7 +326,7 @@ export function PostsPage({
         <EmptyState>No posts match that filter.</EmptyState>
       ) : (
         <div className="book-spine">
-          <nav className="book-spine-index" aria-label="Jump by month">
+          <nav ref={monthIndexRef} className="book-spine-index" aria-label="Jump by month">
             {yearBuckets.map((bucket) => (
               <div key={bucket.year} className="book-spine-year-block">
                 <p className="book-spine-year">{bucket.year}</p>
@@ -287,9 +334,10 @@ export function PostsPage({
                   <button
                     key={group.key}
                     type="button"
+                    data-month={group.key}
                     className={group.key === activeMonth.key ? "is-on" : undefined}
                     aria-current={group.key === activeMonth.key ? "true" : undefined}
-                    onClick={() => setMonthKey(group.key)}
+                    onClick={(event) => chooseMonth(event.currentTarget)}
                   >
                     <span>{group.short}</span>
                     <small>{group.posts.length}</small>
@@ -299,7 +347,7 @@ export function PostsPage({
             ))}
           </nav>
           <div className="book-spine-page">
-            <p className="book-spine-open">
+            <p className="book-spine-open" key={activeMonth.key}>
               {activeMonth.label}{" "}
               <span>
                 {activeMonth.posts.length} {activeMonth.posts.length === 1 ? "save" : "saves"}
@@ -494,6 +542,59 @@ function bucketMonthsByYear(groups: MonthGroup[]): { year: string; months: Month
     }
   }
   return buckets;
+}
+
+function spineAxis(nav: HTMLElement): "x" | "y" {
+  return nav.scrollWidth - nav.clientWidth > nav.scrollHeight - nav.clientHeight ? "x" : "y";
+}
+
+function elementOffset(nav: HTMLElement, el: HTMLElement, axis: "x" | "y"): number {
+  const navBox = nav.getBoundingClientRect();
+  const elBox = el.getBoundingClientRect();
+  if (axis === "y") return elBox.top - navBox.top + nav.scrollTop;
+  return elBox.left - navBox.left + nav.scrollLeft;
+}
+
+function paintSpineWheel(nav: HTMLElement) {
+  const axis = spineAxis(nav);
+  const viewport = axis === "y" ? nav.clientHeight : nav.clientWidth;
+  const scroll = axis === "y" ? nav.scrollTop : nav.scrollLeft;
+  const mid = scroll + viewport / 2;
+  const radius = Math.max(viewport / 2, 1);
+  nav.querySelectorAll<HTMLElement>("button, .book-spine-year").forEach((el) => {
+    const size = axis === "y" ? el.offsetHeight : el.offsetWidth;
+    const t = Math.max(-1, Math.min(1, (elementOffset(nav, el, axis) + size / 2 - mid) / radius));
+    el.style.setProperty("--spine-t", t.toFixed(3));
+    el.style.setProperty("--spine-abs", Math.abs(t).toFixed(3));
+  });
+}
+
+function nearestMonthButton(nav: HTMLElement): HTMLButtonElement | null {
+  const axis = spineAxis(nav);
+  const viewport = axis === "y" ? nav.clientHeight : nav.clientWidth;
+  const mid = (axis === "y" ? nav.scrollTop : nav.scrollLeft) + viewport / 2;
+  let nearest: HTMLButtonElement | null = null;
+  let nearestDist = Number.POSITIVE_INFINITY;
+  nav.querySelectorAll<HTMLButtonElement>("button[data-month]").forEach((button) => {
+    const size = axis === "y" ? button.offsetHeight : button.offsetWidth;
+    const dist = Math.abs(elementOffset(nav, button, axis) + size / 2 - mid);
+    if (dist < nearestDist) {
+      nearest = button;
+      nearestDist = dist;
+    }
+  });
+  return nearest;
+}
+
+function scrollSpineToElement(nav: HTMLElement, el: HTMLElement, smooth: boolean) {
+  const axis = spineAxis(nav);
+  const viewport = axis === "y" ? nav.clientHeight : nav.clientWidth;
+  const size = axis === "y" ? el.offsetHeight : el.offsetWidth;
+  const target = Math.max(0, elementOffset(nav, el, axis) - viewport / 2 + size / 2);
+  const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const behavior: ScrollBehavior = smooth && !reduced ? "smooth" : "auto";
+  if (axis === "y") nav.scrollTo({ top: target, behavior });
+  else nav.scrollTo({ left: target, behavior });
 }
 
 export function PostMediaCard({

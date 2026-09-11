@@ -1071,10 +1071,27 @@ html.top-tabs-active,
 }
 
 .lab-pages .book-spine-index {
+  --spine-month-count: 7;
+  --spine-month-row: 2rem;
   position: sticky;
   top: 16px;
   display: grid;
+  align-content: start;
   gap: 2px;
+  max-height: calc(var(--spine-month-count) * var(--spine-month-row));
+  padding-block: calc((var(--spine-month-count) - 1) * var(--spine-month-row) / 2);
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  scroll-snap-type: y mandatory;
+  perspective: 280px;
+  mask-image: linear-gradient(to bottom, transparent 0%, #000 18%, #000 82%, transparent 100%);
+}
+
+.lab-pages .book-spine-index::-webkit-scrollbar {
+  display: none;
 }
 
 .lab-pages .book-spine-year-block {
@@ -1089,6 +1106,7 @@ html.top-tabs-active,
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
+  opacity: calc(0.95 - var(--spine-abs, 0) * 0.75);
 }
 
 .lab-pages .book-spine-year-block:first-child .book-spine-year {
@@ -1101,6 +1119,7 @@ html.top-tabs-active,
   justify-content: space-between;
   gap: 8px;
   width: 100%;
+  min-height: var(--spine-month-row);
   padding: 7px 8px;
   border: 0;
   border-radius: 8px;
@@ -1109,6 +1128,11 @@ html.top-tabs-active,
   font-size: 13px;
   text-align: left;
   cursor: pointer;
+  scroll-snap-align: center;
+  transform: rotateX(calc(var(--spine-t, 0) * -48deg)) scale(calc(1 - var(--spine-abs, 0) * 0.16));
+  opacity: calc(1 - var(--spine-abs, 0) * 0.68);
+  transform-origin: center;
+  will-change: transform, opacity;
 }
 
 .lab-pages .book-spine-index button:hover {
@@ -1132,6 +1156,18 @@ html.top-tabs-active,
 .lab-pages .book-spine-open {
   margin: 0 0 14px;
   font: 500 1.05rem/1.2 var(--wf-font-headline);
+  animation: book-spine-title 320ms ease;
+}
+
+@keyframes book-spine-title {
+  from {
+    opacity: 0;
+    transform: translateY(7px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 .lab-pages .book-spine-open span {
@@ -1215,12 +1251,25 @@ html.top-tabs-active,
   }
 
   .lab-pages .book-spine-index {
+    --spine-month-count: 5;
     position: static;
     display: flex;
     flex-wrap: nowrap;
+    max-height: none;
+    padding-block: 0;
+    padding-inline: calc((min(100%, 28rem) - 5.5rem) / 2);
     overflow-x: auto;
+    overflow-y: hidden;
     gap: 6px;
-    padding-bottom: 2px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    scroll-snap-type: x mandatory;
+    perspective: 420px;
+    mask-image: linear-gradient(to right, transparent 0%, #000 10%, #000 90%, transparent 100%);
+  }
+
+  .lab-pages .book-spine-index button {
+    transform: rotateY(calc(var(--spine-t, 0) * 42deg)) scale(calc(1 - var(--spine-abs, 0) * 0.12));
   }
 
   .lab-pages .book-spine-year-block {
@@ -1244,5 +1293,23 @@ html.top-tabs-active,
 
   .lab-pages .book-spine-index button.is-on {
     border-color: var(--dark);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lab-pages .book-spine-index {
+    scroll-snap-type: none;
+    mask-image: none;
+    perspective: none;
+  }
+
+  .lab-pages .book-spine-index button,
+  .lab-pages .book-spine-year {
+    transform: none;
+    opacity: 1;
+  }
+
+  .lab-pages .book-spine-open {
+    animation: none;
   }
 }
