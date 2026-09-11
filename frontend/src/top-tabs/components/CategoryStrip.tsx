@@ -6,11 +6,28 @@ import { useLabTheme } from "../theme";
 
 import "../category-nav.css";
 
-export function CategoryStrip({ counts }: { counts: Record<string, number | string> }) {
+function countFor(counts: Record<string, number | string>, key: string): number {
+  const value = counts[key] ?? 0;
+  const numeric = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(numeric) ? numeric : 0;
+}
+
+export function CategoryStrip({
+  counts,
+  loading = false,
+}: {
+  counts: Record<string, number | string>;
+  loading?: boolean;
+}) {
   const { basePath } = useLabTheme();
   const location = useLocation();
   const navRef = useRef<HTMLElement>(null);
-  const activeKey = CATEGORY_NAV_ITEMS.find((item) => {
+  const hasAnyEntries = CATEGORY_NAV_ITEMS.some((item) => countFor(counts, item.key) > 0);
+  const visibleItems =
+    loading && !hasAnyEntries
+      ? CATEGORY_NAV_ITEMS
+      : CATEGORY_NAV_ITEMS.filter((item) => countFor(counts, item.key) > 0);
+  const activeKey = visibleItems.find((item) => {
     const to = `${basePath}/${item.key}`;
     return location.pathname === to || location.pathname.startsWith(`${to}/`);
   })?.key;
@@ -25,12 +42,14 @@ export function CategoryStrip({ counts }: { counts: Record<string, number | stri
     });
   }, [activeKey]);
 
+  if (visibleItems.length === 0) return null;
+
   return (
     <nav ref={navRef} className="category-nav" aria-label="Library type">
-      {CATEGORY_NAV_ITEMS.map((item, index) => {
+      {visibleItems.map((item, index) => {
         const to = `${basePath}/${item.key}`;
         const active = item.key === activeKey;
-        const count = counts[item.key] ?? 0;
+        const count = countFor(counts, item.key);
         return (
           <NavLink key={item.key} to={to} className={`category-nav-card${active ? " is-on" : ""}`}>
             <span className="category-nav-index">{String(index + 1).padStart(2, "0")}</span>

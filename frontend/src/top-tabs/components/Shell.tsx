@@ -29,12 +29,14 @@ function icon(name: "search" | "plus") {
 export function Shell({
   children,
   counts,
+  loading = false,
   isAdmin = false,
   isSuperAdmin = false,
   onViewAsChange,
 }: {
   children: ReactNode;
   counts: Record<string, number | string>;
+  loading?: boolean;
   isAdmin?: boolean;
   isSuperAdmin?: boolean;
   onViewAsChange?: (userId: string | null) => void;
@@ -71,7 +73,7 @@ export function Shell({
           </div>
         </header>
         <div className="lab-utility-tabs">
-          <CategoryStrip counts={counts} />
+          <CategoryStrip counts={counts} loading={loading} />
         </div>
         <main className="page-content">{children}</main>
       </div>

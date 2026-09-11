@@ -47,6 +47,7 @@ export function TopTabsApp({
       <LibraryPlatformProvider>
         <Shell
           counts={counts}
+          loading={loading}
           isAdmin={isAdmin}
           isSuperAdmin={isSuperAdmin}
           onViewAsChange={onViewAsChange}
