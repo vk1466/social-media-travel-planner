@@ -1,15 +1,17 @@
 import { LocateDebugTool } from "./LocateDebugTool";
-import { PageHeader } from "./PageHeader";
+import { PageHeading } from "./PageHeading";
 import { UnresolvedPlacesTool } from "./UnresolvedPlacesTool";
 
 /** Tailwind pilot page — layout utilities share wf brand tokens via tw.css @theme. */
 export function AdminPage() {
   return (
-    <div className="wf-container wf-page-pad grid gap-5 [&_.wf-page-header]:mb-0">
-      <PageHeader
-        eyebrow="Internal"
+    <div className="grid gap-5 [&_.page-heading]:mb-0">
+      <PageHeading
+        kicker="Internal"
         title="Admin"
         lede="Tools for place pipeline validation."
+        count={{ value: 2, label: "tools" }}
+        platformFilter={false}
       />
       <UnresolvedPlacesTool />
       <LocateDebugTool />

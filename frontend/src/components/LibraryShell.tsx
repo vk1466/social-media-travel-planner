@@ -16,6 +16,7 @@ import { contentCategoryTabs } from "../contentCategory";
 import { clerkEnabled } from "../authMode";
 import { PlaceLibrary } from "./PlaceLibrary";
 import { PostLibrary } from "./PostLibrary";
+import { PageHeading } from "./PageHeading";
 import { FilterBar, FilterChrome, FilterPills, SegmentGroup } from "./library";
 import { useLibraryPlatform } from "../libraryPlatform";
 
@@ -177,14 +178,13 @@ export function LibraryShell({
 
   return (
     <div className="lib-shell" data-mode={mode}>
-      <div className="lib-shell-masthead">
-        <div>
-          <p className="lib-shell-eyebrow">{copy.eyebrow}</p>
-          <h3>{copy.title}</h3>
-          <p className="lib-shell-lede">{copy.lede}</p>
-        </div>
-        <div className="lib-shell-aside">
-          {mode === "places" ? (
+      <PageHeading
+        kicker={copy.eyebrow}
+        title={copy.title}
+        lede={copy.lede}
+        count={{ value: meta.count || "—", label: meta.countLabel }}
+        aside={
+          mode === "places" ? (
             <SegmentGroup
               ariaLabel="View mode"
               selected={placesFilters.viewMode}
@@ -214,13 +214,9 @@ export function LibraryShell({
                 { value: "grid", label: "Grid" },
               ]}
             />
-          )}
-          <div className="lib-shell-count">
-            <span className="lib-shell-count-value">{meta.count || "—"}</span>
-            <span className="lib-shell-count-label">{meta.countLabel}</span>
-          </div>
-        </div>
-      </div>
+          )
+        }
+      />
 
       {!authReady ? (
         <div className="lib-shell-banner">

@@ -7,7 +7,7 @@ import { recipesFromPosts } from "../recipes";
 import { aggregateMovies } from "../movies";
 import { FilterBar } from "../../components/library";
 import { placeMatchesPlatform, postsForPlatforms, useLibraryPlatform } from "../../libraryPlatform";
-import { PageHeading } from "../components/Shell";
+import { PageHeading } from "../../components/PageHeading";
 import { useLabTheme } from "../theme";
 
 export function SearchPage({ posts, places }: { posts: SavedPost[]; places: Place[] }) {
@@ -53,6 +53,7 @@ export function SearchPage({ posts, places }: { posts: SavedPost[]; places: Plac
         kicker="Search Wanderfile"
         title="Find anything you saved"
         lede="Search posts, places, recipes, movies, and travel history from one place."
+        count={{ value: results.length, label: "results" }}
       />
       <FilterBar
         placeholder="Search saves"

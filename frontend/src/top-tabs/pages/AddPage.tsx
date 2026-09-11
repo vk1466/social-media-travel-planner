@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { fetchActiveJob, fetchJob, startIngest, type Job } from "../../api";
-import { PageHeading } from "../components/Shell";
+import { PageHeading } from "../../components/PageHeading";
 import { useLabTheme } from "../theme";
 
 function isUrl(value: string): boolean {
@@ -78,6 +78,8 @@ export function AddPage({
         kicker="Add to Wanderfile"
         title="Bring your inspiration together"
         lede="Paste links from Instagram, TikTok, YouTube, or the web. Use one link per line."
+        count={{ value: parsed.valid.length, label: "links" }}
+        platformFilter={false}
       />
       <textarea
         className="links-input"

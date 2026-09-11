@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
 import {
   deletePost,
   fetchVisitedPlaceIds,
   nativePostId,
+  postRouteParts,
   type Place,
   type SavedPost,
 } from "../../api";
@@ -15,6 +16,7 @@ import {
   effectiveContentCategory,
 } from "../../contentCategory";
 import { postsForPlatforms, useLibraryPlatform } from "../../libraryPlatform";
+import { PageHeading } from "../../components/PageHeading";
 import {
   formatDate,
   platformLabel,
@@ -23,7 +25,6 @@ import {
 } from "../display";
 import { DetailSheet } from "../components/DetailSheet";
 import { EmptyState, FilterChrome, FilterPills, Toolbar } from "../components/Toolbar";
-import { PageHeading } from "../components/Shell";
 import { useLabTheme } from "../theme";
 
 type PlaceStatus = "all" | "visited" | "inspiration";
@@ -44,6 +45,9 @@ export function PostsPage({
   places: Place[];
   onDeleted: () => void;
 }) {
+  const navigate = useNavigate();
+  const { basePath } = useLabTheme();
+  const { platform: routePlatform, postId: routePostId } = useParams();
   const [query, setQuery] = useState("");
   const { platforms } = useLibraryPlatform();
   const [contentCategory, setContentCategory] = useState("all");
@@ -52,6 +56,28 @@ export function PostsPage({
   const [facetKeys, setFacetKeys] = useState<string[]>([]);
   const [selected, setSelected] = useState<SavedPost | null>(null);
   const [visitedIds, setVisitedIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (!routePlatform || !routePostId) {
+      setSelected(null);
+      return;
+    }
+    const routePost = posts.find(
+      (post) => post.platform === routePlatform && nativePostId(post) === routePostId,
+    );
+    setSelected(routePost ?? null);
+  }, [posts, routePlatform, routePostId]);
+
+  const openPost = (post: SavedPost) => {
+    const route = postRouteParts(post.platform, nativePostId(post));
+    setSelected(post);
+    navigate(`${basePath}/posts/${route.platform}/${route.nativeId}`);
+  };
+
+  const closePost = () => {
+    setSelected(null);
+    navigate(`${basePath}/posts`);
+  };
 
   const names = useMemo(
     () => Object.fromEntries(places.map((place) => [place.place_id, place.display_name])),
@@ -147,9 +173,10 @@ export function PostsPage({
   return (
     <>
       <PageHeading
-        kicker="All sources"
-        title="Posts"
-        lede="Every social save in one feed."
+        kicker="Your inspiration library"
+        title="Saved posts"
+        lede={`${posts.length} ${posts.length === 1 ? "idea" : "ideas"} ready to revisit.`}
+        count={{ value: filtered.length, label: "posts" }}
       />
       <FilterChrome>
       <Toolbar
@@ -224,7 +251,7 @@ export function PostsPage({
               key={post.post_id}
               post={post}
               dateMode={dateMode}
-              onOpen={setSelected}
+              onOpen={openPost}
             />
           ))}
         </div>
@@ -233,10 +260,11 @@ export function PostsPage({
         <PostDetail
           post={selected}
           placeNames={names}
-          onClose={() => setSelected(null)}
+          onClose={closePost}
           onDeleted={() => {
             setSelected(null);
             onDeleted();
+            navigate(`${basePath}/posts`);
           }}
         />
       ) : null}

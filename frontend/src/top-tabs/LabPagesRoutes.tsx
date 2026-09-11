@@ -1,8 +1,7 @@
-import { Route, Routes, Navigate, useNavigate } from "react-router-dom";
+import { Route, Routes, Navigate } from "react-router-dom";
 
 import { type Place, type SavedPost, type VisitDetail } from "../api";
 import { AdminPage } from "../components/AdminPage";
-import { PostLibrary } from "../components/PostLibrary";
 import { postsOfCategory } from "./display";
 import { AddPage } from "./pages/AddPage";
 import { FoodPage } from "./pages/FoodPage";
@@ -30,8 +29,6 @@ export function LabPagesRoutes({
   onRefresh: () => void;
   isAdmin: boolean;
 }) {
-  const navigate = useNavigate();
-
   return (
     <>
       {loading && posts.length === 0 ? <p className="empty-copy">Loading your library…</p> : null}
@@ -49,12 +46,7 @@ export function LabPagesRoutes({
             loading ? (
               <p className="empty-copy">Loading saved posts…</p>
             ) : (
-              <PostLibrary
-                posts={posts}
-                places={places}
-                onDeleted={onRefresh}
-                onNavigateToPlace={(placeId) => navigate(`/travel/${placeId}`)}
-              />
+              <PostsPage posts={posts} places={places} onDeleted={onRefresh} />
             )
           }
         />

@@ -1,15 +1,12 @@
-import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { UserButton } from "@clerk/react";
 import { useEffect, type ReactNode } from "react";
 
 import { clerkEnabled } from "../../authMode";
 import { wanderfileClerkAppearance } from "../../clerkAppearance";
 import { ViewAsSwitcher } from "../../components/ViewAsSwitcher";
-import { PlatformMenu } from "../../components/library";
 import { TOP_TABS_BASE } from "../paths";
 import { CategoryStrip } from "./CategoryStrip";
-
-const PLATFORM_PATHS = ["posts", "travel", "food", "movies", "search"];
 
 const clerkLight = wanderfileClerkAppearance("light");
 
@@ -43,11 +40,7 @@ export function Shell({
   onViewAsChange?: (userId: string | null) => void;
 }) {
   const navigate = useNavigate();
-  const { pathname } = useLocation();
   const homeTo = TOP_TABS_BASE || "/";
-  const showPlatform = PLATFORM_PATHS.some(
-    (key) => pathname === `/${key}` || pathname.startsWith(`/${key}/`),
-  );
 
   useEffect(() => {
     document.documentElement.classList.add("top-tabs-active");
@@ -68,7 +61,6 @@ export function Shell({
                 Admin
               </NavLink>
             ) : null}
-            {showPlatform ? <PlatformMenu /> : null}
             <button type="button" aria-label="Search" onClick={() => navigate("/search")}>
               {icon("search")}
             </button>
@@ -84,32 +76,5 @@ export function Shell({
         <main className="page-content">{children}</main>
       </div>
     </div>
-  );
-}
-
-export function PageHeading({
-  kicker,
-  title,
-  lede,
-  action,
-}: {
-  kicker: string;
-  title: string;
-  lede: string;
-  action?: { label: string; onClick: () => void };
-}) {
-  return (
-    <header className="page-heading">
-      <div>
-        <p className="eyebrow">{kicker}</p>
-        <h1>{title}</h1>
-        <p>{lede}</p>
-      </div>
-      {action ? (
-        <button type="button" className="primary" onClick={action.onClick}>
-          {icon("plus")} {action.label}
-        </button>
-      ) : null}
-    </header>
   );
 }

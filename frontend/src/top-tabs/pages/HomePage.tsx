@@ -2,8 +2,9 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
 import type { Place, SavedPost, VisitDetail } from "../../api";
+import { placeMatchesPlatform, postsForPlatforms, useLibraryPlatform } from "../../libraryPlatform";
 import { locationLine } from "../display";
-import { PageHeading } from "../components/Shell";
+import { PageHeading } from "../../components/PageHeading";
 import { useLabTheme } from "../theme";
 import { PostDetail, PostMediaCard } from "./PostsPage";
 
@@ -25,11 +26,23 @@ export function HomePage({
   onDeleted: () => void;
 }) {
   const { basePath } = useLabTheme();
-  const continuePlace = places[0];
+  const { platforms } = useLibraryPlatform();
+  const scopedPosts = useMemo(
+    () => postsForPlatforms(posts, platforms),
+    [posts, platforms],
+  );
+  const scopedPlaces = useMemo(
+    () =>
+      places.filter((place) =>
+        placeMatchesPlatform(place.source_post_ids, posts, platforms),
+      ),
+    [places, posts, platforms],
+  );
+  const continuePlace = scopedPlaces[0];
   const [selected, setSelected] = useState<SavedPost | null>(null);
   const recentPosts = useMemo(
-    () => [...posts].sort((a, b) => recency(b) - recency(a)).slice(0, 8),
-    [posts],
+    () => [...scopedPosts].sort((a, b) => recency(b) - recency(a)).slice(0, 8),
+    [scopedPosts],
   );
   const placeNames = useMemo(
     () => Object.fromEntries(places.map((place) => [place.place_id, place.display_name])),
@@ -42,6 +55,7 @@ export function HomePage({
         kicker="Your travel library"
         title="Save the spark. Plan the trip."
         lede="Turn reels, posts, and guides into places you can map, plan, and remember."
+        count={{ value: scopedPosts.length, label: "saves" }}
       />
       {continuePlace ? (
         <section className="home-hero">

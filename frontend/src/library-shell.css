@@ -19,56 +19,9 @@
   background: var(--wf-chrome-bg);
 }
 
-.lib-shell-masthead {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 1.5rem;
-  flex-wrap: wrap;
-  padding: 1rem calc(var(--wf-gutter-sm) + 2rem) 1rem var(--wf-gutter-sm);
-}
-
-.lib-shell-eyebrow {
-  margin: 0;
-  font-size: 0.68rem;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  font-weight: 700;
-  color: var(--wf-copy-accent);
-}
-
-.lib-shell-masthead h3 {
-  margin: 0.3rem 0 0;
-  font-family: var(--wf-font-serif);
-  font-style: italic;
-  font-weight: 400;
-  font-size: clamp(1.8rem, 3vw, 2.4rem);
-  letter-spacing: -0.02em;
-  line-height: 1.05;
-  color: var(--wf-copy);
-}
-
-.lib-shell-lede {
-  margin: 0.4rem 0 0;
-  color: var(--wf-copy-muted);
-  font-size: 0.92rem;
-  line-height: 1.5;
-  max-width: 48ch;
-}
-
 .lib-shell-count {
   text-align: right;
   flex-shrink: 0;
-}
-
-.lib-shell-aside {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 1.15rem;
-  flex-shrink: 0;
-  margin-left: auto;
-  align-self: flex-start;
 }
 
 .lib-shell-count-value {
@@ -126,13 +79,6 @@
 .lib-shell-banner button:focus-visible {
   outline: 2px solid var(--wf-coral);
   outline-offset: 2px;
-}
-
-/* View-mode toggle in the masthead aside: offset toward the panel edge */
-.lib-shell-aside .wf-seg--view {
-  position: relative;
-  right: calc(-1 * var(--wf-gutter-sm));
-  margin-top: -0.15rem;
 }
 
 .lib-shell-facets {
@@ -379,26 +325,6 @@
 /* ── Responsive breakpoints ─────────────────────────────── */
 
 @media (max-width: 760px) {
-  .lib-shell-masthead {
-    flex-direction: column;
-    gap: 0.75rem;
-    padding: 0.85rem var(--wf-gutter-sm) 0.75rem;
-  }
-
-  .lib-shell-aside {
-    flex-direction: row;
-    align-items: center;
-    gap: 1rem;
-    margin-left: 0;
-    align-self: auto;
-  }
-
-  /* Reset the position-based offset so the view toggle doesn't clip */
-  .lib-shell-aside .wf-seg--view {
-    right: 0;
-    margin-top: 0;
-  }
-
   .lib-shell-count {
     text-align: left;
   }
@@ -414,10 +340,6 @@
 }
 
 @media (max-width: 480px) {
-  .lib-shell-masthead {
-    padding-inline: var(--wf-gutter-sm);
-  }
-
   .lib-shell-facets {
     margin-inline: var(--wf-gutter-sm);
     padding: 0.75rem 0.85rem;

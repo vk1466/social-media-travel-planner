@@ -1,11 +1,6 @@
-import type { CSSProperties, KeyboardEvent, ReactNode } from "react";
+import type { KeyboardEvent, ReactNode } from "react";
 
-import { coverArt } from "../coverArt";
-
-export function coverCardStyle(name: string, imageUrl?: string | null): CSSProperties {
-  if (imageUrl) return {};
-  return { backgroundImage: coverArt(name) };
-}
+import { coverTone } from "../coverArt";
 
 export function CoverCard({
   title,
@@ -41,14 +36,14 @@ export function CoverCard({
 
   return (
     <article
-      className={["cover-card", className].filter(Boolean).join(" ")}
+      className={["cover-card", `cover-card--${coverTone(title)}`, className].filter(Boolean).join(" ")}
       tabIndex={0}
       role="button"
       aria-label={ariaLabel ?? `Open ${title}`}
       onClick={onOpen}
       onKeyDown={openOnKey}
     >
-      <span className="cover-card-media" style={coverCardStyle(title, imageUrl)}>
+      <span className="cover-card-media">
         {imageUrl ? <img src={imageUrl} alt="" /> : null}
         {category ? <span className="cover-card-category">{category}</span> : null}
         <span className="cover-card-mark" aria-hidden={badge ? undefined : true}>

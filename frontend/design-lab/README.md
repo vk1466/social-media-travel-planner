@@ -142,6 +142,16 @@ direction. The earlier [library cover-card lab](library-cards/index.html) is unc
 
 http://localhost:5179/category-nav/
 
+## Page Header Lab
+
+**10 compact page-header directions** for replacing the oversized, unclear page heading
+with a direct `Saved posts` title and useful controls or context. Each option is shown inside the current top-tabs page
+chrome with the filter toolbar directly below it, so alignment and first-viewport density
+can be compared in context. Option 01, Quiet stack, is the recommended low-risk direction.
+Arrow keys move between concepts.
+
+http://localhost:5179/page-headers/
+
 ## Content System Lab
 
 **10 complete typography and product-language systems** for Home, Posts, Travel, Food,
@@ -232,6 +242,15 @@ map, journey replay, day route planner, community photo highlights, time-aware p
 saved-versus-visited comparison, and mobile “search this area.”
 
 http://localhost:5179/map-experiences/
+
+## Source Switcher Lab
+
+**10 interactive app-filter directions** — logo constellation, segmented tabs, labeled
+tiles, icon rail, stacked menu, split card, selection badge, popover trigger, coral stamp,
+and night mosaic. Every option supports multi-select Instagram, TikTok, YouTube, and Web
+plus a clear Everything state, with no redundant “From” label.
+
+http://localhost:5179/source-switcher/
 
 Skins are generated — edit the skin in `home-page/_generate.mjs` (metadata in
 `home-page/shared/options.js`), then rerun:

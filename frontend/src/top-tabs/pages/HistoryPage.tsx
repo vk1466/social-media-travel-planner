@@ -5,7 +5,7 @@ import { createVisit, startInstagramImport, type Place, type VisitDetail } from 
 import { formatDate, locationLine } from "../display";
 import { SearchField } from "../../components/library";
 import { EmptyState } from "../components/Toolbar";
-import { PageHeading } from "../components/Shell";
+import { PageHeading } from "../../components/PageHeading";
 import { useLabTheme } from "../theme";
 
 export function HistoryPage({
@@ -35,6 +35,8 @@ export function HistoryPage({
         kicker="Places you’ve been"
         title="Travel history"
         lede="Keep a personal record of past trips, then use it to shape what comes next."
+        count={{ value: visits.length, label: "visits" }}
+        platformFilter={false}
       />
       <section className="history-stats">
         <article>

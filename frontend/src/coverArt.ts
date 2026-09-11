@@ -8,6 +8,25 @@ function hashHue(value: string): number {
   return hash;
 }
 
+/** Ten distinct paper gradients for cover cards. */
+export const COVER_TONES = [
+  "forest",
+  "coral",
+  "sand",
+  "slate",
+  "moss",
+  "peach",
+  "lilac",
+  "sky",
+  "blush",
+  "ochre",
+] as const;
+export type CoverTone = (typeof COVER_TONES)[number];
+
+export function coverTone(name: string): CoverTone {
+  return COVER_TONES[hashHue(name) % COVER_TONES.length];
+}
+
 /** CSS background shorthand value (gradient). */
 export function coverArt(name: string): string {
   const hue = 120 + (hashHue(name) % 120);

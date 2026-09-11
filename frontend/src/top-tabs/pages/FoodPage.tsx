@@ -2,8 +2,8 @@ import { useNavigate } from "react-router-dom";
 
 import { nativePostId, postRouteParts, type SavedPost } from "../../api";
 import { RecipeLibrary } from "../../components/food/RecipeLibrary";
-import { PageHeading } from "../components/Shell";
-import { useLabTheme } from "../theme";
+import { postsForPlatforms, useLibraryPlatform } from "../../libraryPlatform";
+import { PageHeading } from "../../components/PageHeading";
 
 export function FoodPage({
   posts,
@@ -13,7 +13,8 @@ export function FoodPage({
   onPostUpdated: (post: SavedPost) => void;
 }) {
   const navigate = useNavigate();
-  const { basePath } = useLabTheme();
+  const { platforms } = useLibraryPlatform();
+  const scopedPosts = postsForPlatforms(posts, platforms);
 
   return (
     <div className="food-library">
@@ -21,10 +22,10 @@ export function FoodPage({
         kicker="Recipes from your saves"
         title="Food worth making"
         lede="Find a dish, check the ingredients, and cook from the post that inspired you."
-        action={{ label: "Add inspiration", onClick: () => navigate(`${basePath}/add`) }}
+        count={{ value: scopedPosts.length, label: "recipes" }}
       />
       <RecipeLibrary
-        posts={posts}
+        posts={scopedPosts}
         onPostUpdated={onPostUpdated}
         onSelectPost={(post) => {
           const { platform, nativeId } = postRouteParts(post.platform, nativePostId(post));
