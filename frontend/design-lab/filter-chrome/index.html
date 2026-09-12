@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Filter Chrome Lab — 12 one-row directions</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <aside class="lab-rail">
+      <a href="../index.html" class="back">← Design Lab</a>
+      <div class="rail-copy">
+        <p class="lab-kicker">Filter chrome study</p>
+        <h1>Same row.<br />Twelve silhouettes.</h1>
+        <p>Search, meals, time, and Grocery list — the Food toolbar from production, redrawn twelve ways on Ocean Dusk. Click through; filters are live.</p>
+      </div>
+      <nav id="options" aria-label="Filter concepts"></nav>
+      <p class="key-hint"><kbd>←</kbd><kbd>→</kbd> to compare</p>
+    </aside>
+
+    <main class="stage">
+      <div class="stage-meta">
+        <div>
+          <span id="option-number">Option 01</span>
+          <h2 id="option-name">Capsule groups</h2>
+        </div>
+        <p id="option-note"></p>
+      </div>
+
+      <section class="browser" aria-label="Food filter preview">
+        <header class="site-bar">
+          <a href="#">Wanderfile</a>
+          <nav><span>Home</span><span>Saved posts</span><span>Travel</span><span class="is-active">Food</span><span>Movies</span></nav>
+          <div class="site-actions"><button type="button" aria-label="Search">⌕</button><button type="button" class="add">＋ Add</button><span class="avatar">V</span></div>
+        </header>
+        <div class="page">
+          <header class="page-head">
+            <p>Recipes from your saves</p>
+            <h1>Food worth making</h1>
+          </header>
+          <div id="filter-demo"></div>
+          <div class="results-meta"><span id="result-count">8 recipe ideas</span><span>Newest first</span></div>
+          <div class="cards" aria-hidden="true">
+            <article><div class="photo p1"></div><small>Dinner · 35 min</small><b>Miso salmon bowls</b></article>
+            <article><div class="photo p2"></div><small>Lunch · 18 min</small><b>Citrus fennel salad</b></article>
+            <article><div class="photo p3"></div><small>Breakfast · 12 min</small><b>Cardamom overnight oats</b></article>
+            <article><div class="photo p4"></div><small>Dessert · 40 min</small><b>Olive oil cake</b></article>
+          </div>
+        </div>
+      </section>
+    </main>
+    <script type="module" src="app.js"></script>
+  </body>
+</html>
