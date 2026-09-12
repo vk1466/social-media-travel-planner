@@ -51,12 +51,12 @@ export function categoryTone(category: string | null | undefined): string {
 }
 
 export const CATEGORY_TONE_COLORS: Record<string, { bg: string; text: string; border: string }> = {
-  outdoors: { bg: "#e7f3ec", text: "#1f5c3d", border: "#c5e0d0" },
-  water: { bg: "#e6f2f7", text: "#2a5f78", border: "#c5dce8" },
-  place: { bg: "#eef1f3", text: "#3d4f5c", border: "#d5dde3" },
-  culture: { bg: "#f5efe8", text: "#7a5538", border: "#e4d5c4" },
-  food: { bg: "#f7efe6", text: "#8a5a2b", border: "#ead7c0" },
-  market: { bg: "#f3ece6", text: "#6e4f3a", border: "#e0d0c2" },
-  stay: { bg: "#e8eef2", text: "#3a5568", border: "#c9d7e0" },
-  muted: { bg: "#f0f2f0", text: "#7a8680", border: "#e8ece9" },
+  outdoors: { bg: "#204848", text: "#a7c5b7", border: "#2c5a56" },
+  water: { bg: "#1c4654", text: "#9fc4d4", border: "#2a5c68" },
+  place: { bg: "#34453e", text: "#d2c4a8", border: "#4a5c52" },
+  culture: { bg: "#2c3c52", text: "#c7b3d8", border: "#3e4e64" },
+  food: { bg: "#3a3f42", text: "#e0b4a4", border: "#4e5254" },
+  market: { bg: "#363e4a", text: "#d8a8b8", border: "#4a5260" },
+  stay: { bg: "#1e4254", text: "#a8c0d4", border: "#2c5668" },
+  muted: { bg: "#1f3d48", text: "#b2cbd0", border: "#2a5260" },
 };

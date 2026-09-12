@@ -7,6 +7,7 @@ import { SearchField } from "../../components/library";
 import { EmptyState } from "../components/Toolbar";
 import { PageHeading } from "../../components/PageHeading";
 import { useLabTheme } from "../theme";
+import "../../history-page.css";
 
 export function HistoryPage({
   visits,
@@ -30,7 +31,7 @@ export function HistoryPage({
   }, [visits]);
 
   return (
-    <>
+    <div className="top-history-page">
       <PageHeading
         kicker="Places you’ve been"
         title="Travel history"
@@ -127,6 +128,6 @@ export function HistoryPage({
           ))}
         </section>
       )}
-    </>
+    </div>
   );
 }

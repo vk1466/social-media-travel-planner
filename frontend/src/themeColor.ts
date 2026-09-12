@@ -4,7 +4,7 @@ import {
 } from "./brandColors";
 
 /** Default Wanderfile brand — Trail guide from the content-system lab. */
-export const DEFAULT_BRAND_COLOR = "#173e32";
+export const DEFAULT_BRAND_COLOR = "#55b7c7";
 
 export const DEFAULT_BRAND_SHIFT = 1;
 
@@ -217,11 +217,11 @@ export type EditableSwatchGroup = (typeof EDITABLE_BRAND_SWATCHES)[number]["grou
 
 /** Hand-tuned swatches — Trail guide on sage paper. */
 export const DEFAULT_BRAND_OVERRIDES: Partial<Record<EditableBrandKey, string>> = {
-  forestDeep: "#ebece6",
-  sage: "#2a705c",
-  mint: "#d75f43",
-  quiet: "#68736e",
-  onBrand: "#fffefa",
+  forestDeep: "#112a35",
+  sage: "#55b7c7",
+  mint: "#55b7c7",
+  quiet: "#b2cbd0",
+  onBrand: "#f3fafc",
 };
 
 export type BrandMode = "dark" | "light";
@@ -457,12 +457,12 @@ const SWATCH_TOKEN: Record<EditableBrandKey, string> = {
 
 const DEFAULT_SWATCH_HEX: BrandSwatchMap = {
   forest: DEFAULT_BRAND_COLOR,
-  forestDeep: "#0e1013",
-  sage: "#f0a02a",
-  mint: "#ffd79a",
-  ink: "#20180a",
-  quiet: "#98a1ac",
-  onBrand: "#f2f3f5",
+  forestDeep: "#112a35",
+  sage: "#55b7c7",
+  mint: "#55b7c7",
+  ink: "#112a35",
+  quiet: "#b2cbd0",
+  onBrand: "#f3fafc",
 };
 
 /** Derive the Wanderfile token set from a brand hex + shift amount. */
@@ -650,13 +650,15 @@ function applyOverridesToDom(overrides: BrandLabState["overrides"]): void {
   } else {
     const onBrand = hexToRgb(overrides.onBrand);
     const onBrandL = rgbToHsl(onBrand).l;
-    root.style.setProperty("--wf-text-on-brand", overrides.onBrand);
-    // Light on-brand is button/label-on-fill; page copy stays ink.
-    const pageText =
-      onBrandL > 0.55
-        ? getComputedStyle(root).getPropertyValue("--wf-ink").trim() || "#1c2623"
-        : overrides.onBrand;
-    root.style.setProperty("--wf-text", pageText);
+    // Light “onBrand” is page copy on dark ground. Button labels on accent
+    // stay --wf-text-on-brand / --on-accent.
+    if (onBrandL > 0.55) {
+      root.style.setProperty("--wf-copy", overrides.onBrand);
+      root.style.setProperty("--wf-text", overrides.onBrand);
+      root.style.setProperty("--wf-ink", overrides.onBrand);
+    } else {
+      root.style.setProperty("--wf-text-on-brand", overrides.onBrand);
+    }
     if (!overrides.quiet) {
       const onDark = fromHsl(
         rgbToHsl(onBrand).h,
@@ -703,7 +705,7 @@ function applyTextStylesToDom(styles: TextRoleStyles): void {
   root.style.setProperty("--wf-font-serif", headlineFace);
 }
 
-export const DEFAULT_BRAND_MODE: BrandMode = "light";
+export const DEFAULT_BRAND_MODE: BrandMode = "dark";
 
 export function defaultBrandLabState(): BrandLabState {
   return {
@@ -742,17 +744,36 @@ function applyModeToDom(mode: BrandMode): void {
   }
 }
 
+function clearDerivedPaletteFromDom(): void {
+  const root = document.documentElement;
+  const palette = deriveBrandPalette(DEFAULT_BRAND_COLOR, DEFAULT_BRAND_SHIFT);
+  for (const token of Object.keys(palette)) {
+    root.style.removeProperty(token);
+  }
+  root.style.removeProperty("--forest-ring");
+}
+
 export function applyBrandLab(state: BrandLabState): BrandSwatchMap {
   const base = normalizeHex(state.base) ?? DEFAULT_BRAND_COLOR;
   const shift = clamp(state.shift, 0, 2);
   const textStyles = normalizeTextStyles(state.textStyles);
   const mode: BrandMode = state.mode === "light" ? "light" : "dark";
+  const next = { ...state, base, shift, textStyles, mode };
+  // Ocean Dusk lives in wf-tokens.css. Don't HSL-derive a light paper family
+  // over the product theme when the lab is still on the shipped default.
+  if (isDefaultBrandLab(next)) {
+    clearDerivedPaletteFromDom();
+    resetBrandHex();
+    applyTextStylesToDom(textStyles);
+    applyModeToDom(mode);
+    return swatchesFromLab(next);
+  }
   const palette = deriveBrandPalette(base, shift);
   applyPaletteToDom(palette);
   applyOverridesToDom(state.overrides);
   applyTextStylesToDom(textStyles);
   applyModeToDom(mode);
-  return swatchesFromLab({ ...state, base, shift, mode });
+  return swatchesFromLab(next);
 }
 
 /** Current mode from storage (used by SiteLayout / SiteHeader). */
@@ -772,11 +793,7 @@ export function applyBrandPalette(
 
 export function resetBrandPalette(): string {
   const root = document.documentElement;
-  const palette = deriveBrandPalette(DEFAULT_BRAND_COLOR, DEFAULT_BRAND_SHIFT);
-  for (const token of Object.keys(palette)) {
-    root.style.removeProperty(token);
-  }
-  root.style.removeProperty("--forest-ring");
+  clearDerivedPaletteFromDom();
   for (const token of [
     "--wf-font-body",
     "--wf-font-muted",
@@ -802,7 +819,13 @@ export function readBrandLabState(): BrandLabState {
   try {
     const raw = localStorage.getItem(BRAND_LAB_STORAGE_KEY);
     if (raw) {
-      return normalizeLabState(JSON.parse(raw) as Partial<BrandLabState>);
+      const normalized = normalizeLabState(JSON.parse(raw) as Partial<BrandLabState>);
+      // Migrate the previous shipped Emerald default to Ocean Dusk once. Keep
+      // intentional custom palettes untouched.
+      if (normalized.base.toLowerCase() === "#0d2b1a") {
+        return defaultBrandLabState();
+      }
+      return normalized;
     }
     const legacy = localStorage.getItem(BRAND_COLOR_STORAGE_KEY);
     const base = normalizeHex(legacy ?? "") ?? DEFAULT_BRAND_COLOR;

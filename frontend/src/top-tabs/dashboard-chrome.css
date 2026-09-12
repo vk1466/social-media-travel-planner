@@ -51,17 +51,12 @@
   padding: 0 12px;
 }
 
+.lab-pages .lab-utility .add-button,
 .lab-pages .lab-utility .queue-button.active,
 .lab-pages .lab-utility .queue-button[aria-current="page"] {
-  border-color: var(--dark);
-  background: var(--dark);
-  color: #fff;
-}
-
-.lab-pages .lab-utility .add-button {
-  border-color: var(--dark);
-  background: var(--dark);
-  color: #fff;
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
 }
 
 .lab-pages .lab-utility svg {
@@ -74,6 +69,7 @@
 }
 
 .lab-pages .lab-utility .lab-platform-menu {
+  display: none;
   position: relative;
 }
 
@@ -115,7 +111,7 @@
   border: 1px solid var(--line);
   border-radius: 14px;
   background: var(--panel);
-  box-shadow: 0 14px 38px rgba(25, 39, 33, 0.12);
+  box-shadow: 0 14px 38px rgb(var(--theme-ink-rgb) / 0.12);
 }
 
 .lab-pages .lab-utility .lab-platform-panel label {
@@ -210,11 +206,11 @@
   padding: 27px;
   background-size: cover;
   background-position: center;
-  color: #fff;
+  color: var(--on-fill);
 }
 
 .lab-pages .bento-feature .eyebrow {
-  color: #ffd3c5;
+  color: color-mix(in srgb, var(--on-fill) 70%, var(--theme-accent));
 }
 
 .lab-pages .bento-feature h2 {
@@ -264,7 +260,7 @@
   grid-column: span 2;
   padding: 22px;
   background: var(--dark);
-  color: #fff;
+  color: var(--on-fill);
 }
 
 .lab-pages .bento-recent h2 {
@@ -273,7 +269,7 @@
 }
 
 .lab-pages .bento-recent p {
-  color: #baccc5;
+  color: color-mix(in srgb, var(--on-fill) 72%, var(--theme-muted));
   font-size: 10px;
 }
 
@@ -288,13 +284,32 @@
   }
 }
 
-@media (max-width: 700px) {
+@media (max-width: 760px) {
   .lab-pages .lab-utility {
-    padding: 0 14px;
+    min-height: 56px;
+    height: auto;
+    padding: calc(8px + env(safe-area-inset-top, 0px)) 12px 8px;
+  }
+
+  .lab-pages .lab-utility .wordmark {
+    font-size: 19px;
+  }
+
+  .lab-pages .lab-utility .queue-button-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+
+  .lab-pages .lab-utility .queue-button {
+    width: 38px;
+    padding: 0;
   }
 
   .lab-pages .lab-utility-tabs {
-    padding: 12px 14px 0;
+    padding: 8px 12px 0;
   }
 
   .lab-pages .bento-board {
@@ -310,5 +325,21 @@
   .lab-pages .bento-feature h2 {
     margin-top: 24px;
     font-size: 32px;
+  }
+
+  .lab-pages .library-panel {
+    padding: 16px;
+    border-radius: 18px;
+  }
+
+  .lab-pages .panel-heading {
+    align-items: start;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+
+  .lab-pages .panel-heading h2 {
+    font-size: 26px;
   }
 }

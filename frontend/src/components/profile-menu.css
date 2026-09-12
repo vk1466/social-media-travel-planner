@@ -300,7 +300,7 @@
   position: relative;
   padding: 0.35rem 0.55rem 0.6rem;
   border-top: 1px solid rgb(var(--wf-mint-rgb) / 0.16);
-  background: color-mix(in srgb, var(--wf-forest-deep) 86%, #000);
+  background: color-mix(in srgb, var(--wf-forest-deep) 86%, var(--theme-mask));
 }
 
 .wf-header[data-tone="light"] .wf-profile-footer {
@@ -320,7 +320,7 @@
 
 .wf-profile-action.is-danger:hover {
   background: color-mix(in srgb, var(--wf-danger) 14%, transparent);
-  color: color-mix(in srgb, var(--wf-danger) 85%, #fff);
+  color: color-mix(in srgb, var(--wf-danger) 85%, var(--on-fill));
 }
 
 @media (max-width: 760px) {

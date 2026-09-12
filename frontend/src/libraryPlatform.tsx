@@ -72,7 +72,7 @@ export const LIBRARY_PLATFORM_COLOR: Record<string, string> = {
   instagram: `#${siInstagram.hex}`,
   youtube: `#${siYoutube.hex}`,
   tiktok: `#${siTiktok.hex}`,
-  web: "#2a705c",
+  web: "var(--dark)",
 };
 
 /** Material “public” glyph — web has no brand logo. */

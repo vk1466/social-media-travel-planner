@@ -172,7 +172,7 @@ function ClerkSignInForm() {
     >
       <View style={styles.card}>
         <View style={styles.logoMark}>
-          <Ionicons name="airplane" size={26} color="#fff" />
+          <Ionicons name="airplane" size={26} color={colors.onFill} />
         </View>
         <Text style={styles.brand}>Travel Planner</Text>
         <Text style={styles.title}>Welcome back</Text>

@@ -33,7 +33,7 @@
   height: 44px;
   border-radius: 14px;
   background: linear-gradient(140deg, var(--wf-coral-soft), var(--wf-coral));
-  color: var(--wf-forest-deep);
+  color: var(--on-accent);
   font-family: var(--wf-font-serif);
   font-size: 1.35rem;
   line-height: 1;
@@ -78,7 +78,7 @@ html[data-wf-mode="light"] .signed-out-sub {
 }
 
 .signed-out-gate .primary-button {
-  color: var(--wf-forest-deep);
+  color: var(--on-accent);
 }
 
 .signed-out-gate .secondary-button {
@@ -144,5 +144,59 @@ html[data-wf-mode="light"] .signed-out-sub {
 
   .signed-out-mosaic figure:nth-child(n + 4) {
     display: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .signed-out-gate {
+    min-height: 100dvh;
+    min-height: 100svh;
+    align-content: start;
+  }
+
+  .signed-out-copy {
+    padding: calc(1.5rem + env(safe-area-inset-top, 0px)) 1.25rem 1rem;
+    gap: 0.9rem;
+  }
+
+  .signed-out-title {
+    font-size: clamp(2rem, 9vw, 2.55rem);
+  }
+
+  .signed-out-sub {
+    font-size: 0.95rem;
+  }
+
+  .signed-out-actions .primary-button,
+  .signed-out-actions .secondary-button {
+    min-height: 44px;
+    padding-inline: 1.15rem;
+  }
+
+  .signed-out-mosaic {
+    display: flex;
+    min-height: 0;
+    gap: 10px;
+    padding: 0 1.25rem calc(1.25rem + env(safe-area-inset-bottom, 0px));
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x;
+    overscroll-behavior-x: contain;
+  }
+
+  .signed-out-mosaic::-webkit-scrollbar {
+    display: none;
+  }
+
+  .signed-out-mosaic figure,
+  .signed-out-mosaic figure:first-child,
+  .signed-out-mosaic figure:nth-child(n + 4) {
+    display: block;
+    flex: 0 0 min(78vw, 280px);
+    height: min(42vh, 280px);
+    border-radius: 18px;
+    scroll-snap-align: center;
   }
 }

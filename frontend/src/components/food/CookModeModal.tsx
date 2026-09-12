@@ -1,5 +1,6 @@
-import { useEffect, useState, type JSX } from "react";
+import { useEffect, useRef, useState, type JSX } from "react";
 import type { SavedRecipe } from "./recipeUtils";
+import { useHorizontalSwipe } from "../../hooks/usePointerSwipe";
 import "./recipe-library.css";
 
 export interface CookModeModalProps {
@@ -13,10 +14,18 @@ function extractMinutesFromStep(step: string): number | null {
 }
 
 export function CookModeModal({ item, onClose }: CookModeModalProps): JSX.Element {
+  const overlayRef = useRef<HTMLDivElement>(null);
   const steps = item.recipe.steps.length > 0 ? item.recipe.steps : ["Watch the original reel for step instructions."];
   const [stepIndex, setStepIndex] = useState(0);
   const [timerSeconds, setTimerSeconds] = useState<number | null>(null);
   const [timerRunning, setTimerRunning] = useState(false);
+
+  useHorizontalSwipe(overlayRef, {
+    enabled: true,
+    onLeft: () => setStepIndex((i) => Math.min(steps.length - 1, i + 1)),
+    onRight: () => setStepIndex((i) => Math.max(0, i - 1)),
+    threshold: 48,
+  });
 
   const currentStep = steps[stepIndex] ?? "";
   const structuredSeconds = item.recipe.step_timers_seconds?.[stepIndex];
@@ -73,6 +82,7 @@ export function CookModeModal({ item, onClose }: CookModeModalProps): JSX.Elemen
 
   return (
     <div
+      ref={overlayRef}
       className="cook-mode-overlay"
       role="dialog"
       aria-modal="true"
@@ -94,9 +104,10 @@ export function CookModeModal({ item, onClose }: CookModeModalProps): JSX.Elemen
       </div>
 
       <div className="cook-mode-stage">
-        <div style={{ color: "#a1a1aa", fontSize: "1.1rem", fontWeight: 600 }}>
+        <div style={{ color: "var(--theme-muted)", fontSize: "1.1rem", fontWeight: 600 }}>
           Step {stepIndex + 1} of {steps.length}
         </div>
+        <p className="cook-mode-swipe-hint">Swipe left or right to change steps</p>
 
         <div className="cook-mode-step-text">
           {currentStep}
@@ -114,7 +125,7 @@ export function CookModeModal({ item, onClose }: CookModeModalProps): JSX.Elemen
               </button>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.5rem" }}>
-                <div style={{ fontSize: "3.2rem", fontWeight: 900, fontFamily: "monospace", color: timerSeconds === 0 ? "#ef4444" : "#f97316" }}>
+                <div style={{ fontSize: "3.2rem", fontWeight: 900, fontFamily: "monospace", color: timerSeconds === 0 ? "var(--theme-danger)" : "var(--theme-warning)" }}>
                   {formatTimer(timerSeconds)}
                 </div>
                 <div style={{ display: "flex", gap: "0.5rem" }}>
@@ -134,7 +145,7 @@ export function CookModeModal({ item, onClose }: CookModeModalProps): JSX.Elemen
                   </button>
                 </div>
                 {timerSeconds === 0 && (
-                  <span style={{ color: "#ef4444", fontWeight: 700, fontSize: "1.2rem" }}>
+                  <span style={{ color: "var(--theme-danger)", fontWeight: 700, fontSize: "1.2rem" }}>
                     🔔 Timer Done!
                   </span>
                 )}

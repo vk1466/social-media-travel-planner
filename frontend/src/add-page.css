@@ -2,6 +2,11 @@
   max-width: 720px;
 }
 
+@media (max-width: 760px) {
+  .top-add-page .draft-list article { padding: 9px; }
+  .top-add-page .job-list article { grid-template-columns: 68px minmax(0, 1fr) auto; }
+}
+
 .add-page-form-card {
   padding: 1.5rem;
   background: var(--wf-chrome-panel);

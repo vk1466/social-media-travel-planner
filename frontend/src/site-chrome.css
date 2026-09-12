@@ -35,10 +35,10 @@
   background: var(--wf-forest-deep);
   color: var(--wf-copy);
   color-scheme: dark;
-  /* Semantic page copy — muted uses on-dark, not light-paper quiet */
-  --wf-copy: var(--wf-on-brand);
-  --wf-copy-muted: var(--wf-on-dark);
-  --wf-copy-accent: var(--wf-coral);
+  /* Semantic page copy — ink on paper, not button-on-accent. */
+  --wf-copy: var(--theme-ink);
+  --wf-copy-muted: var(--theme-muted);
+  --wf-copy-accent: var(--theme-accent);
   --wf-chrome-bg: var(--wf-forest-deep);
   --wf-chrome-panel: var(--wf-panel-dark);
   --wf-chrome-panel-muted: var(--wf-panel-dark-hover);

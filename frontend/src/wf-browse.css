@@ -150,7 +150,7 @@
 
 .wf-seg-btn.is-active {
   background: var(--wf-coral);
-  color: var(--wf-forest-deep);
+  color: var(--on-accent);
 }
 
 /* Generic button selector — allows .wf-seg children without an explicit .wf-seg-btn class */
@@ -176,7 +176,7 @@
 
 .wf-seg button:not(.wf-seg-btn).is-active {
   background: var(--wf-coral);
-  color: var(--wf-forest-deep);
+  color: var(--on-accent);
 }
 
 /* Soft variant — translucent background, larger non-uppercase buttons (toolbar contexts) */
@@ -264,7 +264,7 @@
 
 .wf-pill.is-active {
   background: var(--wf-coral);
-  color: var(--wf-forest-deep);
+  color: var(--on-accent);
   border-color: var(--wf-coral);
   font-weight: 700;
 }

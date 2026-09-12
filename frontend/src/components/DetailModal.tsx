@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import { useDetailModal } from "../hooks/useDetailModal";
+import { useDragDismiss } from "../hooks/usePointerSwipe";
 
 export interface DetailModalProps {
   titleId: string;
@@ -33,6 +34,7 @@ export function DetailModal({
   closeOnEsc = true,
 }: DetailModalProps) {
   const panelRef = useDetailModal(closeOnEsc ? onClose : null);
+  useDragDismiss(panelRef, onClose, { enabled: !preventOverlayClose });
   const panelClasses = ["detail-panel", panelClassName].filter(Boolean).join(" ");
   const overlayClasses = ["detail-overlay", overlayClassName].filter(Boolean).join(" ");
 

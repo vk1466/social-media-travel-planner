@@ -7,6 +7,7 @@ import { locationLine } from "../display";
 import { PageHeading } from "../../components/PageHeading";
 import { useLabTheme } from "../theme";
 import { PostDetail, PostMediaCard } from "./PostsPage";
+import "../../home-page.css";
 
 function recency(post: SavedPost): number {
   const raw = post.fetched_at ?? post.posted_at;
@@ -50,7 +51,7 @@ export function HomePage({
   );
 
   return (
-    <>
+    <div className="top-home-page">
       <PageHeading
         kicker="Your travel library"
         title="Save the spark. Plan the trip."
@@ -81,7 +82,7 @@ export function HomePage({
             </div>
             <Link to={`${basePath}/posts`}>See all →</Link>
           </div>
-          <div className="cover-grid">
+          <div className="cover-grid cover-rail">
             {recentPosts.map((post) => (
               <PostMediaCard key={post.post_id} post={post} onOpen={setSelected} />
             ))}
@@ -99,6 +100,6 @@ export function HomePage({
           }}
         />
       ) : null}
-    </>
+    </div>
   );
 }

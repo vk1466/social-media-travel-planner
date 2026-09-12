@@ -24,7 +24,7 @@ export function PostCard({ post, onPress, onDelete }: PostCardProps) {
         <View style={styles.thumbWrap}>
           <Image source={{ uri: thumb }} style={styles.thumb} resizeMode="cover" />
           <View style={styles.playBadge}>
-            <Ionicons name="play" size={12} color="#fff" />
+            <Ionicons name="play" size={12} color={colors.onFill} />
           </View>
         </View>
       ) : (

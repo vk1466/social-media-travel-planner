@@ -125,10 +125,10 @@ export function GroceryListModal({ recipes, onClose }: GroceryListModalProps): J
 
         <div>
           <span className="recipe-eyebrow-tag">Aisle-Sorted Shopping List</span>
-          <h2 style={{ margin: "0.25rem 0 0.5rem", fontSize: "1.6rem", color: "var(--text, #ffffff)" }}>
+          <h2 style={{ margin: "0.25rem 0 0.5rem", fontSize: "1.6rem", color: "var(--text)" }}>
             {hasRecipes ? `🛒 Grocery List (${totalIngredientsCount} items)` : "🛒 Your grocery list is empty"}
           </h2>
-          <p style={{ margin: 0, color: "var(--text-muted, rgb(255 255 255 / 0.7))", fontSize: "0.92rem" }}>
+          <p style={{ margin: 0, color: "var(--text-muted)", fontSize: "0.92rem" }}>
             {hasRecipes ? (
               <>
                 Aggregated from {recipes.length} saved {recipes.length === 1 ? "recipe" : "recipes"}:{" "}

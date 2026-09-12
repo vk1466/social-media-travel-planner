@@ -9,35 +9,35 @@ export const ALL_FILTER_ICON = "✦";
 export const TONE_VISUALS: Record<string, { icon: string; color: string }> = {
   food: {
     icon: `${ICON_START}<path d="M7 3v8M4 3v5a3 3 0 0 0 6 0V3M7 11v10M16 3c3 3 3 8 0 11v7M16 3v11h4"/>${ICON_END}`,
-    color: "#d35f42",
+    color: "var(--tone-food)",
   },
   culture: {
     icon: `${ICON_START}<path d="m12 3 9 5H3l9-5ZM5 10v7M9 10v7M15 10v7M19 10v7M3 21h18M4 17h16"/>${ICON_END}`,
-    color: "#7c58a6",
+    color: "var(--tone-culture)",
   },
   outdoors: {
     icon: `${ICON_START}<path d="m3 20 6-10 4 6 2-3 6 7H3ZM15 7l2-4 2 4"/>${ICON_END}`,
-    color: "#3f7c58",
+    color: "var(--tone-outdoors)",
   },
   water: {
     icon: `${ICON_START}<path d="M2 8c3-2 5 2 8 0s5 2 8 0 4 0 4 0M2 13c3-2 5 2 8 0s5 2 8 0 4 0 4 0M2 18c3-2 5 2 8 0s5 2 8 0 4 0 4 0"/>${ICON_END}`,
-    color: "#347fa2",
+    color: "var(--tone-water)",
   },
   place: {
     icon: `${ICON_START}<path d="M4 21V8l5-3v16M9 21V3l7 3v15M16 21v-9l4-2v11M2 21h20M12 8h1M12 12h1M12 16h1"/>${ICON_END}`,
-    color: "#b77a2d",
+    color: "var(--tone-place)",
   },
   market: {
     icon: `${ICON_START}<path d="M3 9h18l-2-5H5L3 9ZM5 9v11h14V9M9 20v-6h6v6M4 9c0 2 3 2 4 0 1 2 3 2 4 0 1 2 3 2 4 0 1 2 4 2 4 0"/>${ICON_END}`,
-    color: "#b44f72",
+    color: "var(--tone-market)",
   },
   stay: {
     icon: `${ICON_START}<path d="M3 19V9M21 19v-7H8a5 5 0 0 0-5 5v2M3 15h18M7 9a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/>${ICON_END}`,
-    color: "#385e86",
+    color: "var(--tone-stay)",
   },
   muted: {
     icon: `${ICON_START}<path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2"/>${ICON_END}`,
-    color: "#68736d",
+    color: "var(--tone-muted)",
   },
 };
 
@@ -61,14 +61,14 @@ const CATEGORY_ICONS: Record<string, string> = {
 };
 
 const KEY_COLORS: Record<string, string> = {
-  dinner: "#d35f42",
-  lunch: "#b77a2d",
-  breakfast: "#c45238",
-  dessert: "#b44f72",
-  snack: "#3f7c58",
-  cocktail: "#7c58a6",
-  movie: "#385e86",
-  tv: "#7c58a6",
+  dinner: "var(--meal-dinner)",
+  lunch: "var(--meal-lunch)",
+  breakfast: "var(--meal-breakfast)",
+  dessert: "var(--meal-dessert)",
+  snack: "var(--meal-snack)",
+  cocktail: "var(--meal-cocktail)",
+  movie: "var(--watch-movie)",
+  tv: "var(--watch-tv)",
 };
 
 export function visualForCategory(
@@ -90,7 +90,7 @@ export function hashSwatch(key: string): string {
 
 export function visualForFilterKey(key: string): { color: string; icon: string | null } {
   if (key === "all") {
-    return { color: "#173e32", icon: null };
+    return { color: "var(--dark)", icon: null };
   }
   if (CATEGORY_ICONS[key] || key === "other" || key === "uncategorized") {
     return visualForCategory(key === "uncategorized" ? null : key);

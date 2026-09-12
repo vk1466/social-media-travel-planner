@@ -145,7 +145,7 @@ export default function PostDetailScreen() {
         <View style={styles.heroWrap}>
           <Image source={{ uri: thumb }} style={styles.hero} resizeMode="cover" />
           <View style={styles.playBadge}>
-            <Ionicons name="play" size={16} color="#fff" />
+            <Ionicons name="play" size={16} color={colors.onFill} />
           </View>
         </View>
       ) : null}

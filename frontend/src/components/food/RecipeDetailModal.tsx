@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type JSX } from "react";
+import { useDragDismiss } from "../../hooks/usePointerSwipe";
 import type { ExtractedRecipe, SavedPost } from "../../api";
 import { reconstructRecipe } from "../../api";
 import { proxiedMediaUrl } from "../../postDisplayUtils";
@@ -34,6 +35,7 @@ export function RecipeDetailModal({
   onPostUpdated,
 }: RecipeDetailModalProps): JSX.Element {
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLElement>(null);
   const dialogTitleId = useMemo(
     () => `recipe-title-${item.key.replace(/[^a-zA-Z0-9_-]/g, "-")}`,
     [item.key],
@@ -41,6 +43,7 @@ export function RecipeDetailModal({
   const [multiplier, setMultiplier] = useState(1);
   const [checkedIngredients, setCheckedIngredients] = useState<Set<number>>(new Set());
   const [cooking, setCooking] = useState(false);
+  useDragDismiss(panelRef, onClose, { enabled: !cooking });
   const [currentPost, setCurrentPost] = useState<SavedPost>(item.post);
   const [currentRecipe, setCurrentRecipe] = useState<ExtractedRecipe>(item.recipe);
   const [isReconstructing, setIsReconstructing] = useState(false);
@@ -157,12 +160,14 @@ export function RecipeDetailModal({
         onClick={onClose}
       >
         <section
+          ref={panelRef}
           className="recipe-detail-panel recipe-detail-panel--editorial"
           role="dialog"
           aria-modal="true"
           aria-labelledby={dialogTitleId}
           onClick={(e) => e.stopPropagation()}
         >
+          <div className="sheet-handle recipe-sheet-handle" data-drag-handle aria-hidden="true" />
           <button
             ref={closeButtonRef}
             type="button"

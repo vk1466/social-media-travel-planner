@@ -241,45 +241,47 @@ export function LibraryShell({
           query={searchValue}
           onQuery={setSearch}
           groups={mode === "places" ? placeGroups : postGroups}
-        />
-        <FilterPills
-          allLabel={
-            mode === "places" ? copy.pillAll : travelPostFilters ? "All types" : "All saves"
+          trailing={
+            <FilterPills
+              allLabel={
+                mode === "places" ? copy.pillAll : travelPostFilters ? "All types" : "All saves"
+              }
+              allCount={meta.count}
+              pills={typePills}
+              selectedKeys={selectedFacetKeys}
+              multi={mode === "places" || travelPostFilters}
+              ariaLabel="Library filters"
+              onSelect={(key) => {
+                if (mode === "places") {
+                  if (key === "all") {
+                    setPlacesFilters((current) => ({ ...current, typeFilter: [] }));
+                    return;
+                  }
+                  setPlacesFilters((current) => ({
+                    ...current,
+                    typeFilter: current.typeFilter.includes(key)
+                      ? current.typeFilter.filter((entry) => entry !== key)
+                      : [...current.typeFilter, key],
+                  }));
+                  return;
+                }
+                if (travelPostFilters) {
+                  if (key === "all") {
+                    setPostsFilters((current) => ({ ...current, placeTypes: [] }));
+                    return;
+                  }
+                  setPostsFilters((current) => ({
+                    ...current,
+                    placeTypes: current.placeTypes.includes(key)
+                      ? current.placeTypes.filter((entry) => entry !== key)
+                      : [...current.placeTypes, key],
+                  }));
+                  return;
+                }
+                setPostsFilters((current) => ({ ...current, ringKey: key }));
+              }}
+            />
           }
-          allCount={meta.count}
-          pills={typePills}
-          selectedKeys={selectedFacetKeys}
-          multi={mode === "places" || travelPostFilters}
-          ariaLabel="Library filters"
-          onSelect={(key) => {
-            if (mode === "places") {
-              if (key === "all") {
-                setPlacesFilters((current) => ({ ...current, typeFilter: [] }));
-                return;
-              }
-              setPlacesFilters((current) => ({
-                ...current,
-                typeFilter: current.typeFilter.includes(key)
-                  ? current.typeFilter.filter((entry) => entry !== key)
-                  : [...current.typeFilter, key],
-              }));
-              return;
-            }
-            if (travelPostFilters) {
-              if (key === "all") {
-                setPostsFilters((current) => ({ ...current, placeTypes: [] }));
-                return;
-              }
-              setPostsFilters((current) => ({
-                ...current,
-                placeTypes: current.placeTypes.includes(key)
-                  ? current.placeTypes.filter((entry) => entry !== key)
-                  : [...current.placeTypes, key],
-              }));
-              return;
-            }
-            setPostsFilters((current) => ({ ...current, ringKey: key }));
-          }}
         />
       </FilterChrome>
 

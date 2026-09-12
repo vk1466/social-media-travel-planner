@@ -222,7 +222,7 @@
 .wf-chip-btn.is-active {
   background: var(--wf-copy-accent);
   border-color: var(--wf-copy-accent);
-  color: var(--wf-on-brand);
+  color: var(--on-accent);
   font-weight: 700;
 }
 
@@ -232,7 +232,7 @@
 }
 
 .wf-site[data-tone="dark"] .wf-chip-btn.is-active {
-  color: var(--wf-forest-deep);
+  color: var(--on-accent);
 }
 
 .wf-chip-count {
@@ -257,6 +257,23 @@
 
   .wf-page-header-aside {
     gap: 1.5rem;
+  }
+
+  .wf-chipbar {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x;
+  }
+
+  .wf-chipbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .wf-chip-btn {
+    flex: 0 0 auto;
+    min-height: 40px;
   }
 
   .wf-metric-value {

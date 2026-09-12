@@ -186,19 +186,21 @@
   text-decoration: none;
 }
 
-@media (max-width: 720px) {
+@media (max-width: 760px) {
 
 .detail-overlay {
     padding: 0;
     align-items: stretch;
+    justify-content: flex-end;
   }
 
 .detail-panel {
     width: 100%;
-    max-height: 100vh;
-    border-radius: 0;
+    max-height: min(94dvh, 100%);
+    border-radius: 20px 20px 0 0;
     border-left: none;
     border-right: none;
+    padding-bottom: calc(var(--size-6, 1.5rem) + env(safe-area-inset-bottom, 0px));
   }
 
 .detail-footer {

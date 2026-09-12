@@ -21,7 +21,7 @@ export function wanderfileClerkAppearance(mode: BrandMode = "dark"): Appearance 
     },
     variables: {
       colorPrimary: BrandCss.forest,
-      colorPrimaryForeground: BrandCss.cream,
+      colorPrimaryForeground: BrandCss.forestDeep,
       colorForeground: dark ? "var(--wf-on-brand)" : BrandCss.ink,
       colorMutedForeground: BrandCss.quiet,
       colorMuted: dark ? "rgb(255 255 255 / 0.07)" : BrandCss.surfaceMuted,

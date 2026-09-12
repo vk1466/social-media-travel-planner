@@ -335,41 +335,41 @@ export function getRecipeFoodHeroTheme(recipe: ExtractedRecipe): {
   const text = `${recipe.title ?? ""} ${recipe.summary ?? ""} ${recipe.meal_type ?? ""} ${recipe.cuisine ?? ""}`.toLowerCase();
   if (text.includes("ice cream") || text.includes("sorbet") || text.includes("gelato")) {
     return {
-      gradient: "linear-gradient(135deg, #4a1936 0%, #2b1636 50%, #151124 100%)",
+      gradient: "var(--theme-hero-frozen)",
       emoji: "🍨",
       label: "Artisanal Ice Cream & Frozen Treat",
     };
   }
   if (text.includes("dessert") || text.includes("cake") || text.includes("sweet")) {
     return {
-      gradient: "linear-gradient(135deg, #3d1b28 0%, #261324 50%, #17101e 100%)",
+      gradient: "var(--theme-hero-dessert)",
       emoji: "🍰",
       label: "Sweet Dessert Creation",
     };
   }
   if (text.includes("cocktail") || text.includes("drink") || text.includes("beverage")) {
     return {
-      gradient: "linear-gradient(135deg, #182b42 0%, #1a1b38 50%, #101221 100%)",
+      gradient: "var(--theme-hero-drink)",
       emoji: "🍹",
       label: "Craft Beverage & Refreshment",
     };
   }
   if (text.includes("breakfast") || text.includes("pancake") || text.includes("egg")) {
     return {
-      gradient: "linear-gradient(135deg, #4d3319 0%, #302115 50%, #191410 100%)",
+      gradient: "var(--theme-hero-breakfast)",
       emoji: "🥞",
       label: "Morning Breakfast & Brunch",
     };
   }
   if (text.includes("pasta") || text.includes("italian") || text.includes("pizza")) {
     return {
-      gradient: "linear-gradient(135deg, #422019 0%, #2e1a17 50%, #191212 100%)",
+      gradient: "var(--theme-hero-italian)",
       emoji: "🍝",
       label: "Comfort Italian Cuisine",
     };
   }
   return {
-    gradient: "linear-gradient(135deg, #2b3038 0%, #1c2129 50%, #111419 100%)",
+    gradient: "var(--theme-hero-food)",
     emoji: "🍳",
     label: "Fresh Culinary Creation",
   };

@@ -18,6 +18,12 @@
   outline-offset: 3px;
 }
 
+@media (max-width: 760px) {
+  .top-home-page .home-recent { margin-top: 10px; }
+  .top-home-page .home-recent .panel-heading { margin-bottom: 10px; }
+  .top-home-page .home-recent .cover-card { min-width: 0; }
+}
+
 /* ── Bento ──────────────────────────────────────────────── */
 
 .home-bento {
@@ -257,12 +263,12 @@ html[data-bento-motion="card-shuffle"] .home-tile--media.is-in .home-tile-layer-
 .home-tile--title {
   background: linear-gradient(
     150deg,
-    color-mix(in srgb, var(--wf-coral) 22%, #16181d) 0%,
-    #16181d 62%,
+    color-mix(in srgb, var(--wf-coral) 22%, var(--theme-overlay)) 0%,
+    var(--theme-overlay) 62%,
     var(--wf-forest-deep) 100%
   );
   border-color: rgb(var(--wf-coral-rgb) / 0.28);
-  color: #fdf6e9;
+  color: var(--on-fill);
   padding: 28px;
   display: flex;
   flex-direction: column;
@@ -406,8 +412,8 @@ html[data-bento-motion="card-shuffle"] .home-tile--media.is-in .home-tile-layer-
 .home-tab--posts {
   background: linear-gradient(
     140deg,
-    color-mix(in srgb, var(--wf-coral) 32%, #1b1d23) 0%,
-    #1b1d23 100%
+    color-mix(in srgb, var(--wf-coral) 32%, var(--theme-overlay)) 0%,
+    var(--theme-overlay) 100%
   );
   color: var(--wf-mint);
   border: 1px solid rgb(var(--wf-coral-rgb) / 0.3);
@@ -494,7 +500,7 @@ html[data-bento-motion="card-shuffle"] .home-tile--media.is-in .home-tile-layer-
   padding: 0.75rem 1.4rem;
   border-radius: var(--wf-radius-pill);
   background: var(--wf-coral);
-  color: var(--wf-forest-deep);
+  color: var(--on-accent);
   font-weight: 700;
   font-size: 0.9rem;
   transition: transform 0.15s ease, filter 0.15s ease;

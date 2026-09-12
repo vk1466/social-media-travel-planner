@@ -270,6 +270,20 @@ export function MovieLibrary({ posts, onSelectPost }: MovieLibraryProps): JSX.El
 
   return (
     <div className="movie-library-shelf">
+      <nav className="mobile-editorial-rail" aria-label="Movie categories">
+        {(["all", "movie", "tv"] as KindFilter[]).map((value) => (
+          <button
+            key={value}
+            type="button"
+            className={kindFilter === value ? "is-active" : ""}
+            aria-pressed={kindFilter === value}
+            onClick={() => setKindFilter(value)}
+          >
+            <span aria-hidden="true">{value === "all" ? "◎" : value === "movie" ? "▣" : "◫"}</span>
+            <small>{value === "all" ? "All" : value === "movie" ? "Films" : "Series"}</small>
+          </button>
+        ))}
+      </nav>
       <FilterChrome>
         <FilterBar
           placeholder="Search titles, directors, actors, genres..."
@@ -288,31 +302,33 @@ export function MovieLibrary({ posts, onSelectPost }: MovieLibraryProps): JSX.El
             },
           ]}
           trailing={
-            <select
-              className="lib-filters-select"
-              value={sortBy}
-              onChange={(event) => setSortBy(event.target.value as SortOption)}
-              aria-label="Sort movies"
-            >
-              <option value="rating">Top rated</option>
-              <option value="year">Release year</option>
-              <option value="recent">Most recommended</option>
-            </select>
+            <>
+              <select
+                className="lib-filters-select"
+                value={sortBy}
+                onChange={(event) => setSortBy(event.target.value as SortOption)}
+                aria-label="Sort movies"
+              >
+                <option value="rating">Top rated</option>
+                <option value="year">Release year</option>
+                <option value="recent">Most recommended</option>
+              </select>
+              {availableProviders.length > 0 ? (
+                <FilterPills
+                  allLabel="All platforms"
+                  allCount={moviesWithEnrichment.length}
+                  pills={availableProviders.map((provider) => ({
+                    key: provider,
+                    label: provider,
+                  }))}
+                  selectedKeys={[providerFilter]}
+                  ariaLabel="Filter by streaming service"
+                  onSelect={(key) => setProviderFilter(key === providerFilter ? "all" : key)}
+                />
+              ) : null}
+            </>
           }
         />
-        {availableProviders.length > 0 ? (
-          <FilterPills
-            allLabel="All platforms"
-            allCount={moviesWithEnrichment.length}
-            pills={availableProviders.map((provider) => ({
-              key: provider,
-              label: provider,
-            }))}
-            selectedKeys={[providerFilter]}
-            ariaLabel="Filter by streaming service"
-            onSelect={(key) => setProviderFilter(key === providerFilter ? "all" : key)}
-          />
-        ) : null}
       </FilterChrome>
 
       {/* Stats Summary Bar */}

@@ -1,22 +1,26 @@
+/**
+ * Native palette — keep in sync with frontend/src/wf-tokens.css (--theme-*).
+ */
 import { Platform, type TextStyle, type ViewStyle } from "react-native";
 
 export const colors = {
-  bg: "#f4f7f5",
-  surface: "#ffffff",
-  surfaceAlt: "#eef3f0",
-  ink: "#14201b",
-  muted: "#5c6f66",
-  faint: "#8a998f",
-  border: "#d5e0da",
-  brand: "#1a3a2f",
-  brandSoft: "#e8f0ec",
-  accent: "#c45c26",
-  accentSoft: "#fbeade",
-  danger: "#b42318",
-  dangerSoft: "#fef3f2",
-  success: "#1f7a4d",
-  successSoft: "#ecfdf3",
-  running: "#b45309",
+  bg: "#112a35",
+  surface: "#173a47",
+  surfaceAlt: "#2a5260",
+  ink: "#f3fafc",
+  muted: "#b2cbd0",
+  faint: "#b2cbd0",
+  border: "#2a5260",
+  brand: "#55b7c7",
+  brandSoft: "#2a5260",
+  accent: "#55b7c7",
+  accentSoft: "#2a5260",
+  onFill: "#112a35",
+  danger: "#c45c5c",
+  dangerSoft: "#3a2a2e",
+  success: "#2e7d52",
+  successSoft: "#1c3d34",
+  running: "#d97706",
 };
 
 export const spacing = {
@@ -44,7 +48,7 @@ export function shadow(level: 1 | 2 | 3 = 1): ViewStyle {
   }[level];
   return Platform.select({
     ios: {
-      shadowColor: "#0d1f18",
+      shadowColor: "#08171e",
       shadowOffset: { width: 0, height: config.height },
       shadowOpacity: config.opacity,
       shadowRadius: config.radius,

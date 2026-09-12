@@ -1,119 +1,177 @@
 :root {
   /*
-   * Common Wanderfile brand palette — single source for every page.
-   * Change via ThemeColorPicker (or edit these defaults). Prefer these
-   * tokens everywhere: var(--wf-forest), rgb(var(--wf-forest-rgb) / a).
-   * JS consumers: import { BrandCss, BrandHex, P } from "./brandColors".
+   * Product theme — Ocean Dusk. Hex lives only in --theme-* below.
+   * Change this block to restyle the app. Components must use
+   * var(--bg), var(--accent), var(--ink), … or the --wf-* aliases.
    */
 
-  /*
-   * Brand — Midnight Reel (amber on near-black).
-   * --wf-coral / --wf-coral-soft are intentional aliases of --wf-forest / --wf-mint.
-   * Convention: use --wf-coral for UI interactive accents (active pills, buttons,
-   * focus rings); use --wf-forest for brand color references (logos, backgrounds).
-   * Use --wf-mint for text highlights on dark grounds; --wf-coral-soft for fills.
-   */
-  --wf-forest: #ffb648;
-  --wf-forest-mid: #ffc56a;
-  --wf-forest-deep: #0e1013;
-  --wf-forest-hover: #f0a02a;
-  /* --wf-sage is an alias of --wf-forest-hover; prefer --wf-sage for success/status indicators */
-  --wf-sage: #f0a02a;
-  /* Highlight — pale amber */
-  --wf-mint: #ffd79a;
+  --theme-paper: #112a35;
+  --theme-panel: #173a47;
+  --theme-ink: #f3fafc;
+  --theme-muted: #b2cbd0;
+  --theme-line: #2a5260;
+  --theme-accent: #55b7c7;
+  --theme-accent-hover: #3f9bad;
+  --theme-soft: #2a5260;
+  --theme-fill: #0c222b;
+  --theme-mid: #1f4654;
+  --theme-fog: #224957;
+  --theme-chrome-muted: #214957;
+  --theme-on-fill: #f3fafc;
+  --theme-on-accent: #173a47;
+  --theme-overlay: #08171e;
+  --theme-overlay-rgb: 8 23 30;
+  --theme-mask: #000000;
+  --theme-cover: #173a47;
+  --theme-tile: color-mix(in srgb, var(--theme-accent) 22%, var(--theme-panel));
+  --theme-hero-frozen: linear-gradient(135deg, #4a1936 0%, #2b1636 50%, #151124 100%);
+  --theme-hero-dessert: linear-gradient(135deg, #3d1b28 0%, #261324 50%, #17101e 100%);
+  --theme-hero-drink: linear-gradient(135deg, #182b42 0%, #1a1b38 50%, #101221 100%);
+  --theme-hero-breakfast: linear-gradient(135deg, #4d3319 0%, #302115 50%, #191410 100%);
+  --theme-hero-italian: linear-gradient(135deg, #422019 0%, #2e1a17 50%, #191212 100%);
+  --theme-hero-food: linear-gradient(135deg, #2b3038 0%, #1c2129 50%, #111419 100%);
 
-  /* Channel forms for translucent overlays */
-  --wf-forest-rgb: 255 182 72;
-  --wf-forest-mid-rgb: 255 197 106;
-  --wf-forest-deep-rgb: 14 16 19;
-  --wf-forest-hover-rgb: 240 160 42;
-  --wf-sage-rgb: 240 160 42;
-  --wf-mint-rgb: 255 215 154;
-  --wf-cream-rgb: 242 243 245;
-  --wf-ink-rgb: 32 24 10;
-  --wf-sand-rgb: 196 168 130;
-  --wf-clay-rgb: 154 115 88;
-  --wf-slate-rgb: 61 107 138;
-  --wf-plum-rgb: 111 95 138;
+  --theme-paper-rgb: 17 42 53;
+  --theme-panel-rgb: 23 58 71;
+  --theme-ink-rgb: 243 250 252;
+  --theme-muted-rgb: 178 203 208;
+  --theme-accent-rgb: 85 183 199;
+  --theme-accent-hover-rgb: 63 155 173;
+  --theme-soft-rgb: 42 82 96;
+  --theme-fill-rgb: 12 34 43;
+  --theme-mid-rgb: 31 70 84;
+  --theme-on-fill-rgb: 243 250 252;
 
-  /* Neutrals — midnight charcoal (light mode re-derives paper) */
-  --wf-cream: #f2f3f5;
-  --wf-soft: #1d2128;
-  --wf-bg: #0e1013;
-  --wf-surface: #171a1f;
-  --wf-surface-muted: #14171c;
-  --wf-fog: #1d2128;
-  --wf-border: rgb(255 255 255 / 0.1);
-  --wf-border-subtle: rgb(255 255 255 / 0.08);
+  --theme-instagram-a: #7b43d6;
+  --theme-instagram-b: #dc3d78;
+  --theme-instagram-c: #f0a34a;
+  --theme-instagram: linear-gradient(135deg, var(--theme-instagram-a), var(--theme-instagram-b) 55%, var(--theme-instagram-c));
+  --theme-tiktok: #111719;
+  --theme-youtube: #e3362d;
 
-  /* Text — three shared roles for the whole site */
-  --wf-ink: #20180a; /* contrast ink for chips / light insets */
-  --wf-quiet: #5c564e; /* muted copy on light paper only — never on dark grounds */
-  --wf-on-brand: #f2f3f5; /* labels on brand fills / dark-ground copy */
-  /* Page copy — dark site defaults (overridden by .wf-site[data-tone]) */
-  --wf-copy: var(--wf-on-brand);
-  --wf-copy-muted: var(--wf-on-dark);
-  --wf-copy-accent: var(--wf-mint);
-  --wf-chrome-bg: var(--wf-forest-deep);
-  --wf-chrome-panel: var(--wf-surface);
-  --wf-chrome-panel-muted: var(--wf-surface-muted);
-  --wf-chrome-border: var(--wf-border);
-  /* Back-compat aliases — same roles, do not invent new text colors */
-  --wf-text: var(--wf-ink);
-  --wf-text-muted: var(--wf-quiet);
-  --wf-text-on-brand: var(--wf-on-brand);
-  --wf-subtle: var(--wf-quiet);
+  --theme-success: #2e7d52;
+  --theme-danger: #c45c5c;
+  --theme-warning: #d97706;
+  --theme-info: #0284c7;
 
-  /* Secondary accents */
-  --wf-sand: #c4a882;
-  --wf-clay: #9a7358;
-  --wf-slate: #3d6b8a;
-  --wf-plum: #6f5f8a;
-  /*
-   * Warm mark — intentional aliases of the forest/mint pair.
-   * Use --wf-coral for UI interactive accents (active pills, buttons, focus rings).
-   * Use --wf-coral-soft for soft fill variants and overlays.
-   */
-  --wf-coral: #ffb648;       /* == --wf-forest */
-  --wf-coral-soft: #ffd79a;  /* == --wf-mint */
-  --wf-coral-deep: #f0a02a;  /* == --wf-forest-hover / --wf-sage */
-  --wf-coral-rgb: 255 182 72;
-  --wf-coral-soft-rgb: 255 215 154;
-  --wf-coral-deep-rgb: 240 160 42;
+  --theme-macro-protein: #38bdf8;
+  --theme-macro-carbs: #fbbf24;
+  --theme-macro-fat: #f87171;
+  --theme-rating-bad: #ff6b57;
+  --theme-rating-good: #72d95b;
 
-  /* Status */
-  --wf-success: #3fc79a;
-  --wf-danger: #c45c5c;
+  --tone-food: #d35f42;
+  --tone-culture: #7c58a6;
+  --tone-outdoors: #3f7c58;
+  --tone-water: #347fa2;
+  --tone-place: #b77a2d;
+  --tone-market: #b44f72;
+  --tone-stay: #385e86;
+  --tone-muted: var(--theme-muted);
 
-  /* Category chip tones — bg / ink / border per family */
-  --wf-cat-outdoors-bg: #e7f3ec;
-  --wf-cat-outdoors-ink: #1f5c3d;
-  --wf-cat-outdoors-border: #c5e0d0;
-  --wf-cat-water-bg: #e6f2f7;
-  --wf-cat-water-ink: #2a5f78;
-  --wf-cat-water-border: #c5dce8;
-  --wf-cat-place-bg: #eef1f3;
-  --wf-cat-place-ink: #3d4f5c;
-  --wf-cat-place-border: #d5dde3;
-  --wf-cat-culture-bg: #f5efe8;
-  --wf-cat-culture-ink: #7a5538;
-  --wf-cat-culture-border: #e4d5c4;
-  --wf-cat-food-bg: #f7efe6;
-  --wf-cat-food-ink: #8a5a2b;
-  --wf-cat-food-border: #ead7c0;
-  --wf-cat-market-bg: #f3ece6;
-  --wf-cat-market-ink: #6e4f3a;
-  --wf-cat-market-border: #e0d0c2;
-  --wf-cat-stay-bg: #e8eef2;
-  --wf-cat-stay-ink: #3a5568;
-  --wf-cat-stay-border: #c9d7e0;
+  --meal-dinner: var(--tone-food);
+  --meal-lunch: var(--tone-place);
+  --meal-breakfast: #c45238;
+  --meal-dessert: var(--tone-market);
+  --meal-snack: var(--tone-outdoors);
+  --meal-cocktail: var(--tone-culture);
+  --watch-movie: var(--tone-stay);
+  --watch-tv: var(--tone-culture);
 
-  /* On-dark surfaces — light muted (never alias --wf-quiet) */
-  --wf-on-dark: #98a1ac;
-  --wf-on-dark-strong: color-mix(in srgb, var(--wf-on-brand) 92%, var(--wf-on-dark));
-  --wf-border-dark: rgb(255 255 255 / 0.1);
-  --wf-panel-dark: #171a1f;
-  --wf-panel-dark-hover: #1d2128;
+  --wf-cat-outdoors-bg: color-mix(in srgb, var(--tone-outdoors) 22%, var(--theme-panel));
+  --wf-cat-outdoors-ink: color-mix(in srgb, var(--tone-outdoors) 42%, var(--theme-ink));
+  --wf-cat-outdoors-border: color-mix(in srgb, var(--tone-outdoors) 32%, var(--theme-line));
+  --wf-cat-water-bg: color-mix(in srgb, var(--tone-water) 22%, var(--theme-panel));
+  --wf-cat-water-ink: color-mix(in srgb, var(--tone-water) 42%, var(--theme-ink));
+  --wf-cat-water-border: color-mix(in srgb, var(--tone-water) 32%, var(--theme-line));
+  --wf-cat-place-bg: color-mix(in srgb, var(--tone-place) 22%, var(--theme-panel));
+  --wf-cat-place-ink: color-mix(in srgb, var(--tone-place) 42%, var(--theme-ink));
+  --wf-cat-place-border: color-mix(in srgb, var(--tone-place) 32%, var(--theme-line));
+  --wf-cat-culture-bg: color-mix(in srgb, var(--tone-culture) 22%, var(--theme-panel));
+  --wf-cat-culture-ink: color-mix(in srgb, var(--tone-culture) 42%, var(--theme-ink));
+  --wf-cat-culture-border: color-mix(in srgb, var(--tone-culture) 32%, var(--theme-line));
+  --wf-cat-food-bg: color-mix(in srgb, var(--tone-food) 22%, var(--theme-panel));
+  --wf-cat-food-ink: color-mix(in srgb, var(--tone-food) 42%, var(--theme-ink));
+  --wf-cat-food-border: color-mix(in srgb, var(--tone-food) 32%, var(--theme-line));
+  --wf-cat-market-bg: color-mix(in srgb, var(--tone-market) 22%, var(--theme-panel));
+  --wf-cat-market-ink: color-mix(in srgb, var(--tone-market) 42%, var(--theme-ink));
+  --wf-cat-market-border: color-mix(in srgb, var(--tone-market) 32%, var(--theme-line));
+  --wf-cat-stay-bg: color-mix(in srgb, var(--tone-stay) 22%, var(--theme-panel));
+  --wf-cat-stay-ink: color-mix(in srgb, var(--tone-stay) 42%, var(--theme-ink));
+  --wf-cat-stay-border: color-mix(in srgb, var(--tone-stay) 32%, var(--theme-line));
+
+  /* Semantic roles used by components */
+  --bg: var(--theme-paper);
+  --panel: var(--theme-panel);
+  --ink: var(--theme-ink);
+  --muted: var(--theme-muted);
+  --line: var(--theme-line);
+  --accent: var(--theme-accent);
+  --accent-hover: var(--theme-accent-hover);
+  --soft: var(--theme-soft);
+  --dark: var(--theme-fill);
+  --on-fill: var(--theme-on-fill);
+  --on-accent: var(--theme-on-accent);
+  --cover-paper: var(--theme-cover);
+
+  /* --wf-* aliases so older rules follow the same theme */
+  --wf-forest: var(--theme-accent);
+  --wf-forest-mid: var(--theme-mid);
+  --wf-forest-deep: var(--theme-paper);
+  --wf-forest-hover: var(--theme-accent-hover);
+  --wf-sage: var(--theme-muted);
+  --wf-mint: var(--theme-accent);
+  --wf-forest-rgb: var(--theme-accent-rgb);
+  --wf-forest-mid-rgb: var(--theme-mid-rgb);
+  --wf-forest-deep-rgb: var(--theme-paper-rgb);
+  --wf-forest-hover-rgb: var(--theme-accent-hover-rgb);
+  --wf-sage-rgb: var(--theme-muted-rgb);
+  --wf-mint-rgb: var(--theme-accent-rgb);
+  --wf-cream: var(--theme-panel);
+  --wf-cream-rgb: var(--theme-panel-rgb);
+  --wf-soft: var(--theme-soft);
+  --wf-bg: var(--theme-paper);
+  --wf-surface: var(--theme-panel);
+  --wf-surface-muted: var(--theme-soft);
+  --wf-fog: var(--theme-fog);
+  --wf-border: var(--theme-line);
+  --wf-border-subtle: var(--theme-line);
+  --wf-ink: var(--theme-ink);
+  --wf-ink-rgb: var(--theme-ink-rgb);
+  --wf-quiet: var(--theme-muted);
+  --wf-on-brand: var(--theme-ink);
+  --wf-copy: var(--theme-ink);
+  --wf-copy-muted: var(--theme-muted);
+  --wf-copy-accent: var(--theme-accent);
+  --wf-chrome-bg: var(--theme-paper);
+  --wf-chrome-panel: var(--theme-panel);
+  --wf-chrome-panel-muted: var(--theme-chrome-muted);
+  --wf-chrome-border: var(--theme-line);
+  --wf-text: var(--theme-ink);
+  --wf-text-muted: var(--theme-muted);
+  --wf-text-on-brand: var(--theme-on-accent);
+  --wf-subtle: var(--theme-muted);
+  --wf-sand: var(--theme-fog);
+  --wf-clay: var(--theme-muted);
+  --wf-slate: var(--theme-mid);
+  --wf-plum: var(--tone-culture);
+  --wf-sand-rgb: var(--theme-soft-rgb);
+  --wf-clay-rgb: var(--theme-muted-rgb);
+  --wf-slate-rgb: var(--theme-mid-rgb);
+  --wf-plum-rgb: 124 88 166;
+  --wf-coral: var(--theme-accent);
+  --wf-coral-soft: var(--theme-soft);
+  --wf-coral-deep: var(--theme-accent-hover);
+  --wf-coral-rgb: var(--theme-accent-rgb);
+  --wf-coral-soft-rgb: var(--theme-soft-rgb);
+  --wf-coral-deep-rgb: var(--theme-accent-hover-rgb);
+  --wf-success: var(--theme-success);
+  --wf-danger: var(--theme-danger);
+  --wf-on-dark: var(--theme-muted);
+  --wf-on-dark-strong: color-mix(in srgb, var(--theme-on-fill) 92%, var(--theme-muted));
+  --wf-border-dark: var(--theme-line);
+  --wf-panel-dark: var(--theme-panel);
+  --wf-panel-dark-hover: var(--theme-paper);
 
   /* Geometry */
   --wf-radius-xs: 6px;
@@ -124,10 +182,10 @@
   --wf-radius-pill: 999px;
 
   /* Elevation */
-  --wf-shadow-sm: 0 1px 2px rgb(var(--wf-ink-rgb) / 0.04);
-  --wf-shadow-md: 0 8px 24px rgb(var(--wf-ink-rgb) / 0.06);
-  --wf-shadow-lg: 0 16px 40px rgb(var(--wf-ink-rgb) / 0.08);
-  --wf-shadow-dark: 0 22px 48px rgb(0 0 0 / 0.45);
+  --wf-shadow-sm: 0 1px 2px rgb(var(--theme-overlay-rgb) / 0.22);
+  --wf-shadow-md: 0 8px 24px rgb(var(--theme-overlay-rgb) / 0.32);
+  --wf-shadow-lg: 0 16px 40px rgb(var(--theme-overlay-rgb) / 0.4);
+  --wf-shadow-dark: 0 22px 48px rgb(var(--theme-overlay-rgb) / 0.45);
 
   /* Layout */
   --wf-header-h: 60px;
@@ -146,13 +204,11 @@
    *   --wf-bp-sm  → 640px   (small phones / single-column)
    *   --wf-bp-md  → 760px   (mobile / standard — most common)
    *   --wf-bp-lg  → 960px   (tablet / narrow desktop)
-   * Prefer 760px over 720px; prefer 960px over 900px when migrating.
    */
   --wf-bp-sm: 640px;
   --wf-bp-md: 760px;
   --wf-bp-lg: 960px;
 
-  /* Type — Trail guide: Newsreader headlines, Source Sans 3 body */
   --wf-font-sans: "Source Sans 3 Variable", "Source Sans 3", system-ui, sans-serif;
   --wf-font-serif: "Newsreader Variable", "Newsreader", Georgia, "Times New Roman", serif;
   --wf-font-mono: ui-monospace, "SF Mono", Menlo, Monaco, Consolas, monospace;
@@ -166,4 +222,28 @@
   --wf-size-headline: 1;
   --wf-eyebrow-size: 0.75rem;
   --wf-eyebrow-tracking: 0.13em;
+}
+
+html.top-tabs-active,
+.top-tabs-root {
+  --bg: var(--theme-paper);
+  --panel: var(--theme-panel);
+  --ink: var(--theme-ink);
+  --muted: var(--theme-muted);
+  --line: var(--theme-line);
+  --accent: var(--theme-accent);
+  --accent-hover: var(--theme-accent-hover);
+  --soft: var(--theme-soft);
+  --dark: var(--theme-fill);
+  --on-fill: var(--theme-on-fill);
+  --on-accent: var(--theme-on-accent);
+  --wf-copy: var(--theme-ink);
+  --wf-copy-muted: var(--theme-muted);
+  --wf-copy-accent: var(--theme-accent);
+  --wf-coral: var(--theme-accent);
+  --wf-coral-soft: var(--theme-soft);
+  --wf-coral-deep: var(--theme-accent-hover);
+  --wf-chrome-bg: var(--theme-paper);
+  --wf-chrome-panel: var(--theme-panel);
+  --wf-chrome-border: var(--theme-line);
 }

@@ -1,15 +1,17 @@
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { UserButton } from "@clerk/react";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import { clerkEnabled } from "../../authMode";
 import { wanderfileClerkAppearance } from "../../clerkAppearance";
 import { ViewAsSwitcher } from "../../components/ViewAsSwitcher";
+import { useHorizontalSwipe } from "../../hooks/usePointerSwipe";
+import { CATEGORY_NAV_ITEMS } from "../categoryNavStyle";
 import { TOP_TABS_BASE } from "../paths";
 import { AddLinkSheet } from "./AddLinkSheet";
 import { CategoryStrip } from "./CategoryStrip";
 
-const clerkLight = wanderfileClerkAppearance("light");
+const clerkAppearance = wanderfileClerkAppearance("dark");
 
 function icon(name: "search" | "plus" | "queue") {
   if (name === "search") {
@@ -52,8 +54,31 @@ export function Shell({
   onIngestComplete: () => void;
 }) {
   const navigate = useNavigate();
+  const location = useLocation();
+  const pageRef = useRef<HTMLElement>(null);
   const homeTo = TOP_TABS_BASE || "/";
   const [addOpen, setAddOpen] = useState(false);
+  const tabKeys = useMemo(() => {
+    const hasAnyEntries = CATEGORY_NAV_ITEMS.some((item) => Number(counts[item.key] ?? 0) > 0);
+    const items =
+      loading && !hasAnyEntries
+        ? CATEGORY_NAV_ITEMS
+        : CATEGORY_NAV_ITEMS.filter((item) => Number(counts[item.key] ?? 0) > 0);
+    return items.map((item) => item.key);
+  }, [counts, loading]);
+  const tabIndex = tabKeys.findIndex((key) => location.pathname === `${TOP_TABS_BASE}/${key}` || location.pathname === `/${key}`);
+
+  useHorizontalSwipe(pageRef, {
+    enabled: tabIndex >= 0 && !addOpen,
+    onLeft: () => {
+      const next = tabKeys[tabIndex + 1];
+      if (next) navigate(`${TOP_TABS_BASE}/${next}`);
+    },
+    onRight: () => {
+      const previous = tabKeys[tabIndex - 1];
+      if (previous) navigate(`${TOP_TABS_BASE}/${previous}`);
+    },
+  });
 
   useEffect(() => {
     document.documentElement.classList.add("top-tabs-active");
@@ -65,7 +90,7 @@ export function Shell({
       <div className="app-shell" data-theme="top-tabs">
         <header className="lab-utility">
           <NavLink className="wordmark" to={homeTo}>
-            Wanderfile
+            Wander<b>file</b>
           </NavLink>
           <div>
             <ViewAsSwitcher enabled={isSuperAdmin} onChange={onViewAsChange} />
@@ -79,15 +104,17 @@ export function Shell({
             </button>
             <NavLink to="/add" className="queue-button" aria-label="Open processing">
               {icon("queue")}
-              Processing
+              <span className="queue-button-label">Processing</span>
             </NavLink>
-            {clerkEnabled ? <UserButton appearance={clerkLight} /> : null}
+            {clerkEnabled ? <UserButton appearance={clerkAppearance} /> : null}
           </div>
         </header>
         <div className="lab-utility-tabs">
           <CategoryStrip counts={counts} loading={loading} />
         </div>
-        <main className="page-content">{children}</main>
+        <main ref={pageRef} className="page-content">
+          {children}
+        </main>
         <button
           type="button"
           className="processing-fab"

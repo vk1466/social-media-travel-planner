@@ -125,7 +125,7 @@ export function AtlasMapPanel({ scope, posts, onOpenNode, onOpenPlace }: AtlasMa
   }
 
   const showLabels = false;
-  const mapStyle = { "--selected-color": selectedPlace ? visualFor(selectedPlace).color : "#68736d" } as CSSProperties;
+  const mapStyle = { "--selected-color": selectedPlace ? visualFor(selectedPlace).color : "var(--muted)" } as CSSProperties;
 
   return (
     <section className="saved-map-view saved-map-view--photos" style={mapStyle}>

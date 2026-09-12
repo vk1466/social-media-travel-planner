@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { fetchActiveJob, fetchJob, fetchJobs, startIngest, type Job, type JobLink } from "../../api";
 import { PageHeading } from "../../components/PageHeading";
 import { useLabTheme } from "../theme";
+import "../../add-page.css";
 
 function isUrl(value: string): boolean {
   try {
@@ -156,7 +157,7 @@ export function AddPage({
   }
 
   return (
-    <>
+    <div className="top-add-page">
       <PageHeading
         kicker="Wanderfile queue"
         title="Processing"
@@ -261,7 +262,7 @@ export function AddPage({
           {jobsError ? <p className="inline-errors">{jobsError}</p> : null}
         </div>
       </div>
-    </>
+    </div>
   );
 }
 

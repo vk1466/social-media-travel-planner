@@ -104,6 +104,20 @@ export function RecipeLibrary({ posts, onSelectPost, onPostUpdated }: RecipeLibr
 
   return (
     <div className="recipe-library-shelf">
+      <nav className="mobile-editorial-rail" aria-label="Recipe categories">
+        {(["all", ...MEAL_TYPES.filter((value) => value !== "all")] as MealTypeFilter[]).map((value) => (
+          <button
+            key={value}
+            type="button"
+            className={meal === value ? "is-active" : ""}
+            aria-pressed={meal === value}
+            onClick={() => setMeal(value)}
+          >
+            <span aria-hidden="true">{value === "all" ? "◎" : value === "breakfast" ? "☼" : value === "lunch" ? "◒" : value === "dinner" ? "◐" : "✦"}</span>
+            <small>{value === "all" ? "All" : value.charAt(0).toUpperCase() + value.slice(1)}</small>
+          </button>
+        ))}
+      </nav>
       <FilterChrome>
         <FilterBar
           placeholder="Search by dish or pantry ingredient (e.g. garlic, salmon, pasta)..."
@@ -131,27 +145,29 @@ export function RecipeLibrary({ posts, onSelectPost, onPostUpdated }: RecipeLibr
             },
           ]}
           trailing={
-            <button
-              type="button"
-              className="lib-filters-action"
-              onClick={() => setGroceryOpen(true)}
-              aria-label="Open Grocery List"
-            >
-              Grocery list
-              {groceryRecipeKeys.size > 0 ? <span>{groceryRecipeKeys.size}</span> : null}
-            </button>
+            <>
+              <button
+                type="button"
+                className="lib-filters-action"
+                onClick={() => setGroceryOpen(true)}
+                aria-label="Open Grocery List"
+              >
+                Grocery list
+                {groceryRecipeKeys.size > 0 ? <span>{groceryRecipeKeys.size}</span> : null}
+              </button>
+              {cuisines.length > 0 ? (
+                <FilterPills
+                  allLabel="All cuisines"
+                  allCount={recipes.length}
+                  pills={cuisines.map((name) => ({ key: name, label: name }))}
+                  selectedKeys={[cuisine]}
+                  ariaLabel="Cuisine"
+                  onSelect={(key) => setCuisine(key === cuisine ? "all" : key)}
+                />
+              ) : null}
+            </>
           }
         />
-        {cuisines.length > 0 ? (
-          <FilterPills
-            allLabel="All cuisines"
-            allCount={recipes.length}
-            pills={cuisines.map((name) => ({ key: name, label: name }))}
-            selectedKeys={[cuisine]}
-            ariaLabel="Cuisine"
-            onSelect={(key) => setCuisine(key === cuisine ? "all" : key)}
-          />
-        ) : null}
       </FilterChrome>
 
       <div className="recipe-meta-strip">

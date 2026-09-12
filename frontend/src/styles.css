@@ -24,10 +24,10 @@
   --forest-soft: var(--wf-soft);
   --forest-ring: rgb(var(--wf-forest-rgb) / 0.18);
 
-  --accent: var(--forest);
-  --accent-hover: var(--forest-hover);
-  --accent-soft: var(--forest-soft);
-  --accent-ring: var(--forest-ring);
+  --accent: var(--wf-coral);
+  --accent-hover: var(--wf-coral-deep);
+  --accent-soft: var(--wf-coral-soft);
+  --accent-ring: rgb(var(--wf-coral-rgb) / 0.18);
 
   --sage-accent: var(--wf-sage);
   --clay-accent: var(--wf-clay);
@@ -64,7 +64,7 @@ html[data-wf-mode="dark"] {
   --surface: var(--wf-panel-dark);
   --surface-muted: var(--wf-panel-dark-hover);
   --border: var(--wf-border-dark);
-  --border-subtle: rgb(255 255 255 / 0.08);
+  --border-subtle: rgb(var(--theme-on-fill-rgb) / 0.08);
 }
 
 * {
@@ -292,7 +292,7 @@ a {
   padding: var(--size-3) var(--size-5);
   border-radius: var(--radius-pill);
   background: var(--accent);
-  color: var(--wf-on-brand);
+  color: var(--on-accent);
   font-family: var(--wf-font-on-brand);
   font-weight: var(--font-weight-6);
   font-size: var(--wf-size-on-brand);

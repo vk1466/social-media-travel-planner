@@ -107,7 +107,7 @@ function GoogleMapsIcon() {
       <path fill="#EA4335" d="M12 9v13s7-7.75 7-13H12z" />
       <path fill="#4285F4" d="M5 9a7 7 0 0 0 1.76 4.7L12 22V9H5z" />
       <circle cx="12" cy="9" r="3.15" fill="#1A73E8" />
-      <circle cx="12" cy="9" r="1.45" fill="#fff" />
+      <circle cx="12" cy="9" r="1.45" fill="var(--on-fill)" />
     </svg>
   );
 }

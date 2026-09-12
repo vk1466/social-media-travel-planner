@@ -1,5 +1,7 @@
 import { useEffect, useRef, type ReactNode } from "react";
 
+import { useDragDismiss } from "../../hooks/usePointerSwipe";
+
 interface DetailSheetProps {
   title: string;
   onClose: () => void;
@@ -9,6 +11,8 @@ interface DetailSheetProps {
 
 export function DetailSheet({ title, onClose, children, wide }: DetailSheetProps) {
   const closeRef = useRef<HTMLButtonElement>(null);
+  const sheetRef = useRef<HTMLElement>(null);
+  useDragDismiss(sheetRef, onClose);
 
   useEffect(() => {
     const previous = document.body.style.overflow;
@@ -27,12 +31,14 @@ export function DetailSheet({ title, onClose, children, wide }: DetailSheetProps
   return (
     <div className="sheet-backdrop" onClick={onClose} role="presentation">
       <article
+        ref={sheetRef}
         className={`sheet${wide ? " is-wide" : ""}`}
         role="dialog"
         aria-modal="true"
         aria-label={title}
         onClick={(event) => event.stopPropagation()}
       >
+        <div className="sheet-handle" data-drag-handle aria-hidden="true" />
         <button ref={closeRef} type="button" className="sheet-close" onClick={onClose}>
           Close
         </button>

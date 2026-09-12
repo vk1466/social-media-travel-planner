@@ -9,6 +9,13 @@
   gap: 1.25rem;
 }
 
+@media (max-width: 760px) {
+  .top-history-page .history-stats { gap: 6px; }
+  .top-history-page .history-stats article { padding: 12px 8px; border-radius: 12px; }
+  .top-history-page .history-stats b { font-size: 25px; }
+  .top-history-page .history-stats span { font-size: 10px; }
+}
+
 .history-page > .wf-page-header {
   margin-bottom: 0.6rem;
 }

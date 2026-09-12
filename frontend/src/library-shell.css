@@ -67,7 +67,7 @@
   border-radius: 999px;
   padding: 0.45rem 0.95rem;
   background: var(--wf-coral);
-  color: var(--wf-forest-deep);
+  color: var(--on-accent);
   font: inherit;
   font-size: 0.78rem;
   font-weight: 700;
@@ -152,7 +152,7 @@
 
 .lib-shell-pill.is-active {
   background: var(--wf-coral);
-  color: var(--wf-forest-deep);
+  color: var(--on-accent);
   border-color: var(--wf-coral);
 }
 
@@ -196,7 +196,7 @@
   border: 1px solid color-mix(in srgb, var(--wf-coral) 72%, var(--wf-chrome-border));
   border-radius: 999px;
   background: var(--wf-coral);
-  color: var(--wf-forest-deep);
+  color: var(--on-accent);
   box-shadow: 0 10px 28px rgb(var(--wf-forest-rgb) / 0.2);
   font: inherit;
   font-size: 0.78rem;
@@ -375,6 +375,106 @@
 /* ── Responsive breakpoints ─────────────────────────────── */
 
 @media (max-width: 760px) {
+  .lib-shell .page-heading {
+    align-items: center;
+    gap: 0.45rem;
+    margin-bottom: 0.7rem;
+    padding-block: 0.65rem;
+  }
+
+  .lib-shell .page-heading-copy .eyebrow,
+  .lib-shell .page-heading-lede {
+    display: none;
+  }
+
+  .lib-shell .page-heading-copy h1 {
+    font-size: 1.55rem;
+  }
+
+  .lib-shell .page-heading-actions {
+    gap: 0.4rem;
+  }
+
+  .lib-shell .page-heading-count-value {
+    font-size: 1.55rem;
+  }
+
+  .lib-shell .page-heading-count-label {
+    font-size: 0.58rem;
+  }
+
+  .lib-shell-core {
+    padding-top: 0.25rem;
+  }
+
+  .lib-shell-map-peek {
+    width: 42px;
+    min-width: 42px;
+    height: 42px;
+    min-height: 42px;
+    justify-content: center;
+    padding: 0;
+  }
+
+  .lib-shell-map-peek span {
+    display: none;
+  }
+
+  .lib-shell[data-mode="places"] .cover-grid {
+    grid-template-columns: 1fr;
+    gap: 0.55rem;
+  }
+
+  .lib-shell[data-mode="places"] .cover-card {
+    aspect-ratio: auto;
+    min-height: 92px;
+    grid-template-columns: 92px minmax(0, 1fr);
+    grid-template-rows: 1fr;
+    border: 1px solid rgb(var(--wf-ink-rgb) / 0.08);
+    border-radius: 12px;
+  }
+
+  .lib-shell[data-mode="places"] .cover-card-media {
+    min-height: 92px;
+  }
+
+  .lib-shell[data-mode="places"] .cover-card-media::after {
+    inset: 0;
+    background: linear-gradient(90deg, transparent 55%, rgb(10 18 15 / 0.35));
+  }
+
+  .lib-shell[data-mode="places"] .cover-card-category {
+    top: 7px;
+    left: 7px;
+    max-width: calc(100% - 14px);
+    padding: 3px 5px;
+    font-size: 0.48rem;
+  }
+
+  .lib-shell[data-mode="places"] .cover-card-mark {
+    top: auto;
+    right: 7px;
+    bottom: 7px;
+    width: 24px;
+    height: 24px;
+  }
+
+  .lib-shell[data-mode="places"] .cover-card-copy {
+    min-height: 0;
+    justify-content: center;
+    padding: 0.65rem 0.75rem;
+  }
+
+  .lib-shell[data-mode="places"] .cover-card-copy > strong {
+    margin-top: 0.25rem;
+    font-size: 1.05rem;
+  }
+
+  .lib-shell[data-mode="places"] .cover-card-foot {
+    padding-top: 0.35rem;
+    font-size: 0.55rem;
+  }
+
   .lib-shell-count {
     text-align: left;
   }
@@ -386,6 +486,24 @@
 
   .lib-shell-toolbar {
     gap: 0.45rem;
+  }
+
+  .lib-shell-pills {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    touch-action: pan-x;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .lib-shell-pills::-webkit-scrollbar {
+    display: none;
+  }
+
+  .lib-shell-pill,
+  .lib-shell-pill-more {
+    flex: 0 0 auto;
+    min-height: 40px;
   }
 }
 

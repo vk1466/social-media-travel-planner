@@ -1,5 +1,6 @@
-import type { KeyboardEvent, ReactNode } from "react";
+import { useId, useState, type KeyboardEvent, type ReactNode } from "react";
 
+import { PlatformMenu } from "./PlatformMenu";
 import "./library-filters.css";
 
 export interface FilterOption {
@@ -80,6 +81,7 @@ export function FilterBar({
   trailing,
   autoFocus,
   onSearchKeyDown,
+  platformFilter = true,
 }: {
   placeholder: string;
   query: string;
@@ -88,7 +90,12 @@ export function FilterBar({
   trailing?: ReactNode;
   autoFocus?: boolean;
   onSearchKeyDown?: (event: KeyboardEvent<HTMLInputElement>) => void;
+  platformFilter?: boolean;
 }) {
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const panelId = useId();
+  const activeCount = groups.filter((group) => group.selected !== group.options[0]?.value).length;
+  const showTools = platformFilter || groups.length > 0;
   return (
     <div className="lib-filters-toolbar">
       <SearchField
@@ -98,10 +105,32 @@ export function FilterBar({
         autoFocus={autoFocus}
         onKeyDown={onSearchKeyDown}
       />
-      {groups.map((group, index) => (
-        <SegmentGroup key={group.ariaLabel ?? index} {...group} />
-      ))}
-      {trailing}
+      {showTools ? (
+        <div className="lib-filters-tools">
+          {platformFilter ? <PlatformMenu /> : null}
+          {groups.length > 0 ? (
+            <button
+              type="button"
+              className="lib-filters-toggle"
+              aria-label={activeCount > 0 ? `Filters, ${activeCount} active` : "Filters"}
+              aria-expanded={filtersOpen}
+              aria-controls={panelId}
+              onClick={() => setFiltersOpen((value) => !value)}
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4 5h16M7 12h10M10 19h4" />
+              </svg>
+              {activeCount > 0 ? <b>{activeCount}</b> : null}
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+      <div id={panelId} className={`lib-filters-secondary${filtersOpen ? " is-open" : ""}`}>
+        {groups.map((group, index) => (
+          <SegmentGroup key={group.ariaLabel ?? index} {...group} />
+        ))}
+        {trailing}
+      </div>
     </div>
   );
 }

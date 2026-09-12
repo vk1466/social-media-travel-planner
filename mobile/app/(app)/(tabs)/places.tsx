@@ -362,5 +362,5 @@ const styles = StyleSheet.create({
     borderColor: colors.brand,
   },
   scopeChipText: { color: colors.ink, fontSize: 13, fontWeight: "500" },
-  scopeChipTextActive: { color: "#fff" },
+  scopeChipTextActive: { color: colors.onFill },
 });

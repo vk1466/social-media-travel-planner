@@ -254,7 +254,7 @@
 
 .pl2-filters button.is-active {
   background: var(--wf-forest);
-  color: var(--wf-on-brand);
+  color: var(--on-accent);
 }
 
 .pl2--dark .pl2-filters button.is-active {

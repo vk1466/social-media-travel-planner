@@ -98,7 +98,7 @@ export function FilterPills({
         <button
           type="button"
           className={allActive ? "is-on" : ""}
-          style={{ "--category-color": "#173e32" } as CSSProperties}
+          style={{ "--category-color": "var(--dark)" } as CSSProperties}
           onClick={() => {
             onSelect("all");
             setOpen(false);

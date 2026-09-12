@@ -35,7 +35,7 @@ export function Button({
 }: ButtonProps) {
   const busy = disabled || loading;
   const fg =
-    variant === "primary" ? "#fff" : variant === "danger" ? colors.danger : colors.brand;
+    variant === "primary" ? colors.onFill : variant === "danger" ? colors.danger : colors.brand;
   return (
     <Pressable
       accessibilityRole="button"
@@ -52,7 +52,7 @@ export function Button({
       ]}
     >
       {loading ? (
-        <ActivityIndicator color={variant === "primary" ? "#fff" : colors.brand} />
+        <ActivityIndicator color={variant === "primary" ? colors.onFill : colors.brand} />
       ) : (
         <View style={styles.btnContent}>
           {icon ? <Ionicons name={icon} size={17} color={fg} /> : null}
@@ -208,7 +208,7 @@ const styles = StyleSheet.create({
   danger: {
     backgroundColor: colors.dangerSoft,
     borderWidth: 1,
-    borderColor: "#fecdca",
+    borderColor: colors.danger,
   },
   disabled: {
     opacity: 0.5,
@@ -217,7 +217,7 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   label: {
-    color: "#fff",
+    color: colors.onFill,
     fontWeight: "700",
     fontSize: 15,
   },
@@ -275,7 +275,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 8,
     backgroundColor: colors.dangerSoft,
-    borderColor: "#fecdca",
+    borderColor: colors.danger,
     borderWidth: 1,
     borderRadius: radius.md,
     padding: spacing.md,

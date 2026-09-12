@@ -1172,3 +1172,62 @@
     padding-right: 0;
   }
 }
+
+@media (max-width: 760px) {
+  /* The library shell owns mobile filtering; keep the content list single-column. */
+  .lib-shell-core .p3-body--lantern .p3-rings {
+    display: none;
+  }
+
+  .lib-shell-core .p3-body--lantern .p3-lattice {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.45rem;
+    overflow: visible;
+    padding: 0.25rem 0 0.55rem;
+  }
+
+  .lib-shell-core .p3-body--lantern .p3-tile {
+    width: 100%;
+    min-height: 86px;
+    aspect-ratio: auto;
+    border-radius: 10px;
+  }
+
+  .lib-shell-core .p3-body--lantern .p3-tile-thumb {
+    right: auto;
+    width: 88px;
+  }
+
+  .lib-shell-core .p3-body--lantern .p3-tile-veil {
+    background: linear-gradient(90deg, rgb(var(--wf-forest-deep-rgb) / 0) 0 72px, rgb(var(--wf-forest-deep-rgb) / 0.78) 120px);
+  }
+
+  .lib-shell-core .p3-body--lantern .p3-tile-copy {
+    justify-content: center;
+    padding: 0.55rem 0.7rem 0.55rem 6.1rem;
+  }
+
+  .lib-shell-core .p3-body--lantern .p3-tile-title {
+    font-size: 0.76rem;
+  }
+
+  .lib-shell-core .p3-body--lantern .p3-tile-reveal {
+    grid-template-rows: 1fr;
+    opacity: 1;
+  }
+
+  .lib-shell-core .p3-body--lantern .p3-tile-desc {
+    -webkit-line-clamp: 1;
+    font-size: 0.62rem;
+  }
+
+  .lib-shell-core .p3-body--lantern .p3-tile-meta {
+    font-size: 0.53rem;
+  }
+
+  .lib-shell-core .p3-body--lantern .p3-tile:hover,
+  .lib-shell-core .p3-body--lantern .p3-tile:focus-visible {
+    transform: none;
+  }
+}

@@ -2,6 +2,11 @@
   min-height: 50vh;
 }
 
+@media (max-width: 760px) {
+  .top-search-page .search-field { padding: 0.7rem 1rem; }
+  .top-search-page .search-section { margin-bottom: 1rem; }
+}
+
 .search-field {
   display: block;
   width: 100%;

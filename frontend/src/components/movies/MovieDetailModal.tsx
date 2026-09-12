@@ -1,4 +1,5 @@
-import { useEffect, useState, type JSX } from "react";
+import { useEffect, useRef, useState, type JSX } from "react";
+import { useDragDismiss } from "../../hooks/usePointerSwipe";
 import type { SavedPost } from "../../api";
 import { formatPostDate, getPlatformLabel, proxiedMediaUrl } from "../../postDisplayUtils";
 import { ImdbRatingBadge, RottenTomatoesBadge, StreamingProviderPill } from "./MovieBadges";
@@ -18,7 +19,9 @@ export function MovieDetailModal({
   onPlayTrailer,
   onSelectPost,
 }: MovieDetailModalProps): JSX.Element {
+  const panelRef = useRef<HTMLDivElement>(null);
   const [enriched, setEnriched] = useState<TmdbEnrichedData | null>(null);
+  useDragDismiss(panelRef, onClose);
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
@@ -83,7 +86,8 @@ export function MovieDetailModal({
       aria-modal="true"
       aria-labelledby="movie-detail-title"
     >
-      <div className="movie-detail-modal-panel" onClick={(e) => e.stopPropagation()}>
+      <div ref={panelRef} className="movie-detail-modal-panel" onClick={(e) => e.stopPropagation()}>
+        <div className="sheet-handle movie-sheet-handle" data-drag-handle aria-hidden="true" />
         {/* Backdrop Hero Header */}
         <div className={`movie-detail-hero ${!displayBackdrop ? "is-empty" : ""}`}>
           {displayBackdrop ? (

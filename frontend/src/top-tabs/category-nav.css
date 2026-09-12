@@ -64,12 +64,95 @@
 }
 
 .category-nav-card.is-on {
-  background: var(--dark);
-  border-color: var(--dark);
-  color: #fff;
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
 }
 
 .category-nav-card.is-on .category-nav-logo,
 .category-nav-card.is-on small {
-  color: color-mix(in srgb, #fff 60%, var(--accent));
+  color: color-mix(in srgb, var(--on-accent) 70%, var(--panel));
+}
+
+@media (max-width: 760px) {
+  .category-nav {
+    justify-content: safe center;
+    gap: 8px;
+    margin-bottom: 14px;
+    padding: 2px 0 8px;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+    touch-action: pan-x;
+  }
+
+  /* Center the group when it fits; auto margins collapse when it overflows so the first card stays reachable. */
+  .category-nav-card:first-child {
+    margin-inline-start: auto;
+  }
+
+  .category-nav-card:last-child {
+    margin-inline-end: auto;
+  }
+
+  .category-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .category-nav-card {
+    position: relative;
+    flex: 0 0 auto;
+    width: 60px;
+    min-width: 60px;
+    min-height: 60px;
+    padding: 7px 4px 6px;
+    gap: 2px;
+    grid-template-columns: 1fr;
+    grid-template-rows: 28px auto;
+    justify-items: center;
+    border-radius: 14px;
+    text-align: center;
+    scroll-snap-align: start;
+  }
+
+  .category-nav-card > span { min-width: 0; }
+
+  .category-nav-card small {
+    display: none;
+  }
+
+  .category-nav-card b {
+    font-size: 10px;
+    line-height: 1.1;
+  }
+
+  .category-nav-card em {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    min-width: 15px;
+    padding: 1px 3px;
+    border-radius: 999px;
+    background: var(--bg);
+    color: var(--muted);
+    font-size: 9px;
+  }
+
+  .category-nav-card.is-on {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--on-accent);
+    box-shadow: none;
+  }
+
+  .category-nav-card.is-on em { background: var(--panel); color: var(--on-accent); }
+
+  .category-nav-logo {
+    width: 22px;
+    height: 22px;
+  }
+
+  .category-nav-logo svg {
+    width: 20px;
+    height: 20px;
+  }
 }

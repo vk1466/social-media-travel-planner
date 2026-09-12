@@ -100,7 +100,12 @@ export function CategoryStrip({
         const active = item.key === activeKey;
         const count = countFor(counts, item.key);
         return (
-          <NavLink key={item.key} to={to} className={`category-nav-card${active ? " is-on" : ""}`}>
+          <NavLink
+            key={item.key}
+            to={to}
+            aria-current={active ? "page" : undefined}
+            className={`category-nav-card${active ? " is-on" : ""}`}
+          >
             <CategoryLogo name={item.key} />
             <span>
               <b>{item.label}</b>

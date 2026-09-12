@@ -9,6 +9,7 @@ import { FilterBar } from "../../components/library";
 import { placeMatchesPlatform, postsForPlatforms, useLibraryPlatform } from "../../libraryPlatform";
 import { PageHeading } from "../../components/PageHeading";
 import { useLabTheme } from "../theme";
+import "../../search-page.css";
 
 export function SearchPage({ posts, places }: { posts: SavedPost[]; places: Place[] }) {
   const navigate = useNavigate();
@@ -48,7 +49,7 @@ export function SearchPage({ posts, places }: { posts: SavedPost[]; places: Plac
   }, [q, scopedPosts, places, recipes, movies, basePath, posts, platforms]);
 
   return (
-    <>
+    <div className="top-search-page">
       <PageHeading
         kicker="Search Wanderfile"
         title="Find anything you saved"
@@ -80,6 +81,6 @@ export function SearchPage({ posts, places }: { posts: SavedPost[]; places: Plac
           </li>
         ))}
       </ul>
-    </>
+    </div>
   );
 }

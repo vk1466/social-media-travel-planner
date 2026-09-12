@@ -60,7 +60,10 @@ export function PlatformMenu({ variant = "utility" }: { variant?: "utility" | "h
         title={summary}
         onClick={() => setOpen((value) => !value)}
       >
-        <span className="lab-platform-stack" aria-hidden="true">
+        <span
+          className={`lab-platform-stack${stacked.length > 1 ? " is-overlap" : ""}`}
+          aria-hidden="true"
+        >
           {stacked.map((platform) => (
             <span
               key={platform}
