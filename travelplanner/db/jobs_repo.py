@@ -21,6 +21,58 @@ JOB_KIND_LINK_INGEST = "link_ingest"
 JOB_KIND_INSTAGRAM_PROFILE_IMPORT = "instagram_profile_import"
 JOB_KIND_TIMELINE_IMPORT = "timeline_import"
 
+_IN_FLIGHT_STATUSES = frozenset({"pending", "fetching"})
+
+
+class JobNotRunningError(Exception):
+  """The job is no longer running, so it cannot be queued onto."""
+
+
+def _item_ref(item: dict[str, Any]) -> str:
+  return item.get("item_ref") or item.get("post_url") or ""
+
+
+def _has_in_flight(job: dict[str, Any]) -> bool:
+  return any(
+    (item.get("status") or "pending") in _IN_FLIGHT_STATUSES
+    for item in job.get("items") or []
+  )
+
+
+def _commit_items(
+  job_id: str,
+  version: int,
+  items: list[dict[str, Any]],
+  *,
+  extra_set: str = "",
+  extra_names: dict[str, str] | None = None,
+  extra_values: dict[str, Any] | None = None,
+  extra_condition: str = "",
+) -> None:
+  names = {"#items": "items"}
+  if extra_names:
+    names.update(extra_names)
+  values: dict[str, Any] = {
+    ":items": to_dynamo(items),
+    ":new_version": version + 1,
+    ":old_version": version,
+  }
+  if extra_values:
+    values.update(extra_values)
+  condition = "attribute_not_exists(version) OR version = :old_version"
+  if extra_condition:
+    condition = f"({condition}) AND ({extra_condition})"
+  update = "SET #items = :items, version = :new_version"
+  if extra_set:
+    update = f"{update}, {extra_set}"
+  get_table("Jobs").update_item(
+    Key={"job_id": job_id},
+    UpdateExpression=update,
+    ConditionExpression=condition,
+    ExpressionAttributeNames=names,
+    ExpressionAttributeValues=values,
+  )
+
 
 def _post_url_item(post_url: str) -> dict[str, Any]:
   return {
@@ -215,6 +267,121 @@ def mark_fetching(job_id: str, item_ref: str) -> None:
   update_item(job_id, item_ref, status="fetching")
 
 
+def claim_pending_item(job_id: str, item_ref: str) -> bool:
+  """Mark a pending item fetching. False if it was removed or already finished."""
+  for attempt in range(_ITEM_UPDATE_ATTEMPTS):
+    job = get_job(job_id, consistent_read=True)
+    if job is None:
+      return False
+
+    items = list(job.get("items") or [])
+    index = next((i for i, item in enumerate(items) if _item_ref(item) == item_ref), None)
+    if index is None:
+      return False
+
+    status = items[index].get("status") or "pending"
+    if status == "fetching":
+      return True
+    if status != "pending":
+      return False
+
+    item = dict(items[index])
+    item["item_ref"] = item_ref
+    item["status"] = "fetching"
+    items[index] = item
+    try:
+      _commit_items(job_id, int(job.get("version") or 0), items)
+      return True
+    except ClientError as exc:
+      if exc.response.get("Error", {}).get("Code") != "ConditionalCheckFailedException":
+        raise
+      time.sleep(random.uniform(0.015, 0.04 * (attempt + 1)))
+
+  raise RuntimeError(f"Could not claim item on job {job_id} after concurrent retries")
+
+
+def append_pending_urls(job_id: str, post_urls: list[str]) -> list[str]:
+  """Add new pending URLs to a running job. Returns URLs that still need a worker run."""
+  for attempt in range(_ITEM_UPDATE_ATTEMPTS):
+    job = get_job(job_id, consistent_read=True)
+    if job is None:
+      raise KeyError(f"Job not found: {job_id}")
+    if job.get("status") != "running":
+      raise JobNotRunningError(job_id)
+
+    items = list(job.get("items") or [])
+    existing = {_item_ref(item): item for item in items}
+    dispatch: list[str] = []
+    changed = False
+    for post_url in post_urls:
+      current = existing.get(post_url)
+      if current is None:
+        item = _post_url_item(post_url)
+        items.append(item)
+        existing[post_url] = item
+        dispatch.append(post_url)
+        changed = True
+      elif (current.get("status") or "pending") == "pending":
+        dispatch.append(post_url)
+
+    if not changed:
+      return dispatch
+
+    now = datetime.now(timezone.utc)
+    try:
+      _commit_items(
+        job_id,
+        int(job.get("version") or 0),
+        items,
+        extra_set="#ttl = :ttl",
+        extra_values={
+          ":ttl": int((now + timedelta(days=JOB_TTL_DAYS)).timestamp()),
+          ":running": "running",
+        },
+        extra_names={"#status": "status", "#ttl": "ttl"},
+        extra_condition="#status = :running",
+      )
+      return dispatch
+    except ClientError as exc:
+      if exc.response.get("Error", {}).get("Code") != "ConditionalCheckFailedException":
+        raise
+      latest = get_job(job_id, consistent_read=True)
+      if latest is None:
+        raise KeyError(f"Job not found: {job_id}") from exc
+      if latest.get("status") != "running":
+        raise JobNotRunningError(job_id) from exc
+      time.sleep(random.uniform(0.015, 0.04 * (attempt + 1)))
+
+  raise RuntimeError(f"Could not append items on job {job_id} after concurrent retries")
+
+
+def remove_pending_item(job_id: str, item_ref: str) -> None:
+  """Drop a pending item. Raises ValueError if it has already started."""
+  for attempt in range(_ITEM_UPDATE_ATTEMPTS):
+    job = get_job(job_id, consistent_read=True)
+    if job is None:
+      raise KeyError(f"Job not found: {job_id}")
+
+    items = list(job.get("items") or [])
+    index = next((i for i, item in enumerate(items) if _item_ref(item) == item_ref), None)
+    if index is None:
+      raise KeyError(f"Item not found on job {job_id}: {item_ref}")
+    status = items[index].get("status") or "pending"
+    if status != "pending":
+      raise ValueError(f"Cannot remove {item_ref} in status {status}")
+
+    items.pop(index)
+    try:
+      _commit_items(job_id, int(job.get("version") or 0), items)
+      return
+    except ClientError as exc:
+      if exc.response.get("Error", {}).get("Code") != "ConditionalCheckFailedException":
+        raise
+      time.sleep(random.uniform(0.015, 0.04 * (attempt + 1)))
+
+  raise RuntimeError(f"Could not remove item on job {job_id} after concurrent retries")
+
+
 def update_item(
   job_id: str,
   item_ref: str,
@@ -233,7 +400,7 @@ def update_item(
     items = list(job.get("items") or [])
     updated = False
     for index, item in enumerate(items):
-      ref = item.get("item_ref") or item.get("post_url")
+      ref = _item_ref(item)
       if ref != item_ref:
         continue
       item = dict(item)
@@ -256,19 +423,8 @@ def update_item(
     if not updated:
       raise KeyError(f"Item not found on job {job_id}: {item_ref}")
 
-    version = int(job.get("version") or 0)
     try:
-      get_table("Jobs").update_item(
-        Key={"job_id": job_id},
-        UpdateExpression="SET #items = :items, version = :new_version",
-        ConditionExpression="attribute_not_exists(version) OR version = :old_version",
-        ExpressionAttributeNames={"#items": "items"},
-        ExpressionAttributeValues={
-          ":items": to_dynamo(items),
-          ":new_version": version + 1,
-          ":old_version": version,
-        },
-      )
+      _commit_items(job_id, int(job.get("version") or 0), items)
       return
     except ClientError as exc:
       if exc.response.get("Error", {}).get("Code") != "ConditionalCheckFailedException":
@@ -305,3 +461,36 @@ def mark_done(job_id: str) -> None:
     ExpressionAttributeNames={"#status": "status"},
     ExpressionAttributeValues={":done": "done"},
   )
+
+
+def try_mark_done(job_id: str) -> bool:
+  """Mark done only when nothing is still pending or fetching."""
+  for attempt in range(_ITEM_UPDATE_ATTEMPTS):
+    job = get_job(job_id, consistent_read=True)
+    if job is None:
+      raise KeyError(f"Job not found: {job_id}")
+    if job.get("status") == "done":
+      return True
+    if _has_in_flight(job):
+      return False
+    try:
+      get_table("Jobs").update_item(
+        Key={"job_id": job_id},
+        UpdateExpression="SET #status = :done, version = :new_version",
+        ConditionExpression=(
+          "(attribute_not_exists(version) OR version = :old_version) AND #status = :running"
+        ),
+        ExpressionAttributeNames={"#status": "status"},
+        ExpressionAttributeValues={
+          ":done": "done",
+          ":running": "running",
+          ":new_version": int(job.get("version") or 0) + 1,
+          ":old_version": int(job.get("version") or 0),
+        },
+      )
+      return True
+    except ClientError as exc:
+      if exc.response.get("Error", {}).get("Code") != "ConditionalCheckFailedException":
+        raise
+      time.sleep(random.uniform(0.015, 0.04 * (attempt + 1)))
+  return False

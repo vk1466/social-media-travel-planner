@@ -290,6 +290,7 @@ export interface JobCounts {
 export interface Job {
   job_id: string;
   status: "running" | "done";
+  created_at?: string | null;
   refresh: boolean;
   kind?: string;
   mark_visited?: boolean;
@@ -333,6 +334,14 @@ export async function startIngest(links: string[], refresh: boolean): Promise<st
     body: JSON.stringify({ links, refresh }),
   });
   return body.job_id;
+}
+
+export async function removePendingJobLink(jobId: string, postUrl: string): Promise<void> {
+  await request<void>(`/api/jobs/${jobId}/links`, {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ post_url: postUrl }),
+  });
 }
 
 export async function startInstagramImport(username: string): Promise<string> {
@@ -447,6 +456,69 @@ export async function fetchActiveJob(kind?: string): Promise<Job | null> {
   return request<Job | null>(`/api/jobs/active${query}`);
 }
 
+export async function fetchJobs(): Promise<Job[]> {
+  return request<Job[]>("/api/jobs");
+}
+
+export interface AdminMe {
+  is_admin: boolean;
+  is_super_admin: boolean;
+  authenticated_user_id?: string | null;
+  acting_user_id?: string | null;
+}
+
+export async function fetchAdminMe(): Promise<AdminMe> {
+  return request<AdminMe>("/api/admin/me");
+}
+
+export interface PlaceCandidateHints {
+  place_name: string;
+  city?: string | null;
+  country?: string | null;
+  state_province?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  details?: string | null;
+  tips: string[];
+  category?: string | null;
+  attributes: string[];
+  parent_place_name?: string | null;
+}
+
+export interface PlaceCandidate {
+  candidate_id: string;
+  source_post_id: string;
+  place_name: string;
+  status: string;
+  hints: PlaceCandidateHints;
+  last_tried_at?: string | null;
+  resolved_place_id?: string | null;
+}
+
+export interface PlaceCandidateList {
+  candidates: PlaceCandidate[];
+  count: number;
+}
+
+export type PlaceCandidateStatusFilter = "unresolved" | "low_confidence" | "open";
+
+export async function fetchPlaceCandidates(options?: {
+  status?: PlaceCandidateStatusFilter;
+  source_post_id?: string | null;
+}): Promise<PlaceCandidateList> {
+  const params = new URLSearchParams();
+  if (options?.status) {
+    params.set("status", options.status);
+  }
+  if (options?.source_post_id?.trim()) {
+    params.set("source_post_id", options.source_post_id.trim());
+  }
+  const query = params.toString();
+  return request<PlaceCandidateList>(
+    `/api/admin/places/candidates${query ? `?${query}` : ""}`,
+  );
+}
+
 export async function fetchPosts(platform?: string): Promise<SavedPost[]> {
   const query = platform ? `?platform=${encodeURIComponent(platform)}` : "";
   return request<SavedPost[]>(`/api/posts${query}`);
@@ -458,6 +530,12 @@ export async function fetchPost(platform: string, postId: string): Promise<Saved
 
 export async function deletePost(platform: string, postId: string): Promise<void> {
   await request<void>(`/api/posts/${platform}/${postId}`, { method: "DELETE" });
+}
+
+export async function reconstructRecipe(platform: string, postId: string): Promise<SavedPost> {
+  return request<SavedPost>(`/api/posts/${platform}/${postId}/reconstruct-recipe`, {
+    method: "POST",
+  });
 }
 
 export interface PlaceFilters {

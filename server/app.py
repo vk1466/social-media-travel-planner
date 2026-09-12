@@ -57,6 +57,7 @@ from server.schemas import (
   ErrorResponse,
   IngestRequest,
   IngestResponse,
+  RemoveJobLinkRequest,
   InstagramImportRequest,
   JobSchema,
   LocateDebugRequest,
@@ -143,13 +144,18 @@ def start_ingest(
   if not links:
     raise HTTPException(status_code=400, detail="At least one link is required")
 
-  job_id = jobs.create_job(links, user_id=user_id, refresh=request.refresh)
-  start_ingest_job(
-    job_id,
+  job_id, to_start = jobs.enqueue_link_ingest(
     links,
     user_id=user_id,
     refresh=request.refresh,
   )
+  if to_start:
+    start_ingest_job(
+      job_id,
+      to_start,
+      user_id=user_id,
+      refresh=request.refresh,
+    )
   return IngestResponse(job_id=job_id)
 
 
@@ -175,6 +181,28 @@ def get_job(job_id: str, user_id: CurrentUserId) -> JobSchema:
   if job is None:
     raise HTTPException(status_code=404, detail="Job not found")
   return job
+
+
+@app.delete(
+  "/api/jobs/{job_id}/links",
+  status_code=204,
+  responses={404: {"model": ErrorResponse}, 409: {"model": ErrorResponse}},
+)
+def remove_pending_job_link(
+  job_id: str,
+  request: RemoveJobLinkRequest,
+  user_id: CurrentUserId,
+) -> Response:
+  post_url = request.post_url.strip()
+  if not post_url:
+    raise HTTPException(status_code=400, detail="post_url is required")
+  try:
+    jobs.remove_pending_link(job_id, user_id=user_id, post_url=post_url)
+  except KeyError:
+    raise HTTPException(status_code=404, detail="Link not found") from None
+  except ValueError as exc:
+    raise HTTPException(status_code=409, detail=str(exc)) from exc
+  return Response(status_code=204)
 
 
 @app.post(

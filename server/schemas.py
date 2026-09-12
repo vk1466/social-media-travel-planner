@@ -238,6 +238,10 @@ class IngestResponse(BaseModel):
   job_id: str
 
 
+class RemoveJobLinkRequest(BaseModel):
+  post_url: str
+
+
 LinkStatus = Literal[
   "pending",
   "fetching",

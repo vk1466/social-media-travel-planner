@@ -156,3 +156,60 @@ def test_jobs_repo_reads_legacy_links(dynamodb) -> None:
   job = jobs_repo.get_job(job_id)
   assert job is not None
   assert _item_refs(job) == ["https://legacy/1"]
+
+
+def test_append_pending_urls_and_remove(dynamodb) -> None:
+  job_id = jobs_repo.create_job(
+    ["https://a.example/1"],
+    user_id="user-a",
+    refresh=False,
+  )
+  added = jobs_repo.append_pending_urls(
+    job_id,
+    ["https://a.example/1", "https://a.example/2"],
+  )
+  assert added == ["https://a.example/1", "https://a.example/2"]
+  job = jobs_repo.get_job(job_id)
+  assert job is not None
+  assert _item_refs(job) == ["https://a.example/1", "https://a.example/2"]
+
+  jobs_repo.remove_pending_item(job_id, "https://a.example/2")
+  job = jobs_repo.get_job(job_id)
+  assert job is not None
+  assert _item_refs(job) == ["https://a.example/1"]
+
+  jobs_repo.mark_fetching(job_id, "https://a.example/1")
+  try:
+    jobs_repo.remove_pending_item(job_id, "https://a.example/1")
+    raise AssertionError("expected ValueError")
+  except ValueError:
+    pass
+
+
+def test_append_rejected_when_job_done(dynamodb) -> None:
+  job_id = jobs_repo.create_job(
+    ["https://a.example/1"],
+    user_id="user-a",
+    refresh=False,
+  )
+  jobs_repo.mark_done(job_id)
+  try:
+    jobs_repo.append_pending_urls(job_id, ["https://a.example/2"])
+    raise AssertionError("expected JobNotRunningError")
+  except jobs_repo.JobNotRunningError:
+    pass
+
+
+def test_try_mark_done_waits_for_pending(dynamodb) -> None:
+  job_id = jobs_repo.create_job(
+    ["https://a.example/1", "https://a.example/2"],
+    user_id="user-a",
+    refresh=False,
+  )
+  jobs_repo.update_item(job_id, "https://a.example/1", status="saved", post_id="instagram:1")
+  assert jobs_repo.try_mark_done(job_id) is False
+  assert jobs_repo.get_job(job_id)["status"] == "running"
+
+  jobs_repo.update_item(job_id, "https://a.example/2", status="saved", post_id="instagram:2")
+  assert jobs_repo.try_mark_done(job_id) is True
+  assert jobs_repo.get_job(job_id)["status"] == "done"

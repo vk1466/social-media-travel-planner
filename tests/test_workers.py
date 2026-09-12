@@ -234,6 +234,12 @@ def test_finalize_job_marks_done(monkeypatch, dynamodb) -> None:
     user_id="user-a",
     refresh=False,
   )
+  jobs_repo.update_item(
+    job_id,
+    "https://www.instagram.com/p/x/",
+    status="saved",
+    post_id="instagram:x",
+  )
   called = {"link": False}
 
   def fake_link() -> None:
@@ -245,3 +251,41 @@ def test_finalize_job_marks_done(monkeypatch, dynamodb) -> None:
   assert out["status"] == "done"
   assert called["link"] is True
   assert jobs_repo.get_job(job_id)["status"] == "done"
+
+
+def test_finalize_job_stays_running_when_queue_has_pending(monkeypatch, dynamodb) -> None:
+  job_id = jobs_repo.create_job(
+    ["https://www.instagram.com/p/x/"],
+    user_id="user-a",
+    refresh=False,
+  )
+  monkeypatch.setattr("server.workers.link_places", lambda: None)
+  out = finalize_job({"job_id": job_id})
+  assert out["status"] == "running"
+  assert jobs_repo.get_job(job_id)["status"] == "running"
+
+
+def test_ingest_one_link_skips_removed_pending(monkeypatch, dynamodb) -> None:
+  job_id = jobs_repo.create_job(
+    ["https://www.instagram.com/p/gone/"],
+    user_id="user-a",
+    refresh=False,
+  )
+  jobs_repo.remove_pending_item(job_id, "https://www.instagram.com/p/gone/")
+  called = {"ingest": False}
+
+  def fake_ingest(*args, **kwargs):
+    called["ingest"] = True
+    raise AssertionError("should not ingest a removed link")
+
+  monkeypatch.setattr("server.workers.ingest_link", fake_ingest)
+  result = ingest_one_link(
+    {
+      "job_id": job_id,
+      "post_url": "https://www.instagram.com/p/gone/",
+      "user_id": "user-a",
+      "refresh": False,
+    }
+  )
+  assert result["status"] == "skipped"
+  assert called["ingest"] is False

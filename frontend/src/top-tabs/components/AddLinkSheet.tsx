@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { fetchJob, startIngest, type Job } from "../../api";
+import { fetchActiveJob, fetchJob, removePendingJobLink, startIngest, type Job } from "../../api";
 import { DetailSheet } from "./DetailSheet";
 
 function isUrl(value: string): boolean {
@@ -44,6 +44,22 @@ export function AddLinkSheet({
     inputRef.current?.focus();
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+    void fetchActiveJob("link_ingest")
+      .then((active) => {
+        if (!cancelled && active?.status === "running") {
+          setJob(active);
+        }
+      })
+      .catch(() => {
+        // ignore — sheet still works for a fresh queue
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const runningJobId = job?.status === "running" ? job.job_id : null;
 
   useEffect(() => {
@@ -82,7 +98,7 @@ export function AddLinkSheet({
         value={text}
         onChange={(event) => setText(event.target.value)}
         placeholder="https://www.instagram.com/reel/..."
-        disabled={starting || job?.status === "running"}
+        disabled={starting}
       />
       {parsed.invalid.length > 0 ? (
         <p className="inline-errors">Not a valid URL: {parsed.invalid.join(", ")}</p>
@@ -92,7 +108,7 @@ export function AddLinkSheet({
           type="checkbox"
           checked={refresh}
           onChange={(event) => setRefresh(event.target.checked)}
-          disabled={starting || job?.status === "running"}
+          disabled={starting}
         />
         Re-fetch if already saved
       </label>
@@ -100,38 +116,24 @@ export function AddLinkSheet({
         <button
           type="button"
           className="primary"
-          disabled={parsed.valid.length === 0 || starting || job?.status === "running"}
+          disabled={parsed.valid.length === 0 || starting}
           onClick={async () => {
             setError(null);
             setStarting(true);
             try {
               const jobId = await startIngest(parsed.valid, refresh);
               setText("");
-              setJob({
-                job_id: jobId,
-                status: "running",
-                refresh,
-                counts: {
-                  pending: parsed.valid.length,
-                  fetching: 0,
-                  saved: 0,
-                  linked: 0,
-                  skipped: 0,
-                  unsupported: 0,
-                  error: 0,
-                },
-                links: parsed.valid.map((postUrl) => ({ post_url: postUrl, status: "pending" })),
-              });
+              setJob(await fetchJob(jobId));
             } catch (err) {
-              setError(err instanceof Error ? err.message : "Failed to start processing");
+              setError(err instanceof Error ? err.message : "Failed to queue links");
             } finally {
               setStarting(false);
             }
           }}
         >
           {starting
-            ? "Starting…"
-            : `Add ${parsed.valid.length} link${parsed.valid.length === 1 ? "" : "s"}`}
+            ? "Adding…"
+            : `Add ${parsed.valid.length} link${parsed.valid.length === 1 ? "" : "s"} to queue`}
         </button>
         <button
           type="button"
@@ -146,11 +148,29 @@ export function AddLinkSheet({
       {error ? <p className="inline-errors">{error}</p> : null}
       {job ? (
         <section className="job-list">
-          <h3 className="sheet-section">{job.status === "running" ? "Saving…" : "Done"}</h3>
+          <h3 className="sheet-section">{job.status === "running" ? "Queue" : "Done"}</h3>
           {job.links.map((link) => (
             <article key={link.post_url}>
               <b>{link.status}</b>
               <span>{link.post_url}</span>
+              {link.status === "pending" ? (
+                <button
+                  type="button"
+                  aria-label={`Remove ${link.post_url}`}
+                  onClick={() => {
+                    void (async () => {
+                      try {
+                        await removePendingJobLink(job.job_id, link.post_url);
+                        setJob(await fetchJob(job.job_id));
+                      } catch (err) {
+                        setError(err instanceof Error ? err.message : "Failed to remove link");
+                      }
+                    })();
+                  }}
+                >
+                  Remove
+                </button>
+              ) : null}
             </article>
           ))}
         </section>

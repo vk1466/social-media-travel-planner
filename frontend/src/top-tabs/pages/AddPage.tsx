@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { fetchActiveJob, fetchJob, fetchJobs, startIngest, type Job, type JobLink } from "../../api";
+import { fetchActiveJob, fetchJob, fetchJobs, removePendingJobLink, startIngest, type Job, type JobLink } from "../../api";
 import { PageHeading } from "../../components/PageHeading";
 import { useLabTheme } from "../theme";
 import "../../add-page.css";
@@ -25,7 +25,6 @@ export function AddPage({
   const navigate = useNavigate();
   const { basePath } = useLabTheme();
   const [text, setText] = useState("");
-  const [pendingUrls, setPendingUrls] = useState<string[]>([]);
   const [refresh, setRefresh] = useState(false);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loadingJobs, setLoadingJobs] = useState(false);
@@ -46,6 +45,9 @@ export function AddPage({
   const runningJobs = jobs.filter((job) => job.status === "running");
   const historicJobs = jobs.filter((job) => job.status === "done");
   const runningJobIds = runningJobs.map((job) => job.job_id).join(",");
+  const queuedPending = runningJobs
+    .filter((job) => (job.kind ?? "link_ingest") === "link_ingest")
+    .reduce((total, job) => total + (job.counts.pending ?? 0), 0);
 
   useEffect(() => {
     if (!authReady) return;
@@ -112,47 +114,33 @@ export function AddPage({
     };
   }, [authReady, onComplete, runningJobIds]);
 
-  function addToDraft(): void {
-    setPendingUrls((current) => {
-      const seen = new Set(current);
-      const additions = parsed.valid.filter((url) => {
-        if (seen.has(url)) return false;
-        seen.add(url);
-        return true;
-      });
-      return [...current, ...additions];
-    });
-    setText(parsed.invalid.join("\n"));
+  function upsertJob(nextJob: Job): void {
+    setJobs((current) => [nextJob, ...current.filter((job) => job.job_id !== nextJob.job_id)]);
   }
 
-  async function startProcessing(): Promise<void> {
-    const submittedUrls = [...pendingUrls];
-    if (submittedUrls.length === 0) return;
+  async function addToQueue(): Promise<void> {
+    if (parsed.valid.length === 0) return;
     setStarting(true);
     setStartError(null);
     try {
-      const jobId = await startIngest(submittedUrls, refresh);
-      setPendingUrls((current) => current.filter((url) => !submittedUrls.includes(url)));
-      const pendingJob: Job = {
-        job_id: jobId,
-        status: "running",
-        refresh,
-        counts: {
-          pending: submittedUrls.length,
-          fetching: 0,
-          saved: 0,
-          linked: 0,
-          skipped: 0,
-          unsupported: 0,
-          error: 0,
-        },
-        links: submittedUrls.map((postUrl) => ({ post_url: postUrl, status: "pending" })),
-      };
-      setJobs((current) => [pendingJob, ...current.filter((job) => job.job_id !== jobId)]);
+      const jobId = await startIngest(parsed.valid, refresh);
+      const nextJob = await fetchJob(jobId);
+      upsertJob(nextJob);
+      setText(parsed.invalid.join("\n"));
     } catch (err) {
-      setStartError(err instanceof Error ? err.message : "Failed to start processing");
+      setStartError(err instanceof Error ? err.message : "Failed to queue links");
     } finally {
       setStarting(false);
+    }
+  }
+
+  async function removePending(jobId: string, postUrl: string): Promise<void> {
+    setStartError(null);
+    try {
+      await removePendingJobLink(jobId, postUrl);
+      upsertJob(await fetchJob(jobId));
+    } catch (err) {
+      setStartError(err instanceof Error ? err.message : "Failed to remove link");
     }
   }
 
@@ -161,14 +149,14 @@ export function AddPage({
       <PageHeading
         kicker="Wanderfile queue"
         title="Processing"
-        lede="Build a draft, start processing, and follow recent link activity."
-        count={{ value: pendingUrls.length, label: "pending" }}
+        lede="Add links anytime. They join your queue and stay there on every device you sign in with."
+        count={{ value: queuedPending, label: "pending" }}
         platformFilter={false}
       />
       <div className="processing-layout">
         <section className="queue-panel draft-panel">
           <h2>Add links</h2>
-          <p>Paste one URL per line, then review the draft before processing.</p>
+          <p>Paste one URL per line. You can keep adding while others are processing.</p>
           <textarea
             className="links-input"
             rows={5}
@@ -179,35 +167,6 @@ export function AddPage({
           {parsed.invalid.length > 0 ? (
             <p className="inline-errors">Not a valid URL: {parsed.invalid.join(", ")}</p>
           ) : null}
-          <div className="queue-actions">
-            <button
-              type="button"
-              disabled={parsed.valid.length === 0}
-              onClick={addToDraft}
-            >
-              Add to list
-            </button>
-          </div>
-
-          <h3 className="sheet-section">Pending draft</h3>
-          {pendingUrls.length === 0 ? (
-            <p className="empty-copy">No links waiting.</p>
-          ) : (
-            <div className="draft-list">
-              {pendingUrls.map((url) => (
-                <article key={url}>
-                  <span>{url}</span>
-                  <button
-                    type="button"
-                    aria-label={`Remove ${url}`}
-                    onClick={() => setPendingUrls((current) => current.filter((item) => item !== url))}
-                  >
-                    Remove
-                  </button>
-                </article>
-              ))}
-            </div>
-          )}
           <label className="refresh-row">
             <input type="checkbox" checked={refresh} onChange={(event) => setRefresh(event.target.checked)} />
             Re-fetch if already saved
@@ -216,12 +175,12 @@ export function AddPage({
             <button
               type="button"
               className="primary"
-              disabled={pendingUrls.length === 0 || starting}
-              onClick={() => void startProcessing()}
+              disabled={parsed.valid.length === 0 || starting}
+              onClick={() => void addToQueue()}
             >
               {starting
-                ? "Starting…"
-                : `Start processing ${pendingUrls.length} link${pendingUrls.length === 1 ? "" : "s"}`}
+                ? "Adding…"
+                : `Add ${parsed.valid.length} link${parsed.valid.length === 1 ? "" : "s"} to queue`}
             </button>
           </div>
           {startError ? <p className="inline-errors">{startError}</p> : null}
@@ -239,6 +198,11 @@ export function AddPage({
                 key={job.job_id}
                 job={job}
                 onOpen={() => navigate(`${basePath}/posts`)}
+                onRemovePending={
+                  (job.kind ?? "link_ingest") === "link_ingest"
+                    ? (postUrl) => void removePending(job.job_id, postUrl)
+                    : undefined
+                }
               />
             ))}
           </section>
@@ -266,7 +230,15 @@ export function AddPage({
   );
 }
 
-function JobCard({ job, onOpen }: { job: Job; onOpen: () => void }) {
+function JobCard({
+  job,
+  onOpen,
+  onRemovePending,
+}: {
+  job: Job;
+  onOpen: () => void;
+  onRemovePending?: (postUrl: string) => void;
+}) {
   const summary = [
     `${job.counts.saved} saved`,
     `${job.counts.linked} linked`,
@@ -284,19 +256,37 @@ function JobCard({ job, onOpen }: { job: Job; onOpen: () => void }) {
       </header>
       <div className="job-list">
         {job.links.map((link) => (
-          <JobLinkRow key={link.post_url} link={link} onOpen={onOpen} />
+          <JobLinkRow
+            key={link.post_url}
+            link={link}
+            onOpen={onOpen}
+            onRemovePending={onRemovePending}
+          />
         ))}
       </div>
     </article>
   );
 }
 
-function JobLinkRow({ link, onOpen }: { link: JobLink; onOpen: () => void }) {
+function JobLinkRow({
+  link,
+  onOpen,
+  onRemovePending,
+}: {
+  link: JobLink;
+  onOpen: () => void;
+  onRemovePending?: (postUrl: string) => void;
+}) {
   return (
     <article>
       <b>{link.status}</b>
       <span title={link.post_url}>{link.post_url}</span>
       {link.error_message ? <small>{link.error_message}</small> : null}
+      {link.status === "pending" && onRemovePending ? (
+        <button type="button" aria-label={`Remove ${link.post_url}`} onClick={() => onRemovePending(link.post_url)}>
+          Remove
+        </button>
+      ) : null}
       {link.post_id ? (
         <button type="button" onClick={onOpen}>
           Open

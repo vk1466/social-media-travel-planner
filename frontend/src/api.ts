@@ -410,6 +410,14 @@ export async function startIngest(links: string[], refresh: boolean): Promise<st
   return body.job_id;
 }
 
+export async function removePendingJobLink(jobId: string, postUrl: string): Promise<void> {
+  await request<void>(`/api/jobs/${jobId}/links`, {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ post_url: postUrl }),
+  });
+}
+
 export async function startInstagramImport(username: string): Promise<string> {
   const body = await request<{ job_id: string }>("/api/visits/import-instagram", {
     method: "POST",

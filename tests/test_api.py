@@ -106,6 +106,62 @@ def test_get_job_scoped_to_owner(monkeypatch, dynamodb) -> None:
   )
 
 
+def test_ingest_appends_to_running_job_and_removes_pending(monkeypatch, dynamodb) -> None:
+  started: list[list[str]] = []
+
+  def capture_start(job_id: str, post_urls: list[str], *, user_id: str, refresh: bool, mark_visited: bool = False) -> str:
+    del job_id, user_id, refresh, mark_visited
+    started.append(list(post_urls))
+    return "arn:aws:states:us-east-1:123:execution:test:queue"
+
+  monkeypatch.setattr("server.app.start_ingest_job", capture_start)
+  client = TestClient(app)
+  first = client.post(
+    "/api/ingest",
+    json={"links": ["https://www.instagram.com/p/one/"]},
+    headers=HEADERS,
+  )
+  assert first.status_code == 202
+  job_id = first.json()["job_id"]
+
+  second = client.post(
+    "/api/ingest",
+    json={"links": ["https://www.instagram.com/p/two/"]},
+    headers=HEADERS,
+  )
+  assert second.status_code == 202
+  assert second.json()["job_id"] == job_id
+  assert started == [
+    ["https://www.instagram.com/p/one/"],
+    ["https://www.instagram.com/p/two/"],
+  ]
+
+  job = client.get(f"/api/jobs/{job_id}", headers=HEADERS).json()
+  assert job["status"] == "running"
+  assert [link["post_url"] for link in job["links"]] == [
+    "https://www.instagram.com/p/one/",
+    "https://www.instagram.com/p/two/",
+  ]
+
+  removed = client.request(
+    "DELETE",
+    f"/api/jobs/{job_id}/links",
+    json={"post_url": "https://www.instagram.com/p/two/"},
+    headers=HEADERS,
+  )
+  assert removed.status_code == 204
+  job = client.get(f"/api/jobs/{job_id}", headers=HEADERS).json()
+  assert [link["post_url"] for link in job["links"]] == ["https://www.instagram.com/p/one/"]
+
+  forbidden = client.request(
+    "DELETE",
+    f"/api/jobs/{job_id}/links",
+    json={"post_url": "https://www.instagram.com/p/one/"},
+    headers={"X-User-Id": "user-b"},
+  )
+  assert forbidden.status_code == 404
+
+
 def test_get_job_not_found(dynamodb) -> None:
   client = TestClient(app)
   response = client.get("/api/jobs/does-not-exist", headers=HEADERS)

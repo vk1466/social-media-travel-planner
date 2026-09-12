@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import uuid
 
 import boto3
 
@@ -33,7 +34,7 @@ def start_ingest_job(
   client = boto3.client("stepfunctions", region_name=settings.dynamodb_region())
   response = client.start_execution(
     stateMachineArn=state_machine_arn,
-    name=job_id,
+    name=f"{job_id}-{uuid.uuid4().hex[:12]}",
     input=json.dumps(payload),
   )
   execution_arn = response["executionArn"]

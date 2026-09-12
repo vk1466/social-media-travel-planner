@@ -30,6 +30,38 @@ def create_job(
   )
 
 
+def enqueue_link_ingest(
+  post_urls: list[str],
+  *,
+  user_id: str,
+  refresh: bool,
+) -> tuple[str, list[str]]:
+  """Attach URLs to the user's running link-ingest job, or start a new one."""
+  active = jobs_repo.get_active_job_for_user(
+    user_id,
+    kind=jobs_repo.JOB_KIND_LINK_INGEST,
+  )
+  if active:
+    try:
+      to_start = jobs_repo.append_pending_urls(active["job_id"], post_urls)
+      return active["job_id"], to_start
+    except jobs_repo.JobNotRunningError:
+      pass
+  job_id = create_job(post_urls, user_id=user_id, refresh=refresh)
+  return job_id, post_urls
+
+
+def claim_for_fetch(job_id: str, item_ref: str) -> bool:
+  return jobs_repo.claim_pending_item(job_id, item_ref)
+
+
+def remove_pending_link(job_id: str, *, user_id: str, post_url: str) -> None:
+  job = jobs_repo.get_job(job_id)
+  if job is None or job.get("user_id") != user_id:
+    raise KeyError(f"Job not found: {job_id}")
+  jobs_repo.remove_pending_item(job_id, post_url)
+
+
 def mark_fetching(job_id: str, item_ref: str) -> None:
   jobs_repo.mark_fetching(job_id, item_ref)
 
@@ -50,6 +82,10 @@ def update_link(job_id: str, result: IngestResult) -> None:
 
 def mark_done(job_id: str) -> None:
   jobs_repo.mark_done(job_id)
+
+
+def try_mark_done(job_id: str) -> bool:
+  return jobs_repo.try_mark_done(job_id)
 
 
 def set_execution_arn(job_id: str, execution_arn: str) -> None:

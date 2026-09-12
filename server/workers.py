@@ -40,7 +40,13 @@ def ingest_one_link(event: dict[str, Any], context: Any = None) -> dict[str, Any
     mark_visited_flag,
   )
   try:
-    jobs.mark_fetching(job_id, post_url)
+    if not jobs.claim_for_fetch(job_id, post_url):
+      logger.info("worker ingest_one_link skipped job_id=%s url=%s", job_id, post_url)
+      return {
+        "job_id": job_id,
+        "post_url": post_url,
+        "status": "skipped",
+      }
     result = ingest_link(
       post_url,
       user_id=user_id,
@@ -172,9 +178,10 @@ def finalize_job(event: dict[str, Any], context: Any = None) -> dict[str, Any]:
     link_places()
   except Exception:
     logger.exception("worker finalize_job hierarchy failed job_id=%s", job_id)
-  jobs.mark_done(job_id)
-  logger.info("worker finalize_job done job_id=%s", job_id)
-  return {"job_id": job_id, "status": "done"}
+  done = jobs.try_mark_done(job_id)
+  status = "done" if done else "running"
+  logger.info("worker finalize_job done job_id=%s status=%s", job_id, status)
+  return {"job_id": job_id, "status": status}
 
 
 def finalize_timeline_job(event: dict[str, Any], context: Any = None) -> dict[str, Any]:

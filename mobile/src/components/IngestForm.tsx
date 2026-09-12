@@ -104,6 +104,7 @@ interface IngestProgressProps {
   title?: string;
   subtitle?: string;
   onOpenPost?: (platform: string, postId: string) => void;
+  onRemovePending?: (postUrl: string) => void;
 }
 
 function statusLabel(link: JobLink): string {
@@ -154,6 +155,7 @@ export function IngestProgress({
   title = "Progress",
   subtitle,
   onOpenPost,
+  onRemovePending,
 }: IngestProgressProps) {
   if (links.length === 0) {
     return null;
@@ -191,6 +193,11 @@ export function IngestProgress({
                 <Pressable onPress={() => onOpenPost(platform, link.post_id!)} style={styles.openRow}>
                   <Text style={styles.openLink}>View saved post</Text>
                   <Ionicons name="arrow-forward" size={14} color={colors.brand} />
+                </Pressable>
+              ) : null}
+              {link.status === "pending" && onRemovePending ? (
+                <Pressable onPress={() => onRemovePending(link.post_url)} style={styles.openRow}>
+                  <Text style={styles.removeLink}>Remove</Text>
                 </Pressable>
               ) : null}
             </View>
@@ -307,6 +314,11 @@ const styles = StyleSheet.create({
   },
   openLink: {
     color: colors.brand,
+    fontWeight: "700",
+    fontSize: 13,
+  },
+  removeLink: {
+    color: colors.danger,
     fontWeight: "700",
     fontSize: 13,
   },
