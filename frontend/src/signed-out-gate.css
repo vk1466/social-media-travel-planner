@@ -32,7 +32,7 @@
   width: 44px;
   height: 44px;
   border-radius: 14px;
-  background: linear-gradient(140deg, var(--wf-coral-soft), var(--wf-coral));
+  background: linear-gradient(140deg, color-mix(in srgb, #fff 35%, var(--wf-coral)), var(--wf-coral));
   color: var(--on-accent);
   font-family: var(--wf-font-serif);
   font-size: 1.35rem;

@@ -8,12 +8,12 @@
  */
 
 export const DEFAULT_BRAND_HEX = {
-  forest: "#55b7c7",
+  forest: "#4fe8f6",
   forestMid: "#1f4654",
   forestDeep: "#112a35",
-  forestHover: "#3f9bad",
+  forestHover: "#7cf0fa",
   sage: "#b2cbd0",
-  mint: "#55b7c7",
+  mint: "#4fe8f6",
   cream: "#173a47",
   soft: "#2a5260",
   bg: "#112a35",
@@ -28,9 +28,9 @@ export const DEFAULT_BRAND_HEX = {
   clay: "#b2cbd0",
   slate: "#1f4654",
   plum: "#7c58a6",
-  coral: "#55b7c7",
+  coral: "#4fe8f6",
   coralSoft: "#2a5260",
-  coralDeep: "#3f9bad",
+  coralDeep: "#7cf0fa",
   white: "#ffffff",
 } as const;
 

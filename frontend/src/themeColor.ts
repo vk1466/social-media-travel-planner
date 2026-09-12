@@ -4,7 +4,7 @@ import {
 } from "./brandColors";
 
 /** Default Wanderfile brand — Trail guide from the content-system lab. */
-export const DEFAULT_BRAND_COLOR = "#55b7c7";
+export const DEFAULT_BRAND_COLOR = "#4fe8f6";
 
 export const DEFAULT_BRAND_SHIFT = 1;
 
@@ -218,8 +218,8 @@ export type EditableSwatchGroup = (typeof EDITABLE_BRAND_SWATCHES)[number]["grou
 /** Hand-tuned swatches — Trail guide on sage paper. */
 export const DEFAULT_BRAND_OVERRIDES: Partial<Record<EditableBrandKey, string>> = {
   forestDeep: "#112a35",
-  sage: "#55b7c7",
-  mint: "#55b7c7",
+  sage: "#4fe8f6",
+  mint: "#4fe8f6",
   quiet: "#b2cbd0",
   onBrand: "#f3fafc",
 };
@@ -458,8 +458,8 @@ const SWATCH_TOKEN: Record<EditableBrandKey, string> = {
 const DEFAULT_SWATCH_HEX: BrandSwatchMap = {
   forest: DEFAULT_BRAND_COLOR,
   forestDeep: "#112a35",
-  sage: "#55b7c7",
-  mint: "#55b7c7",
+  sage: "#4fe8f6",
+  mint: "#4fe8f6",
   ink: "#112a35",
   quiet: "#b2cbd0",
   onBrand: "#f3fafc",
@@ -820,9 +820,14 @@ export function readBrandLabState(): BrandLabState {
     const raw = localStorage.getItem(BRAND_LAB_STORAGE_KEY);
     if (raw) {
       const normalized = normalizeLabState(JSON.parse(raw) as Partial<BrandLabState>);
-      // Migrate the previous shipped Emerald default to Ocean Dusk once. Keep
-      // intentional custom palettes untouched.
-      if (normalized.base.toLowerCase() === "#0d2b1a") {
+      // Migrate previous shipped defaults to the current Ocean Dusk once.
+      // Keep intentional custom palettes untouched.
+      if (
+        normalized.base.toLowerCase() === "#0d2b1a" ||
+        normalized.base.toLowerCase() === "#55b7c7" ||
+        normalized.base.toLowerCase() === "#70cad8" ||
+        normalized.base.toLowerCase() === "#8ad6e2"
+      ) {
         return defaultBrandLabState();
       }
       return normalized;

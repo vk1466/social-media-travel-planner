@@ -149,7 +149,7 @@
 }
 
 .wf-seg-btn.is-active {
-  background: var(--wf-coral);
+  background: var(--accent-fill);
   color: var(--on-accent);
 }
 
@@ -175,7 +175,7 @@
 }
 
 .wf-seg button:not(.wf-seg-btn).is-active {
-  background: var(--wf-coral);
+  background: var(--accent-fill);
   color: var(--on-accent);
 }
 
@@ -263,7 +263,7 @@
 }
 
 .wf-pill.is-active {
-  background: var(--wf-coral);
+  background: var(--accent-fill);
   color: var(--on-accent);
   border-color: var(--wf-coral);
   font-weight: 700;

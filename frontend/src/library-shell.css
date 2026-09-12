@@ -66,7 +66,7 @@
   border: 0;
   border-radius: 999px;
   padding: 0.45rem 0.95rem;
-  background: var(--wf-coral);
+  background: var(--accent-fill);
   color: var(--on-accent);
   font: inherit;
   font-size: 0.78rem;
@@ -152,7 +152,7 @@
 }
 
 .lib-shell-pill.is-active {
-  background: var(--wf-coral);
+  background: var(--accent-fill);
   color: var(--on-accent);
   border-color: var(--wf-coral);
 }
@@ -196,7 +196,7 @@
   padding: 0.65rem 1rem;
   border: 1px solid color-mix(in srgb, var(--wf-coral) 72%, var(--wf-chrome-border));
   border-radius: 999px;
-  background: var(--wf-coral);
+  background: var(--accent-fill);
   color: var(--on-accent);
   box-shadow: 0 10px 28px rgb(var(--wf-forest-rgb) / 0.2);
   font: inherit;

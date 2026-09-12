@@ -499,16 +499,17 @@ html[data-bento-motion="card-shuffle"] .home-tile--media.is-in .home-tile-layer-
   justify-content: center;
   padding: 0.75rem 1.4rem;
   border-radius: var(--wf-radius-pill);
-  background: var(--wf-coral);
+  background: var(--accent-fill);
   color: var(--on-accent);
   font-weight: 700;
   font-size: 0.9rem;
+  box-shadow: var(--accent-sheen);
   transition: transform 0.15s ease, filter 0.15s ease;
 }
 
 .home-cta-btn:hover {
   transform: translateY(-1px);
-  filter: brightness(1.05);
+  filter: brightness(1.08);
 }
 
 @media (max-width: 900px) {

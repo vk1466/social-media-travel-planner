@@ -10,8 +10,20 @@
   --theme-ink: #f3fafc;
   --theme-muted: #b2cbd0;
   --theme-line: #2a5260;
-  --theme-accent: #55b7c7;
-  --theme-accent-hover: #3f9bad;
+  --theme-accent: #4fe8f6;
+  --theme-accent-hover: #7cf0fa;
+  --theme-accent-gloss: linear-gradient(
+    165deg,
+    color-mix(in srgb, #ffffff 58%, var(--theme-accent)) 0%,
+    color-mix(in srgb, #ffffff 22%, var(--theme-accent)) 24%,
+    var(--theme-accent) 55%,
+    color-mix(in srgb, #083040 20%, var(--theme-accent)) 100%
+  );
+  --theme-accent-sheen:
+    inset 0 1px 0 rgb(255 255 255 / 0.55),
+    inset 0 -1px 0 rgb(8 40 50 / 0.22),
+    0 0 0 1px rgb(255 255 255 / 0.12),
+    0 10px 22px rgb(var(--theme-accent-rgb) / 0.32);
   --theme-soft: #2a5260;
   --theme-fill: #0c222b;
   --theme-mid: #1f4654;
@@ -35,8 +47,8 @@
   --theme-panel-rgb: 23 58 71;
   --theme-ink-rgb: 243 250 252;
   --theme-muted-rgb: 178 203 208;
-  --theme-accent-rgb: 85 183 199;
-  --theme-accent-hover-rgb: 63 155 173;
+  --theme-accent-rgb: 79 232 246;
+  --theme-accent-hover-rgb: 124 240 250;
   --theme-soft-rgb: 42 82 96;
   --theme-fill-rgb: 12 34 43;
   --theme-mid-rgb: 31 70 84;
@@ -108,6 +120,8 @@
   --line: var(--theme-line);
   --accent: var(--theme-accent);
   --accent-hover: var(--theme-accent-hover);
+  --accent-fill: var(--theme-accent-gloss);
+  --accent-sheen: var(--theme-accent-sheen);
   --soft: var(--theme-soft);
   --dark: var(--theme-fill);
   --on-fill: var(--theme-on-fill);
@@ -233,6 +247,8 @@ html.top-tabs-active,
   --line: var(--theme-line);
   --accent: var(--theme-accent);
   --accent-hover: var(--theme-accent-hover);
+  --accent-fill: var(--theme-accent-gloss);
+  --accent-sheen: var(--theme-accent-sheen);
   --soft: var(--theme-soft);
   --dark: var(--theme-fill);
   --on-fill: var(--theme-on-fill);

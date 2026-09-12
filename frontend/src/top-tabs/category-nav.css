@@ -64,7 +64,7 @@
 }
 
 .category-nav-card.is-on {
-  background: var(--accent);
+  background: var(--accent-fill);
   border-color: var(--accent);
   color: var(--on-accent);
 }
@@ -138,7 +138,7 @@
   }
 
   .category-nav-card.is-on {
-    background: var(--accent);
+    background: var(--accent-fill);
     border-color: var(--accent);
     color: var(--on-accent);
     box-shadow: none;

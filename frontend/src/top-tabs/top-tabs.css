@@ -80,7 +80,15 @@ html.top-tabs-active,
   background: var(--panel);
 }
 .lab-pages .wordmark { font-family: var(--wf-font-headline); font-size: 22px; font-weight: 600; letter-spacing: -0.02em; text-decoration: none; }
-.lab-pages .wordmark b { color: var(--accent); font-weight: inherit; }
+.lab-pages .wordmark b {
+  color: var(--accent);
+  font-weight: inherit;
+  background: linear-gradient(180deg, #f4fdff 0%, var(--accent) 46%, #2ec5d8 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 12px rgb(var(--theme-accent-rgb) / 0.45));
+}
 .lab-pages .top-navigation nav { display: flex; gap: 3px; }
 .lab-pages .top-navigation nav a {
   position: relative;
@@ -108,7 +116,7 @@ html.top-tabs-active,
   background: var(--panel);
   cursor: pointer;
 }
-.lab-pages .top-navigation .add-button { border-color: var(--accent); background: var(--accent); color: var(--on-accent); }
+.lab-pages .top-navigation .add-button { border-color: transparent; background: var(--accent-fill); color: var(--on-accent); box-shadow: var(--accent-sheen); }
 .lab-pages .page-content { max-width: 1260px; margin: auto; padding: 34px 34px 100px; }
 .lab-pages .page-heading {
   min-height: 78px;
@@ -283,10 +291,11 @@ html.top-tabs-active,
   padding: 0 17px;
   border: 0;
   border-radius: 999px;
-  background: var(--accent);
+  background: var(--accent-fill);
   color: var(--on-accent);
   font-weight: 700;
   cursor: pointer;
+  box-shadow: var(--accent-sheen);
 }
 .lab-pages .toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 9px; margin-bottom: 12px; }
 .lab-pages .filter-pills {
@@ -311,7 +320,7 @@ html.top-tabs-active,
   font-weight: 700;
 }
 .lab-pages .filter-pills button.is-on {
-  background: var(--accent);
+  background: var(--accent-fill);
   border-color: var(--accent);
   color: var(--on-accent);
 }
@@ -332,7 +341,7 @@ html.top-tabs-active,
 .lab-pages .recipe-toolbar .filter-pills button.is-on,
 .lab-pages .recipe-toolbar .filter-pills button.is-on.is-soft,
 .lab-pages .movie-library-toolbar .filter-pills button.is-active {
-  background: var(--accent);
+  background: var(--accent-fill);
   border-color: var(--accent);
   color: var(--on-accent);
   font-weight: 400;
@@ -361,7 +370,7 @@ html.top-tabs-active,
   font-size: 13px;
   cursor: pointer;
 }
-.lab-pages .toolbar > div button.is-on { background: var(--accent); color: var(--on-accent); }
+.lab-pages .toolbar > div button.is-on { background: var(--accent-fill); color: var(--on-accent); }
 
 /* Shared filter chrome — Travel, Food, and Movies match Posts. */
 .lab-pages .lib-shell-facets {
@@ -439,7 +448,7 @@ html.top-tabs-active,
 .lab-pages .wf-seg-btn.is-active,
 .lab-pages .recipe-chip.is-active,
 .lab-pages .movie-seg-control button.is-active {
-  background: var(--accent);
+  background: var(--accent-fill);
   color: var(--on-accent);
   border-color: transparent;
   box-shadow: none;
@@ -476,7 +485,7 @@ html.top-tabs-active,
 }
 .lab-pages .movie-provider-filter-chip.is-active.is-soft,
 .lab-pages .filter-pills button.is-on.is-soft {
-  background: var(--accent);
+  background: var(--accent-fill);
   border-color: var(--accent);
   color: var(--on-accent);
 }
@@ -485,7 +494,7 @@ html.top-tabs-active,
 .lab-pages .movie-provider-filter-chip.is-active,
 .lab-pages .pl2-type.is-active,
 .lab-pages .wf-pill.is-active {
-  background: var(--accent);
+  background: var(--accent-fill);
   border-color: var(--accent);
   color: var(--on-accent);
 }
@@ -588,7 +597,7 @@ html.top-tabs-active,
   padding: 0 17px;
   border: 0;
   border-radius: 999px;
-  background: var(--accent);
+  background: var(--accent-fill);
   color: var(--on-accent);
   font-size: 11px;
   font-weight: 700;
@@ -606,7 +615,7 @@ html.top-tabs-active,
 .lab-pages .history-toolbar button[type="submit"] {
   border: 0;
   border-radius: 999px;
-  background: var(--accent);
+  background: var(--accent-fill);
   color: var(--on-accent);
   font-weight: 700;
   padding: 0 17px;
@@ -625,7 +634,7 @@ html.top-tabs-active,
   color: var(--muted);
 }
 .lab-pages .pl2-filters button.is-active {
-  background: var(--accent);
+  background: var(--accent-fill);
   color: var(--on-accent);
 }
 .lab-pages .child-list { margin: 0 0 12px; padding-left: 16px; color: var(--muted); font-size: 10px; }
@@ -777,13 +786,13 @@ html.top-tabs-active,
   padding: 0;
   border: 2px solid var(--panel);
   border-radius: 50%;
-  background: var(--accent);
+  background: var(--accent-fill);
   color: var(--on-accent);
-  box-shadow: var(--shadow), 0 8px 24px rgb(var(--theme-overlay-rgb) / 0.45);
+  box-shadow: var(--accent-sheen), 0 8px 24px rgb(var(--theme-overlay-rgb) / 0.35);
   cursor: pointer;
   transition: background 120ms ease, transform 120ms ease;
 }
-.lab-pages .processing-fab:hover { background: var(--accent-hover); transform: translateY(-2px); }
+.lab-pages .processing-fab:hover { filter: brightness(1.08); transform: translateY(-2px); }
 .lab-pages .processing-fab:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 45%, transparent); outline-offset: 3px; }
 .lab-pages .processing-fab svg {
   width: 24px;
@@ -829,7 +838,7 @@ html.top-tabs-active,
   font-size: 11px;
   cursor: pointer;
 }
-.lab-pages .queue-actions .primary { border-color: var(--accent); background: var(--accent); color: var(--on-accent); }
+.lab-pages .queue-actions .primary { border-color: var(--accent); background: var(--accent-fill); color: var(--on-accent); }
 .lab-pages .queue-actions button:disabled { cursor: not-allowed; opacity: 0.45; }
 .lab-pages .draft-list { display: grid; gap: 7px; }
 .lab-pages .draft-list article {
@@ -925,7 +934,7 @@ html.top-tabs-active,
   font-size: 11px;
   cursor: pointer;
 }
-.lab-pages .sheet-actions button.is-on, .lab-pages .sheet-actions .primary { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+.lab-pages .sheet-actions button.is-on, .lab-pages .sheet-actions .primary { background: var(--accent-fill); color: var(--on-accent); border-color: var(--accent); }
 .lab-pages .tag-row { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0; }
 .lab-pages .tag-row span { padding: 5px 8px; border-radius: 999px; background: var(--soft); color: var(--accent); font-size: 10px; }
 .lab-pages .check-list { list-style: none; padding: 0; margin: 0; }
@@ -1154,7 +1163,7 @@ html.top-tabs-active,
 }
 
 .lab-pages-light .food-library .recipe-grocery-btn {
-  background: var(--accent);
+  background: var(--accent-fill);
   border-color: var(--accent);
   color: var(--on-accent);
 }
@@ -1220,7 +1229,7 @@ html.top-tabs-active,
 }
 
 .lab-pages-light .lib-shell-banner button {
-  background: var(--accent);
+  background: var(--accent-fill);
   color: var(--on-accent);
 }
 

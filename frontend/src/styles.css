@@ -296,16 +296,16 @@ a {
 .primary-button {
   padding: var(--size-3) var(--size-5);
   border-radius: var(--radius-pill);
-  background: var(--accent);
+  background: var(--accent-fill);
   color: var(--on-accent);
   font-family: var(--wf-font-on-brand);
   font-weight: var(--font-weight-6);
   font-size: var(--wf-size-on-brand);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--accent-sheen);
 }
 
 .primary-button:hover:not(:disabled) {
-  background: var(--accent-hover);
+  filter: brightness(1.08);
 }
 
 .primary-button:disabled,
