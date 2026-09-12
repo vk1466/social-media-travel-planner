@@ -349,7 +349,7 @@ html.top-tabs-active,
   border-radius: 11px;
   background: var(--panel);
 }
-.lab-pages .toolbar input { min-width: 0; flex: 1; border: 0; outline: 0; background: transparent; }
+.lab-pages .toolbar input { min-width: 0; flex: 1; border: 0; outline: 0; background: transparent; color: var(--ink); }
 .lab-pages .toolbar > div { display: flex; padding: 3px; border: 1px solid var(--line); border-radius: 11px; background: var(--panel); }
 .lab-pages .toolbar > div button {
   height: 34px;
@@ -391,6 +391,17 @@ html.top-tabs-active,
 .lab-pages .lib-shell-search input {
   font-size: inherit;
   color: var(--ink);
+}
+.lab-pages .lib-shell-search input::placeholder,
+.lab-pages .lib-filters-search input::placeholder,
+.lab-pages .recipe-search-input::placeholder,
+.lab-pages .movie-search-input::placeholder,
+.lab-pages .toolbar input::placeholder,
+.lab-pages .history-toolbar input::placeholder,
+.lab-pages .links-input::placeholder {
+  color: var(--muted);
+  -webkit-text-fill-color: var(--muted);
+  opacity: 1;
 }
 .lab-pages .wf-seg,
 .lab-pages .wf-seg--soft,

@@ -52,8 +52,15 @@
   border: 0;
   outline: 0;
   background: transparent;
-  color: inherit;
+  color: var(--ink);
+  -webkit-text-fill-color: var(--ink);
   font: inherit;
+}
+
+.lib-filters-search input::placeholder {
+  color: var(--muted);
+  -webkit-text-fill-color: var(--muted);
+  opacity: 1;
 }
 
 .lib-filters-seg {
@@ -179,8 +186,14 @@
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--bg);
+  color: var(--ink);
   font: inherit;
   font-size: 10px;
+}
+
+.lib-filters-menu-panel input[type="search"]::placeholder {
+  color: var(--muted);
+  opacity: 1;
 }
 
 .lib-filters-menu-panel label {

@@ -25,6 +25,11 @@
   border-color: var(--wf-copy-accent);
 }
 
+.search-field::placeholder {
+  color: var(--wf-copy-muted);
+  opacity: 1;
+}
+
 .search-count {
   margin: 0.9rem 0 1.4rem;
   font-size: 0.85rem;

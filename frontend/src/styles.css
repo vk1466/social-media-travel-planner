@@ -85,6 +85,11 @@ input {
   font: inherit;
 }
 
+::placeholder {
+  color: var(--muted);
+  opacity: 1;
+}
+
 a {
   color: var(--accent);
   text-decoration-thickness: 1px;

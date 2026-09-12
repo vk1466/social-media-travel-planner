@@ -54,6 +54,11 @@
   box-shadow: 0 0 0 2px rgb(var(--theme-accent-rgb) / 0.25);
 }
 
+.movie-search-input::placeholder {
+  color: var(--text-muted);
+  opacity: 1;
+}
+
 .movie-search-clear {
   position: absolute;
   right: 0.75rem;

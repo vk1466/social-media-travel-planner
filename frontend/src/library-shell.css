@@ -123,6 +123,7 @@
 
 .lib-shell-search input::placeholder {
   color: var(--wf-copy-muted);
+  opacity: 1;
 }
 
 
