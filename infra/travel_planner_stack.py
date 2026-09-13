@@ -112,15 +112,22 @@ class TravelPlannerStack(Stack):
       )
     )
 
+    facts_queue_name = f"travelplanner-place-facts-{stage}-{region}"
+    facts_dlq_name = f"travelplanner-place-facts-dlq-{stage}-{region}"
+    facts_queue_url = (
+      f"https://sqs.{region}.amazonaws.com/{Stack.of(self).account}/{facts_queue_name}"
+    )
     facts_dlq = sqs.Queue(
       self,
       "PlaceFactsDlq",
+      queue_name=facts_dlq_name,
       retention_period=Duration.days(14),
       removal_policy=removal,
     )
     facts_queue = sqs.Queue(
       self,
       "PlaceFactsQueue",
+      queue_name=facts_queue_name,
       visibility_timeout=Duration.seconds(360),
       retention_period=Duration.days(4),
       dead_letter_queue=sqs.DeadLetterQueue(
@@ -143,7 +150,6 @@ class TravelPlannerStack(Stack):
       "LOG_LEVEL": "INFO",
       "TIMELINE_IMPORTS_BUCKET": timeline_bucket.bucket_name,
       "MEDIA_BUCKET": media_bucket.bucket_name,
-      "PLACE_FACTS_QUEUE_URL": facts_queue.queue_url,
       "TIMELINE_BATCH_SIZE": "100",
       "TIMELINE_HOME_EXCLUDE_KM": "30",
       "TIMELINE_MAX_PLACES_PER_CALL": "100",
@@ -163,6 +169,7 @@ class TravelPlannerStack(Stack):
       timeout=Duration.seconds(900),
       environment=shared_env,
     )
+    ingest_fn.add_environment("PLACE_FACTS_QUEUE_URL", facts_queue_url)
 
     finalize_fn = lambda_.DockerImageFunction(
       self,
@@ -282,6 +289,7 @@ class TravelPlannerStack(Stack):
         "CLERK_SECRET_KEY": clerk_secret_key,
         "ADMIN_USER_IDS": admin_user_ids,
         "INSTAGRAM_PROFILE_POST_LIMIT": "5",
+        "PLACE_FACTS_QUEUE_URL": facts_queue_url,
       },
     )
     for table in tables.values():
@@ -320,7 +328,7 @@ class TravelPlannerStack(Stack):
       self,
       "PlaceFactsQueueUrl",
       description="SQS queue for async place-facts enrichment",
-      value=facts_queue.queue_url,
+      value=facts_queue_url,
     )
     CfnOutput(
       self,
