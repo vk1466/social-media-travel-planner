@@ -244,6 +244,12 @@ def media_bucket() -> str | None:
   return value or None
 
 
+def place_facts_queue_url() -> str | None:
+  """SQS queue for async place-facts enrichment (unset = skip enqueue)."""
+  value = os.getenv("PLACE_FACTS_QUEUE_URL", "").strip()
+  return value or None
+
+
 def timeline_state_machine_arn() -> str | None:
   value = os.getenv("TIMELINE_STATE_MACHINE_ARN", "").strip()
   return value or None

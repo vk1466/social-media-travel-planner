@@ -6,6 +6,7 @@ from collections import Counter
 from typing import Any
 
 from travelplanner.db import jobs_repo
+from travelplanner.ingest_limits import link_ingest_concurrency
 from travelplanner.personas.link_ingest import IngestResult
 
 from server.schemas import JobCountsSchema, JobItemSchema, JobLinkSchema, JobSchema
@@ -35,7 +36,7 @@ def enqueue_link_ingest(
   *,
   user_id: str,
   refresh: bool,
-) -> tuple[str, list[str]]:
+) -> str:
   """Attach URLs to the user's running link-ingest job, or start a new one."""
   active = jobs_repo.get_active_job_for_user(
     user_id,
@@ -43,12 +44,24 @@ def enqueue_link_ingest(
   )
   if active:
     try:
-      to_start = jobs_repo.append_pending_urls(active["job_id"], post_urls)
-      return active["job_id"], to_start
+      jobs_repo.append_pending_urls(active["job_id"], post_urls)
+      return active["job_id"]
     except jobs_repo.JobNotRunningError:
       pass
-  job_id = create_job(post_urls, user_id=user_id, refresh=refresh)
-  return job_id, post_urls
+  return create_job(post_urls, user_id=user_id, refresh=refresh)
+
+
+def reserve_runnable_links(job_id: str) -> list[str]:
+  """Claim pending post URLs up to this account's ingest concurrency."""
+  job = jobs_repo.get_job(job_id)
+  if job is None or job.get("status") != "running":
+    return []
+  if (job.get("kind") or jobs_repo.JOB_KIND_LINK_INGEST) != jobs_repo.JOB_KIND_LINK_INGEST:
+    return []
+  return jobs_repo.reserve_runnable_urls(
+    job_id,
+    concurrency=link_ingest_concurrency(str(job.get("user_id") or "")),
+  )
 
 
 def claim_for_fetch(job_id: str, item_ref: str) -> bool:

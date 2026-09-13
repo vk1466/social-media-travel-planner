@@ -432,6 +432,10 @@ class AdminUsersResponse(BaseModel):
   users: list[AdminUserSchema]
 
 
+class IngestConcurrencySchema(BaseModel):
+  ingest_concurrency: int = Field(..., ge=1, le=10)
+
+
 class LocateDebugRequest(BaseModel):
   place_name: str = Field(..., min_length=1)
   city: str | None = None

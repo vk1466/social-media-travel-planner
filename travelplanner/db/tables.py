@@ -12,6 +12,7 @@ TABLE_NAMES = (
   "IngestFailures",
   "UserPosts",
   "UserPlaces",
+  "UserSettings",
   "Visits",
   "Jobs",
 )
@@ -111,6 +112,7 @@ def ensure_tables() -> list[str]:
     ("IngestFailures", "failure_id", None),
     ("UserPosts", "user_id", "post_id"),
     ("UserPlaces", "user_id", "place_id"),
+    ("UserSettings", "user_id", None),
     ("Visits", "user_id", "visit_id"),
   ]
 

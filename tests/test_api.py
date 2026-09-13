@@ -133,7 +133,6 @@ def test_ingest_appends_to_running_job_and_removes_pending(monkeypatch, dynamodb
   assert second.json()["job_id"] == job_id
   assert started == [
     ["https://www.instagram.com/p/one/"],
-    ["https://www.instagram.com/p/two/"],
   ]
 
   job = client.get(f"/api/jobs/{job_id}", headers=HEADERS).json()
@@ -142,6 +141,7 @@ def test_ingest_appends_to_running_job_and_removes_pending(monkeypatch, dynamodb
     "https://www.instagram.com/p/one/",
     "https://www.instagram.com/p/two/",
   ]
+  assert [link["status"] for link in job["links"]] == ["fetching", "pending"]
 
   removed = client.request(
     "DELETE",
@@ -160,6 +160,65 @@ def test_ingest_appends_to_running_job_and_removes_pending(monkeypatch, dynamodb
     headers={"X-User-Id": "user-b"},
   )
   assert forbidden.status_code == 404
+
+
+def test_ingest_keeps_extra_links_pending_at_default_concurrency(monkeypatch, dynamodb) -> None:
+  started: list[list[str]] = []
+
+  def capture_start(job_id: str, post_urls: list[str], *, user_id: str, refresh: bool, mark_visited: bool = False) -> str:
+    del job_id, user_id, refresh, mark_visited
+    started.append(list(post_urls))
+    return "arn:aws:states:us-east-1:123:execution:test:queue"
+
+  monkeypatch.setattr("server.app.start_ingest_job", capture_start)
+  client = TestClient(app)
+  start = client.post(
+    "/api/ingest",
+    json={
+      "links": [
+        "https://www.instagram.com/p/one/",
+        "https://www.instagram.com/p/two/",
+        "https://www.instagram.com/p/three/",
+      ]
+    },
+    headers=HEADERS,
+  )
+  assert start.status_code == 202
+  job_id = start.json()["job_id"]
+  assert started == [["https://www.instagram.com/p/one/"]]
+
+  job = client.get(f"/api/jobs/{job_id}", headers=HEADERS).json()
+  assert [link["status"] for link in job["links"]] == ["fetching", "pending", "pending"]
+
+
+def test_super_admin_sets_ingest_concurrency(dynamodb) -> None:
+  super_id = "user_3GLjUeF6M5n7ZTDnzK1CFuQU9O1"
+  client = TestClient(app)
+  default = client.get(
+    "/api/admin/users/user-a/ingest-concurrency",
+    headers={"X-User-Id": super_id},
+  )
+  assert default.status_code == 200
+  assert default.json() == {"ingest_concurrency": 1}
+
+  updated = client.put(
+    "/api/admin/users/user-a/ingest-concurrency",
+    json={"ingest_concurrency": 3},
+    headers={"X-User-Id": super_id},
+  )
+  assert updated.status_code == 200
+  assert updated.json() == {"ingest_concurrency": 3}
+  assert client.get(
+    "/api/admin/users/user-a/ingest-concurrency",
+    headers={"X-User-Id": super_id},
+  ).json() == {"ingest_concurrency": 3}
+
+  blocked = client.put(
+    "/api/admin/users/user-a/ingest-concurrency",
+    json={"ingest_concurrency": 2},
+    headers=HEADERS,
+  )
+  assert blocked.status_code == 403
 
 
 def test_get_job_not_found(dynamodb) -> None:

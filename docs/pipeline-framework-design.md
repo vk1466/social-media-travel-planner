@@ -124,7 +124,7 @@ Resource type is often known only **after** fetch. Dispatch is:
 2. **Tail (by platform + resource type):** transcript and/or image text.
 3. **Classify (flagged):** `classify_content` stamps `SavedPost.content_category`. No-op when `content_categories` is off.
 4. **Close (by content category):**
-   - `travel` or unset (classify skipped / failed) → **place pipeline:** extract places → locate → dedupe → upsert. Named restaurants/cafes/bars/markets are travel places; copy dish/order recs onto details and tips.
+   - `travel` or unset (classify skipped / failed) → **place pipeline:** extract places → locate → dedupe → upsert. Named restaurants/cafes/bars/markets are travel places; copy dish/order recs onto details and tips. Place-facts enrichment is **persona post-work**: after the post is saved, enqueue one SQS message per `place_id`; a worker loads the Place and runs `enrich_place_facts`. Ingest job pass/fail does not wait on facts.
    - `movies` → **movie pipeline:** extract films and TV series onto `SavedPost.extracted_movies` (`kind` is `movie` or `tv`), then `resolve_movies` (TMDB movie or TV identity + details, OMDb IMDb/RT scores, optional review summary). Snapshot stored on `SavedPost.resolved_movies`. No geocode. Shared Movie upsert is not wired yet.
    - `food` → **recipe pipeline:** `fetch_recipe_source` → `extract_recipe_frames` (adaptive OCR if caption thin) → `extract_recipe` → `enrich_recipe` (timers & numeric scaling) → `calculate_recipe_nutrition` (flagged USDA estimate from explicitly weighed ingredients). A clearly necessary basic cooking default may be included only when marked `estimated_inferred`; other missing fields remain absent. Nutrition is omitted when servings or ingredient mass is unknown, and visibly partial when a food lookup is unavailable. No place processing.
    - `fashion` / `hairstyle` / `other` → skip close (save the post only).
@@ -202,7 +202,6 @@ travelplanner/steps/
   calculate_recipe_nutrition.py # generic — flagged macros from weighed ingredients
   resolve_movies.py          # generic — TMDB movie/TV resolve + OMDb ratings
   process_mentions.py        # generic — locate + upsert mentions
-  enrich_place_facts.py      # generic — structured Google/OSM facts + LLM insights
   locate_by_name.py          # generic
   locate_by_coordinates.py   # generic
   nearby_pois.py             # generic

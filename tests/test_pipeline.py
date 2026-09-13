@@ -147,6 +147,32 @@ def test_ingest_link_attaches_place_ids_from_pipeline(dynamodb) -> None:
   assert saved.place_ids == ("us-or-portland-multnomah-falls",)
 
 
+def test_ingest_link_enqueues_place_facts_after_save(monkeypatch, dynamodb) -> None:
+  queued: list[tuple[tuple[str, ...], str]] = []
+
+  def fake_enqueue(place_ids, *, trigger, force=False, source_post_id=None):
+    queued.append((tuple(place_ids), trigger, source_post_id, force))
+    return len(tuple(place_ids))
+
+  monkeypatch.setattr(
+    "travelplanner.personas.link_ingest.enqueue_place_facts",
+    fake_enqueue,
+  )
+  deps = IngestDeps(
+    run_pipeline=lambda ctx: _success_pipeline(
+      ctx,
+      place_ids=["us-or-portland-multnomah-falls"],
+    ),
+    record_failure=ingest_failures_repo.record_ingest_failure,
+    clear_failure=ingest_failures_repo.clear_ingest_failure,
+  )
+  result = ingest_link("https://www.instagram.com/p/withplace/", user_id=USER, deps=deps)
+  assert result.outcome == "saved"
+  assert queued == [
+    (("us-or-portland-multnomah-falls",), "ingest", "instagram:withplace", False)
+  ]
+
+
 def test_ingest_link_pipeline_failure_returns_error(dynamodb) -> None:
   deps = IngestDeps(
     run_pipeline=_boom_pipeline,

@@ -4,7 +4,8 @@ Production layout:
 
 - **Frontend:** Vercel (`frontend/`), production Git branch `production`
 - **API:** Lambda Function URL → Mangum / FastAPI
-- **Ingest:** Step Functions Map → ingest Lambda per link → finalize Lambda
+- **Ingest:** Step Functions Map → ingest Lambda per link → on timeout/failure, mark the job item `error` → finalize Lambda
+- **Place facts:** SQS (one `place_id` per message) → PlaceFacts Lambda
 - **Data:** DynamoDB tables owned by each CDK stack (`{Name}-{stage}-{region}`)
 
 Work lands on `feat/serverless` / `main` (deploys **dev**), then merges to

@@ -260,9 +260,20 @@ def test_finalize_job_stays_running_when_queue_has_pending(monkeypatch, dynamodb
     refresh=False,
   )
   monkeypatch.setattr("server.workers.link_places", lambda: None)
+  started: list[list[str]] = []
+
+  def capture_start(job_id: str, post_urls: list[str], *, user_id: str, refresh: bool, mark_visited: bool = False) -> str:
+    del job_id, user_id, refresh, mark_visited
+    started.append(list(post_urls))
+    return "arn:test"
+
+  monkeypatch.setattr("server.workers.start_ingest_job", capture_start)
   out = finalize_job({"job_id": job_id})
   assert out["status"] == "running"
-  assert jobs_repo.get_job(job_id)["status"] == "running"
+  assert started == [["https://www.instagram.com/p/x/"]]
+  job = jobs_repo.get_job(job_id)
+  assert job["status"] == "running"
+  assert job["items"][0]["status"] == "fetching"
 
 
 def test_ingest_one_link_skips_removed_pending(monkeypatch, dynamodb) -> None:
@@ -289,3 +300,78 @@ def test_ingest_one_link_skips_removed_pending(monkeypatch, dynamodb) -> None:
   )
   assert result["status"] == "skipped"
   assert called["ingest"] is False
+
+
+def test_ingest_one_link_records_timeout_from_catch(dynamodb) -> None:
+  job_id = jobs_repo.create_job(
+    ["https://www.instagram.com/p/slow/"],
+    user_id="user-a",
+    refresh=False,
+  )
+  jobs_repo.claim_pending_item(job_id, "https://www.instagram.com/p/slow/")
+  result = ingest_one_link(
+    {
+      "job_id": job_id,
+      "post_url": "https://www.instagram.com/p/slow/",
+      "user_id": "user-a",
+      "error": {"Error": "Sandbox.Timedout", "Cause": "Task timed out after 900.00 seconds"},
+    }
+  )
+  assert result["status"] == "error"
+  assert result["error_message"] == "Ingest timed out"
+  job = jobs_repo.get_job(job_id)
+  assert job is not None
+  assert job["items"][0]["status"] == "error"
+  assert job["items"][0]["error_message"] == "Ingest timed out"
+
+
+def test_enrich_one_place_loads_and_enriches(monkeypatch, dynamodb) -> None:
+  from travelplanner.feature_flag import FeatureFlag
+  from travelplanner.models import Place, PlaceFacts, PlaceLocation
+  from travelplanner.places.facts.enrich import EnrichResult
+  from travelplanner.places.store import save_place
+
+  from server.workers import enrich_one_place
+
+  place = Place(
+    place_id="us-oregon-crater-lake",
+    display_name="Crater Lake",
+    location=PlaceLocation(
+      display_name="Crater Lake",
+      country="United States",
+      latitude=42.9,
+      longitude=-122.1,
+    ),
+    category="park",
+  )
+  save_place(place)
+  called: list[str] = []
+
+  def fake_enrich(candidate, *, force=False, persist=True):
+    called.append(candidate.place_id)
+    assert force is False
+    return EnrichResult(
+      place_id=candidate.place_id,
+      status="saved",
+      facts=PlaceFacts(status="partial", fetched_at="2026-01-01T00:00:00Z"),
+    )
+
+  monkeypatch.setattr("server.workers.enrich_place_facts", fake_enrich)
+  prior = FeatureFlag.get("place_facts")
+  try:
+    out = enrich_one_place(
+      {
+        "Records": [
+          {
+            "body": (
+              '{"schema_version":1,"place_id":"us-oregon-crater-lake",'
+              '"trigger":"ingest","force":false}'
+            )
+          }
+        ]
+      }
+    )
+  finally:
+    FeatureFlag.set("place_facts", prior)
+  assert called == ["us-oregon-crater-lake"]
+  assert out["enriched"] == 1

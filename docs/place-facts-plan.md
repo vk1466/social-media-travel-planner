@@ -265,19 +265,21 @@ Fails soft: structured facts are still saved.
 
 ## When it runs
 
-Travel **place close** (after mentions are resolved) calls `enrich_place_facts`
-for each new/stale pin so a travel reel stores hours, phone, and website on
-ingest. Mindcase Google Maps is the Google source (`MINDCASE_API_KEY`).
+After a travel ingest **saves the post**, the persona enqueues one SQS message
+per unique `place_id`. A dedicated Lambda loads the Place and runs
+`enrich_place_facts`. Ingest job status is only fetch/extract/locate pass or
+fail — not facts. Mindcase Google Maps is the Google source (`MINDCASE_API_KEY`).
 Place-detail view still enqueues a refresh when facts are missing or past TTL.
 
 | Trigger | Behavior |
 |---------|----------|
-| Travel reel ingest (place close) | After `process_place_mentions`, enrich each resolved pin if facts are missing/stale |
+| Travel reel ingest (persona post-work) | After `save_post`, enqueue each resolved pin (`force=false`); worker skips fresh facts |
 | Place detail viewed | If facts missing or stale, enqueue an async refresh; return the place immediately without blocking |
 | Admin refresh | `POST /api/places/{place_id}/facts/refresh` — force, ignore TTL |
 | Backfill | Admin job over a filter (category / country), batched through Step Functions like the Timeline import |
 
-`place_facts` still gates the lazy/admin path. Ingest enrichment uses `force=True` so a travel reel can fill facts whenever Mindcase is configured.
+`place_facts` still gates the lazy place-detail path. The SQS worker turns the
+flag on so ingest-queued pins enrich even when the in-process default is off.
 
 ---
 

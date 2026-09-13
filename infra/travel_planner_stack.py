@@ -13,7 +13,9 @@ from aws_cdk import (
   aws_ecr_assets as ecr_assets,
   aws_iam as iam,
   aws_lambda as lambda_,
+  aws_lambda_event_sources as lambda_event_sources,
   aws_s3 as s3,
+  aws_sqs as sqs,
   aws_stepfunctions as sfn,
   aws_stepfunctions_tasks as tasks,
 )
@@ -110,6 +112,24 @@ class TravelPlannerStack(Stack):
       )
     )
 
+    facts_dlq = sqs.Queue(
+      self,
+      "PlaceFactsDlq",
+      retention_period=Duration.days(14),
+      removal_policy=removal,
+    )
+    facts_queue = sqs.Queue(
+      self,
+      "PlaceFactsQueue",
+      visibility_timeout=Duration.seconds(360),
+      retention_period=Duration.days(4),
+      dead_letter_queue=sqs.DeadLetterQueue(
+        max_receive_count=3,
+        queue=facts_dlq,
+      ),
+      removal_policy=removal,
+    )
+
     shared_env = {
       "DYNAMODB_REGION": region,
       "DYNAMODB_STAGE": stage,
@@ -123,6 +143,7 @@ class TravelPlannerStack(Stack):
       "LOG_LEVEL": "INFO",
       "TIMELINE_IMPORTS_BUCKET": timeline_bucket.bucket_name,
       "MEDIA_BUCKET": media_bucket.bucket_name,
+      "PLACE_FACTS_QUEUE_URL": facts_queue.queue_url,
       "TIMELINE_BATCH_SIZE": "100",
       "TIMELINE_HOME_EXCLUDE_KM": "30",
       "TIMELINE_MAX_PLACES_PER_CALL": "100",
@@ -198,20 +219,47 @@ class TravelPlannerStack(Stack):
       },
     )
 
+    enrich_fn = lambda_.DockerImageFunction(
+      self,
+      "PlaceFactsWorker",
+      code=lambda_.DockerImageCode.from_image_asset(
+        str(REPO_ROOT),
+        file="infra/Dockerfile",
+        cmd=["server.workers.enrich_one_place"],
+        platform=LAMBDA_PLATFORM,
+      ),
+      architecture=lambda_.Architecture.X86_64,
+      memory_size=1024,
+      timeout=Duration.seconds(180),
+      environment=shared_env,
+    )
+
     for table in tables.values():
       table.grant_read_write_data(ingest_fn)
       table.grant_read_write_data(finalize_fn)
       table.grant_read_write_data(timeline_batch_fn)
       table.grant_read_write_data(timeline_finalize_fn)
+      table.grant_read_write_data(enrich_fn)
 
     timeline_bucket.grant_read(timeline_batch_fn)
     media_bucket.grant_read_write(ingest_fn)
+    facts_queue.grant_send_messages(ingest_fn)
+    facts_queue.grant_consume_messages(enrich_fn)
+    enrich_fn.add_event_source(
+      lambda_event_sources.SqsEventSource(
+        facts_queue,
+        batch_size=1,
+        report_batch_item_failures=True,
+      )
+    )
 
     state_machine = self._create_state_machine(ingest_fn, finalize_fn)
     timeline_state_machine = self._create_timeline_state_machine(
       timeline_batch_fn,
       timeline_finalize_fn,
     )
+    finalize_fn.add_environment("STATE_MACHINE_ARN", state_machine.state_machine_arn)
+    state_machine.grant_start_execution(finalize_fn)
 
     api_fn = lambda_.DockerImageFunction(
       self,
@@ -243,6 +291,7 @@ class TravelPlannerStack(Stack):
     timeline_bucket.grant_put(api_fn)
     timeline_bucket.grant_read(api_fn)
     media_bucket.grant_read_write(api_fn)
+    facts_queue.grant_send_messages(api_fn)
     # Presigned PUT from the browser needs the API role to sign PutObject.
     api_fn.add_to_role_policy(
       iam.PolicyStatement(
@@ -266,6 +315,12 @@ class TravelPlannerStack(Stack):
       "StateMachineArn",
       description="Ingest Step Functions ARN",
       value=state_machine.state_machine_arn,
+    )
+    CfnOutput(
+      self,
+      "PlaceFactsQueueUrl",
+      description="SQS queue for async place-facts enrichment",
+      value=facts_queue.queue_url,
     )
     CfnOutput(
       self,
@@ -366,6 +421,7 @@ class TravelPlannerStack(Stack):
       "IngestFailures": simple("IngestFailures", "failure_id"),
       "UserPosts": composite("UserPosts", "user_id", "post_id"),
       "UserPlaces": composite("UserPlaces", "user_id", "place_id"),
+      "UserSettings": simple("UserSettings", "user_id"),
       "Visits": composite("Visits", "user_id", "visit_id"),
       "Jobs": jobs,
     }
@@ -381,12 +437,23 @@ class TravelPlannerStack(Stack):
       lambda_function=ingest_fn,
       payload_response_only=True,
     )
+    mark_failed = tasks.LambdaInvoke(
+      self,
+      "MarkIngestFailed",
+      lambda_function=ingest_fn,
+      payload_response_only=True,
+    )
+    ingest_one.add_catch(
+      mark_failed,
+      errors=["States.ALL"],
+      result_path="$.error",
+    )
 
     ingest_links = sfn.Map(
       self,
       "IngestLinks",
       items_path="$.links",
-      max_concurrency=2,
+      max_concurrency=10,
       item_selector={
         "job_id.$": "$.job_id",
         "user_id.$": "$.user_id",

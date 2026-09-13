@@ -3,6 +3,7 @@ from __future__ import annotations
 from fastapi import BackgroundTasks, FastAPI, HTTPException, Query, Response
 from fastapi.middleware.cors import CORSMiddleware
 import httpx
+import logging
 
 from travelplanner.logging_config import configure_logging
 from travelplanner import settings
@@ -20,8 +21,9 @@ from travelplanner.pipeline import unlink_post_from_user
 from travelplanner.place_hints import PlaceMention
 from travelplanner.places import cleanup_all_data, list_places, load_place, place_to_dict, reprocess_all_places
 from travelplanner.places.facts import enrich_place_facts, facts_are_stale
+from travelplanner.places.facts.queue import enqueue_place_facts
 from travelplanner.clients.clerk import list_clerk_users
-from travelplanner.db import jobs_repo, place_candidates_repo, user_posts_repo
+from travelplanner.db import jobs_repo, place_candidates_repo, user_posts_repo, user_settings_repo
 from travelplanner.places.debug import debug_locate
 from travelplanner.personas.profile_import import list_recent_post_urls, normalize_instagram_username
 from travelplanner.store import load_post, post_to_dict
@@ -51,6 +53,7 @@ from server.schemas import (
   AdminMeSchema,
   AdminUserSchema,
   AdminUsersResponse,
+  IngestConcurrencySchema,
   ContentCategoryCountSchema,
   PlaceSchema,
   VisitedStatusSchema,
@@ -82,6 +85,7 @@ from server.schemas import (
 from server.timeline_runner import create_and_start_timeline_job
 
 configure_logging()
+logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Travel Post Ingest API", version="0.1.0")
 
@@ -120,14 +124,15 @@ def _visit_to_schema(visit: Visit) -> VisitSchema:
 
 
 def _queue_place_facts_refresh(place_id: str) -> None:
-  """Background enrich — never raises into the HTTP worker."""
+  """Enqueue async enrich — never raises into the HTTP worker."""
   try:
-    place = load_place(place_id)
-    if place is None:
-      return
-    enrich_place_facts(place, force=False)
+    enqueue_place_facts(
+      [place_id],
+      trigger="place_detail",
+      force=False,
+    )
   except Exception as exc:
-    logger.warning("place_facts background refresh failed place_id=%s error=%s", place_id, exc)
+    logger.warning("place_facts enqueue failed place_id=%s error=%s", place_id, exc)
 
 
 @app.post(
@@ -144,11 +149,12 @@ def start_ingest(
   if not links:
     raise HTTPException(status_code=400, detail="At least one link is required")
 
-  job_id, to_start = jobs.enqueue_link_ingest(
+  job_id = jobs.enqueue_link_ingest(
     links,
     user_id=user_id,
     refresh=request.refresh,
   )
+  to_start = jobs.reserve_runnable_links(job_id)
   if to_start:
     start_ingest_job(
       job_id,
@@ -502,6 +508,39 @@ def admin_list_users(user_id: SuperAdminUserId) -> AdminUsersResponse:
     key=lambda row: ((row.email or "").lower(), row.user_id),
   )
   return AdminUsersResponse(users=users)
+
+
+@app.get(
+  "/api/admin/users/{target_user_id}/ingest-concurrency",
+  response_model=IngestConcurrencySchema,
+  responses={403: {"model": ErrorResponse}},
+)
+def get_ingest_concurrency(
+  target_user_id: str,
+  user_id: SuperAdminUserId,
+) -> IngestConcurrencySchema:
+  del user_id
+  return IngestConcurrencySchema(
+    ingest_concurrency=user_settings_repo.get_ingest_concurrency(target_user_id),
+  )
+
+
+@app.put(
+  "/api/admin/users/{target_user_id}/ingest-concurrency",
+  response_model=IngestConcurrencySchema,
+  responses={403: {"model": ErrorResponse}},
+)
+def put_ingest_concurrency(
+  target_user_id: str,
+  request: IngestConcurrencySchema,
+  user_id: SuperAdminUserId,
+) -> IngestConcurrencySchema:
+  del user_id
+  value = user_settings_repo.set_ingest_concurrency(
+    target_user_id,
+    request.ingest_concurrency,
+  )
+  return IngestConcurrencySchema(ingest_concurrency=value)
 
 
 @app.post(

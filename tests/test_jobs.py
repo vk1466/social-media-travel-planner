@@ -213,3 +213,40 @@ def test_try_mark_done_waits_for_pending(dynamodb) -> None:
   jobs_repo.update_item(job_id, "https://a.example/2", status="saved", post_id="instagram:2")
   assert jobs_repo.try_mark_done(job_id) is True
   assert jobs_repo.get_job(job_id)["status"] == "done"
+
+
+def test_reserve_runnable_urls_honors_default_concurrency(dynamodb) -> None:
+  job_id = jobs_repo.create_job(
+    ["https://a.example/1", "https://a.example/2", "https://a.example/3"],
+    user_id="user-a",
+    refresh=False,
+  )
+  reserved = jobs_repo.reserve_runnable_urls(job_id, concurrency=1)
+  assert reserved == ["https://a.example/1"]
+  job = jobs_repo.get_job(job_id)
+  assert [item["status"] for item in job["items"]] == ["fetching", "pending", "pending"]
+
+  assert jobs_repo.reserve_runnable_urls(job_id, concurrency=1) == []
+  claimed = jobs_repo.claim_pending_item(job_id, "https://a.example/2")
+  assert claimed is False
+  assert jobs_repo.get_job(job_id)["items"][1]["status"] == "pending"
+
+
+def test_reserve_runnable_urls_uses_account_concurrency(dynamodb) -> None:
+  from travelplanner.db import user_settings_repo
+
+  user_settings_repo.set_ingest_concurrency("user-a", 2)
+  job_id = jobs_repo.create_job(
+    ["https://a.example/1", "https://a.example/2", "https://a.example/3"],
+    user_id="user-a",
+    refresh=False,
+  )
+  from server import jobs as job_helpers
+
+  reserved = job_helpers.reserve_runnable_links(job_id)
+  assert reserved == ["https://a.example/1", "https://a.example/2"]
+  assert [item["status"] for item in jobs_repo.get_job(job_id)["items"]] == [
+    "fetching",
+    "fetching",
+    "pending",
+  ]

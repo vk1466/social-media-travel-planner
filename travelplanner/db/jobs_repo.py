@@ -13,6 +13,7 @@ from botocore.exceptions import ClientError
 
 from travelplanner.db.serialize import from_dynamo, to_dynamo
 from travelplanner.db.tables import JOBS_USER_CREATED_INDEX, get_table
+from travelplanner.ingest_limits import link_ingest_concurrency
 
 JOB_TTL_DAYS = 7
 _ITEM_UPDATE_ATTEMPTS = 16
@@ -32,11 +33,23 @@ def _item_ref(item: dict[str, Any]) -> str:
   return item.get("item_ref") or item.get("post_url") or ""
 
 
+def _item_status(item: dict[str, Any]) -> str:
+  return item.get("status") or "pending"
+
+
+def _is_post_url_item(item: dict[str, Any]) -> bool:
+  item_kind = item.get("item_kind")
+  if item_kind:
+    return item_kind == "post_url"
+  return not _item_ref(item).startswith("timeline-batch:")
+
+
+def _fetching_count(items: list[dict[str, Any]]) -> int:
+  return sum(1 for item in items if _item_status(item) == "fetching")
+
+
 def _has_in_flight(job: dict[str, Any]) -> bool:
-  return any(
-    (item.get("status") or "pending") in _IN_FLIGHT_STATUSES
-    for item in job.get("items") or []
-  )
+  return any(_item_status(item) in _IN_FLIGHT_STATUSES for item in job.get("items") or [])
 
 
 def _commit_items(
@@ -279,10 +292,12 @@ def claim_pending_item(job_id: str, item_ref: str) -> bool:
     if index is None:
       return False
 
-    status = items[index].get("status") or "pending"
+    status = _item_status(items[index])
     if status == "fetching":
       return True
     if status != "pending":
+      return False
+    if _fetching_count(items) >= link_ingest_concurrency(str(job.get("user_id") or "")):
       return False
 
     item = dict(items[index])
@@ -298,6 +313,43 @@ def claim_pending_item(job_id: str, item_ref: str) -> bool:
       time.sleep(random.uniform(0.015, 0.04 * (attempt + 1)))
 
   raise RuntimeError(f"Could not claim item on job {job_id} after concurrent retries")
+
+
+def reserve_runnable_urls(job_id: str, *, concurrency: int) -> list[str]:
+  """Move pending post URLs to fetching until the account concurrency is filled."""
+  limit = max(1, int(concurrency))
+  for attempt in range(_ITEM_UPDATE_ATTEMPTS):
+    job = get_job(job_id, consistent_read=True)
+    if job is None or job.get("status") != "running":
+      return []
+
+    items = [dict(item) for item in job.get("items") or []]
+    slots = limit - _fetching_count(items)
+    if slots <= 0:
+      return []
+
+    reserved: list[str] = []
+    for item in items:
+      if slots <= 0:
+        break
+      if not _is_post_url_item(item) or _item_status(item) != "pending":
+        continue
+      item["status"] = "fetching"
+      reserved.append(_item_ref(item))
+      slots -= 1
+
+    if not reserved:
+      return []
+
+    try:
+      _commit_items(job_id, int(job.get("version") or 0), items)
+      return reserved
+    except ClientError as exc:
+      if exc.response.get("Error", {}).get("Code") != "ConditionalCheckFailedException":
+        raise
+      time.sleep(random.uniform(0.015, 0.04 * (attempt + 1)))
+
+  raise RuntimeError(f"Could not reserve items on job {job_id} after concurrent retries")
 
 
 def append_pending_urls(job_id: str, post_urls: list[str]) -> list[str]:

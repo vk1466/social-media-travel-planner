@@ -14,6 +14,7 @@ from travelplanner.hierarchy import link_places
 from travelplanner.links import detect_platform, extract_post_id
 from travelplanner.models import Platform, SavedPost, make_post_id
 from travelplanner.places.candidates import mark_candidate_resolved, record_candidate
+from travelplanner.places.facts.queue import enqueue_place_facts
 from travelplanner.store import has_post, load_all_posts, load_post, load_post_by_id, save_post
 from travelplanner.visits import mark_visited
 
@@ -275,6 +276,18 @@ def ingest_link(
   save_post(post)
   _link_post_to_user(user_id, post)
   _clear_failure(deps, post_url=post_url, user_id=user_id)
+  try:
+    enqueue_place_facts(
+      post.place_ids,
+      trigger="ingest",
+      force=False,
+      source_post_id=post.post_id,
+    )
+  except Exception:
+    logger.exception(
+      "place_facts enqueue failed post_id=%s (post kept)",
+      post.post_id,
+    )
 
   logger.info(
     "ingest saved post_id=%s places=%d extracted=%d",

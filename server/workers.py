@@ -6,17 +6,35 @@ import logging
 from typing import Any
 
 from travelplanner.db import jobs_repo
+from travelplanner.feature_flag import FeatureFlag
 from travelplanner.hierarchy import link_places
 from travelplanner.logging_config import configure_logging
 from travelplanner.personas.link_ingest import IngestResult, ingest_link
 from travelplanner.personas.timeline_import import clusters_from_dicts, import_timeline_visits
+from travelplanner.places.facts.enrich import enrich_place_facts
+from travelplanner.places.facts.queue import parse_place_facts_message
+from travelplanner.places.store import load_place
 from travelplanner.timeline.trips import build_travel_context
 
 from server import jobs
 from server import timeline_staging
+from server.ingest_runner import start_ingest_job
 
 configure_logging()
 logger = logging.getLogger(__name__)
+
+
+def _ingest_failure_reason(event: dict[str, Any]) -> str:
+  error = event.get("error")
+  if isinstance(error, dict):
+    name = str(error.get("Error") or "")
+    if "Timedout" in name or "Timeout" in name:
+      return "Ingest timed out"
+    if name:
+      return name
+  if event.get("record_failure"):
+    return "Ingest failed"
+  return "Ingest failed"
 
 
 def ingest_one_link(event: dict[str, Any], context: Any = None) -> dict[str, Any]:
@@ -24,6 +42,24 @@ def ingest_one_link(event: dict[str, Any], context: Any = None) -> dict[str, Any
   del context
   job_id = event["job_id"]
   post_url = event["post_url"]
+  if event.get("error") or event.get("record_failure"):
+    reason = _ingest_failure_reason(event)
+    logger.warning(
+      "worker ingest_one_link record_failure job_id=%s url=%s reason=%s",
+      job_id,
+      post_url,
+      reason,
+    )
+    jobs.update_item(
+      job_id,
+      IngestResult(post_url=post_url, outcome="error", reason=reason),
+    )
+    return {
+      "job_id": job_id,
+      "post_url": post_url,
+      "status": "error",
+      "error_message": reason,
+    }
   user_id = event["user_id"]
   refresh = bool(event.get("refresh", False))
   mark_visited_flag = bool(event.get("mark_visited", False))
@@ -178,6 +214,23 @@ def finalize_job(event: dict[str, Any], context: Any = None) -> dict[str, Any]:
     link_places()
   except Exception:
     logger.exception("worker finalize_job hierarchy failed job_id=%s", job_id)
+  job = jobs_repo.get_job(job_id)
+  if job and (job.get("kind") or jobs_repo.JOB_KIND_LINK_INGEST) == jobs_repo.JOB_KIND_LINK_INGEST:
+    next_urls = jobs.reserve_runnable_links(job_id)
+    if next_urls:
+      start_ingest_job(
+        job_id,
+        next_urls,
+        user_id=str(job.get("user_id") or ""),
+        refresh=bool(job.get("refresh", False)),
+        mark_visited=bool(job.get("mark_visited", False)),
+      )
+      logger.info(
+        "worker finalize_job queued next job_id=%s count=%s",
+        job_id,
+        len(next_urls),
+      )
+      return {"job_id": job_id, "status": "running"}
   done = jobs.try_mark_done(job_id)
   status = "done" if done else "running"
   logger.info("worker finalize_job done job_id=%s status=%s", job_id, status)
@@ -196,3 +249,42 @@ def finalize_timeline_job(event: dict[str, Any], context: Any = None) -> dict[st
   jobs.mark_done(job_id)
   logger.info("worker finalize_timeline_job done job_id=%s", job_id)
   return {"job_id": job_id, "status": "done"}
+
+
+def enrich_one_place(event: dict[str, Any], context: Any = None) -> dict[str, Any]:
+  """SQS handler: load one Place and run facts enrichment. Fail-soft per message."""
+  del context
+  FeatureFlag.set("place_facts", True)
+  records = event.get("Records") or []
+  enriched = 0
+  skipped = 0
+  for record in records:
+    parsed = parse_place_facts_message(record.get("body") or "")
+    if parsed is None:
+      skipped += 1
+      continue
+    place_id = parsed["place_id"]
+    force = bool(parsed["force"])
+    logger.info(
+      "worker enrich_one_place place_id=%s trigger=%s force=%s",
+      place_id,
+      parsed["trigger"],
+      force,
+    )
+    place = load_place(place_id)
+    if place is None:
+      logger.warning("worker enrich_one_place missing place_id=%s", place_id)
+      skipped += 1
+      continue
+    result = enrich_place_facts(place, force=force)
+    logger.info(
+      "worker enrich_one_place done place_id=%s status=%s note=%s",
+      place_id,
+      result.status,
+      result.note,
+    )
+    if result.status == "saved":
+      enriched += 1
+    else:
+      skipped += 1
+  return {"enriched": enriched, "skipped": skipped}
