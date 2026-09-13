@@ -66,7 +66,7 @@ export function OsmPlaceMap({
               onSelectPlace?.(place);
             }
           }}
-          {...(Platform.OS === "android" ? { androidLayerType: "hardware" as const } : {})}
+          {...(Platform.OS === "android" ? { androidLayerType: "software" as const } : {})}
         />
       ) : null}
     </View>
@@ -242,12 +242,24 @@ function buildMapHtml(places: Place[], visitedPlaceIds: ReadonlySet<string>): st
       maxZoom: 19
     }).addTo(map);
 
-    function showNorthAmerica() {
-      map.fitBounds([[14, -135], [72, -52]], { padding: [8, 8], maxZoom: 5, animate: false });
+    function fitPlaces() {
+      if (!places.length) {
+        map.setView([20, 0], 2);
+        return;
+      }
+      if (places.length === 1) {
+        map.setView([places[0].lat, places[0].lng], 12);
+        return;
+      }
+      map.fitBounds(places.map(function (place) { return [place.lat, place.lng]; }), {
+        padding: [48, 72],
+        maxZoom: 12,
+        animate: false
+      });
     }
     window.__relayoutMap = function () {
       map.invalidateSize({ animate: false });
-      showNorthAmerica();
+      fitPlaces();
     };
     window.__setMapFrame = function (width, height) {
       var root = document.documentElement;
@@ -260,7 +272,7 @@ function buildMapHtml(places: Place[], visitedPlaceIds: ReadonlySet<string>): st
       el.style.height = height + "px";
       window.__relayoutMap();
     };
-    map.whenReady(showNorthAmerica);
+    map.whenReady(fitPlaces);
     window.addEventListener("resize", window.__relayoutMap);
     for (const place of places) {
       const icon = L.divIcon({
@@ -292,7 +304,7 @@ function buildMapHtml(places: Place[], visitedPlaceIds: ReadonlySet<string>): st
         }
       });
     }
-    showNorthAmerica();
+    fitPlaces();
   </script>
 </body>
 </html>`;

@@ -4,14 +4,17 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
+  Image,
   Pressable,
   RefreshControl,
+  ScrollView,
   StyleSheet,
   Text,
   View,
 } from "react-native";
 
-import { fetchVisitedPlaceIds, type Place } from "@/src/api";
+import { fetchVisitedPlaceIds, type Place, type SavedPost } from "@/src/api";
+import { coverFallbackColor } from "@/src/coverArt";
 import { CoverCard } from "@/src/components/CoverCard";
 import { FilterBar, MultiFilterChips, PageHeading } from "@/src/components/LibraryChrome";
 import { PlaceMap } from "@/src/components/PlaceMap";
@@ -30,7 +33,8 @@ import {
   type AtlasGrouping,
   type AtlasNode,
 } from "@/src/placeAtlasModel";
-import { colors, shadow, spacing } from "@/src/theme";
+import { getPlatformLabel, getPostTitle, proxiedMediaUrl } from "@/src/postDisplayUtils";
+import { colors, radius, shadow, spacing } from "@/src/theme";
 
 const GRID_GAP = 12;
 
@@ -53,6 +57,7 @@ export default function TravelScreen() {
   const [rawScopeKey, setScopeKey] = useState("world");
   const [visitedPlaceIds, setVisitedPlaceIds] = useState<Set<string>>(new Set());
   const [refreshing, setRefreshing] = useState(false);
+  const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
 
   useEffect(() => {
     void fetchVisitedPlaceIds()
@@ -118,11 +123,36 @@ export default function TravelScreen() {
     return searchAtlas(atlas, searchQuery, 40).filter((node) => node.place);
   }, [atlas, searchQuery, searching]);
 
+  const postsById = useMemo(() => new Map(posts.map((post) => [post.post_id, post])), [posts]);
+
+  const scopedAtlasPlaces = useMemo(
+    () => leafPlaces(scope).filter((place) => place.lat !== null && place.lng !== null),
+    [scope],
+  );
+
+  const mapPostEntries = useMemo(() => {
+    const uniquePosts = new Map<string, SavedPost>();
+    for (const place of scopedAtlasPlaces) {
+      for (const postId of place.sourcePostIds) {
+        const post = postsById.get(postId);
+        if (post && !uniquePosts.has(post.post_id)) {
+          uniquePosts.set(post.post_id, post);
+        }
+      }
+    }
+    return Array.from(uniquePosts.values());
+  }, [scopedAtlasPlaces, postsById]);
+
+  const selectedMapPost = selectedPostId ? postsById.get(selectedPostId) ?? null : null;
+
   const mapPlaces = useMemo(() => {
-    return leafPlaces(scope)
+    const visible = selectedPostId
+      ? scopedAtlasPlaces.filter((place) => place.sourcePostIds.includes(selectedPostId))
+      : scopedAtlasPlaces;
+    return visible
       .map((atlasPlace) => placesById.get(atlasPlace.placeId))
       .filter((place): place is Place => Boolean(place));
-  }, [scope, placesById]);
+  }, [scopedAtlasPlaces, selectedPostId, placesById]);
 
   const openPlace = useCallback(
     (placeId: string) => {
@@ -164,6 +194,10 @@ export default function TravelScreen() {
       setScopeKey("world");
     }
   }, [atlas, rawScopeKey]);
+
+  useEffect(() => {
+    setSelectedPostId(null);
+  }, [scopeKey]);
 
   if (loading && places.length === 0) {
     return (
@@ -265,12 +299,84 @@ export default function TravelScreen() {
 
       {pane === "map" ? (
         <View style={styles.mapPane}>
-          <PlaceMap
-            places={mapPlaces}
-            visitedPlaceIds={visitedPlaceIds}
-            onSelectPlace={(place) => openPlace(place.place_id)}
-            height="100%"
-          />
+          {selectedMapPost ? (
+            <View style={styles.postFilterChip}>
+              <Text style={styles.postFilterCopy} numberOfLines={1}>
+                Showing places from{" "}
+                <Text style={styles.postFilterAuthor}>
+                  {selectedMapPost.author_handle
+                    ? `@${selectedMapPost.author_handle}`
+                    : "this post"}
+                </Text>
+              </Text>
+              <Pressable
+                onPress={() => setSelectedPostId(null)}
+                style={styles.postFilterClear}
+                accessibilityRole="button"
+                accessibilityLabel="Show places from all posts"
+              >
+                <Text style={styles.postFilterClearText}>Show all</Text>
+              </Pressable>
+            </View>
+          ) : null}
+          <View style={styles.mapCanvas}>
+            <PlaceMap
+              places={mapPlaces}
+              visitedPlaceIds={visitedPlaceIds}
+              onSelectPlace={(place) => openPlace(place.place_id)}
+              height="100%"
+            />
+          </View>
+          {mapPostEntries.length > 0 ? (
+            <ScrollView
+              horizontal
+              nestedScrollEnabled
+              style={styles.postRail}
+              contentContainerStyle={styles.postRailContent}
+              showsHorizontalScrollIndicator={false}
+            >
+              {mapPostEntries.map((post) => {
+                const thumb = proxiedMediaUrl(post.thumbnail_url);
+                const selected = selectedPostId === post.post_id;
+                return (
+                  <Pressable
+                    key={post.post_id}
+                    onPress={() =>
+                      setSelectedPostId((current) =>
+                        current === post.post_id ? null : post.post_id,
+                      )
+                    }
+                    style={[styles.postRailCard, selected && styles.postRailCardActive]}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Show places from ${getPostTitle(post)}`}
+                    accessibilityState={{ selected }}
+                  >
+                    {thumb ? (
+                      <Image source={{ uri: thumb }} style={styles.postRailThumb} />
+                    ) : (
+                      <View
+                        style={[
+                          styles.postRailThumb,
+                          { backgroundColor: coverFallbackColor(getPostTitle(post)) },
+                        ]}
+                      />
+                    )}
+                    <View style={styles.postRailCopy}>
+                      <Text style={styles.postRailMeta} numberOfLines={1}>
+                        {getPlatformLabel(post)} · {post.media_kind}
+                      </Text>
+                      <Text style={styles.postRailTitle} numberOfLines={2}>
+                        {getPostTitle(post)}
+                      </Text>
+                      <Text style={styles.postRailAuthor} numberOfLines={1}>
+                        {post.author_handle ? `@${post.author_handle}` : "Processed post"}
+                      </Text>
+                    </View>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          ) : null}
         </View>
       ) : (
         <FlatList
@@ -354,7 +460,11 @@ export default function TravelScreen() {
           setSearchQuery("");
           setPane((current) => (current === "browse" ? "map" : "browse"));
         }}
-        style={({ pressed }) => [styles.mapPeek, pressed && styles.mapPeekPressed]}
+        style={({ pressed }) => [
+          styles.mapPeek,
+          pane === "map" && mapPostEntries.length > 0 ? styles.mapPeekAboveRail : null,
+          pressed && styles.mapPeekPressed,
+        ]}
         accessibilityRole="button"
         accessibilityLabel={pane === "browse" ? "View map" : "View covers"}
       >
@@ -379,6 +489,96 @@ const styles = StyleSheet.create({
   pad: { padding: spacing.md },
   chrome: { paddingHorizontal: spacing.md, paddingTop: spacing.sm },
   mapPane: { flex: 1, minHeight: 0, padding: spacing.md },
+  mapCanvas: { flex: 1, minHeight: 0 },
+  postFilterChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: spacing.sm,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderRadius: radius.pill,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    ...shadow(2),
+  },
+  postFilterCopy: {
+    flex: 1,
+    minWidth: 0,
+    color: colors.ink,
+    fontSize: 12,
+  },
+  postFilterAuthor: {
+    fontWeight: "800",
+  },
+  postFilterClear: {
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: radius.pill,
+    backgroundColor: colors.brand,
+  },
+  postFilterClearText: {
+    color: colors.onFill,
+    fontSize: 11,
+    fontWeight: "800",
+  },
+  postRail: {
+    flexGrow: 0,
+    marginTop: spacing.sm,
+    height: 76,
+  },
+  postRailContent: {
+    paddingRight: 56,
+    gap: 10,
+    alignItems: "center",
+  },
+  postRailCard: {
+    width: 228,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    padding: 6,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: "transparent",
+    backgroundColor: colors.surface,
+    ...shadow(2),
+  },
+  postRailCardActive: {
+    borderColor: colors.brand,
+  },
+  postRailThumb: {
+    width: 52,
+    height: 52,
+    borderRadius: 6,
+    backgroundColor: colors.surfaceAlt,
+  },
+  postRailCopy: {
+    flex: 1,
+    minWidth: 0,
+  },
+  postRailMeta: {
+    color: colors.muted,
+    fontSize: 10,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
+  },
+  postRailTitle: {
+    marginTop: 2,
+    color: colors.ink,
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  postRailAuthor: {
+    marginTop: 2,
+    color: colors.muted,
+    fontSize: 11,
+  },
+  mapPeekAboveRail: {
+    bottom: 92,
+  },
   list: { padding: spacing.md, flexGrow: 1 },
   breadcrumb: {
     flexDirection: "row",
