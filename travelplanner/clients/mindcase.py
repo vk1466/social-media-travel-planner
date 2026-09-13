@@ -99,7 +99,7 @@ def fetch_google_maps_places(
     terms = [term.strip() for term in (keywords or []) if term and term.strip()]
     if not terms:
       raise ValueError("keywords or place_urls is required")
-    params["keywords"] = terms
+    params["keywords"] = ", ".join(terms)
     loc = (location or "").strip()
     if loc:
       params["location"] = loc

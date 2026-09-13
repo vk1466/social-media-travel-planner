@@ -100,7 +100,7 @@ def test_fetch_google_maps_places_posts_params(monkeypatch) -> None:
       "params": {
         "maxResults": 1,
         "maxImages": 0,
-        "keywords": ["Crater Lake"],
+        "keywords": "Crater Lake, Crater Lake National Park",
         "location": "Oregon, United States",
       }
     }
@@ -111,7 +111,7 @@ def test_fetch_google_maps_places_posts_params(monkeypatch) -> None:
 
   monkeypatch.setattr(mindcase, "_request", fake_request)
   rows = mindcase.fetch_google_maps_places(
-    keywords=["Crater Lake"],
+    keywords=["Crater Lake", "Crater Lake National Park"],
     location="Oregon, United States",
     max_results=1,
   )
