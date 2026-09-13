@@ -209,6 +209,8 @@ def _from_nominatim_location(location: Location, fallback_name: str = "") -> Geo
     address.get("city")
     or address.get("town")
     or address.get("village")
+    or address.get("hamlet")
+    or address.get("locality")
     or address.get("municipality")
     or address.get("county")
   )

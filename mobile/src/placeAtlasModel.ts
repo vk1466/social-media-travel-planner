@@ -1,5 +1,8 @@
 /**
- * Shared view model for atlas browse — region or type grouping with rolled-up counts.
+ * Shared view model for atlas browse — region or type grouping with rolled-up
+ * counts. Board path is World → Country → City → Place. Continent is not a
+ * click; state folders only appear for large federal countries. Regions with
+ * fewer than NEST_MIN_PLACES show places instead of another folder.
  */
 
 import type { Place, SavedPost } from "./api";
@@ -18,11 +21,23 @@ export type AtlasLevel =
 /** Top rung of the tree: geography first, or place type first. */
 export type AtlasGrouping = "region" | "type";
 
+/** Folders only when a region has at least this many places. */
+export const NEST_MIN_PLACES = 10;
+
+/** ISO codes where state/province is a useful browse rung. */
+const STATE_COUNTRY_CODES = new Set(["US", "CA", "AU", "IN"]);
+
+/** Town/neighborhood saves — folders, not sibling cards next to their venues. */
+const AREA_CATEGORIES = new Set(["city", "neighborhood"]);
+
+/** Attach a city-less venue to a nearby saved town. */
+const CITY_INHERIT_KM = 25;
+
 const CHILD_LEVEL: Record<AtlasLevel, AtlasLevel> = {
-  world: "continent",
-  type: "continent",
+  world: "country",
+  type: "country",
   continent: "country",
-  country: "state",
+  country: "city",
   state: "city",
   city: "place",
   place: "place",
@@ -62,6 +77,7 @@ export interface AtlasPlace {
   bestTimeToVisit: string | null;
   imageUrl: string | null;
   sourcePostIds: string[];
+  parentPlaceId: string | null;
 }
 
 export interface AtlasNode {
@@ -110,6 +126,72 @@ function slug(value: string): string {
     .replace(/(^-|-$)/g, "") || "x";
 }
 
+function isAreaPlace(place: AtlasPlace): boolean {
+  return AREA_CATEGORIES.has(place.category ?? "");
+}
+
+function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const toRad = (deg: number) => (deg * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  return 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+/**
+ * City-category saves use their name as the city rung. Venues missing a city
+ * inherit from a parent place or a nearby saved town, so Glacier Inn sits in
+ * Hyder instead of beside it.
+ */
+function resolveBrowseCities(places: AtlasPlace[]): AtlasPlace[] {
+  const withAreaCity = places.map((place) => {
+    if (place.city || !isAreaPlace(place)) {
+      return place;
+    }
+    return { ...place, city: place.name };
+  });
+  const byId = new Map(withAreaCity.map((place) => [place.placeId, place]));
+  const withParent = withAreaCity.map((place) => {
+    if (place.city || !place.parentPlaceId) {
+      return place;
+    }
+    const parent = byId.get(place.parentPlaceId);
+    if (!parent?.city) {
+      return place;
+    }
+    return { ...place, city: parent.city };
+  });
+  return withParent.map((place) => {
+    if (place.city || place.lat === null || place.lng === null) {
+      return place;
+    }
+    let nearest: AtlasPlace | null = null;
+    let nearestKm = CITY_INHERIT_KM;
+    for (const area of withParent) {
+      if (!isAreaPlace(area) || area.lat === null || area.lng === null) {
+        continue;
+      }
+      if (area.country !== place.country) {
+        continue;
+      }
+      if (area.state && place.state && area.state !== place.state) {
+        continue;
+      }
+      const km = haversineKm(place.lat, place.lng, area.lat, area.lng);
+      if (km < nearestKm) {
+        nearestKm = km;
+        nearest = area;
+      }
+    }
+    if (!nearest) {
+      return place;
+    }
+    return { ...place, city: nearest.city || nearest.name };
+  });
+}
+
 function makeNode(
   key: string,
   name: string,
@@ -136,25 +218,147 @@ function makeNode(
   };
 }
 
+function usesAdminState(place: AtlasPlace): boolean {
+  const code = place.countryCode?.trim().toUpperCase();
+  return Boolean(code && STATE_COUNTRY_CODES.has(code));
+}
+
+function geographyRungs(place: AtlasPlace): { name: string; level: AtlasLevel }[] {
+  const rungs: { name: string; level: AtlasLevel }[] = [{ name: place.country, level: "country" }];
+  if (place.state && usesAdminState(place)) {
+    rungs.push({ name: place.state, level: "state" });
+  }
+  if (place.city) {
+    rungs.push({ name: place.city, level: "city" });
+  }
+  return rungs;
+}
+
+function leafNodes(node: AtlasNode): AtlasNode[] {
+  if (node.place) {
+    return [node];
+  }
+  return node.children.flatMap(leafNodes);
+}
+
+function dropFromIndex(node: AtlasNode, index: Map<string, AtlasNode>, keep: Set<string>): void {
+  if (!keep.has(node.key)) {
+    index.delete(node.key);
+  }
+  for (const child of node.children) {
+    dropFromIndex(child, index, keep);
+  }
+}
+
+function attachLeaves(parent: AtlasNode, leaves: AtlasNode[], index: Map<string, AtlasNode>): void {
+  for (const leaf of leaves) {
+    leaf.parentKey = parent.key;
+    leaf.depth = parent.depth + 1;
+    index.set(leaf.key, leaf);
+  }
+}
+
+function flattenToLeaves(node: AtlasNode, index: Map<string, AtlasNode>): void {
+  const leaves = leafNodes(node);
+  const keep = new Set([node.key, ...leaves.map((leaf) => leaf.key)]);
+  for (const child of node.children) {
+    dropFromIndex(child, index, keep);
+  }
+  attachLeaves(node, leaves, index);
+  node.children = leaves;
+}
+
+/** Skip folders that are not worth a click. World still lists countries/types. */
+function collapseSparseFolders(node: AtlasNode, index: Map<string, AtlasNode>): void {
+  for (const child of node.children) {
+    collapseSparseFolders(child, index);
+  }
+  if (node.level === "place") {
+    return;
+  }
+
+  const hasFolderChild = node.children.some((child) => child.level !== "place");
+  if (node.total > 0 && node.total < NEST_MIN_PLACES && hasFolderChild) {
+    flattenToLeaves(node, index);
+    return;
+  }
+
+  if (node.level === "world") {
+    return;
+  }
+
+  const next: AtlasNode[] = [];
+  for (const child of node.children) {
+    if (child.level === "place" || child.total >= NEST_MIN_PLACES) {
+      next.push(child);
+      continue;
+    }
+    const leaves = leafNodes(child);
+    const keep = new Set(leaves.map((leaf) => leaf.key));
+    dropFromIndex(child, index, keep);
+    attachLeaves(node, leaves, index);
+    next.push(...leaves);
+  }
+  node.children = next;
+}
+
+function dropRedundantAreaLeaves(node: AtlasNode, index: Map<string, AtlasNode>): void {
+  for (const child of node.children) {
+    dropRedundantAreaLeaves(child, index);
+  }
+  const venueCities = new Set<string>();
+  const folderCities = new Set<string>();
+  for (const child of node.children) {
+    if (child.level === "city") {
+      folderCities.add(slug(child.name));
+    }
+    if (child.place && !isAreaPlace(child.place) && child.place.city) {
+      venueCities.add(slug(child.place.city));
+    }
+  }
+  node.children = node.children.filter((child) => {
+    if (!child.place || !isAreaPlace(child.place)) {
+      return true;
+    }
+    const cityKey = slug(child.place.city || child.place.name);
+    if (venueCities.has(cityKey) || folderCities.has(cityKey)) {
+      index.delete(child.key);
+      return false;
+    }
+    return true;
+  });
+}
+
+function pruneEmptyFolders(node: AtlasNode, index: Map<string, AtlasNode>): void {
+  for (const child of node.children) {
+    pruneEmptyFolders(child, index);
+  }
+  node.children = node.children.filter((child) => {
+    if (child.level === "place" || child.children.length > 0) {
+      return true;
+    }
+    index.delete(child.key);
+    return false;
+  });
+}
+
+function tidyAtlas(root: AtlasNode, index: Map<string, AtlasNode>): void {
+  dropRedundantAreaLeaves(root, index);
+  pruneEmptyFolders(root, index);
+  rollUp(root);
+}
+
 export function buildAtlas(places: AtlasPlace[], grouping: AtlasGrouping = "region"): Atlas {
+  const located = resolveBrowseCities(places);
   const root = makeNode("world", "World", "world", 0, null, []);
   const index = new Map<string, AtlasNode>([[root.key, root]]);
 
-  for (const place of places) {
+  for (const place of located) {
     const rungs: { name: string; level: AtlasLevel }[] = [];
     if (grouping === "type") {
       rungs.push({ name: place.categoryLabel, level: "type" });
     }
-    rungs.push(
-      { name: place.continent, level: "continent" },
-      { name: place.country, level: "country" },
-    );
-    if (place.state) {
-      rungs.push({ name: place.state, level: "state" });
-    }
-    if (place.city) {
-      rungs.push({ name: place.city, level: "city" });
-    }
+    rungs.push(...geographyRungs(place));
 
     let parent = root;
     let keyPath = "world";
@@ -186,8 +390,11 @@ export function buildAtlas(places: AtlasPlace[], grouping: AtlasGrouping = "regi
   }
 
   rollUp(root);
+  tidyAtlas(root, index);
+  collapseSparseFolders(root, index);
+  tidyAtlas(root, index);
   sortTree(root);
-  return { root, index, places };
+  return { root, index, places: located };
 }
 
 function rollUp(node: AtlasNode): void {
@@ -353,6 +560,7 @@ export function toAtlasPlace(
     imageUrl:
       place.source_post_ids.map((postId) => thumbnailByPostId.get(postId)).find(Boolean) ?? null,
     sourcePostIds: place.source_post_ids,
+    parentPlaceId: place.parent_place_id ?? null,
   };
 }
 

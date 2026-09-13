@@ -292,7 +292,7 @@ export function PlaceLibrary({
               <p className="wf-browse-eyebrow">Your atlas</p>
               <h1 className="wf-browse-title">Atlas</h1>
               <p className="wf-browse-lede">
-                Everywhere your saves point to, from continents down to the single café — with what
+                Everywhere your saves point to, from countries down to the single café — with what
                 you've already visited marked off.
               </p>
             </div>

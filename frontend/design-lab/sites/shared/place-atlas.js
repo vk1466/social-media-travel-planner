@@ -25,11 +25,14 @@ const CATEGORY_LABELS = {
   food: "Food",
 };
 
+const NEST_MIN_PLACES = 10;
+const STATE_COUNTRY_CODES = new Set(["US", "CA", "AU", "IN"]);
+
 const CHILD_LEVEL = {
-  world: "continent",
-  type: "continent",
+  world: "country",
+  type: "country",
   continent: "country",
-  country: "state",
+  country: "city",
   state: "city",
   city: "place",
   place: "place",
@@ -128,6 +131,74 @@ function sortTree(node) {
   for (const child of node.children) sortTree(child);
 }
 
+function usesAdminState(place) {
+  const code = (place.countryCode || "").trim().toUpperCase();
+  return Boolean(code && STATE_COUNTRY_CODES.has(code));
+}
+
+function geographyRungs(place) {
+  const rungs = [{ name: place.country, level: "country" }];
+  if (place.state && usesAdminState(place)) {
+    rungs.push({ name: place.state, level: "state" });
+  }
+  if (place.city && place.city !== place.name) {
+    rungs.push({ name: place.city, level: "city" });
+  }
+  return rungs;
+}
+
+function leafNodes(node) {
+  if (node.place) return [node];
+  return node.children.flatMap(leafNodes);
+}
+
+function dropFromIndex(node, index, keep) {
+  if (!keep.has(node.key)) index.delete(node.key);
+  for (const child of node.children) dropFromIndex(child, index, keep);
+}
+
+function attachLeaves(parent, leaves, index) {
+  for (const leaf of leaves) {
+    leaf.parentKey = parent.key;
+    leaf.depth = parent.depth + 1;
+    index.set(leaf.key, leaf);
+  }
+}
+
+function flattenToLeaves(node, index) {
+  const leaves = leafNodes(node);
+  const keep = new Set([node.key, ...leaves.map((leaf) => leaf.key)]);
+  for (const child of node.children) dropFromIndex(child, index, keep);
+  attachLeaves(node, leaves, index);
+  node.children = leaves;
+}
+
+function collapseSparseFolders(node, index) {
+  for (const child of node.children) collapseSparseFolders(child, index);
+  if (node.level === "place") return;
+
+  const hasFolderChild = node.children.some((child) => child.level !== "place");
+  if (node.total > 0 && node.total < NEST_MIN_PLACES && hasFolderChild) {
+    flattenToLeaves(node, index);
+    return;
+  }
+
+  if (node.level === "world") return;
+
+  const next = [];
+  for (const child of node.children) {
+    if (child.level === "place" || child.total >= NEST_MIN_PLACES) {
+      next.push(child);
+      continue;
+    }
+    const leaves = leafNodes(child);
+    dropFromIndex(child, index, new Set(leaves.map((leaf) => leaf.key)));
+    attachLeaves(node, leaves, index);
+    next.push(...leaves);
+  }
+  node.children = next;
+}
+
 export function buildAtlas(places, grouping = "region") {
   const root = makeNode("world", "World", "world", 0, null, []);
   const index = new Map([[root.key, root]]);
@@ -137,14 +208,7 @@ export function buildAtlas(places, grouping = "region") {
     if (grouping === "type") {
       rungs.push({ name: place.categoryLabel, level: "type" });
     }
-    rungs.push(
-      { name: place.continent, level: "continent" },
-      { name: place.country, level: "country" },
-    );
-    if (place.state) rungs.push({ name: place.state, level: "state" });
-    if (place.city && place.city !== place.name) {
-      rungs.push({ name: place.city, level: "city" });
-    }
+    rungs.push(...geographyRungs(place));
 
     let parent = root;
     let keyPath = "world";
@@ -176,6 +240,7 @@ export function buildAtlas(places, grouping = "region") {
   }
 
   rollUp(root);
+  collapseSparseFolders(root, index);
   sortTree(root);
   return { root, index, places };
 }
