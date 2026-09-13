@@ -1,3 +1,4 @@
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -12,7 +13,7 @@ import {
 
 import { fetchVisitedPlaceIds, type Place } from "@/src/api";
 import { CoverCard } from "@/src/components/CoverCard";
-import { FilterBar, MultiFilterChips, PageHeading, SegmentGroup } from "@/src/components/LibraryChrome";
+import { FilterBar, MultiFilterChips, PageHeading } from "@/src/components/LibraryChrome";
 import { PlaceMap } from "@/src/components/PlaceMap";
 import { EmptyState, ErrorBanner } from "@/src/components/ui";
 import { useLibrary } from "@/src/context/LibraryContext";
@@ -29,7 +30,7 @@ import {
   type AtlasGrouping,
   type AtlasNode,
 } from "@/src/placeAtlasModel";
-import { colors, spacing } from "@/src/theme";
+import { colors, shadow, spacing } from "@/src/theme";
 
 const GRID_GAP = 12;
 
@@ -239,15 +240,6 @@ export default function TravelScreen() {
             ) : null
           }
         />
-        <SegmentGroup
-          ariaLabel="View mode"
-          selected={pane}
-          onSelect={(value) => setPane(value as Pane)}
-          options={[
-            { value: "browse", label: "Browse" },
-            { value: "map", label: "Map" },
-          ]}
-        />
       </View>
 
       {!searching && trail.length > 1 ? (
@@ -356,6 +348,22 @@ export default function TravelScreen() {
           }}
         />
       )}
+
+      <Pressable
+        onPress={() => {
+          setSearchQuery("");
+          setPane((current) => (current === "browse" ? "map" : "browse"));
+        }}
+        style={({ pressed }) => [styles.mapPeek, pressed && styles.mapPeekPressed]}
+        accessibilityRole="button"
+        accessibilityLabel={pane === "browse" ? "View map" : "View covers"}
+      >
+        <Ionicons
+          name={pane === "browse" ? "location" : "grid"}
+          size={18}
+          color={colors.onFill}
+        />
+      </Pressable>
     </View>
   );
 }
@@ -370,7 +378,7 @@ const styles = StyleSheet.create({
   },
   pad: { padding: spacing.md },
   chrome: { paddingHorizontal: spacing.md, paddingTop: spacing.sm },
-  mapPane: { flex: 1, padding: spacing.md },
+  mapPane: { flex: 1, minHeight: 0, padding: spacing.md },
   list: { padding: spacing.md, flexGrow: 1 },
   breadcrumb: {
     flexDirection: "row",
@@ -430,5 +438,24 @@ const styles = StyleSheet.create({
     marginTop: 2,
     color: colors.muted,
     fontSize: 12,
+  },
+  mapPeek: {
+    position: "absolute",
+    right: spacing.md,
+    bottom: spacing.md,
+    zIndex: 20,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.brand,
+    borderWidth: 1,
+    borderColor: colors.brand,
+    ...shadow(3),
+  },
+  mapPeekPressed: {
+    opacity: 0.85,
+    transform: [{ translateY: -2 }],
   },
 });

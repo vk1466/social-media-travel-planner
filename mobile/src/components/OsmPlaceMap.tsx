@@ -1,5 +1,5 @@
-import { useMemo } from "react";
-import { StyleSheet } from "react-native";
+import { useCallback, useMemo, useRef, useState } from "react";
+import { Platform, StyleSheet, View } from "react-native";
 import { WebView } from "react-native-webview";
 
 import type { Place } from "../api";
@@ -19,24 +19,69 @@ export function OsmPlaceMap({
   onSelectPlace,
 }: OsmPlaceMapProps) {
   const html = useMemo(() => buildMapHtml(places, visitedPlaceIds), [places, visitedPlaceIds]);
+  const webViewRef = useRef<WebView>(null);
+  const [frame, setFrame] = useState({ width: 0, height: 0 });
+
+  const applyFrame = useCallback((width: number, height: number) => {
+    if (width <= 0 || height <= 0) {
+      return;
+    }
+    webViewRef.current?.injectJavaScript(
+      `window.__setMapFrame && window.__setMapFrame(${Math.round(width)}, ${Math.round(height)}); true;`,
+    );
+  }, []);
 
   return (
-    <WebView
-      style={StyleSheet.absoluteFill}
-      originWhitelist={["*"]}
-      source={{ html }}
-      javaScriptEnabled
-      nestedScrollEnabled
-      setSupportMultipleWindows={false}
-      onMessage={(event) => {
-        const place = places.find((item) => item.place_id === event.nativeEvent.data);
-        if (place) {
-          onSelectPlace?.(place);
-        }
+    <View
+      style={styles.host}
+      onLayout={(event) => {
+        const { width, height } = event.nativeEvent.layout;
+        setFrame((current) =>
+          current.width === width && current.height === height ? current : { width, height },
+        );
+        applyFrame(width, height);
       }}
-    />
+    >
+      {frame.width > 0 && frame.height > 0 ? (
+        <WebView
+          ref={webViewRef}
+          style={{ width: frame.width, height: frame.height, backgroundColor: "#112a35" }}
+          originWhitelist={["*"]}
+          source={{ html, baseUrl: "https://basemaps.cartocdn.com" }}
+          javaScriptEnabled
+          nestedScrollEnabled
+          scrollEnabled={false}
+          bounces={false}
+          overScrollMode="never"
+          setSupportMultipleWindows={false}
+          automaticallyAdjustContentInsets={false}
+          contentInsetAdjustmentBehavior="never"
+          scalesPageToFit={false}
+          showsHorizontalScrollIndicator={false}
+          showsVerticalScrollIndicator={false}
+          onLoadEnd={() => applyFrame(frame.width, frame.height)}
+          onMessage={(event) => {
+            const place = places.find((item) => item.place_id === event.nativeEvent.data);
+            if (place) {
+              onSelectPlace?.(place);
+            }
+          }}
+          {...(Platform.OS === "android" ? { androidLayerType: "hardware" as const } : {})}
+        />
+      ) : null}
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  host: {
+    flex: 1,
+    alignSelf: "stretch",
+    minHeight: 0,
+    overflow: "hidden",
+    backgroundColor: "#112a35",
+  },
+});
 
 function locationLine(place: Place): string {
   const { city, state_province: stateProvince, country } = place.location;
@@ -71,29 +116,62 @@ function buildMapHtml(places: Place[], visitedPlaceIds: ReadonlySet<string>): st
 <html>
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
-    html, body, #map { height: 100%; margin: 0; background: #112a35; }
-    .leaflet-container { background: #112a35; filter: saturate(0.72) brightness(1.05); }
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: #112a35;
+    }
+    #map {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+    .leaflet-container { width: 100%; height: 100%; background: #112a35; }
+    .leaflet-tile-pane { filter: saturate(0.72) brightness(1.05); }
     .saved-map-marker-host { border: 0; background: transparent; }
     .saved-map-marker {
       display: flex;
       align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
       filter: drop-shadow(0 3px 5px rgb(0 0 0 / 0.3));
     }
     .saved-map-marker > i {
+      flex: 0 0 auto;
+      box-sizing: border-box;
       width: 28px;
       height: 28px;
+      min-width: 28px;
+      min-height: 28px;
+      max-width: 28px;
+      max-height: 28px;
+      aspect-ratio: 1 / 1;
+      overflow: hidden;
       display: grid;
       place-items: center;
+      line-height: 0;
       border: 3px solid white;
-      border-radius: 50%;
+      border-radius: 999px;
       background: var(--marker-color);
       color: white;
       font-style: normal;
     }
-    .saved-map-marker svg { width: 14px; height: 14px; }
+    .saved-map-marker svg {
+      display: block;
+      width: 14px;
+      height: 14px;
+      flex-shrink: 0;
+    }
     .saved-map-marker.is-active { transform: scale(1.22); }
     .saved-map-marker.is-active > i { box-shadow: 0 0 0 3px var(--marker-color); }
     .saved-place-popup-card {
@@ -112,15 +190,20 @@ function buildMapHtml(places: Place[], visitedPlaceIds: ReadonlySet<string>): st
       text-transform: uppercase;
     }
     .saved-place-popup-card small i {
+      box-sizing: border-box;
       width: 18px;
       height: 18px;
+      min-width: 18px;
+      min-height: 18px;
+      overflow: hidden;
       display: grid;
       place-items: center;
-      border-radius: 50%;
+      line-height: 0;
+      border-radius: 999px;
       color: white;
       font-style: normal;
     }
-    .saved-place-popup-card small svg { width: 10px; height: 10px; }
+    .saved-place-popup-card small svg { display: block; width: 10px; height: 10px; }
     .saved-place-popup-card strong { display: block; margin: 0.35rem 0 0.15rem; font-size: 0.95rem; }
     .saved-place-popup-card span, .saved-place-popup-card p {
       display: block;
@@ -151,7 +234,7 @@ function buildMapHtml(places: Place[], visitedPlaceIds: ReadonlySet<string>): st
         return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch];
       });
     }
-    const map = L.map("map", { zoomControl: true, worldCopyJump: true }).setView([20, 0], 2);
+    const map = L.map("map", { zoomControl: true, worldCopyJump: true, minZoom: 2, maxZoom: 19 });
     L.tileLayer(${JSON.stringify(tileUrl)}, {
       attribution: "&copy; OSM &copy; CARTO",
       subdomains: "abcd",
@@ -159,7 +242,26 @@ function buildMapHtml(places: Place[], visitedPlaceIds: ReadonlySet<string>): st
       maxZoom: 19
     }).addTo(map);
 
-    const bounds = [];
+    function showNorthAmerica() {
+      map.fitBounds([[14, -135], [72, -52]], { padding: [8, 8], maxZoom: 5, animate: false });
+    }
+    window.__relayoutMap = function () {
+      map.invalidateSize({ animate: false });
+      showNorthAmerica();
+    };
+    window.__setMapFrame = function (width, height) {
+      var root = document.documentElement;
+      root.style.width = width + "px";
+      root.style.height = height + "px";
+      document.body.style.width = width + "px";
+      document.body.style.height = height + "px";
+      var el = document.getElementById("map");
+      el.style.width = width + "px";
+      el.style.height = height + "px";
+      window.__relayoutMap();
+    };
+    map.whenReady(showNorthAmerica);
+    window.addEventListener("resize", window.__relayoutMap);
     for (const place of places) {
       const icon = L.divIcon({
         className: "saved-map-marker-host",
@@ -189,13 +291,8 @@ function buildMapHtml(places: Place[], visitedPlaceIds: ReadonlySet<string>): st
           });
         }
       });
-      bounds.push([place.lat, place.lng]);
     }
-    if (bounds.length === 1) {
-      map.setView(bounds[0], 12);
-    } else if (bounds.length > 1) {
-      map.fitBounds(bounds, { padding: [56, 56], maxZoom: 12 });
-    }
+    showNorthAmerica();
   </script>
 </body>
 </html>`;

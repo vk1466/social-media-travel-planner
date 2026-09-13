@@ -22,16 +22,18 @@ export function PlaceMap({
   const mapped = useMemo(() => mappablePlaces(places), [places]);
   const visited = visitedPlaceIds ?? new Set<string>();
 
+  const fill = height === "100%";
+
   if (mapped.length === 0) {
     return (
-      <View style={[styles.empty, { height }]}>
+      <View style={[styles.empty, fill ? styles.fill : { height }]}>
         <Text style={styles.emptyText}>No mapped places yet</Text>
       </View>
     );
   }
 
   return (
-    <View style={[styles.wrap, { height }]}>
+    <View style={[styles.wrap, fill ? styles.fill : { height }]}>
       <OsmPlaceMap places={mapped} visitedPlaceIds={visited} onSelectPlace={onSelectPlace} />
     </View>
   );
@@ -44,6 +46,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     marginBottom: spacing.md,
+  },
+  fill: {
+    flex: 1,
+    alignSelf: "stretch",
+    minHeight: 0,
+    marginBottom: 0,
   },
   empty: {
     borderRadius: 14,
