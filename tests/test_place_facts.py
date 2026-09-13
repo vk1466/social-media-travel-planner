@@ -557,3 +557,65 @@ def test_enrich_place_facts_step_runs_for_stale_pins(monkeypatch) -> None:
   assert result.place_library is not None
   assert result.place_library[0].facts is not None
   assert result.place_library[0].facts.famous_for == "Caldera lake"
+
+
+def test_fetch_all_runs_tools_and_keeps_catalog_order(monkeypatch) -> None:
+  from travelplanner.places.facts.enrich import _fetch_all
+
+  query = FactQuery(
+    place_id="us-oregon-crater-lake",
+    display_name="Crater Lake",
+    category="park",
+    latitude=42.9,
+    longitude=-122.1,
+  )
+
+  def _tool(tool_id: str, fetch) -> FactTool:
+    return FactTool(
+      tool_id=tool_id,
+      description=tool_id,
+      source_name=tool_id,
+      categories=frozenset(),
+      cost_class="free",
+      requires_setting=None,
+      fetch=fetch,
+    )
+
+  def ok_a(_query: FactQuery) -> list[SourceDocument]:
+    return [
+      SourceDocument(
+        tool_id="a",
+        source_name="a",
+        source_ref="a1",
+        title="A",
+        latitude=None,
+        longitude=None,
+        content={},
+        retrieved_at="2026-01-01T00:00:00Z",
+      )
+    ]
+
+  def boom(_query: FactQuery) -> list[SourceDocument]:
+    raise RuntimeError("down")
+
+  def ok_c(_query: FactQuery) -> list[SourceDocument]:
+    return [
+      SourceDocument(
+        tool_id="c",
+        source_name="c",
+        source_ref="c1",
+        title="C",
+        latitude=None,
+        longitude=None,
+        content={},
+        retrieved_at="2026-01-01T00:00:00Z",
+      )
+    ]
+
+  monkeypatch.setattr(
+    "travelplanner.places.facts.enrich.select_tools",
+    lambda _category: [_tool("a", ok_a), _tool("b", boom), _tool("c", ok_c)],
+  )
+  docs, notes = _fetch_all(query)
+  assert [doc.tool_id for doc in docs] == ["a", "c"]
+  assert notes == ["b error: down"]

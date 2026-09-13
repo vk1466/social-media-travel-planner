@@ -116,3 +116,52 @@ def test_fetch_google_maps_places_posts_params(monkeypatch) -> None:
     max_results=1,
   )
   assert rows[0]["placeId"] == "ChIJ_test"
+
+
+def test_fetch_google_maps_places_returns_when_rows_ready(monkeypatch) -> None:
+  monkeypatch.setenv("MINDCASE_API_KEY", "mk_live_test")
+  monkeypatch.setattr(mindcase, "POLL_INTERVAL_SECONDS", 0)
+  gets = 0
+
+  def fake_request(method: str, path: str, body: dict | None = None) -> dict:
+    nonlocal gets
+    if method == "POST":
+      return {"job_id": "maps_1", "status": "queued"}
+    gets += 1
+    return {
+      "status": "running",
+      "row_count": 1,
+      "data": [{"placeId": "ChIJ_ready"}],
+    }
+
+  monkeypatch.setattr(mindcase, "_request", fake_request)
+  rows = mindcase.fetch_google_maps_places(place_urls=["ChIJ_ready"])
+  assert rows[0]["placeId"] == "ChIJ_ready"
+  assert gets == 1
+
+
+def test_fetch_post_ignores_running_rows_until_completed(monkeypatch) -> None:
+  monkeypatch.setenv("MINDCASE_API_KEY", "mk_live_test")
+  monkeypatch.setattr(mindcase, "POLL_INTERVAL_SECONDS", 0)
+  gets = 0
+
+  def fake_request(method: str, path: str, body: dict | None = None) -> dict:
+    nonlocal gets
+    if method == "POST":
+      return {"job_id": "job_partial", "status": "queued"}
+    gets += 1
+    if gets == 1:
+      return {
+        "status": "running",
+        "row_count": 1,
+        "data": [{"caption": "partial"}],
+      }
+    return {
+      "status": "completed",
+      "data": [{"caption": "final"}],
+    }
+
+  monkeypatch.setattr(mindcase, "_request", fake_request)
+  row = mindcase.fetch_post(shortcode="abc")
+  assert row["caption"] == "final"
+  assert gets == 2

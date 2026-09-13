@@ -158,8 +158,10 @@ def search_nearby_travel_pois(
 
 
 # Broader nearby query for place-facts: keep named features with useful tags.
+_FACTS_QL_TIMEOUT_SECONDS = 8
+_FACTS_HTTP_TIMEOUT_SECONDS = 10
 _FACTS_QUERY = """
-[out:json][timeout:25];
+[out:json][timeout:{ql_timeout}];
 (
   nwr(around:{radius},{lat},{lon})["name"];
 );
@@ -202,6 +204,7 @@ def fetch_nearby_tagged_elements(
   Used by place-facts `osm_tags`. Fail-soft → [].
   """
   query = _FACTS_QUERY.format(
+    ql_timeout=_FACTS_QL_TIMEOUT_SECONDS,
     radius=max(50, min(int(radius_m), 15_000)),
     lat=latitude,
     lon=longitude,
@@ -215,7 +218,7 @@ def fetch_nearby_tagged_elements(
     method="POST",
   )
   try:
-    with urllib.request.urlopen(request, timeout=30) as response:
+    with urllib.request.urlopen(request, timeout=_FACTS_HTTP_TIMEOUT_SECONDS) as response:
       payload = json.loads(response.read().decode("utf-8"))
   except (urllib.error.URLError, TimeoutError, json.JSONDecodeError, ValueError) as exc:
     logger.warning("overpass facts failed lat=%s lon=%s error=%s", latitude, longitude, exc)

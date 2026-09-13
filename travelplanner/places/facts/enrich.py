@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, replace
 from datetime import datetime, timedelta, timezone
 
@@ -66,17 +67,34 @@ def _build_query(place: Place) -> FactQuery | None:
 
 
 def _fetch_all(query: FactQuery) -> tuple[list[SourceDocument], list[str]]:
-  notes: list[str] = []
-  documents: list[SourceDocument] = []
-  for tool in select_tools(query.category):
+  tools = select_tools(query.category)
+  if not tools:
+    return [], []
+
+  def run_tool(tool):
     try:
-      fetched = tool.fetch(query)
+      return tool.tool_id, list(tool.fetch(query) or []), None
     except Exception as exc:
-      note = f"{tool.tool_id} error: {exc}"
-      logger.warning("place_facts tool failed tool_id=%s error=%s", tool.tool_id, exc)
-      notes.append(note)
-      continue
+      logger.warning(
+        "place_facts tool failed tool_id=%s error=%s", tool.tool_id, exc
+      )
+      return tool.tool_id, [], f"{tool.tool_id} error: {exc}"
+
+  by_id: dict[str, tuple[list[SourceDocument], str | None]] = {}
+  workers = min(4, len(tools))
+  with ThreadPoolExecutor(max_workers=workers) as pool:
+    futures = [pool.submit(run_tool, tool) for tool in tools]
+    for future in futures:
+      tool_id, fetched, error = future.result()
+      by_id[tool_id] = (fetched, error)
+
+  documents: list[SourceDocument] = []
+  notes: list[str] = []
+  for tool in tools:
+    fetched, error = by_id[tool.tool_id]
     documents.extend(fetched)
+    if error:
+      notes.append(error)
   return documents, notes
 
 

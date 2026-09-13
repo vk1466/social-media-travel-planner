@@ -91,7 +91,8 @@ def fetch_google_maps_places(
   max_results: int = 1,
 ) -> list[dict[str, Any]]:
   """Google Maps place listings via Mindcase (hours, phone, website, categories)."""
-  params: dict[str, Any] = {"maxResults": max(1, max_results), "maxImages": 0}
+  wanted = max(1, max_results)
+  params: dict[str, Any] = {"maxResults": wanted, "maxImages": 0}
   urls = [url.strip() for url in (place_urls or []) if url and url.strip()]
   if urls:
     params["placeUrls"] = urls
@@ -103,12 +104,17 @@ def fetch_google_maps_places(
     loc = (location or "").strip()
     if loc:
       params["location"] = loc
-  return _run_job(GOOGLE_MAPS_PLACES_RUN_PATH, params)
+  return _run_job(GOOGLE_MAPS_PLACES_RUN_PATH, params, ready_row_count=wanted)
 
 
-def _run_job(path: str, params: dict[str, Any]) -> list[dict[str, Any]]:
+def _run_job(
+  path: str,
+  params: dict[str, Any],
+  *,
+  ready_row_count: int | None = None,
+) -> list[dict[str, Any]]:
   started = _request("POST", path, {"params": params})
-  rows = _rows_if_completed(started)
+  rows = _rows_if_ready(started, ready_row_count=ready_row_count)
   if rows is not None:
     return rows
 
@@ -130,7 +136,7 @@ def _run_job(path: str, params: dict[str, Any]) -> list[dict[str, Any]]:
       status or "unknown",
       results.get("row_count"),
     )
-    rows = _rows_if_completed(results)
+    rows = _rows_if_ready(results, ready_row_count=ready_row_count)
     if rows is not None:
       return rows
     if status in {"failed", "error", "cancelled"}:
@@ -139,14 +145,30 @@ def _run_job(path: str, params: dict[str, Any]) -> list[dict[str, Any]]:
   raise RuntimeError(f"Mindcase job {job_id} timed out after {MAX_WAIT_SECONDS}s")
 
 
-def _rows_if_completed(payload: dict[str, Any]) -> list[dict[str, Any]] | None:
-  status = str(payload.get("status") or "").lower()
-  if status != "completed":
-    return None
+def _data_rows(payload: dict[str, Any]) -> list[dict[str, Any]] | None:
   raw = payload.get("data")
   if not isinstance(raw, list):
-    return []
+    return None
   return [row for row in raw if isinstance(row, dict)]
+
+
+def _rows_if_ready(
+  payload: dict[str, Any],
+  *,
+  ready_row_count: int | None = None,
+) -> list[dict[str, Any]] | None:
+  status = str(payload.get("status") or "").lower()
+  rows = _data_rows(payload)
+  if status == "completed":
+    return rows if rows is not None else []
+  if (
+    ready_row_count is not None
+    and ready_row_count > 0
+    and rows is not None
+    and len(rows) >= ready_row_count
+  ):
+    return rows
+  return None
 
 
 def _job_id(payload: dict[str, Any]) -> str:
