@@ -136,6 +136,10 @@ class SavedPostSchema(BaseModel):
   reel_summary: str | None = None
   content_category: str | None = None
   trip_tips: list[str] = Field(default_factory=list)
+  image_text: str | None = None
+  transcript: str | None = None
+  video_analysis: str | None = None
+  slide_media_urls: list[str] = Field(default_factory=list)
 
 
 class PlaceLocationSchema(BaseModel):
@@ -207,6 +211,7 @@ class PlaceSchema(BaseModel):
   parent_place_id: str | None = None
   facts: PlaceFactsSchema | None = None
   google_maps_url: str | None = None
+  summary: str | None = None
 
 
 class PlaceFactsRefreshSchema(BaseModel):

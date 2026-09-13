@@ -203,6 +203,10 @@ export interface SavedPost {
   reel_summary?: string | null;
   content_category?: string | null;
   trip_tips?: string[];
+  image_text?: string | null;
+  transcript?: string | null;
+  video_analysis?: string | null;
+  slide_media_urls?: string[];
 }
 
 /** Split a global post_id (`platform:native`) for API routes and navigation. */
@@ -311,6 +315,7 @@ export interface Place {
   parent_place_id?: string | null;
   facts?: PlaceFacts | null;
   google_maps_url?: string | null;
+  summary?: string | null;
 }
 
 export interface PlaceDetail {

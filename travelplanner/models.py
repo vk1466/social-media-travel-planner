@@ -67,6 +67,10 @@ class SavedPost:
   reel_summary: str | None = None
   content_category: str | None = None
   trip_tips: tuple[str, ...] = ()
+  image_text: str | None = None
+  transcript: str | None = None
+  video_analysis: str | None = None
+  slide_media_urls: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -161,6 +165,7 @@ class Place:
   parent_place_id: str | None = None
   facts: PlaceFacts | None = None
   google_maps_url: str | None = None
+  summary: str | None = None
 
 
 VISIT_SOURCES = frozenset({"manual", "instagram", "timeline"})

@@ -46,7 +46,7 @@ def extract_recipe_frames(ctx: IngestContext) -> IngestContext:
   """Run adaptive full-duration frame OCR on recipe videos if caption is thin."""
   if ctx.resource_type not in {"video", "reel"}:
     return ctx
-  if not FeatureFlag.get("extract_reel_frame_text"):
+  if not FeatureFlag.get("food_recipes"):
     return ctx
 
   caption = ctx.post.caption if ctx.post else ""

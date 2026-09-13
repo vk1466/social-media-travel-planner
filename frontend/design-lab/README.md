@@ -218,6 +218,32 @@ http://localhost:5179/travel-section/
 **20 paired place-card and detail-modal directions** — landscape, adaptive, planning-first,
 map-aware, compact, and portrait concepts. The four portrait formats are magazine cover,
 pocket guide, journey ticket, and night portrait.
+
+## Travel Detail Organization Lab
+
+**10 structurally different information-architecture directions** for fixing the
+production place-detail card's mixed hierarchy. Each direction uses the same objective
+facts, highlights, guide advice, creator tip, source trail, and direct Google Maps action,
+shown in purpose-built Mobile web, Native app, and Desktop compositions. Option 01,
+Decision stack, is the recommended low-risk production direction.
+
+http://localhost:5179/travel-detail-organization/
+
+## Pipeline walkthrough (engineering doc)
+
+Readable HTML views of step I/O and external API calls (live from repo markdown):
+
+| Post type | Doc | Design Lab |
+|-----------|-----|------------|
+| Reel (Suobuya Stone Forest) | `docs/pipeline-walkthrough-instagram-reel-example.md` | http://localhost:5179/pipeline-walkthrough/ |
+| Carousel (Amsterdam list) | `docs/pipeline-walkthrough-instagram-carousel-example.md` | http://localhost:5179/pipeline-walkthrough-carousel/ |
+| Image (Amsterdam day-1 itinerary) | `docs/pipeline-walkthrough-instagram-image-example.md` | http://localhost:5179/pipeline-walkthrough-image/ |
+| Reel (Amsterdam kayak, `/p/` link) | `docs/pipeline-walkthrough-instagram-reel-amsterdam-kayak-example.md` | http://localhost:5179/pipeline-walkthrough-reel-kayak/ |
+
+Also linked from the Design Lab home grid.
+
+The supporting audit and research notes live in
+[`docs/design/travel-detail-organization-audit.md`](../../docs/design/travel-detail-organization-audit.md).
 Each card opens its matching responsive detail treatment with save and quick-action states.
 Add `?open=1` through `?open=20` to link directly to an open concept.
 

@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Travel Pipeline Logic Test — 4 Reels Result</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400..700;1,9..40,400..700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0d1110;
+      --bg-card: #151a18;
+      --bg-card-subtle: #1c2220;
+      --border: rgba(255, 255, 255, 0.08);
+      --border-strong: rgba(255, 255, 255, 0.16);
+      --text: #f0f3f1;
+      --text-muted: #8d9a94;
+      --accent: #2dd4bf;
+      --accent-dim: rgba(45, 212, 191, 0.15);
+      --amber: #fbbf24;
+      --amber-dim: rgba(251, 191, 36, 0.15);
+      --rose: #fb7185;
+      --rose-dim: rgba(251, 113, 133, 0.15);
+      --blue: #38bdf8;
+      --blue-dim: rgba(56, 189, 248, 0.15);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: "DM Sans", system-ui, -apple-system, sans-serif;
+      line-height: 1.5;
+      padding: 32px 24px 80px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .wrap {
+      max-width: 1180px;
+      margin: 0 auto;
+    }
+
+    header.top-header {
+      margin-bottom: 36px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 24px;
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.85rem;
+      margin-bottom: 16px;
+      transition: color 0.15s ease;
+    }
+    .back-link:hover { color: var(--accent); }
+
+    h1 {
+      font-family: "Instrument Serif", Georgia, serif;
+      font-size: clamp(2rem, 4vw, 2.8rem);
+      font-weight: 400;
+      letter-spacing: -0.01em;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 1rem;
+      max-width: 780px;
+    }
+
+    /* Tabs */
+    .tab-bar {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 8px;
+      margin-bottom: 32px;
+      border-bottom: 1px solid var(--border);
+    }
+    .tab-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      padding: 10px 18px;
+      border-radius: 999px;
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      transition: all 0.15s ease;
+    }
+    .tab-btn:hover {
+      background: var(--bg-card);
+      color: var(--text);
+      border-color: var(--border-strong);
+    }
+    .tab-btn.active {
+      background: var(--accent-dim);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .tab-badge {
+      font-size: 0.72rem;
+      padding: 2px 7px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    /* Section Flow */
+    .reel-view { display: none; }
+    .reel-view.active { display: block; }
+
+    .stage-section {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+
+    .stage-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 18px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .stage-title {
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .stage-1-title { color: var(--blue); }
+    .stage-2-title { color: var(--amber); }
+    .stage-3-title { color: var(--rose); }
+    .stage-4-title { color: var(--accent); }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    @media (max-width: 820px) {
+      .grid-2 { grid-template-columns: 1fr; }
+    }
+
+    .data-box {
+      background: var(--bg-card-subtle);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+    }
+    .data-box h4 {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .data-box p, .data-box pre {
+      font-size: 0.88rem;
+      line-height: 1.55;
+    }
+    .raw-content {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 0.82rem;
+      color: #cfd8d4;
+      white-space: pre-wrap;
+      word-break: break-word;
+      max-height: 220px;
+      overflow-y: auto;
+      background: rgba(0,0,0,0.25);
+      padding: 12px;
+      border-radius: 6px;
+    }
+
+    .excluded-pill {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: rgba(251, 113, 133, 0.12);
+      color: #fb7185;
+      font-size: 0.74rem;
+      font-weight: 500;
+      margin-right: 6px;
+      margin-top: 4px;
+    }
+    .included-pill {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: rgba(45, 212, 191, 0.12);
+      color: #2dd4bf;
+      font-size: 0.74rem;
+      font-weight: 500;
+      margin-right: 6px;
+      margin-top: 4px;
+    }
+
+    /* Places Table */
+    .places-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .place-item {
+      background: var(--bg-card-subtle);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+    }
+    .place-name {
+      font-weight: 600;
+      font-size: 0.95rem;
+      color: var(--text);
+    }
+    .place-category {
+      display: inline-block;
+      font-size: 0.72rem;
+      padding: 2px 7px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-muted);
+      margin-left: 6px;
+    }
+    .place-details {
+      font-size: 0.85rem;
+      color: #a8b4ae;
+      margin-top: 4px;
+    }
+    .badge-status {
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 4px 9px;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+    .status-resolved {
+      background: rgba(45, 212, 191, 0.15);
+      color: #2dd4bf;
+      border: 1px solid rgba(45, 212, 191, 0.3);
+    }
+    .status-rejected {
+      background: rgba(251, 113, 133, 0.15);
+      color: #fb7185;
+      border: 1px solid rgba(251, 113, 133, 0.3);
+    }
+    .status-unresolved {
+      background: rgba(251, 191, 36, 0.15);
+      color: #fbbf24;
+      border: 1px solid rgba(251, 191, 36, 0.3);
+    }
+
+    /* Result Place Card */
+    .result-card {
+      background: var(--bg-card-subtle);
+      border: 1px solid var(--border-strong);
+      border-radius: 12px;
+      padding: 22px;
+      margin-bottom: 20px;
+      position: relative;
+    }
+    .result-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .result-card-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #fff;
+    }
+    .result-card-geo {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      font-family: "JetBrains Mono", monospace;
+    }
+
+    .intuitive-summary {
+      background: linear-gradient(135deg, rgba(45, 212, 191, 0.08), rgba(56, 189, 248, 0.04));
+      border-left: 3px solid var(--accent);
+      padding: 14px 16px;
+      border-radius: 0 8px 8px 0;
+      font-size: 0.94rem;
+      line-height: 1.6;
+      color: #e5ece8;
+      margin-bottom: 18px;
+    }
+    .intuitive-summary strong {
+      color: var(--accent);
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .facts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+    .fact-item {
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid var(--border);
+      padding: 10px 12px;
+      border-radius: 6px;
+    }
+    .fact-label {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 2px;
+    }
+    .fact-value {
+      font-size: 0.86rem;
+      color: #fff;
+      font-weight: 500;
+    }
+    .fact-value a {
+      color: var(--blue);
+      text-decoration: none;
+      word-break: break-all;
+    }
+    .fact-value a:hover { text-decoration: underline; }
+
+    .tips-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .tip-pill {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 0.86rem;
+      line-height: 1.5;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    .tip-tag {
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: 4px;
+      white-space: nowrap;
+      margin-top: 2px;
+    }
+    .tag-creator { background: rgba(251, 191, 36, 0.15); color: #fbbf24; }
+    .tag-logistics { background: rgba(56, 189, 248, 0.15); color: #38bdf8; }
+    .tag-advisory { background: rgba(251, 113, 133, 0.15); color: #fb7185; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="top-header">
+      <a href="../index.html" class="back-link">← Design Lab Home</a>
+      <h1>Pipeline Logic &amp; Place Results Test</h1>
+      <p class="subtitle">
+        Testing the updated logic across 4 real-world walkthrough examples: 
+        <strong>preserving full content assets</strong> (OCR, transcripts, scene descriptions) while <strong>dropping ephemeral vanity metadata</strong>, extracting all place tips, and outputting an <strong>intuitive summary + sanitized facts</strong> for each place.
+      </p>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="tab-bar">
+      <button class="tab-btn active" onclick="showTab('tab-carousel', this)">
+        <span>1. Amsterdam Carousel</span>
+        <span class="tab-badge">DOd5nuWDAuP · 10 Places</span>
+      </button>
+      <button class="tab-btn" onclick="showTab('tab-image', this)">
+        <span>2. Day Itinerary Graphic</span>
+        <span class="tab-badge">DZTAioMOzIW · Timeline OCR</span>
+      </button>
+      <button class="tab-btn" onclick="showTab('tab-kayak', this)">
+        <span>3. Canal Kayak Reel</span>
+        <span class="tab-badge">DI4Q-yuMH0h · Video Extract</span>
+      </button>
+      <button class="tab-btn" onclick="showTab('tab-suobuya', this)">
+        <span>4. Suobuya Stone Forest</span>
+        <span class="tab-badge">Db6I58kCI7F · Landscape</span>
+      </button>
+    </nav>
+
+    <!-- ==================== TAB 1: CAROUSEL ==================== -->
+    <section id="tab-carousel" class="reel-view active">
+      <!-- Stage 1 -->
+      <div class="stage-section">
+        <div class="stage-header">
+          <div class="stage-title stage-1-title">Stage 1 · Data Source Ingestion (Clean Content vs Ignored Metadata)</div>
+          <span class="tab-badge">Media: Carousel · 13 Slides</span>
+        </div>
+        <div class="grid-2">
+          <div class="data-box">
+            <h4>Raw Content Extracted &amp; Preserved</h4>
+            <div style="margin-bottom: 8px;">
+              <span class="included-pill">✓ Full Caption</span>
+              <span class="included-pill">✓ 13-Slide OCR Text</span>
+              <span class="included-pill">✓ Slide Media URLs</span>
+              <span class="included-pill">✓ Tagged Handles</span>
+            </div>
+            <pre class="raw-content"><strong>Caption:</strong>
+10 Things to do in Amsterdam 🇳🇱✨ by @explorewithmairyy
+@stanley_hotel_amsterdam ~ Stylish hotel in the heart of Amsterdam with canal views & moderns rooms 🇳🇱🛎️
+@cornerbakeryamsterdam ~ Brunch & breakfast spot at 2 locations in Amsterdam 🇳🇱🍳
+@theburgermaffia ~ The most delicious smash burgers in the city 🍔🍹
+@loop51_ams ~ Brunch & vinyl bar in the heart of Amsterdam 🇳🇱
+@bysim.app ~ Stay connected while travelling the world 📲✈️
+
+<strong>Slide OCR Text (image_text):</strong>
+10 things to do AMSTERDAM
+1. Moco Museum
+2. Visit Zaandam @explore_human
+3. Anne frank house Believe It or Not! 5 FLOORS OF ENTERTAINMENT
+3. Visit ripley's @explorewithmarty
+4. Do a sunset canal cruise @explorewithmatt
+7. Visit the red light district Moulin Rouge EROTIC nightclub LIVE SEX theater Red Light Secrets MUSEUM OF PROSTITUTION</pre>
+          </div>
+          <div class="data-box">
+            <h4>Ignored Social Vanity Metadata (Dropped)</h4>
+            <p style="color: var(--text-muted); margin-bottom: 12px;">The updated pipeline drops ephemeral vanity metrics to save DB space and focus purely on travel utility:</p>
+            <div>
+              <span class="excluded-pill">✗ 9,798 Likes</span>
+              <span class="excluded-pill">✗ 2,592 Comments count</span>
+              <span class="excluded-pill">✗ Top Comments ("Guide", "Guide ❤️")</span>
+              <span class="excluded-pill">✗ Algorithm Impression Counts</span>
+              <span class="excluded-pill">✗ Song/Audio Licensing IDs</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stage 2 & 3 -->
+      <div class="stage-section">
+        <div class="stage-header">
+          <div class="stage-title stage-2-title">Stages 2 &amp; 3 · Places Extracted &amp; Geocoded Resolution</div>
+          <span class="tab-badge">10 Mentions Processed</span>
+        </div>
+        <div class="places-list">
+          <div class="place-item">
+            <div>
+              <span class="place-name">Moco Museum</span><span class="place-category">museum</span>
+              <p class="place-details">Extracted: Modern & contemporary art museum featuring Banksy & Dalí in a townhouse.</p>
+            </div>
+            <span class="badge-status status-resolved">✓ Resolved (52.3587, 4.8820)</span>
+          </div>
+          <div class="place-item">
+            <div>
+              <span class="place-name">Anne Frank House</span><span class="place-category">landmark</span>
+              <p class="place-details">Extracted: Historic Secret Annex where Anne Frank wrote her diary during WWII.</p>
+            </div>
+            <span class="badge-status status-resolved">✓ Resolved (52.3752, 4.8840)</span>
+          </div>
+          <div class="place-item">
+            <div>
+              <span class="place-name">Corner Bakery Amsterdam</span><span class="place-category">cafe</span>
+              <p class="place-details">Extracted: Brunch & breakfast spot with two city locations, famous for pancakes.</p>
+            </div>
+            <span class="badge-status status-resolved">✓ Resolved (52.3551, 4.8849)</span>
+          </div>
+          <div class="place-item">
+            <div>
+              <span class="place-name">The Burger Maffia</span><span class="place-category">restaurant</span>
+              <p class="place-details">Extracted: Delicious smash burgers & cocktails in the heart of Amsterdam.</p>
+            </div>
+            <span class="badge-status status-resolved">✓ Resolved (52.3683, 4.8693)</span>
+          </div>
+          <div class="place-item">
+            <div>
+              <span class="place-name">Ripley's Believe It or Not!</span><span class="place-category">landmark</span>
+              <p class="place-details">Extracted: 5 floors of entertainment, oddities and interactive exhibits on Dam Square.</p>
+            </div>
+            <span class="badge-status status-resolved">✓ Resolved (52.3728, 4.8936)</span>
+          </div>
+          <div class="place-item">
+            <div>
+              <span class="place-name">Red Light District (De Wallen)</span><span class="place-category">neighborhood</span>
+              <p class="place-details">Extracted: Historic canal quarter famous for nightlife, Moulin Rouge, and Red Light Secrets museum.</p>
+            </div>
+            <span class="badge-status status-resolved">✓ Resolved (52.3725, 4.8978)</span>
+          </div>
+          <div class="place-item">
+            <div>
+              <span class="place-name">Zaandam &amp; Amsterdam Boundary</span><span class="place-category">city</span>
+              <p class="place-details">Broad administrative city names filtered by travel category gate.</p>
+            </div>
+            <span class="badge-status status-rejected">✗ Rejected (City boundary)</span>
+          </div>
+          <div class="place-item">
+            <div>
+              <span class="place-name">Loop 51 &amp; Stanley Hotel</span><span class="place-category">cafe / hotel</span>
+              <p class="place-details">Tagged IG accounts with missing/ambiguous Nominatim POI matches.</p>
+            </div>
+            <span class="badge-status status-unresolved">⚠️ Unresolved (Needs manual link)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stage 4 -->
+      <div class="stage-section">
+        <div class="stage-header">
+          <div class="stage-title stage-4-title">Stage 4 · Final Results: Intuitive Summaries &amp; Sanitized Facts</div>
+          <span class="tab-badge">Ready for Travel Details Card</span>
+        </div>
+
+        <!-- Place 1 -->
+        <div class="result-card">
+          <div class="result-card-header">
+            <span class="result-card-title">Moco Museum</span>
+            <span class="result-card-geo">Honthorststraat 20 · 52.3587°N, 4.8820°E</span>
+          </div>
+          <div class="intuitive-summary">
+            <strong>Intuitive Summary</strong>
+            A boutique contemporary art museum set in a historic Museumplein townhouse, renowned for its energetic, subversive exhibitions featuring Banksy, Andy Warhol, and Jean-Michel Basquiat alongside immersive digital art installations.
+          </div>
+          <div class="facts-grid">
+            <div class="fact-item"><div class="fact-label">Opening Hours</div><div class="fact-value">09:30 – 17:00 Daily</div></div>
+            <div class="fact-item"><div class="fact-label">Admission / Tickets</div><div class="fact-value">~€21.95 (Online booking required)</div></div>
+            <div class="fact-item"><div class="fact-label">Official Website</div><div class="fact-value"><a href="https://www.mocomuseum.com/amsterdam/" target="_blank">mocomuseum.com/amsterdam</a></div></div>
+            <div class="fact-item"><div class="fact-label">Best Time To Visit</div><div class="fact-value">Weekday mornings before 11:00 AM</div></div>
+          </div>
+          <div class="tips-list">
+            <div class="tip-pill"><span class="tip-tag tag-creator">Creator Tip</span><span>Features prominent Banksy originals and 5 interactive digital rooms in the lower level.</span></div>
+            <div class="tip-pill"><span class="tip-tag tag-logistics">Logistics</span><span>Timed-entry slots fill up fast; book online to bypass the main entrance line.</span></div>
+            <div class="tip-pill"><span class="tip-tag tag-logistics">Pairing</span><span>Located directly between the Van Gogh Museum and Rijksmuseum for an easy Museumplein crawl.</span></div>
+          </div>
+        </div>
+
+        <!-- Place 2 -->
+        <div class="result-card">
+          <div class="result-card-header">
+            <span class="result-card-title">Anne Frank House</span>
+            <span class="result-card-geo">Westermarkt 20 · 52.3752°N, 4.8840°E</span>
+          </div>
+          <div class="intuitive-summary">
+            <strong>Intuitive Summary</strong>
+            The sobering 17th-century canal house on the Prinsengracht where Anne Frank and her family hid in the Secret Annex during World War II, preserved today as an intimate and deeply moving historical museum.
+          </div>
+          <div class="facts-grid">
+            <div class="fact-item"><div class="fact-label">Opening Hours</div><div class="fact-value">09:00 – 22:00 Daily</div></div>
+            <div class="fact-item"><div class="fact-label">Admission / Tickets</div><div class="fact-value">€16.00 (Timed ticket mandatory)</div></div>
+            <div class="fact-item"><div class="fact-label">Official Website</div><div class="fact-value"><a href="https://www.annefrank.org/" target="_blank">annefrank.org</a></div></div>
+            <div class="fact-item"><div class="fact-label">Accessibility</div><div class="fact-value">Steep historic stairs; audio guide included</div></div>
+          </div>
+          <div class="tips-list">
+            <div class="tip-pill"><span class="tip-tag tag-advisory">Strict Rule</span><span>Tickets release exclusively online exactly 6 weeks in advance on Tuesdays at 10:00 AM CET; zero walk-ins permitted.</span></div>
+            <div class="tip-pill"><span class="tip-tag tag-creator">Creator Tip</span><span>Allow at least 75–90 minutes for the audio guide walk through the warehouse and Secret Annex.</span></div>
+          </div>
+        </div>
+
+        <!-- Place 3 -->
+        <div class="result-card">
+          <div class="result-card-header">
+            <span class="result-card-title">Corner Bakery Amsterdam</span>
+            <span class="result-card-geo">Johannes Vermeerstraat 40 · 52.3551°N, 4.8849°E</span>
+          </div>
+          <div class="intuitive-summary">
+            <strong>Intuitive Summary</strong>
+            A cheerful, photogenic brunch destination in Oud-Zuid famous for decadent stuffed pancakes, towering milkshakes, hearty sandwiches, and vibrant breakfast boards.
+          </div>
+          <div class="facts-grid">
+            <div class="fact-item"><div class="fact-label">Opening Hours</div><div class="fact-value">11:30 – 22:30 Daily</div></div>
+            <div class="fact-item"><div class="fact-label">Phone Number</div><div class="fact-value">+31 6 81157537</div></div>
+            <div class="fact-item"><div class="fact-label">Cuisines</div><div class="fact-value">Brunch, Pancakes, Pastries, Coffee</div></div>
+            <div class="fact-item"><div class="fact-label">Website</div><div class="fact-value"><a href="https://www.cornerbakeryamsterdam.com/" target="_blank">cornerbakeryamsterdam.com</a></div></div>
+          </div>
+          <div class="tips-list">
+            <div class="tip-pill"><span class="tip-tag tag-creator">Creator Tip</span><span>Must-try dish is their signature red velvet pancake stack and loaded iced drinks.</span></div>
+            <div class="tip-pill"><span class="tip-tag tag-logistics">Timing</span><span>Peak wait times run between 12:00 PM and 2:00 PM on weekends; arrive before 11:45 AM for quick seating.</span></div>
+          </div>
+        </div>
+
+        <!-- Place 4 -->
+        <div class="result-card">
+          <div class="result-card-header">
+            <span class="result-card-title">The Burger Maffia</span>
+            <span class="result-card-geo">Kinkerstraat 282 · 52.3683°N, 4.8693°E</span>
+          </div>
+          <div class="intuitive-summary">
+            <strong>Intuitive Summary</strong>
+            A cult-favorite local burger bar serving crispy-edged smash patties on toasted brioche with house truffle glazes, paired with loaded fries and crafted shakes.
+          </div>
+          <div class="facts-grid">
+            <div class="fact-item"><div class="fact-label">Phone Number</div><div class="fact-value">+31 20 2213794</div></div>
+            <div class="fact-item"><div class="fact-label">Cuisine</div><div class="fact-value">Smash Burgers &amp; Loaded Sides</div></div>
+            <div class="fact-item"><div class="fact-label">Price Level</div><div class="fact-value">€€ (Moderate casual)</div></div>
+            <div class="fact-item"><div class="fact-label">Website</div><div class="fact-value"><a href="https://theburgermaffia.nl/" target="_blank">theburgermaffia.nl</a></div></div>
+          </div>
+          <div class="tips-list">
+            <div class="tip-pill"><span class="tip-tag tag-creator">Creator Tip</span><span>Known for having the crispest smash patties in west Amsterdam; quick turnover makes it great for dinner before canal walks.</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 2: IMAGE ITINERARY ==================== -->
+    <section id="tab-image" class="reel-view">
+      <!-- Stage 1 -->
+      <div class="stage-section">
+        <div class="stage-header">
+          <div class="stage-title stage-1-title">Stage 1 · Data Source Ingestion (Clean Content vs Ignored Metadata)</div>
+          <span class="tab-badge">Media: Single Image Graphic (DZTAioMOzIW)</span>
+        </div>
+        <div class="grid-2">
+          <div class="data-box">
+            <h4>Raw Content Extracted &amp; Preserved</h4>
+            <div style="margin-bottom: 8px;">
+              <span class="included-pill">✓ Full Caption</span>
+              <span class="included-pill">✓ High-Res Vision OCR (Timeline &amp; Spots)</span>
+            </div>
+            <pre class="raw-content"><strong>Caption:</strong>
+Amsterdam itinerary for one day🌷 Save this for later📌
+
+<strong>Full Infographic OCR Text (image_text):</strong>
+AMSTERDAM ITINERARY - DAY 1 • BEST OF AMSTERDAM
+Morning
+8:00 AM - 9:00 AM Coffee & breakfast in Jordaan
+9:30 AM - 11:00 AM Dam Square
+11:00 AM - 12:00 PM Royal Palace Amsterdam
+Afternoon
+12:30 PM - 1:30 PM Lunch at De Negen Straatjes (Nine Streets)
+2:00 PM - 4:00 PM Canal Cruise through the historic canals
+4:00 PM - 5:30 PM Shopping at Nine Streets & Kalverstraat
+Evening
+6:00 PM - 7:30 PM Traditional Dutch Dinner (Must Try: Dutch Cheese, Herring, Dutch Pancakes)
+8:00 PM - 9:30 PM Sunset walk along the canals
+9:30 PM Fresh Stroopwafel for dessert
+MUST VISIT: Dam Square, Royal Palace Amsterdam, Jordaan District, Nine Streets, Amsterdam Canals</pre>
+          </div>
+          <div class="data-box">
+            <h4>Ignored Social Vanity Metadata (Dropped)</h4>
+            <p style="color: var(--text-muted); margin-bottom: 12px;">The updated pipeline drops ephemeral vanity metrics:</p>
+            <div>
+              <span class="excluded-pill">✗ 119 Likes</span>
+              <span class="excluded-pill">✗ 1 Comment ("Amsterdam")</span>
+              <span class="excluded-pill">✗ Algorithm Distribution Score</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stage 2 & 3 -->
+      <div class="stage-section">
+        <div class="stage-header">
+          <div class="stage-title stage-2-title">Stages 2 &amp; 3 · Places Extracted &amp; Geocoded Resolution</div>
+          <span class="tab-badge">Timed Stops Mapped</span>
+        </div>
+        <div class="places-list">
+          <div class="place-item">
+            <div>
+              <span class="place-name">Royal Palace Amsterdam</span><span class="place-category">landmark</span>
+              <p class="place-details">Extracted: Mid-day visit (11:00 AM - 12:00 PM) to historical state palace on Dam Square.</p>
+            </div>
+            <span class="badge-status status-resolved">✓ Resolved (52.3732, 4.8913)</span>
+          </div>
+          <div class="place-item">
+            <div>
+              <span class="place-name">De Negen Straatjes (Nine Streets)</span><span class="place-category">neighborhood</span>
+              <p class="place-details">Extracted: Lunch stop (12:30 PM) and afternoon boutique shopping (4:00 PM).</p>
+            </div>
+            <span class="badge-status status-resolved">✓ Resolved (52.3702, 4.8845)</span>
+          </div>
+          <div class="place-item">
+            <div>
+              <span class="place-name">Dam Square</span><span class="place-category">square</span>
+              <p class="place-details">Extracted: Central square morning stop (9:30 AM - 11:00 AM).</p>
+            </div>
+            <span class="badge-status status-resolved">✓ Resolved (52.3731, 4.8924)</span>
+          </div>
+          <div class="place-item">
+            <div>
+              <span class="place-name">Kalverstraat</span><span class="place-category">shopping</span>
+              <p class="place-details">Extracted: Popular retail shopping street (4:00 PM - 5:30 PM).</p>
+            </div>
+            <span class="badge-status status-resolved">✓ Resolved (Amsterdam Shopping Street)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stage 4 -->
+      <div class="stage-section">
+        <div class="stage-header">
+          <div class="stage-title stage-4-title">Stage 4 · Final Results: Intuitive Summaries &amp; Sanitized Facts</div>
+          <span class="tab-badge">Itinerary-Aware Sanitization</span>
+        </div>
+
+        <div class="result-card">
+          <div class="result-card-header">
+            <span class="result-card-title">Royal Palace Amsterdam (Koninklijk Paleis)</span>
+            <span class="result-card-geo">Dam Square · 52.3732°N, 4.8913°E</span>
+          </div>
+          <div class="intuitive-summary">
+            <strong>Intuitive Summary</strong>
+            The grand 17th-century Golden Age town hall converted into King Willem-Alexander’s official reception palace on Dam Square, celebrated for its monumental marble Citizens’ Hall, soaring ceilings, and imperial chandeliers.
+          </div>
+          <div class="facts-grid">
+            <div class="fact-item"><div class="fact-label">Opening Hours</div><div class="fact-value">10:00 – 17:00 (Check state visit closures)</div></div>
+            <div class="fact-item"><div class="fact-label">Admission</div><div class="fact-value">€12.50 (Audio guide included; free under 18)</div></div>
+            <div class="fact-item"><div class="fact-label">Official Website</div><div class="fact-value"><a href="https://www.paleisamsterdam.nl/" target="_blank">paleisamsterdam.nl</a></div></div>
+            <div class="fact-item"><div class="fact-label">Suggested Pacing</div><div class="fact-value">60 minutes (11:00 AM – 12:00 PM)</div></div>
+          </div>
+          <div class="tips-list">
+            <div class="tip-pill"><span class="tip-tag tag-creator">Itinerary Tip</span><span>Scheduled perfectly right after an early walk around Dam Square before heading to Nine Streets for lunch.</span></div>
+            <div class="tip-pill"><span class="tip-tag tag-logistics">Must See</span><span>Look down in the Citizens' Hall to view the massive 17th-century marble maps of the eastern and western hemispheres.</span></div>
+          </div>
+        </div>
+
+        <div class="result-card">
+          <div class="result-card-header">
+            <span class="result-card-title">De Negen Straatjes (The Nine Streets)</span>
+            <span class="result-card-geo">Between Prinsengracht &amp; Singel · 52.3702°N, 4.8845°E</span>
+          </div>
+          <div class="intuitive-summary">
+            <strong>Intuitive Summary</strong>
+            A postcard-perfect network of nine micro-streets crossing Amsterdam’s four main canals, packed with independent fashion boutiques, vintage treasure troves, cozy brown cafes, and specialty bakeries.
+          </div>
+          <div class="facts-grid">
+            <div class="fact-item"><div class="fact-label">Best Visiting Hours</div><div class="fact-value">11:00 – 18:00 (Stores open late morning)</div></div>
+            <div class="fact-item"><div class="fact-label">Neighborhood Category</div><div class="fact-value">Historic Boutique &amp; Dining Quarter</div></div>
+            <div class="fact-item"><div class="fact-label">Location</div><div class="fact-value">Western Canal Belt (Grachtengordel)</div></div>
+            <div class="fact-item"><div class="fact-label">Key Food Spots</div><div class="fact-value">Gouda tastings &amp; fresh stroopwafels</div></div>
+          </div>
+          <div class="tips-list">
+            <div class="tip-pill"><span class="tip-tag tag-creator">Creator Tip</span><span>Split time here into two windows: casual lunch between 12:30–1:30 PM, then revisit at 4:00 PM for boutique shopping.</span></div>
+            <div class="tip-pill"><span class="tip-tag tag-logistics">Food Advisory</span><span>Try fresh warm syrup stroopwafels made to order rather than pre-packaged tins.</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 3: KAYAK REEL ==================== -->
+    <section id="tab-kayak" class="reel-view">
+      <!-- Stage 1 -->
+      <div class="stage-section">
+        <div class="stage-header">
+          <div class="stage-title stage-1-title">Stage 1 · Data Source Ingestion (Clean Content vs Ignored Metadata)</div>
+          <span class="tab-badge">Media: Reel Video with Multimodal Scene Analysis (DI4Q-yuMH0h)</span>
+        </div>
+        <div class="grid-2">
+          <div class="data-box">
+            <h4>Raw Content Extracted &amp; Preserved</h4>
+            <div style="margin-bottom: 8px;">
+              <span class="included-pill">✓ Full Caption</span>
+              <span class="included-pill">✓ Multimodal Scene Analysis</span>
+              <span class="included-pill">✓ Tagged Handle (@amsterdamkayakin)</span>
+            </div>
+            <pre class="raw-content"><strong>Caption:</strong>
+and we had ZERO previous experience! 🛶
+We had the BEST time exploring Amsterdam’s world-famous canals with @amsterdamkayakin 🇳🇱
+Our fantastic instructor welcomed us into his beautiful home and gave a quick history lesson before getting us into the kayaks. We then rowed our way through the charming neighbourhood of Jordaan whilst stopping at popular sites and landmarks for photos 📸
+
+<strong>Video Scene Analysis (video_analysis):</strong>
+Scene: A couple contrasts traditional sightseeing in Amsterdam with their own adventurous approach. They first pose for a traditional photo on a bridge, then the video cuts to them energetically kayaking through the Amsterdam canals, passing by historic buildings and the Westerkerk tower.
+On-screen text: Normal people exploring Amsterdam: vs Us:
+Place: Amsterdam Canals (waterway) — Kayaking route.
+Place: Westerkerk (church / landmark) — Distinctive steeple visible in background.</pre>
+          </div>
+          <div class="data-box">
+            <h4>Ignored Social Vanity Metadata (Dropped)</h4>
+            <p style="color: var(--text-muted); margin-bottom: 12px;">Dropped vanity fields:</p>
+            <div>
+              <span class="excluded-pill">✗ 560 Likes</span>
+              <span class="excluded-pill">✗ 32 Comments</span>
+              <span class="excluded-pill">✗ Audio Track ID</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stage 2 & 3 -->
+      <div class="stage-section">
+        <div class="stage-header">
+          <div class="stage-title stage-2-title">Stages 2 &amp; 3 · Places Extracted &amp; Geocoded Resolution</div>
+          <span class="tab-badge">Activity &amp; Landmarks Resolved</span>
+        </div>
+        <div class="places-list">
+          <div class="place-item">
+            <div>
+              <span class="place-name">Westerkerk</span><span class="place-category">landmark</span>
+              <p class="place-details">Extracted: Notable church steeple visible while kayaking through the western canals.</p>
+            </div>
+            <span class="badge-status status-resolved">✓ Resolved (52.3745, 4.8840)</span>
+          </div>
+          <div class="place-item">
+            <div>
+              <span class="place-name">Amsterdam Canal Kayak Route (Jordaan Belt)</span><span class="place-category">water activity</span>
+              <p class="place-details">Extracted: Water-level paddle tour through Jordaan canals with historical stops.</p>
+            </div>
+            <span class="badge-status status-resolved">✓ Resolved (Western Canal Ring)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stage 4 -->
+      <div class="stage-section">
+        <div class="stage-header">
+          <div class="stage-title stage-4-title">Stage 4 · Final Results: Intuitive Summaries &amp; Sanitized Facts</div>
+          <span class="tab-badge">Activity &amp; Landmark Cards</span>
+        </div>
+
+        <div class="result-card">
+          <div class="result-card-header">
+            <span class="result-card-title">Amsterdam Canal Kayak Experience (@amsterdamkayakin)</span>
+            <span class="result-card-geo">Jordaan Canals · Guided Water Tour</span>
+          </div>
+          <div class="intuitive-summary">
+            <strong>Intuitive Summary</strong>
+            An adventurous, crowd-free alternative to commercial motorized tour boats, letting travelers paddle through peaceful canal belts in Jordaan guided by a local resident with historical storytelling and bridge photography stops.
+          </div>
+          <div class="facts-grid">
+            <div class="fact-item"><div class="fact-label">Skill Level Required</div><div class="fact-value">Beginner (Zero prior experience needed)</div></div>
+            <div class="fact-item"><div class="fact-label">Equipment Provided</div><div class="fact-value">Kayaks, paddles, life vests, dry bags</div></div>
+            <div class="fact-item"><div class="fact-label">Tour Duration</div><div class="fact-value">Approx. 90 – 120 minutes</div></div>
+            <div class="fact-item"><div class="fact-label">Booking Handle</div><div class="fact-value"><a href="https://instagram.com/amsterdamkayakin" target="_blank">@amsterdamkayakin</a></div></div>
+          </div>
+          <div class="tips-list">
+            <div class="tip-pill"><span class="tip-tag tag-creator">Creator Tip</span><span>Includes a brief intro history lesson in the instructor's canal home before hitting the water.</span></div>
+            <div class="tip-pill"><span class="tip-tag tag-logistics">Attire</span><span>Wear athletic clothing and quick-dry shoes; light splashing occurs while paddling under brick bridges.</span></div>
+          </div>
+        </div>
+
+        <div class="result-card">
+          <div class="result-card-header">
+            <span class="result-card-title">Westerkerk</span>
+            <span class="result-card-geo">Prinsengracht 279 · 52.3745°N, 4.8840°E</span>
+          </div>
+          <div class="intuitive-summary">
+            <strong>Intuitive Summary</strong>
+            Amsterdam's iconic 17th-century Renaissance church famous for its soaring 85-meter spire (the highest in the city), its dramatic bells, and for being the final resting place of master painter Rembrandt van Rijn.
+          </div>
+          <div class="facts-grid">
+            <div class="fact-item"><div class="fact-label">Official Website</div><div class="fact-value"><a href="https://www.westerkerk.nl/" target="_blank">westerkerk.nl</a></div></div>
+            <div class="fact-item"><div class="fact-label">Category</div><div class="fact-value">Historic Landmark / Church</div></div>
+            <div class="fact-item"><div class="fact-label">Location</div><div class="fact-value">Prinsengracht corner Westermarkt</div></div>
+          </div>
+          <div class="tips-list">
+            <div class="tip-pill"><span class="tip-tag tag-creator">Photo Tip</span><span>Provides one of the best backdrop angles in the city when looking up from canal water level.</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 4: SUOBUYA ==================== -->
+    <section id="tab-suobuya" class="reel-view">
+      <!-- Stage 1 -->
+      <div class="stage-section">
+        <div class="stage-header">
+          <div class="stage-title stage-1-title">Stage 1 · Data Source Ingestion (Clean Content vs Ignored Metadata)</div>
+          <span class="tab-badge">Media: Reel Video &amp; Frame OCR (Db6I58kCI7F)</span>
+        </div>
+        <div class="grid-2">
+          <div class="data-box">
+            <h4>Raw Content Extracted &amp; Preserved</h4>
+            <div style="margin-bottom: 8px;">
+              <span class="included-pill">✓ Full Caption</span>
+              <span class="included-pill">✓ Video Analysis</span>
+              <span class="included-pill">✓ Frame OCR Text</span>
+            </div>
+            <pre class="raw-content"><strong>Caption:</strong>
+📍 Suobuya Stone Forest, Taiyanghe, Hubei, China
+🌊 460 million years ago, this place was the floor of an ancient ocean.
+Over hundreds of millions of years, geological forces transformed those ancient seabed rocks into a spectacular maze of towering stone walls, narrow gorges and deep passages.
+🌿 Today, the cliffs are covered with moss and lush vegetation, creating an almost otherworldly landscape. Some of the rock formations rise dramatically around narrow pathways where visitors can walk deep into the stone forest.
+
+<strong>Video Analysis (video_analysis):</strong>
+Scene: A woman walks through a narrow canyon with steep, mossy stone walls that resemble ancient sedimentary layers. Sunlight beams through the gorge.
+On-screen text: Imagine standing on the floor of an ocean that disappeared 460 million years ago.
+
+<strong>Frame OCR (image_text):</strong>
+📍 Suobuya Stone Forest, Taiyanghe, Hunan/Hubei, China 🇨🇳</pre>
+          </div>
+          <div class="data-box">
+            <h4>Ignored Social Vanity Metadata (Dropped)</h4>
+            <p style="color: var(--text-muted); margin-bottom: 12px;">Dropped vanity fields:</p>
+            <div>
+              <span class="excluded-pill">✗ 136,740 Likes</span>
+              <span class="excluded-pill">✗ 1,732,040 Plays</span>
+              <span class="excluded-pill">✗ 288 Comments</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stage 2 & 3 -->
+      <div class="stage-section">
+        <div class="stage-header">
+          <div class="stage-title stage-2-title">Stages 2 &amp; 3 · Places Extracted &amp; Geocoded Resolution</div>
+          <span class="tab-badge">National Geological Park</span>
+        </div>
+        <div class="places-list">
+          <div class="place-item">
+            <div>
+              <span class="place-name">Suobuya Stone Forest (梭布垭石林)</span><span class="place-category">geological park / nature reserve</span>
+              <p class="place-details">Extracted: 460-million-year-old ancient ocean seabed karst formation in Taiyanghe, Enshi.</p>
+            </div>
+            <span class="badge-status status-resolved">✓ Resolved (30.5771, 109.5729)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stage 4 -->
+      <div class="stage-section">
+        <div class="stage-header">
+          <div class="stage-title stage-4-title">Stage 4 · Final Results: Intuitive Summaries &amp; Sanitized Facts</div>
+          <span class="tab-badge">Geological Wonder</span>
+        </div>
+
+        <div class="result-card">
+          <div class="result-card-header">
+            <span class="result-card-title">Suobuya Stone Forest (梭布垭石林景区)</span>
+            <span class="result-card-geo">Enshi Prefecture, Hubei · 30.5771°N, 109.5729°E</span>
+          </div>
+          <div class="intuitive-summary">
+            <strong>Intuitive Summary</strong>
+            A surreal 460-million-year-old Ordovician karst stone forest spanning 21 square kilometers in Enshi, Hubei. Once an ancient seabed, geological forces sculpted it into a maze of towering mossy limestone monoliths, underground chambers, and lush slot canyons.
+          </div>
+          <div class="facts-grid">
+            <div class="fact-item"><div class="fact-label">Opening Hours</div><div class="fact-value">08:30 – 17:00 (Peak season: Apr – Oct)</div></div>
+            <div class="fact-item"><div class="fact-label">Admission Fee</div><div class="fact-value">~¥78 – ¥120 (Includes internal shuttle bus)</div></div>
+            <div class="fact-item"><div class="fact-label">Key Scenic Areas</div><div class="fact-value">Lotus Valley (莲花寨), Grinding Stone Ravine (磨子沟)</div></div>
+            <div class="fact-item"><div class="fact-label">Transit from Enshi City</div><div class="fact-value">~54 km north (approx. 90-min drive or bus)</div></div>
+          </div>
+          <div class="tips-list">
+            <div class="tip-pill"><span class="tip-tag tag-creator">Creator Fact</span><span>Walk directly through ancient seabed strata where sedimentary stone layers date back 460 million years.</span></div>
+            <div class="tip-pill"><span class="tip-tag tag-logistics">Footwear Advisory</span><span>Expect hundreds of damp, mossy stone steps; sturdy non-slip walking shoes or trail runners are strictly essential.</span></div>
+            <div class="tip-pill"><span class="tip-tag tag-logistics">Best Photography Light</span><span>Visit between 10:30 AM and 1:30 PM when the midday sun penetrates the deep narrow ravines to create dramatic vertical light beams.</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    function showTab(tabId, btn) {
+      document.querySelectorAll('.reel-view').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+      document.getElementById(tabId).classList.add('active');
+      btn.classList.add('active');
+    }
+  </script>
+</body>
+</html>

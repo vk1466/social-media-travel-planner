@@ -321,6 +321,7 @@ def trim_post_info(raw: dict[str, Any]) -> dict[str, Any]:
     "places": extract_places(raw),
     "hashtags": extract_hashtags_from_raw(raw, caption),
     "thumbnail_url": extract_thumbnail_url(raw),
+    "slide_media_urls": tuple(extract_slide_image_urls(raw)),
   }
 
 

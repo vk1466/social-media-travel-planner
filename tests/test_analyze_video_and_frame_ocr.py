@@ -61,7 +61,7 @@ def test_extract_reel_frame_text_skips_when_flag_off() -> None:
     mock_read.assert_not_called()
     assert result.image_text is None
   finally:
-    FeatureFlag.set("extract_reel_frame_text", True)
+    FeatureFlag.set("extract_reel_frame_text", False)
 
 
 def test_extract_reel_frame_text_sets_image_text_when_enabled() -> None:
@@ -72,14 +72,17 @@ def test_extract_reel_frame_text_sets_image_text_when_enabled() -> None:
     shortcode="abc",
     raw_payload={"video_url": "https://cdn.example/v.mp4"},
   )
-  FeatureFlag.set("extract_reel_frame_text", True)
-  with patch(
-    "travelplanner.steps.instagram.extract_reel_frame_text.read_reel_frame_text",
-    return_value="Håen📍",
-  ) as mock_read:
-    result = extract_reel_frame_text(ctx)
-  mock_read.assert_called_once_with("https://cdn.example/v.mp4")
-  assert result.image_text == "Håen📍"
+  try:
+    FeatureFlag.set("extract_reel_frame_text", True)
+    with patch(
+      "travelplanner.steps.instagram.extract_reel_frame_text.read_reel_frame_text",
+      return_value="Håen📍",
+    ) as mock_read:
+      result = extract_reel_frame_text(ctx)
+    mock_read.assert_called_once_with("https://cdn.example/v.mp4")
+    assert result.image_text == "Håen📍"
+  finally:
+    FeatureFlag.set("extract_reel_frame_text", False)
 
 
 def test_extract_reel_frame_text_reads_mindcase_video_url() -> None:
@@ -90,11 +93,14 @@ def test_extract_reel_frame_text_reads_mindcase_video_url() -> None:
     shortcode="abc",
     raw_payload={"videoUrl": "https://cdn.example/mindcase.mp4"},
   )
-  FeatureFlag.set("extract_reel_frame_text", True)
-  with patch(
-    "travelplanner.steps.instagram.extract_reel_frame_text.read_reel_frame_text",
-    return_value="Quán chay",
-  ) as mock_read:
-    result = extract_reel_frame_text(ctx)
-  mock_read.assert_called_once_with("https://cdn.example/mindcase.mp4")
-  assert result.image_text == "Quán chay"
+  try:
+    FeatureFlag.set("extract_reel_frame_text", True)
+    with patch(
+      "travelplanner.steps.instagram.extract_reel_frame_text.read_reel_frame_text",
+      return_value="Quán chay",
+    ) as mock_read:
+      result = extract_reel_frame_text(ctx)
+    mock_read.assert_called_once_with("https://cdn.example/mindcase.mp4")
+    assert result.image_text == "Quán chay"
+  finally:
+    FeatureFlag.set("extract_reel_frame_text", False)

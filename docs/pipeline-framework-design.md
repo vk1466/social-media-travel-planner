@@ -67,8 +67,11 @@ in [AGENTS.md](../AGENTS.md#feature-flags).
 | Flip with `FeatureFlag.set(...)` in tests/ops | Turn risky paths on by default in prod |
 | Ship incomplete steps (e.g. OCR) behind a flag | |
 
-Examples already in this design: `extract_image_text`, `extract_video_analysis`,
-and `extract_reel_frame_text` stay flagged off until validated; place-facts
+Media defaults: `extract_image_text` on (image/carousel OCR), `extract_video_analysis`
+on (Supadata for reel/video), `extract_reel_frame_text` off (travel reels use
+video analysis; optional override). Recipe video frame OCR runs in
+`extract_recipe_frames` when `food_recipes` is on. Other examples:
+`place_facts` and related knobs stay flagged off until validated; place-facts
 enrichment uses `place_facts`. Post topic classification uses `content_categories`
 (currently on in this environment): ingest stamps `SavedPost.content_category`
 then dispatches close by category — **place** pipeline for travel (and unset;
@@ -211,8 +214,8 @@ travelplanner/steps/
     seed_instagram_post.py
     fetch_media.py
     fetch_transcript.py
-    analyze_video.py         # Supadata multimodal; flag extract_video_analysis
-    extract_reel_frame_text.py  # frame OCR; flag extract_reel_frame_text
+    analyze_video.py         # Supadata multimodal; flag extract_video_analysis (reel/video)
+    extract_reel_frame_text.py  # optional reel/video frame OCR; flag extract_reel_frame_text
     extract_image_text.py    # OCR for image/carousel; flag extract_image_text
 ```
 

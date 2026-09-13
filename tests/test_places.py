@@ -380,6 +380,37 @@ def test_upsert_place_merges_into_existing_place(dynamodb) -> None:
   assert merged.source_post_ids == ("instagram:abc123", "youtube:xyz789")
 
 
+def test_upsert_place_drops_generic_mention_details(dynamodb) -> None:
+  location = PlaceLocation(
+    display_name="Eiffel Tower",
+    country="France",
+    country_code="FR",
+    city="Paris",
+    latitude=48.8584,
+    longitude=2.2945,
+  )
+  upsert_place(
+    PlaceMention(
+      place_name="Eiffel Tower",
+      details="An iconic landmark and symbol of Paris, offering stunning views of the city.",
+    ),
+    location,
+    "instagram:one",
+  )
+  upsert_place(
+    PlaceMention(
+      place_name="Eiffel Tower",
+      details="The Eiffel Tower is best enjoyed with a picnic at Champ de Mars rather than going to the top.",
+    ),
+    location,
+    "instagram:two",
+  )
+  merged = load_all_places()[0]
+  assert merged.details == (
+    "The Eiffel Tower is best enjoyed with a picnic at Champ de Mars rather than going to the top.",
+  )
+
+
 def test_upsert_place_merges_near_duplicate_coordinates_without_shared_key(dynamodb) -> None:
   first_location = PlaceLocation(
     display_name="Multnomah Falls",

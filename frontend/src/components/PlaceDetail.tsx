@@ -10,13 +10,25 @@ import {
 } from "../api";
 import { googleMapsUrl } from "../maps";
 import { factsAttribution, factsStructuredRows } from "../placeFacts";
+import { compactMentionDetails } from "../mentionDetails";
 import { getPlatformLabel, getPostTitle } from "../postDisplayUtils";
 import { thumbStyle } from "../postBrowseModel";
-import { mappablePlaces } from "../placeMapUtils";
-import { DetailModal } from "./DetailModal";
 import { CategoryChip } from "./CategoryChip";
-import { PostPlacesMap } from "./PostPlacesMap";
+import { DetailModal } from "./DetailModal";
 import { RelationRail, type RelationRailItem } from "./RelationRail";
+
+function GoogleMapsIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+      <path fill="#34A853" d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7z" />
+      <path fill="#FBBC04" d="M12 2v20s7-7.75 7-13a7 7 0 0 0-7-7z" />
+      <path fill="#EA4335" d="M12 9v13s7-7.75 7-13H12z" />
+      <path fill="#4285F4" d="M5 9a7 7 0 0 0 1.76 4.7L12 22V9H5z" />
+      <circle cx="12" cy="9" r="3.15" fill="#1A73E8" />
+      <circle cx="12" cy="9" r="1.45" fill="var(--on-fill)" />
+    </svg>
+  );
+}
 
 interface PlaceDetailProps {
   place: Place;
@@ -28,15 +40,16 @@ interface PlaceDetailProps {
 }
 
 function locationBreadcrumb(place: Place): string {
-  const { city, state_province: stateProvince, country, continent } = place.location;
-  return [city, stateProvince, country, continent].filter(Boolean).join(" · ") || "Location unknown";
-}
-
-const FALLBACK_HUES = [152, 28, 205, 168, 42];
-
-function coverFallback(index: number): string {
-  const hue = FALLBACK_HUES[index % FALLBACK_HUES.length];
-  return `linear-gradient(145deg, hsl(${hue} 28% 42%), hsl(${hue + 30} 18% 22%))`;
+  const {
+    city,
+    state_province: stateProvince,
+    country,
+    continent,
+  } = place.location;
+  return (
+    [city, stateProvince, country, continent].filter(Boolean).join(" · ") ||
+    "Location unknown"
+  );
 }
 
 export function PlaceDetail({
@@ -64,17 +77,13 @@ export function PlaceDetail({
       setLoading(true);
       try {
         const fresh = await fetchPlaceDetail(initialPlace.place_id);
-        if (!cancelled) {
-          setDetail(fresh);
-        }
+        if (!cancelled) setDetail(fresh);
       } catch {
         if (!cancelled) {
           setDetail({ place: initialPlace, source_posts: [], children: [] });
         }
       } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
+        if (!cancelled) setLoading(false);
       }
     }
 
@@ -89,7 +98,11 @@ export function PlaceDetail({
   const parent = detail?.parent ?? null;
   const children = detail?.children ?? [];
   const mapUrl = place.google_maps_url || googleMapsUrl(place.location);
-  const mapPlaces = useMemo(() => [place, ...children], [place, children]);
+  const facts = place.facts;
+  const whyGoDetails = compactMentionDetails(place.details, place.display_name);
+  const factRows =
+    facts && facts.status !== "empty" ? factsStructuredRows(facts) : [];
+
   const savedFromItems = useMemo((): RelationRailItem[] => {
     return sourcePosts.map((post, index) => {
       const style = thumbStyle(
@@ -114,12 +127,6 @@ export function PlaceDetail({
         },
         index,
       );
-      const background =
-        typeof style.backgroundImage === "string"
-          ? style.backgroundImage
-          : post.thumbnail_url
-            ? `url(${post.thumbnail_url})`
-            : coverFallback(index);
       return {
         key: post.post_id,
         to: `/posts/${post.platform}/${nativePostId(post)}`,
@@ -128,32 +135,37 @@ export function PlaceDetail({
           : undefined,
         label: getPostTitle(post),
         sublabel: getPlatformLabel(post),
-        background,
-        shape: "tile" as const,
+        background:
+          typeof style.backgroundImage === "string"
+            ? style.backgroundImage
+            : post.thumbnail_url
+              ? `url(${post.thumbnail_url})`
+              : "var(--theme-soft)",
+        shape: "tile",
       };
     });
   }, [onNavigateToPost, sourcePosts]);
+  const heroBackground =
+    savedFromItems[0]?.background ??
+    "linear-gradient(145deg, var(--theme-mid), var(--theme-fill))";
 
   const handleToggleVisited = async () => {
     setVisitedError(null);
     setVisitedSaving(true);
     const next = !isVisited;
     try {
-      if (next) {
-        await markPlaceVisited(place.place_id);
-      } else {
-        await unmarkPlaceVisited(place.place_id);
-      }
+      if (next) await markPlaceVisited(place.place_id);
+      else await unmarkPlaceVisited(place.place_id);
       setIsVisited(next);
       onVisitedChange?.(place.place_id, next);
     } catch (err) {
-      setVisitedError(err instanceof Error ? err.message : "Failed to update visited status");
+      setVisitedError(
+        err instanceof Error ? err.message : "Failed to update visited status",
+      );
     } finally {
       setVisitedSaving(false);
     }
   };
-
-  const heroBackground = savedFromItems[0]?.background ?? coverFallback(0);
 
   return (
     <DetailModal
@@ -162,223 +174,222 @@ export function PlaceDetail({
       panelClassName="place-cover-panel"
       overlayClassName="place-cover-overlay"
     >
-      <div className="place-cover-detail">
-        <aside className="place-cover-hero" style={{ backgroundImage: heroBackground }}>
-          <button
-            type="button"
-            className="place-cover-close"
-            onClick={onClose}
-            aria-label="Close"
-          >
-            <span aria-hidden="true">×</span>
-          </button>
-          <div className="place-cover-hero-caption">
+      <div className="place-decision-detail">
+        <aside
+          className="place-decision-hero"
+          style={{ backgroundImage: heroBackground }}
+          aria-label={`${place.display_name} cover image`}
+        >
+          <div className="place-decision-hero-caption">
             <span>{place.category || "Saved place"}</span>
             <p>{locationBreadcrumb(place)}</p>
           </div>
         </aside>
 
-        <section className="place-cover-content">
-          <header className="place-cover-header">
-            <div>
-              <p className="place-cover-location">{locationBreadcrumb(place)}</p>
-              <h2 id="place-detail-title">{place.display_name}</h2>
-              {place.aliases.length > 0 && (
-                <p className="place-flip-muted">Also known as {place.aliases.join(", ")}</p>
-              )}
-            </div>
-            <div className="place-cover-actions">
-              {mapUrl && (
-                <a href={mapUrl} target="_blank" rel="noreferrer">
-                  Maps ↗
-                </a>
-              )}
-              <button
-                type="button"
-                className={isVisited ? "is-visited" : ""}
-                onClick={() => void handleToggleVisited()}
-                disabled={visitedSaving}
-                aria-pressed={isVisited}
-              >
-                {visitedSaving ? "Saving…" : isVisited ? "✓ Visited" : "Mark visited"}
-              </button>
-            </div>
-          </header>
+        <button
+          type="button"
+          className="place-cover-close place-decision-close"
+          onClick={onClose}
+          aria-label="Close"
+        >
+          <span aria-hidden="true">×</span>
+        </button>
 
-          <div className="place-cover-tags">
-            <CategoryChip category={place.category} small />
-            {(place.attributes ?? []).map((attr) => (
-              <span key={attr} className="tag-chip tag-chip-small">
-                {attr}
-              </span>
-            ))}
+        <div className="place-decision-content">
+        <header className="place-decision-header">
+          <div className="place-decision-identity">
+            <p className="place-cover-location">{locationBreadcrumb(place)}</p>
+            <h2 id="place-detail-title">{place.display_name}</h2>
+            {place.aliases.length > 0 && (
+              <p className="place-flip-muted">
+                Also known as {place.aliases.join(", ")}
+              </p>
+            )}
+            <div className="place-cover-tags">
+              <CategoryChip category={place.category} small />
+              {(place.attributes ?? []).map((attribute) => (
+                <span key={attribute} className="tag-chip tag-chip-small">
+                  {attribute}
+                </span>
+              ))}
+            </div>
           </div>
-
-          {parent && (
-            <p className="place-cover-parent">
-              Part of{" "}
-              <button
-                type="button"
-                className="place-flip-inline"
-                onClick={() => onNavigateToPlace?.(parent)}
+          <div className="place-cover-actions place-decision-actions">
+            {mapUrl && (
+              <a
+                className="place-decision-map-icon"
+                href={mapUrl}
+                target="_blank"
+                rel="noreferrer"
+                aria-label={`Open ${place.display_name} in Google Maps`}
+                title="Open in Google Maps"
               >
-                {parent.display_name}
-              </button>
-            </p>
-          )}
-          {visitedError && <p className="banner-error">{visitedError}</p>}
-          {loading && <p className="place-flip-muted">Loading latest saved data…</p>}
+                <GoogleMapsIcon />
+              </a>
+            )}
+            <button
+              type="button"
+              className={isVisited ? "is-visited" : ""}
+              onClick={() => void handleToggleVisited()}
+              disabled={visitedSaving}
+              aria-pressed={isVisited}
+            >
+              {visitedSaving ? "Saving…" : isVisited ? "✓ Visited" : "Mark visited"}
+            </button>
+          </div>
+        </header>
 
-          <div className="place-flip-body place-cover-scroll">
+        {parent && (
+          <p className="place-cover-parent">
+            Part of{" "}
+            <button
+              type="button"
+              className="place-flip-inline"
+              onClick={() => onNavigateToPlace?.(parent)}
+            >
+              {parent.display_name}
+            </button>
+          </p>
+        )}
+        {visitedError && <p className="banner-error">{visitedError}</p>}
+        {loading && (
+          <p className="place-flip-muted place-decision-status">
+            Loading latest saved data…
+          </p>
+        )}
 
-              {children.length > 0 && (
-                <section className="place-flip-section">
-                  <h3>Activities &amp; spots here ({children.length})</h3>
-                  <ul className="place-flip-list">
-                    {children.map((child) => (
-                      <li key={child.place_id}>
-                        <button
-                          type="button"
-                          className="place-flip-inline"
-                          onClick={() => onNavigateToPlace?.(child)}
-                        >
-                          {child.display_name}
-                        </button>
-                        <span className="place-child-tags">
-                          <CategoryChip category={child.category} small />
-                          {(child.attributes ?? []).map((attr) => (
-                            <span key={attr} className="tag-chip tag-chip-small">
-                              {attr}
-                            </span>
-                          ))}
-                        </span>
-                      </li>
-                    ))}
+        <div className="place-decision-grid">
+          <main className="place-decision-main">
+            {place.summary && (
+              <div
+                className="place-intuitive-summary"
+                style={{
+                  background: "var(--theme-soft, rgba(255, 255, 255, 0.04))",
+                  borderLeft: "3px solid var(--accent, #2dd4bf)",
+                  padding: "12px 16px",
+                  borderRadius: "0 8px 8px 0",
+                  fontSize: "0.95rem",
+                  lineHeight: "1.6",
+                  marginBottom: "20px",
+                  color: "var(--text, #f0f3f1)",
+                }}
+              >
+                <span
+                  style={{
+                    display: "block",
+                    fontSize: "0.75rem",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.08em",
+                    color: "var(--text-muted, #8d9a94)",
+                    marginBottom: "4px",
+                    fontWeight: 600,
+                  }}
+                >
+                  Overview
+                </span>
+                <p style={{ margin: 0 }}>{place.summary}</p>
+              </div>
+            )}
+
+            <details className="place-decision-section place-why-go" open>
+              <summary><h3>Why go</h3></summary>
+              {whyGoDetails.length > 0 ? (
+                <ul className="place-decision-summary">
+                  {whyGoDetails.map((text) => <li key={text}>{text}</li>)}
+                </ul>
+              ) : null}
+              {facts?.highlights && facts.highlights.length > 0 && (
+                <div className="place-fact-highlights">
+                  <span className="place-decision-label">Objective highlights</span>
+                  <ul>
+                    {facts.highlights.map((item) => <li key={item}>{item}</li>)}
                   </ul>
-                </section>
+                </div>
               )}
+              {whyGoDetails.length === 0 && !(facts?.highlights && facts.highlights.length > 0) ? (
+                <p className="place-flip-muted">
+                  A saved place worth keeping on your shortlist.
+                </p>
+              ) : null}
+            </details>
 
-              <section className="place-flip-section">
-                <h3>Facts</h3>
-                {detail?.facts_refresh_queued && (
-                  <p className="place-flip-muted">Looking up source-backed facts…</p>
-                )}
-                {place.facts == null && !detail?.facts_refresh_queued && (
-                  <p className="place-flip-muted">No source-backed facts yet.</p>
-                )}
-                {place.facts?.status === "empty" && (
-                  <p className="place-flip-muted">No objective facts found for this place.</p>
-                )}
-                {place.facts && place.facts.status !== "empty" && (
-                  <>
-                    <dl className="place-facts-list">
-                      {factsStructuredRows(place.facts).map((row) => (
-                        <div key={row.label} className="place-facts-row">
-                          <dt>{row.label}</dt>
-                          <dd>
-                            {row.label === "Website" ? (
-                              <a href={row.value} target="_blank" rel="noreferrer">
-                                {row.value}
-                              </a>
-                            ) : (
-                              row.value
-                            )}
-                          </dd>
-                        </div>
-                      ))}
-                    </dl>
-
-                    {place.facts.highlights && place.facts.highlights.length > 0 && (
-                      <div className="place-facts-insights-block">
-                        <h4 className="place-facts-insights-title">✨ Highlights</h4>
-                        <ul className="place-facts-insights-pills">
-                          {place.facts.highlights.map((item, idx) => (
-                            <li key={idx} className="place-facts-highlight-pill">{item}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-
-                    {place.facts.recommendations && place.facts.recommendations.length > 0 && (
-                      <div className="place-facts-insights-block">
-                        <h4 className="place-facts-insights-title">🌐 Guide Recommendations</h4>
-                        <ul className="place-facts-insights-list">
-                          {place.facts.recommendations.map((item, idx) => (
-                            <li key={idx} className="place-facts-rec-item">{item}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-
-                    {place.facts.caveats && place.facts.caveats.length > 0 && (
-                      <div className="place-facts-insights-block place-facts-caveats-block">
-                        <h4 className="place-facts-insights-title">⚠️ Watch Out</h4>
-                        <ul className="place-facts-insights-list">
-                          {place.facts.caveats.map((item, idx) => (
-                            <li key={idx} className="place-facts-caveat-item">{item}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-
-                    {factsAttribution(place.facts) && (
-                      <p className="place-flip-muted place-facts-attribution">
-                        {factsAttribution(place.facts)}
-                      </p>
-                    )}
-                  </>
-                )}
-              </section>
-
-              {place.details.length > 0 && (
-                <section className="place-flip-section">
-                  <h3>Details</h3>
-                  <ul className="place-flip-list">
-                    {place.details.map((detailText) => (
-                      <li key={detailText}>{detailText}</li>
-                    ))}
-                  </ul>
-                </section>
-              )}
-
-              {place.tips.length > 0 && (
-                <section className="place-flip-section">
-                  <h3>Tips from Creator ({place.tips.length})</h3>
-                  <ul className="place-flip-tips-cards">
-                    {place.tips.map((tip, idx) => (
-                      <li key={idx} className="place-flip-tip-card">
-                        <span className="place-flip-tip-icon" aria-hidden="true">💡</span>
-                        <span className="place-flip-tip-text">{tip}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </section>
-              )}
-
-              <RelationRail
-                heading={`Saved from${sourcePosts.length ? ` (${sourcePosts.length})` : ""}`}
-                emptyText="No saved posts point here yet."
-                items={savedFromItems}
-              />
-
-              {mappablePlaces(mapPlaces).length > 0 && (
-                <section className="place-flip-section">
-                  <h3>Map</h3>
-                  <PostPlacesMap places={mapPlaces} />
-                  {mapUrl && (
-                    <a
-                      className="place-flip-inline place-flip-maps"
-                      href={mapUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      Open in Google Maps
-                    </a>
+            {(facts?.recommendations?.length || facts?.caveats?.length) ? (
+              <details className="place-decision-section" open>
+                <summary><h3>Know before you go</h3></summary>
+                <div className="place-advice-grid">
+                  {facts.recommendations && facts.recommendations.length > 0 && (
+                    <div className="place-advice-block">
+                      <span className="place-decision-label">Recommendations</span>
+                      <ul>{facts.recommendations.map((item) => <li key={item}>{item}</li>)}</ul>
+                    </div>
                   )}
-                </section>
+                  {facts.caveats && facts.caveats.length > 0 && (
+                    <div className="place-advice-block place-advice-caveat">
+                      <span className="place-decision-label">Caveats</span>
+                      <ul>{facts.caveats.map((item) => <li key={item}>{item}</li>)}</ul>
+                    </div>
+                  )}
+                </div>
+              </details>
+            ) : null}
+
+            {place.tips.length > 0 && (
+              <details className="place-decision-section">
+                <summary><h3>Creator tips</h3></summary>
+                <ul className="place-flip-tips-cards">
+                  {place.tips.map((tip, index) => (
+                    <li key={index} className="place-flip-tip-card">
+                      <span className="place-flip-tip-icon" aria-hidden="true">💡</span>
+                      <span className="place-flip-tip-text">{tip}</span>
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            )}
+
+            {children.length > 0 && (
+              <details className="place-decision-section">
+                <summary><h3>Related spots <span className="place-section-count">{children.length}</span></h3></summary>
+                <ul className="place-related-spots">
+                  {children.map((child) => (
+                    <li key={child.place_id}>
+                      <button type="button" className="place-flip-inline" onClick={() => onNavigateToPlace?.(child)}>{child.display_name}</button>
+                      <span>
+                        <CategoryChip category={child.category} small />
+                        {(child.attributes ?? []).map((attribute) => <span key={attribute} className="tag-chip tag-chip-small">{attribute}</span>)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            )}
+          </main>
+
+          <aside className="place-decision-rail">
+            <details className="place-rail-card place-objective-facts" open>
+              <summary><h3>At a glance</h3></summary>
+              {detail?.facts_refresh_queued && <p className="place-flip-muted">Looking up source-backed facts…</p>}
+              {!detail?.facts_refresh_queued && !facts && <p className="place-flip-muted">No source-backed facts yet.</p>}
+              {facts?.status === "empty" && <p className="place-flip-muted">No objective facts found for this place.</p>}
+              {factRows.length > 0 && (
+                <dl className="place-facts-list">
+                  {factRows.map((row) => (
+                    <div key={row.label} className="place-facts-row">
+                      <dt>{row.label}</dt>
+                      <dd>{row.label === "Website" ? <a href={row.value} target="_blank" rel="noreferrer">{row.value}</a> : row.value}</dd>
+                    </div>
+                  ))}
+                </dl>
               )}
-          </div>
-        </section>
+              {facts && factsAttribution(facts) && <p className="place-flip-muted place-facts-attribution">{factsAttribution(facts)}</p>}
+            </details>
+            <details className="place-saved-from-section">
+              <summary><h3>Saved from{sourcePosts.length ? ` (${sourcePosts.length})` : ""}</h3></summary>
+              <RelationRail heading="" emptyText="No saved posts point here yet." items={savedFromItems} />
+            </details>
+          </aside>
+        </div>
+        </div>
       </div>
     </DetailModal>
   );

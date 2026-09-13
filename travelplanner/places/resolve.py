@@ -11,6 +11,8 @@ from travelplanner.categories import (
 from travelplanner.models import Place, PlaceLocation
 from travelplanner.place_hints import PlaceMention
 from travelplanner.places.maps import with_google_maps_url
+from travelplanner.places.mention_details import compact_mention_details
+from travelplanner.places.summary import sanitize_place_tips, synthesize_place_summary
 from travelplanner.places.store import load_all_places, load_place, place_key, save_place
 from travelplanner.places.locate import haversine_meters, name_similarity
 
@@ -115,14 +117,14 @@ def _merge_place(
   if mention.place_name != existing.display_name and mention.place_name not in aliases:
     aliases.append(mention.place_name)
 
-  details = list(existing.details)
-  if mention.details and mention.details not in details:
-    details.append(mention.details)
+  incoming_details = list(existing.details)
+  if mention.details:
+    incoming_details.append(mention.details)
+  details = list(
+    compact_mention_details(incoming_details, place_name=existing.display_name)
+  )
 
-  tips = list(existing.tips)
-  for tip in mention.tips:
-    if tip not in tips:
-      tips.append(tip)
+  tips = sanitize_place_tips(list(existing.tips) + list(mention.tips), place_name=existing.display_name)
 
   incoming_category = _effective_category(mention, location)
   winning_category = resolve_category(existing.category, incoming_category)
@@ -139,6 +141,15 @@ def _merge_place(
   if source_post_id and source_post_id not in source_post_ids:
     source_post_ids = (*source_post_ids, source_post_id)
 
+  summary = synthesize_place_summary(
+    existing.display_name,
+    winning_category,
+    location,
+    details=details,
+    facts=existing.facts,
+    existing_summary=existing.summary,
+  )
+
   return replace(
     existing,
     aliases=tuple(aliases),
@@ -147,6 +158,7 @@ def _merge_place(
     category=winning_category,
     attributes=attributes,
     source_post_ids=source_post_ids,
+    summary=summary,
   )
 
 
@@ -158,6 +170,17 @@ def _new_place(
 ) -> Place:
   aliases = () if mention.place_name == location.display_name else (mention.place_name,)
   category = resolve_category(None, _effective_category(mention, location))
+  details = compact_mention_details(
+    (mention.details,) if mention.details else (),
+    place_name=location.display_name,
+  )
+  tips = sanitize_place_tips(mention.tips, place_name=location.display_name)
+  summary = synthesize_place_summary(
+    location.display_name,
+    category,
+    location,
+    details=details,
+  )
   return Place(
     place_id=place_id,
     display_name=location.display_name,
@@ -165,9 +188,10 @@ def _new_place(
     aliases=aliases,
     category=category,
     attributes=filter_attributes(category, mention.attributes),
-    details=(mention.details,) if mention.details else (),
-    tips=tuple(dict.fromkeys(mention.tips)),
+    details=details,
+    tips=tips,
     source_post_ids=(source_post_id,) if source_post_id else (),
+    summary=summary,
   )
 
 

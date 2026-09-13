@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f5f1e9" />
+    <title>Travel detail organization · Wanderfile design lab</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./chrome.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="back-link" href="../index.html" aria-label="Back to design lab">← Design lab</a>
+      <span class="top-label">Wanderfile / information architecture</span>
+      <span class="top-count">01—10</span>
+    </header>
+
+    <main>
+      <section class="intro" aria-labelledby="page-title">
+        <p class="eyebrow">Travel place detail · organization study</p>
+        <h1 id="page-title">The place page,<br /><em>thought through.</em></h1>
+        <p class="intro-copy">Ten ways to turn a saved place into a useful travel decision. Same Oaxaca field notes, different order of facts, feeling, and next action.</p>
+      </section>
+
+      <section class="gallery" aria-label="Travel detail concepts">
+        <div class="gallery-head">
+          <div><span class="eyebrow" id="concept-kicker">Recommended direction</span><h2 id="concept-title">—</h2></div>
+          <div class="gallery-controls"><button id="prev" type="button" aria-label="Previous concept">←</button><span id="position">01 / 10</span><button id="next" type="button" aria-label="Next concept">→</button></div>
+        </div>
+        <nav id="concept-nav" class="concept-nav" aria-label="Choose a detail concept"></nav>
+        <article id="concept" class="concept" aria-live="polite"></article>
+      </section>
+
+      <section class="dataset" aria-labelledby="dataset-title"><div><p class="eyebrow">One shared place record</p><h2 id="dataset-title">Hierve el Agua, Oaxaca</h2></div><p>Objective facts, editorial context, community tips, creator provenance, and a direct Google Maps action—kept consistent while each concept changes its structure and mobile interaction.</p></section>
+    </main>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

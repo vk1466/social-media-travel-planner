@@ -11,6 +11,9 @@ export default defineConfig(({ mode }) => {
     envDir: resolve(__dirname, ".."),
     server: {
       port: 5179,
+      fs: {
+        allow: [resolve(__dirname, "../../.."), resolve(__dirname)],
+      },
       open: "/index.html",
       proxy: apiTarget
         ? {

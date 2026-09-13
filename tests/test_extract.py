@@ -17,6 +17,7 @@ def test_reel_extract_prompt_includes_core_rules() -> None:
   assert "parent_place_name" in REEL_EXTRACT_PROMPT
   assert "parent_category" in REEL_EXTRACT_PROMPT
   assert "Never invent generic tips" in REEL_EXTRACT_PROMPT
+  assert "Do not write brochure identity copy" in REEL_EXTRACT_PROMPT
   assert "Parents → park, city, neighborhood, or landmark" in REEL_EXTRACT_PROMPT
 
 

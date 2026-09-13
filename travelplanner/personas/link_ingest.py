@@ -271,7 +271,13 @@ def ingest_link(
       reason="Pipeline completed without a post",
     )
 
-  post = replace(post, place_ids=tuple(ctx.place_ids))
+  post = replace(
+    post,
+    place_ids=tuple(ctx.place_ids),
+    image_text=ctx.image_text if ctx.image_text is not None else post.image_text,
+    transcript=ctx.transcript if ctx.transcript is not None else post.transcript,
+    video_analysis=ctx.video_analysis if ctx.video_analysis is not None else post.video_analysis,
+  )
   _record_place_outcomes(post, ctx)
   save_post(post)
   _link_post_to_user(user_id, post)

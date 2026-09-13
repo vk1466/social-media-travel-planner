@@ -20,6 +20,7 @@ from travelplanner.models import Place, Platform, SavedPost, Visit, make_post_id
 from travelplanner.pipeline import unlink_post_from_user
 from travelplanner.place_hints import PlaceMention
 from travelplanner.places import cleanup_all_data, list_places, load_place, place_to_dict, reprocess_all_places
+from travelplanner.places.mention_details import compact_mention_details
 from travelplanner.places.facts import enrich_place_facts, facts_are_stale
 from travelplanner.places.facts.queue import enqueue_place_facts
 from travelplanner.clients.clerk import list_clerk_users
@@ -115,7 +116,11 @@ def _post_to_schema(post: SavedPost) -> SavedPostSchema:
 
 
 def _place_to_schema(place: Place) -> PlaceSchema:
-  return PlaceSchema(**place_to_dict(place))
+  data = place_to_dict(place)
+  data["details"] = list(
+    compact_mention_details(place.details, place_name=place.display_name)
+  )
+  return PlaceSchema(**data)
 
 
 def _visit_to_schema(visit: Visit) -> VisitSchema:

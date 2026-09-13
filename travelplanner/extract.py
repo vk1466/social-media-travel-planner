@@ -75,18 +75,21 @@ PLACE_EXTRACT_SCHEMA: dict[str, Any] = {
           "details": {
             "type": ["string", "null"],
             "description": (
-              "One short sentence of context copied or lightly paraphrased from the "
-              "provided sources only. Null if sources give no place-specific context. "
-              "Never invent facts"
+              "One short visit-useful sentence unique to this source: how to "
+              "experience the place, when, what to skip, or a pairing. Null if the "
+              "source only restates identity or fame (iconic, must-see, symbol of), "
+              "or only describes what the camera showed. Never invent facts"
             ),
           },
           "tips": {
             "type": "array",
             "items": {"type": "string"},
             "description": (
-              "Concrete tips grounded in the sources only: distances, times, fees, "
-              "passes, parking, permits, access notes, seasonal notes. Empty array "
-              "when the sources give none. Never invent generic advice"
+              "ALL concrete tips, facts, and advice mentioned in the reel video, transcript, "
+              "caption, or slide images that apply to this place: timings, distances, costs, "
+              "admission fees, booking rules, must-do activities, what to order/try, gear/footwear advice, "
+              "parking/permits, seasonal or photography tips. Extract every useful fact mentioned. "
+              "Empty array only when the sources give none. Never invent generic advice"
             ),
           },
           "category": {
@@ -198,12 +201,16 @@ REEL_EXTRACT_PROMPT = (
   "7. When sources give 'Place, Area, State', use Place as place_name, Area as "
   "parent_place_name, and State as state_province — not city.\n\n"
   "Details and tips — ground strictly in the sources:\n"
-  "- details: one short sentence from the source about this place, or null.\n"
-  "- tips: copy every concrete fact stated for that place (distance, duration, "
-  "fee/pass/parking, permit, roadside stop, seasonal). For restaurants, cafes, "
-  "bars, and markets also copy what to order, signature dishes, dietary notes "
-  "(vegan, vegetarian, allergy), and any visit-specific rec the source states. "
-  "Use [] only if none.\n"
+  "- details: one short visit-useful sentence unique to this source "
+  "(how to enjoy it, when, what to skip, a pairing). Null if the source only "
+  "calls it iconic / a must-see / a symbol of the city, or only describes "
+  "what the video showed. Do not write brochure identity copy.\n"
+  "- tips: capture every concrete fact, tip, and practical guidance stated for that place "
+  "across the video, audio transcript, caption, and slide images (distances, duration, "
+  "operating schedule/timings, admission/costs, booking rules, permits, parking, roadside stops, "
+  "seasonal advisories, photography lighting, required gear or footwear). For restaurants, cafes, "
+  "and food venues, capture signature dishes, what to order, and dietary notes. "
+  "Use [] only if none are mentioned.\n"
   "- Never invent generic tips unless the source says them.\n\n"
   "Category and attributes (exactly one category per place):\n"
   "1. Decide in two steps. First ask what the place IS — the noun a local would "

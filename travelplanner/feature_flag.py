@@ -20,11 +20,13 @@ class FeatureFlag:
 
   _flags: dict[str, Any] = {
     "place_facts": False,
+    # OCR for image posts and carousels (slide URLs from Mindcase).
     "extract_image_text": True,
-    # Supadata multimodal video analysis for reel/video (places + overlays).
+    # Supadata multimodal extract for reel/video (scene, overlays, places).
     "extract_video_analysis": True,
-    # Sample reel/video frames and OCR on-screen text via OpenAI vision.
-    "extract_reel_frame_text": True,
+    # Reel/video frame OCR (OpenAI vision). Off by default — use analyze_video for travel;
+    # recipe close uses extract_recipe_frames when food_recipes is on.
+    "extract_reel_frame_text": False,
     # When Nominatim locate fails, try one cheap Google Geocoding/Places call.
     "google_geocode_fallback": False,
     # Classify SavedPost.content_category, then dispatch place vs movie close.

@@ -19,6 +19,9 @@ structured facts already copied from those sources (hours, phone, website).
 Deduce only interpretive fields: what the place is famous for, best time to
 visit, typical duration, highlights (good), caveats (bad / watch-outs), and
 practical recommendations.
+Highlights and famous-for must be distinctive visit payoffs, not paraphrases
+of "iconic landmark" or "must-see symbol of the city". Prefer 2-4 concrete
+reasons that would change whether or how someone goes.
 Every filled field must cite the source_ref it came from. If the documents do
 not support a field, leave it null (or an empty list). Never invent hours,
 fees, phone numbers, or cuisine. Never use prior knowledge.

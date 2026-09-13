@@ -1,0 +1,164 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  font-family: "DM Sans", system-ui, sans-serif;
+  background: #f6f4ef;
+  color: #1a1d1c;
+  -webkit-font-smoothing: antialiased;
+}
+
+.top {
+  max-width: 52rem;
+  margin: 0 auto;
+  padding: 40px 24px 24px;
+  border-bottom: 1px solid #ddd8ce;
+}
+
+.back {
+  display: inline-block;
+  margin-bottom: 20px;
+  font-size: 0.875rem;
+  color: #4a5c52;
+  text-decoration: none;
+}
+
+.back:hover {
+  color: #1a5c45;
+}
+
+.kicker {
+  margin: 0 0 8px;
+  font-size: 0.75rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #6b7a72;
+}
+
+h1 {
+  margin: 0 0 12px;
+  font-family: Newsreader, Georgia, serif;
+  font-size: clamp(1.75rem, 4vw, 2.35rem);
+  font-weight: 500;
+  line-height: 1.15;
+}
+
+.lede {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: #3d4844;
+}
+
+.lede code {
+  font-size: 0.85em;
+  background: #ebe6dc;
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+}
+
+.doc {
+  max-width: 52rem;
+  margin: 0 auto;
+  padding: 32px 24px 80px;
+  line-height: 1.65;
+  font-size: 1rem;
+}
+
+.doc h1,
+.doc h2,
+.doc h3 {
+  font-family: Newsreader, Georgia, serif;
+  font-weight: 500;
+  line-height: 1.2;
+  margin: 2rem 0 0.75rem;
+}
+
+.doc h1 {
+  font-size: 1.75rem;
+  margin-top: 0;
+}
+
+.doc h2 {
+  font-size: 1.35rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid #ddd8ce;
+}
+
+.doc h3 {
+  font-size: 1.1rem;
+}
+
+.doc p,
+.doc li {
+  color: #2a302e;
+}
+
+.doc a {
+  color: #1a5c45;
+}
+
+.doc code {
+  font-size: 0.88em;
+  background: #ebe6dc;
+  padding: 0.12em 0.35em;
+  border-radius: 4px;
+}
+
+.doc pre {
+  overflow-x: auto;
+  padding: 14px 16px;
+  background: #1a1d1c;
+  color: #e8ebe9;
+  border-radius: 10px;
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.doc pre code {
+  background: none;
+  padding: 0;
+  color: inherit;
+}
+
+.doc table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+  margin: 1rem 0;
+}
+
+.doc th,
+.doc td {
+  border: 1px solid #ddd8ce;
+  padding: 8px 10px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.doc th {
+  background: #ebe6dc;
+  font-weight: 600;
+}
+
+.doc hr {
+  border: none;
+  border-top: 1px solid #ddd8ce;
+  margin: 2rem 0;
+}
+
+.doc blockquote {
+  margin: 1rem 0;
+  padding-left: 1rem;
+  border-left: 3px solid #1a5c45;
+  color: #4a5c52;
+}
