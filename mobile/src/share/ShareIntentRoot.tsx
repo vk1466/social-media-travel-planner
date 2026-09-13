@@ -20,7 +20,7 @@ export function useShareIntentHandler(canOpenIngest: boolean): void {
     if (urls.length > 0) {
       setPendingShare(urls, true);
       if (canOpenIngest) {
-        const onIngest = segments.includes("ingest");
+        const onIngest = (segments as string[]).includes("ingest");
         if (!onIngest) {
           router.replace({
             pathname: "/(app)/ingest",

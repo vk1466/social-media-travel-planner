@@ -9,6 +9,7 @@ import {
 } from "react";
 
 import {
+  fetchAdminMe,
   fetchPlaces,
   fetchPosts,
   fetchVisits,
@@ -24,6 +25,7 @@ interface LibraryContextValue {
   loading: boolean;
   error: string | null;
   refreshToken: number;
+  isAdmin: boolean;
   refresh: () => Promise<void>;
   bumpRefresh: () => void;
 }
@@ -37,19 +39,22 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshToken, setRefreshToken] = useState(0);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const refresh = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const [nextPosts, nextPlaces, nextVisits] = await Promise.all([
+      const [nextPosts, nextPlaces, nextVisits, admin] = await Promise.all([
         fetchPosts(),
         fetchPlaces(),
         fetchVisits(),
+        fetchAdminMe().catch(() => ({ is_admin: false, is_super_admin: false })),
       ]);
       setPosts(nextPosts);
       setPlaces(nextPlaces);
       setVisits(nextVisits);
+      setIsAdmin(admin.is_admin);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load library");
     } finally {
@@ -73,10 +78,11 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
       loading,
       error,
       refreshToken,
+      isAdmin,
       refresh,
       bumpRefresh,
     }),
-    [posts, places, visits, loading, error, refreshToken, refresh, bumpRefresh],
+    [posts, places, visits, loading, error, refreshToken, isAdmin, refresh, bumpRefresh],
   );
 
   return <LibraryContext.Provider value={value}>{children}</LibraryContext.Provider>;

@@ -44,11 +44,13 @@ Then in Instagram: Share → Travel Planner.
 ## Features
 
 - Sign in with Clerk (same account as the web app)
-- Paste links or receive shared reel URLs → ingest via AWS Step Functions
-- Posts library + detail + delete
-- Places browse / filters / map (`react-native-maps`) + detail
-- Travel history (add / delete visits)
-- Settings: reprocess places, cleanup data, sign out
+- Native tabs: Posts, Travel, Food, Watch, History (shown only when that library has items)
+- Search, processing queue, share-to-app for Instagram reels
+- Posts library with filters, detail, and delete
+- Travel browse / filters / map (`react-native-maps`) + detail
+- Food recipes and Watch titles from saves
+- Travel history (add / import / delete visits)
+- Settings: reprocess places, cleanup data, sign out; admin tools when allowed
 
 ## Env
 

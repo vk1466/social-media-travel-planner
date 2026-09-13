@@ -18,14 +18,15 @@ import {
   fetchPlaceDetail,
   fetchPost,
   nativePostId,
-  type ExtractedPlace,
   type SavedPost,
 } from "@/src/api";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { Button, ErrorBanner, TagChip } from "@/src/components/ui";
+import { DetailSheetChrome } from "@/src/components/DetailSheetChrome";
+import { ErrorBanner } from "@/src/components/ui";
+import { formatDate } from "@/src/display";
 import { useLibrary } from "@/src/context/LibraryContext";
 import { googleMapsUrl } from "@/src/maps";
-import { formatPostDate, getPlatformLabel, getPostTitle, proxiedMediaUrl } from "@/src/postDisplayUtils";
+import { getPlatformLabel, getPostTitle, proxiedMediaUrl } from "@/src/postDisplayUtils";
 import { colors, radius, shadow, spacing } from "@/src/theme";
 
 export default function PostDetailScreen() {
@@ -38,6 +39,7 @@ export default function PostDetailScreen() {
   const [error, setError] = useState<string | null>(null);
   const [recipeMultiplier, setRecipeMultiplier] = useState(1);
   const [checkedIngredients, setCheckedIngredients] = useState<Set<number>>(new Set());
+  const [removing, setRemoving] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -85,23 +87,29 @@ export default function PostDetailScreen() {
 
   if (loading) {
     return (
-      <View style={styles.centered}>
-        <ActivityIndicator color={colors.brand} />
-      </View>
+      <DetailSheetChrome>
+        <View style={styles.centered}>
+          <ActivityIndicator color={colors.brand} />
+        </View>
+      </DetailSheetChrome>
     );
   }
 
   if (error || !post) {
     return (
-      <View style={styles.pad}>
-        <ErrorBanner message={error ?? "Post not found"} />
-      </View>
+      <DetailSheetChrome>
+        <View style={styles.pad}>
+          <ErrorBanner message={error ?? "Post not found"} />
+        </View>
+      </DetailSheetChrome>
     );
   }
 
   const thumb = proxiedMediaUrl(post.thumbnail_url);
-  const date = formatPostDate(post);
+  const date = formatDate(post.posted_at ?? post.fetched_at);
+  const authorMeta = [post.author_handle, date].filter(Boolean).join(" · ");
   const recipe = post.extracted_recipe;
+
   const ingredientText = (
     amount: string | null | undefined,
     unit: string | null | undefined,
@@ -132,282 +140,375 @@ export default function PostDetailScreen() {
       : amount;
     return [scaled, unit, name, note].filter(Boolean).join(" ");
   };
+
   const copyIngredients = async () => {
     if (!recipe) return;
-    const text = recipe.ingredients.map((ingredient) => `- ${ingredientText(ingredient.amount, ingredient.unit, ingredient.name, ingredient.note)}`).join("\n");
+    const text = recipe.ingredients
+      .map(
+        (ingredient) =>
+          `- ${ingredientText(ingredient.amount, ingredient.unit, ingredient.name, ingredient.note)}`,
+      )
+      .join("\n");
     await Clipboard.setStringAsync(text);
     Alert.alert("Copied", "Ingredients are ready to paste into your grocery list.");
   };
 
+  const handleRemove = () => {
+    Alert.alert("Remove post", "Remove this post from your library?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Remove",
+        style: "destructive",
+        onPress: () => {
+          void (async () => {
+            setRemoving(true);
+            try {
+              await deletePost(post.platform, nativePostId(post));
+              bumpRefresh();
+              router.back();
+            } finally {
+              setRemoving(false);
+            }
+          })();
+        },
+      },
+    ]);
+  };
+
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
+    <DetailSheetChrome>
+      <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
       {thumb ? (
         <View style={styles.heroWrap}>
           <Image source={{ uri: thumb }} style={styles.hero} resizeMode="cover" />
-          <View style={styles.playBadge}>
-            <Ionicons name="play" size={16} color={colors.onFill} />
-          </View>
         </View>
       ) : null}
-      <View style={styles.metaRow}>
-        <Ionicons name="logo-instagram" size={14} color={colors.muted} />
-        <Text style={styles.meta}>
-          {getPlatformLabel(post)}
-          {date ? ` · ${date}` : ""}
-          {post.author_handle ? ` · @${post.author_handle}` : ""}
-        </Text>
-      </View>
-      <Text style={styles.title}>{getPostTitle(post)}</Text>
-      {post.reel_summary ? <Text style={styles.summary}>{post.reel_summary}</Text> : null}
-      {post.caption ? <Text style={styles.caption}>{post.caption}</Text> : null}
 
-      {recipe ? (
-        <View style={styles.recipeCard}>
-          <View style={styles.sectionHeader}>
-            <Ionicons name="restaurant" size={16} color={colors.brand} />
-            <Text style={styles.sectionTitle}>Recipe idea</Text>
-          </View>
-          <Text style={styles.recipeTitle}>{recipe.title ?? "Food inspiration"}</Text>
-          {recipe.summary ? <Text style={styles.recipeSummary}>{recipe.summary}</Text> : null}
-          {recipe.estimated_inferred ? <Text style={styles.recipeEstimate}>Chef estimated: some cooking details were filled in.</Text> : null}
-          {(recipe.servings || recipe.prep_time_minutes || recipe.cook_time_minutes) ? (
-            <Text style={styles.recipeMeta}>
-              {[
-                recipe.servings,
-                recipe.prep_time_minutes ? `${recipe.prep_time_minutes} min prep` : null,
-                recipe.cook_time_minutes ? `${recipe.cook_time_minutes} min cook` : null,
-              ].filter(Boolean).join(" · ")}
-            </Text>
-          ) : null}
-          {recipe.ingredients.length > 0 ? (
-            <View style={styles.recipePart}>
-              <View style={styles.recipeRow}><Text style={styles.recipeHeading}>Ingredients</Text><View style={styles.scaler}><Pressable onPress={() => setRecipeMultiplier((value) => Math.max(1, value / 2))}><Text style={styles.scalerButton}>−</Text></Pressable><Text style={styles.scalerText}>{recipeMultiplier}×</Text><Pressable onPress={() => setRecipeMultiplier((value) => Math.min(4, value * 2))}><Text style={styles.scalerButton}>+</Text></Pressable></View></View>
-              {recipe.ingredients.map((ingredient, index) => (
-                <Pressable key={`${ingredient.name}-${index}`} style={styles.ingredientRow} onPress={() => setCheckedIngredients((current) => { const next = new Set(current); next.has(index) ? next.delete(index) : next.add(index); return next; })}>
-                  <Ionicons name={checkedIngredients.has(index) ? "checkbox" : "square-outline"} size={18} color={colors.brand} />
-                  <Text style={[styles.recipeLine, checkedIngredients.has(index) && styles.checkedIngredient]}>{ingredientText(ingredient.amount, ingredient.unit, ingredient.name, ingredient.note)}</Text>
-                </Pressable>
-              ))}
-              <Pressable style={styles.copyIngredients} onPress={() => void copyIngredients()}><Ionicons name="copy-outline" size={14} color={colors.brand} /><Text style={styles.copyIngredientsText}>Copy ingredients</Text></Pressable>
-            </View>
-          ) : null}
-          {recipe.steps.length > 0 ? (
-            <View style={styles.recipePart}>
-              <Text style={styles.recipeHeading}>Steps</Text>
-              {recipe.steps.map((step, index) => (
-                <Text key={`${index}-${step}`} style={styles.recipeLine}>{index + 1}. {step}</Text>
-              ))}
-            </View>
-          ) : null}
-          {recipe.nutrition ? (
-            <View style={styles.recipePart}>
-              <Text style={styles.recipeHeading}>Estimated nutrition (per serving)</Text>
-              <View style={styles.nutritionRow}>
-                <View style={styles.nutritionCol}>
-                  <Text style={styles.nutritionVal}>{Math.round(recipe.nutrition.per_serving.calories_kcal)}</Text>
-                  <Text style={styles.nutritionLabel}>kcal</Text>
+      <View style={styles.body}>
+        <Text style={styles.eyebrow}>{getPlatformLabel(post)}</Text>
+        <Text style={styles.title}>{getPostTitle(post)}</Text>
+        {authorMeta ? <Text style={styles.meta}>{authorMeta}</Text> : null}
+
+        {post.reel_summary ? <Text style={styles.copy}>{post.reel_summary}</Text> : null}
+        {post.caption ? <Text style={styles.copy}>{post.caption}</Text> : null}
+
+        {recipe ? (
+          <View style={styles.recipeSection}>
+            <Text style={styles.recipeSectionLabel}>Recipe</Text>
+            <View style={styles.recipeCard}>
+              <Text style={styles.recipeTitle}>{recipe.title ?? "Food inspiration"}</Text>
+              {recipe.summary ? <Text style={styles.recipeSummary}>{recipe.summary}</Text> : null}
+              {recipe.estimated_inferred ? (
+                <Text style={styles.recipeEstimate}>
+                  Chef estimated: some cooking details were filled in.
+                </Text>
+              ) : null}
+              {recipe.servings || recipe.prep_time_minutes || recipe.cook_time_minutes ? (
+                <Text style={styles.recipeMeta}>
+                  {[
+                    recipe.servings,
+                    recipe.prep_time_minutes ? `${recipe.prep_time_minutes} min prep` : null,
+                    recipe.cook_time_minutes ? `${recipe.cook_time_minutes} min cook` : null,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </Text>
+              ) : null}
+
+              {recipe.ingredients.length > 0 ? (
+                <View style={styles.recipePart}>
+                  <View style={styles.recipeRow}>
+                    <Text style={styles.recipeHeading}>Ingredients</Text>
+                    <View style={styles.scaler}>
+                      <Pressable
+                        onPress={() => setRecipeMultiplier((value) => Math.max(0.5, value / 2))}
+                      >
+                        <Text style={styles.scalerButton}>−</Text>
+                      </Pressable>
+                      <Text style={styles.scalerText}>{recipeMultiplier}×</Text>
+                      <Pressable
+                        onPress={() => setRecipeMultiplier((value) => Math.min(4, value * 2))}
+                      >
+                        <Text style={styles.scalerButton}>+</Text>
+                      </Pressable>
+                    </View>
+                  </View>
+                  {recipe.ingredients.map((ingredient, index) => (
+                    <Pressable
+                      key={`${ingredient.name}-${index}`}
+                      style={styles.ingredientRow}
+                      onPress={() =>
+                        setCheckedIngredients((current) => {
+                          const next = new Set(current);
+                          if (next.has(index)) next.delete(index);
+                          else next.add(index);
+                          return next;
+                        })
+                      }
+                    >
+                      <Ionicons
+                        name={checkedIngredients.has(index) ? "checkbox" : "square-outline"}
+                        size={18}
+                        color={colors.brand}
+                      />
+                      <Text
+                        style={[
+                          styles.recipeLine,
+                          checkedIngredients.has(index) && styles.checkedIngredient,
+                        ]}
+                      >
+                        {ingredientText(
+                          ingredient.amount,
+                          ingredient.unit,
+                          ingredient.name,
+                          ingredient.note,
+                        )}
+                      </Text>
+                    </Pressable>
+                  ))}
+                  <Pressable style={styles.copyIngredients} onPress={() => void copyIngredients()}>
+                    <Ionicons name="copy-outline" size={14} color={colors.brand} />
+                    <Text style={styles.copyIngredientsText}>Copy ingredients</Text>
+                  </Pressable>
                 </View>
-                <View style={styles.nutritionCol}>
-                  <Text style={styles.nutritionVal}>{Math.round(recipe.nutrition.per_serving.protein_g * 10) / 10}g</Text>
-                  <Text style={styles.nutritionLabel}>Protein</Text>
-                </View>
-                <View style={styles.nutritionCol}>
-                  <Text style={styles.nutritionVal}>{Math.round(recipe.nutrition.per_serving.carbohydrates_g * 10) / 10}g</Text>
-                  <Text style={styles.nutritionLabel}>Carbs</Text>
-                </View>
-                <View style={styles.nutritionCol}>
-                  <Text style={styles.nutritionVal}>{Math.round(recipe.nutrition.per_serving.fat_g * 10) / 10}g</Text>
-                  <Text style={styles.nutritionLabel}>Fat</Text>
-                </View>
-              </View>
-              {recipe.nutrition.macro_highlights && recipe.nutrition.macro_highlights.length > 0 ? (
-                <View style={styles.highlightRow}>
-                  {recipe.nutrition.macro_highlights.map((hl, i) => (
-                    <Text key={i} style={styles.highlightPill}>✨ {hl}</Text>
+              ) : null}
+
+              {recipe.steps.length > 0 ? (
+                <View style={styles.recipePart}>
+                  <Text style={styles.recipeHeading}>Steps</Text>
+                  {recipe.steps.map((step, index) => (
+                    <Text key={`${index}-${step}`} style={styles.recipeLine}>
+                      {index + 1}. {step}
+                    </Text>
                   ))}
                 </View>
               ) : null}
-            </View>
-          ) : null}
-          <Text style={styles.recipeNote}>Only details found in the reel are shown. Rewatch the original for anything missing.</Text>
-        </View>
-      ) : null}
 
-      {post.hashtags.length > 0 ? (
-        <View style={styles.tags}>
-          {post.hashtags.map((tag) => (
-            <TagChip key={tag} label={tag.replace(/^#/, "")} />
-          ))}
-        </View>
-      ) : null}
-
-      {(post.place_ids.length > 0 || extracted.length > 0) && (
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Ionicons name="location" size={15} color={colors.brand} />
-            <Text style={styles.sectionTitle}>Places</Text>
-          </View>
-          {post.place_ids.map((placeId, index) => {
-            const extractedPlace: ExtractedPlace | undefined = extracted[index];
-            return (
-              <Pressable
-                key={placeId}
-                style={styles.placeRow}
-                onPress={() => router.push(`/places/${placeId}`)}
-              >
-                <View style={styles.placeRowMain}>
-                  <Text style={styles.placeName}>{placeNames[placeId] ?? placeId}</Text>
-                  {extractedPlace ? (
-                    <Text style={styles.placeMeta}>
-                      {[extractedPlace.city, extractedPlace.country].filter(Boolean).join(", ")}
-                    </Text>
+              {recipe.nutrition ? (
+                <View style={styles.recipePart}>
+                  <Text style={styles.recipeHeading}>Estimated nutrition (per serving)</Text>
+                  <View style={styles.nutritionRow}>
+                    <View style={styles.nutritionCol}>
+                      <Text style={styles.nutritionVal}>
+                        {Math.round(recipe.nutrition.per_serving.calories_kcal)}
+                      </Text>
+                      <Text style={styles.nutritionLabel}>kcal</Text>
+                    </View>
+                    <View style={styles.nutritionCol}>
+                      <Text style={styles.nutritionVal}>
+                        {Math.round(recipe.nutrition.per_serving.protein_g * 10) / 10}g
+                      </Text>
+                      <Text style={styles.nutritionLabel}>Protein</Text>
+                    </View>
+                    <View style={styles.nutritionCol}>
+                      <Text style={styles.nutritionVal}>
+                        {Math.round(recipe.nutrition.per_serving.carbohydrates_g * 10) / 10}g
+                      </Text>
+                      <Text style={styles.nutritionLabel}>Carbs</Text>
+                    </View>
+                    <View style={styles.nutritionCol}>
+                      <Text style={styles.nutritionVal}>
+                        {Math.round(recipe.nutrition.per_serving.fat_g * 10) / 10}g
+                      </Text>
+                      <Text style={styles.nutritionLabel}>Fat</Text>
+                    </View>
+                  </View>
+                  {recipe.nutrition.macro_highlights &&
+                  recipe.nutrition.macro_highlights.length > 0 ? (
+                    <View style={styles.highlightRow}>
+                      {recipe.nutrition.macro_highlights.map((hl, i) => (
+                        <Text key={i} style={styles.highlightPill}>
+                          ✨ {hl}
+                        </Text>
+                      ))}
+                    </View>
                   ) : null}
                 </View>
-                <Ionicons name="chevron-forward" size={16} color={colors.faint} />
-              </Pressable>
-            );
-          })}
-          {extracted
-            .filter((_, index) => !post.place_ids[index])
-            .map((place, index) => {
-              const mapUrl = googleMapsUrl({
-                display_name: place.place_name,
-                city: place.city,
-                country: place.country,
-              });
-              return (
-                <View key={`${place.place_name}-${index}`} style={styles.placeRow}>
-                  <View style={styles.placeRowMain}>
-                    <Text style={styles.placeName}>{place.place_name}</Text>
-                    {mapUrl ? (
-                      <Pressable onPress={() => void Linking.openURL(mapUrl)} style={styles.mapLink}>
-                        <Ionicons name="navigate" size={13} color={colors.brand} />
-                        <Text style={styles.link}>Open in Maps</Text>
-                      </Pressable>
-                    ) : null}
-                  </View>
-                </View>
-              );
-            })}
-        </View>
-      )}
+              ) : null}
 
-      <Button
-        label="Open original"
-        icon="open-outline"
-        variant="secondary"
-        onPress={() => void Linking.openURL(post.post_url)}
-        style={{ marginBottom: spacing.md }}
-      />
-      <Button
-        label="Remove from library"
-        icon="trash-outline"
-        variant="danger"
-        onPress={() => {
-          Alert.alert("Remove post", "Remove this post from your library?", [
-            { text: "Cancel", style: "cancel" },
-            {
-              text: "Remove",
-              style: "destructive",
-              onPress: () => {
-                void (async () => {
-                  await deletePost(post.platform, nativePostId(post));
-                  bumpRefresh();
-                  router.back();
-                })();
-              },
-            },
-          ]);
-        }}
-      />
-    </ScrollView>
+              <Text style={styles.recipeNote}>
+                Only details found in the reel are shown. Rewatch the original for anything missing.
+              </Text>
+            </View>
+          </View>
+        ) : null}
+
+        {(post.place_ids.length > 0 || extracted.length > 0) && (
+          <View style={styles.placesSection}>
+            {post.place_ids.map((placeId) => (
+              <Pressable
+                key={placeId}
+                style={styles.placeLink}
+                onPress={() => router.push(`/places/${placeId}`)}
+              >
+                <Text style={styles.placeLinkText}>{placeNames[placeId] ?? "Place"}</Text>
+                <Ionicons name="chevron-forward" size={14} color={colors.brand} />
+              </Pressable>
+            ))}
+            {extracted
+              .filter((_, index) => !post.place_ids[index])
+              .map((place, index) => {
+                const mapUrl = googleMapsUrl({
+                  display_name: place.place_name,
+                  city: place.city,
+                  country: place.country,
+                });
+                return (
+                  <View key={`${place.place_name}-${index}`} style={styles.placeLink}>
+                    <View style={styles.placeLinkMain}>
+                      <Text style={styles.placeLinkText}>{place.place_name}</Text>
+                      {mapUrl ? (
+                        <Pressable
+                          onPress={() => void Linking.openURL(mapUrl)}
+                          style={styles.mapLink}
+                        >
+                          <Text style={styles.mapLinkText}>Open in Maps ↗</Text>
+                        </Pressable>
+                      ) : null}
+                    </View>
+                  </View>
+                );
+              })}
+          </View>
+        )}
+
+        <View style={styles.actions}>
+          <Pressable
+            style={styles.actionBtn}
+            onPress={() => void Linking.openURL(post.post_url)}
+          >
+            <Text style={styles.actionBtnText}>Open original</Text>
+          </Pressable>
+          <Pressable
+            style={[styles.actionBtn, styles.actionBtnDanger]}
+            onPress={handleRemove}
+            disabled={removing}
+          >
+            <Text style={[styles.actionBtnText, styles.actionBtnDangerText]}>
+              {removing ? "Removing…" : "Remove from library"}
+            </Text>
+          </Pressable>
+        </View>
+      </View>
+      </ScrollView>
+    </DetailSheetChrome>
   );
 }
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
-  content: { padding: spacing.md, paddingBottom: spacing.xl },
+  content: { paddingBottom: spacing.xl },
   centered: { flex: 1, alignItems: "center", justifyContent: "center" },
   pad: { padding: spacing.md },
   heroWrap: { marginBottom: spacing.md },
   hero: {
     width: "100%",
-    height: 240,
-    borderRadius: radius.lg,
+    height: 220,
     backgroundColor: colors.brandSoft,
   },
-  playBadge: {
-    position: "absolute",
-    bottom: 12,
-    left: 12,
-    height: 34,
-    width: 34,
-    borderRadius: radius.pill,
-    backgroundColor: "rgba(20,32,27,0.6)",
-    alignItems: "center",
-    justifyContent: "center",
+  body: { paddingHorizontal: spacing.lg },
+  eyebrow: {
+    color: colors.brand,
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 0.8,
+    textTransform: "uppercase",
+    marginBottom: 10,
   },
-  metaRow: { flexDirection: "row", alignItems: "center", gap: 5, marginBottom: 6 },
-  meta: { color: colors.muted, fontSize: 13 },
-  title: { fontSize: 22, fontWeight: "800", color: colors.ink, marginBottom: spacing.sm, letterSpacing: -0.4 },
-  summary: {
-    backgroundColor: colors.brandSoft,
-    borderRadius: radius.md,
-    padding: spacing.md,
+  title: {
+    fontSize: 32,
+    fontWeight: "800",
     color: colors.ink,
-    lineHeight: 20,
-    marginBottom: spacing.md,
+    marginBottom: 8,
+    letterSpacing: -0.5,
+    lineHeight: 34,
   },
-  recipeCard: { backgroundColor: colors.brandSoft, borderRadius: radius.lg, padding: spacing.md, marginBottom: spacing.md },
-  recipeTitle: { color: colors.ink, fontSize: 19, fontWeight: "800", marginBottom: 4 },
+  meta: { color: colors.muted, fontSize: 12, marginBottom: spacing.md },
+  copy: { color: colors.ink, fontSize: 14, lineHeight: 22, marginBottom: spacing.md },
+  recipeSection: { marginBottom: spacing.lg },
+  recipeSectionLabel: {
+    color: colors.brand,
+    fontSize: 11,
+    fontWeight: "800",
+    letterSpacing: 0.6,
+    textTransform: "uppercase",
+    marginBottom: spacing.sm,
+  },
+  recipeCard: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.md,
+    ...shadow(1),
+  },
+  recipeTitle: { color: colors.ink, fontSize: 20, fontWeight: "800", marginBottom: 4 },
   recipeSummary: { color: colors.ink, lineHeight: 20, marginBottom: 8 },
-  recipeEstimate: { color: "#9a4b0c", backgroundColor: "#fff0dc", borderRadius: radius.sm, padding: 8, fontSize: 12, marginBottom: 8 },
+  recipeEstimate: {
+    color: "#f0c080",
+    backgroundColor: colors.surfaceAlt,
+    borderRadius: radius.sm,
+    padding: 8,
+    fontSize: 12,
+    marginBottom: 8,
+  },
   recipeMeta: { color: colors.muted, fontSize: 13, marginBottom: 8 },
-  recipePart: { marginTop: 8 },
-  recipeHeading: { color: colors.ink, fontSize: 14, fontWeight: "800", marginBottom: 4 },
-  recipeLine: { color: colors.ink, lineHeight: 21, marginBottom: 2 },
+  recipePart: { marginTop: spacing.sm, paddingTop: spacing.sm, borderTopWidth: 1, borderTopColor: colors.border },
+  recipeHeading: { color: colors.ink, fontSize: 14, fontWeight: "800", marginBottom: 6 },
+  recipeLine: { color: colors.ink, lineHeight: 21, marginBottom: 2, flex: 1 },
   recipeRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   scaler: { flexDirection: "row", alignItems: "center", gap: 8 },
   scalerButton: { color: colors.brand, fontSize: 20, fontWeight: "700", paddingHorizontal: 5 },
-  scalerText: { color: colors.ink, fontWeight: "700" },
-  ingredientRow: { flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 3 },
+  scalerText: { color: colors.ink, fontWeight: "700", minWidth: 28, textAlign: "center" },
+  ingredientRow: { flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 4 },
   checkedIngredient: { textDecorationLine: "line-through", color: colors.muted },
   copyIngredients: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 10 },
   copyIngredientsText: { color: colors.brand, fontWeight: "700", fontSize: 13 },
   nutritionRow: { flexDirection: "row", gap: 8, marginTop: 4 },
-  nutritionCol: { flex: 1, backgroundColor: "rgba(0,0,0,0.05)", borderRadius: radius.sm, padding: 8, alignItems: "center" },
+  nutritionCol: {
+    flex: 1,
+    backgroundColor: colors.surfaceAlt,
+    borderRadius: radius.sm,
+    padding: 8,
+    alignItems: "center",
+  },
   nutritionVal: { color: colors.ink, fontWeight: "800", fontSize: 14 },
   nutritionLabel: { color: colors.muted, fontSize: 11, marginTop: 2 },
   highlightRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 8 },
-  highlightPill: { backgroundColor: "rgba(56, 189, 248, 0.12)", color: colors.brand, fontSize: 11, fontWeight: "600", paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.sm },
-  recipeNote: { color: colors.muted, fontSize: 12, lineHeight: 17, marginTop: 12 },
-  caption: { color: colors.ink, lineHeight: 22, marginBottom: spacing.md },
-  tags: { flexDirection: "row", flexWrap: "wrap", marginBottom: spacing.md },
-  section: { marginBottom: spacing.lg },
-  sectionHeader: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: spacing.sm },
-  sectionTitle: {
-    fontSize: 12,
-    fontWeight: "800",
-    color: colors.faint,
-    textTransform: "uppercase",
-    letterSpacing: 0.6,
+  highlightPill: {
+    backgroundColor: colors.surfaceAlt,
+    color: colors.brand,
+    fontSize: 11,
+    fontWeight: "600",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: radius.sm,
   },
-  placeRow: {
+  recipeNote: { color: colors.muted, fontSize: 12, lineHeight: 17, marginTop: 12 },
+  placesSection: { marginBottom: spacing.lg, gap: spacing.sm },
+  placeLink: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    gap: spacing.sm,
-    backgroundColor: colors.surface,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  placeLinkMain: { flex: 1 },
+  placeLinkText: { color: colors.brand, fontWeight: "700", fontSize: 15 },
+  mapLink: { marginTop: 4 },
+  mapLinkText: { color: colors.brand, fontSize: 13, fontWeight: "600" },
+  actions: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: spacing.md },
+  actionBtn: {
+    minHeight: 38,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
     borderRadius: radius.md,
     borderWidth: 1,
     borderColor: colors.border,
-    padding: spacing.md,
-    marginBottom: spacing.sm,
-    ...shadow(1),
+    backgroundColor: colors.surface,
   },
-  placeRowMain: { flex: 1 },
-  placeName: { color: colors.brand, fontWeight: "700", fontSize: 15 },
-  placeMeta: { marginTop: 4, color: colors.muted, fontSize: 13 },
-  mapLink: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 8 },
-  link: { color: colors.brand, fontWeight: "600" },
+  actionBtnText: { color: colors.brand, fontWeight: "700", fontSize: 13 },
+  actionBtnDanger: { borderColor: colors.dangerSoft },
+  actionBtnDangerText: { color: colors.danger },
 });

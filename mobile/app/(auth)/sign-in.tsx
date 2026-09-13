@@ -39,6 +39,9 @@ WebBrowser.maybeCompleteAuthSession();
 
 function useWarmUpBrowser() {
   useEffect(() => {
+    if (Platform.OS !== "ios" && Platform.OS !== "android") {
+      return;
+    }
     void WebBrowser.warmUpAsync();
     return () => {
       void WebBrowser.coolDownAsync();

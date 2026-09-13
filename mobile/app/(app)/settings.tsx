@@ -1,5 +1,6 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useAuth, useUser } from "@clerk/clerk-expo";
+import { useRouter } from "expo-router";
 import { useState } from "react";
 import { Alert, Image, ScrollView, StyleSheet, Text, View } from "react-native";
 
@@ -7,6 +8,7 @@ import { cleanupData, reprocessPlaces } from "@/src/api";
 import { Button, ErrorBanner, SuccessBanner } from "@/src/components/ui";
 import { clerkEnabled } from "@/src/config";
 import { useLibrary } from "@/src/context/LibraryContext";
+import { appHref } from "@/src/nav";
 import { colors, radius, shadow, spacing } from "@/src/theme";
 
 function Avatar({ imageUrl, fallback }: { imageUrl?: string; fallback: string }) {
@@ -73,7 +75,8 @@ function LocalAccountCard() {
 }
 
 export default function SettingsScreen() {
-  const { bumpRefresh } = useLibrary();
+  const router = useRouter();
+  const { bumpRefresh, isAdmin } = useLibrary();
   const [reprocessing, setReprocessing] = useState(false);
   const [cleaning, setCleaning] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -132,6 +135,17 @@ export default function SettingsScreen() {
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
       {clerkEnabled ? <ClerkAccountCard /> : <LocalAccountCard />}
+
+      {isAdmin ? (
+        <View style={styles.card}>
+          <View style={styles.labelRow}>
+            <Ionicons name="shield-checkmark-outline" size={15} color={colors.brand} />
+            <Text style={styles.label}>Admin</Text>
+          </View>
+          <Text style={styles.copy}>Inspect unresolved place candidates from locate.</Text>
+          <Button label="Open admin tools" icon="construct-outline" variant="secondary" onPress={() => router.push(appHref("/(app)/admin"))} />
+        </View>
+      ) : null}
 
       <View style={styles.card}>
         <View style={styles.labelRow}>

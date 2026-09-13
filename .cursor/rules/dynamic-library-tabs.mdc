@@ -1,0 +1,16 @@
+---
+description: Library category tabs are count-driven and can appear or disappear.
+alwaysApply: true
+---
+
+# Dynamic library tabs
+
+Posts, Travel, Food, Watch, and History are **not a fixed tab set**. Show a
+category only when that library has items (same as web `CategoryStrip`).
+
+- While the library is still loading and every count is 0, show all tabs.
+- After load, hide any category with count 0.
+- Native needs at least one tab: if every count is 0, keep **Posts** as the
+  empty inbox. Do not hardcode Posts or Travel as always visible once data
+  exists.
+- New categories follow the same rule; do not assume five tabs.

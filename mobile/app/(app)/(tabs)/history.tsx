@@ -19,7 +19,6 @@ import {
   acceptTimelineReview,
   cleanupVisits,
   createVisit,
-  deleteVisit,
   discardTimelineReview,
   fetchTimelineReviews,
   importTimelineFile,
@@ -27,54 +26,34 @@ import {
   type Place,
   type TimelineReviewDetail,
 } from "@/src/api";
-import { categoryLabel } from "@/src/categoryLabels";
+import { PageHeading, SearchField } from "@/src/components/LibraryChrome";
 import {
   Button,
   EmptyState,
   ErrorBanner,
-  IconButton,
   SuccessBanner,
   TagChip,
 } from "@/src/components/ui";
 import { useLibrary } from "@/src/context/LibraryContext";
+import { formatDate, locationLine } from "@/src/display";
 import { colors, radius, shadow, spacing } from "@/src/theme";
-
-type IconName = keyof typeof Ionicons.glyphMap;
-
-function SectionTitle({
-  icon,
-  title,
-  style,
-}: {
-  icon: IconName;
-  title: string;
-  style?: object;
-}) {
-  return (
-    <View style={[styles.sectionTitleRow, style]}>
-      <Ionicons name={icon} size={18} color={colors.brand} />
-      <Text style={styles.title}>{title}</Text>
-    </View>
-  );
-}
 
 function toDateInput(date: Date): string {
   return date.toISOString().slice(0, 10);
 }
 
-function formatVisitDates(visitedFrom?: string | null, visitedTo?: string | null): string {
-  if (!visitedFrom) {
-    return "Visited · date unknown";
-  }
-  if (!visitedTo || visitedTo === visitedFrom) {
-    return visitedFrom;
-  }
-  return `${visitedFrom} → ${visitedTo}`;
-}
-
 export default function HistoryScreen() {
   const router = useRouter();
   const { places, visits, loading, error, bumpRefresh, refreshToken } = useLibrary();
+  const [instagramUsername, setInstagramUsername] = useState("");
+  const [placeQuery, setPlaceQuery] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [formSuccess, setFormSuccess] = useState<string | null>(null);
+  const [reviews, setReviews] = useState<TimelineReviewDetail[]>([]);
+  const [reviewBusyId, setReviewBusyId] = useState<string | null>(null);
+  const [showMore, setShowMore] = useState(false);
+
   const [destination, setDestination] = useState("");
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [visitedFrom, setVisitedFrom] = useState("");
@@ -83,14 +62,7 @@ export default function HistoryScreen() {
   const [showFromPicker, setShowFromPicker] = useState(false);
   const [showToPicker, setShowToPicker] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [importing, setImporting] = useState(false);
   const [timelineImporting, setTimelineImporting] = useState(false);
-  const [instagramUsername, setInstagramUsername] = useState("");
-  const [formError, setFormError] = useState<string | null>(null);
-  const [formSuccess, setFormSuccess] = useState<string | null>(null);
-  const [reviews, setReviews] = useState<TimelineReviewDetail[]>([]);
-  const [reviewBusyId, setReviewBusyId] = useState<string | null>(null);
-  const [categoryFilter, setCategoryFilter] = useState("all");
 
   useEffect(() => {
     void (async () => {
@@ -101,6 +73,14 @@ export default function HistoryScreen() {
       }
     })();
   }, [refreshToken]);
+
+  const countries = useMemo(() => {
+    return new Set(visits.map((item) => item.place?.location.country).filter(Boolean)).size;
+  }, [visits]);
+
+  const cities = useMemo(() => {
+    return new Set(visits.map((item) => item.place?.location.city).filter(Boolean)).size;
+  }, [visits]);
 
   const suggestions = useMemo(() => {
     const q = destination.trim().toLowerCase();
@@ -116,33 +96,6 @@ export default function HistoryScreen() {
       .slice(0, 6);
   }, [destination, places, selectedPlace]);
 
-  const categoryCounts = useMemo(() => {
-    const counts = new Map<string, number>();
-    for (const { place } of visits) {
-      const key = place?.category ?? "uncategorized";
-      counts.set(key, (counts.get(key) ?? 0) + 1);
-    }
-    return Array.from(counts.entries()).sort(([a], [b]) => {
-      if (a === "uncategorized") {
-        return 1;
-      }
-      if (b === "uncategorized") {
-        return -1;
-      }
-      return categoryLabel(a).localeCompare(categoryLabel(b));
-    });
-  }, [visits]);
-
-  const filteredVisits = useMemo(() => {
-    if (categoryFilter === "all") {
-      return visits;
-    }
-    return visits.filter(({ place }) => {
-      const key = place?.category ?? "uncategorized";
-      return key === categoryFilter;
-    });
-  }, [visits, categoryFilter]);
-
   const handleImportInstagram = async () => {
     setFormError(null);
     setFormSuccess(null);
@@ -151,7 +104,7 @@ export default function HistoryScreen() {
       setFormError("Enter an Instagram username");
       return;
     }
-    setImporting(true);
+    setBusy(true);
     try {
       await startInstagramImport(username);
       setInstagramUsername("");
@@ -161,7 +114,28 @@ export default function HistoryScreen() {
     } catch (err) {
       setFormError(err instanceof Error ? err.message : "Failed to start Instagram import");
     } finally {
-      setImporting(false);
+      setBusy(false);
+    }
+  };
+
+  const handleQuickLogVisit = async () => {
+    setFormError(null);
+    setFormSuccess(null);
+    const query = placeQuery.trim();
+    if (!query) {
+      setFormError("Enter a place name to log a visit");
+      return;
+    }
+    setBusy(true);
+    try {
+      await createVisit({ place_query: query });
+      setPlaceQuery("");
+      setFormSuccess("Visit logged");
+      bumpRefresh();
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : "Failed to log visit");
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -228,8 +202,8 @@ export default function HistoryScreen() {
     const title = scope === "timeline" ? "Clear Timeline visits" : "Clear all visit history";
     const message =
       scope === "timeline"
-        ? "Delete all visits imported from Google Maps Timeline? Places with no remaining visits will be unlinked."
-        : "Delete ALL visited-place history (Timeline, Instagram, and manual)? Places with no remaining visits will be unlinked.";
+        ? "Delete all visits imported from Google Maps Timeline?"
+        : "Delete ALL visited-place history?";
     Alert.alert(title, message, [
       { text: "Cancel", style: "cancel" },
       {
@@ -239,12 +213,7 @@ export default function HistoryScreen() {
           void (async () => {
             try {
               const result = await cleanupVisits(scope);
-              const visitLabel = `${result.visits_deleted} visit${result.visits_deleted === 1 ? "" : "s"}`;
-              const placeLabel =
-                result.places_unlinked > 0
-                  ? `, unlinked ${result.places_unlinked} place${result.places_unlinked === 1 ? "" : "s"}`
-                  : "";
-              setFormSuccess(`Cleared ${visitLabel}${placeLabel}`);
+              setFormSuccess(`Cleared ${result.visits_deleted} visit${result.visits_deleted === 1 ? "" : "s"}`);
               bumpRefresh();
             } catch (err) {
               setFormError(err instanceof Error ? err.message : "Failed to clear visits");
@@ -255,7 +224,7 @@ export default function HistoryScreen() {
     ]);
   };
 
-  const handleSave = async () => {
+  const handleSaveDetailed = async () => {
     setFormError(null);
     setFormSuccess(null);
     if (!selectedPlace && !destination.trim()) {
@@ -289,22 +258,6 @@ export default function HistoryScreen() {
     }
   };
 
-  const handleDelete = (visitId: string) => {
-    Alert.alert("Delete trip", "Remove this trip from your history?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Delete",
-        style: "destructive",
-        onPress: () => {
-          void (async () => {
-            await deleteVisit(visitId);
-            bumpRefresh();
-          })();
-        },
-      },
-    ]);
-  };
-
   if (loading && visits.length === 0) {
     return (
       <View style={styles.centered}>
@@ -317,281 +270,259 @@ export default function HistoryScreen() {
     <FlatList
       style={styles.screen}
       contentContainerStyle={styles.list}
-      data={filteredVisits}
+      data={visits}
       keyExtractor={(item) => item.visit.visit_id}
       ListHeaderComponent={
-        <View style={styles.form}>
-          <SectionTitle icon="logo-instagram" title="Import from Instagram" />
-          <Text style={styles.subtitle}>
-            Latest public posts are ingested and places marked visited. Progress survives refresh.
-          </Text>
+        <View style={styles.header}>
+          <PageHeading
+            kicker="Places you’ve been"
+            title="Travel history"
+            lede="Keep a personal record of past trips, then use it to shape what comes next."
+            count={{ value: visits.length, label: "visits" }}
+          />
+
+          <View style={styles.statsRow}>
+            <View style={styles.statCard}>
+              <Text style={styles.statValue}>{visits.length}</Text>
+              <Text style={styles.statLabel}>visits</Text>
+            </View>
+            <View style={styles.statCard}>
+              <Text style={styles.statValue}>{countries}</Text>
+              <Text style={styles.statLabel}>countries</Text>
+            </View>
+            <View style={styles.statCard}>
+              <Text style={styles.statValue}>{cities}</Text>
+              <Text style={styles.statLabel}>cities</Text>
+            </View>
+          </View>
+
           {error ? <ErrorBanner message={error} /> : null}
           {formError ? <ErrorBanner message={formError} /> : null}
           {formSuccess ? <SuccessBanner message={formSuccess} /> : null}
-          <Text style={styles.label}>Instagram username</Text>
-          <TextInput
-            style={styles.input}
-            value={instagramUsername}
-            onChangeText={setInstagramUsername}
-            placeholder="@yourusername"
-            placeholderTextColor={colors.muted}
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
-          <Button
-            label="Import visits"
-            icon="download-outline"
-            loading={importing}
-            onPress={() => void handleImportInstagram()}
-          />
 
-          <SectionTitle
-            icon="map-outline"
-            title="Import from Google Maps Timeline"
-            style={{ marginTop: spacing.lg }}
-          />
-          <Text style={styles.subtitle}>
-            Upload a phone Timeline .json or Takeout .zip. Parsed on device; processes in the
-            background. Home/errands filtered; unknown types gated via OpenStreetMap.
-          </Text>
-          <Button
-            label={timelineImporting ? "Uploading…" : "Choose Timeline file"}
-            icon="cloud-upload-outline"
-            loading={timelineImporting}
-            onPress={() => void handleImportTimeline()}
-          />
-          <Button
-            label="Clear Timeline visits"
-            icon="trash-outline"
-            variant="danger"
-            onPress={() => handleCleanupVisits("timeline")}
-          />
-          <Button
-            label="Clear all visit history"
-            icon="trash-outline"
-            variant="danger"
-            onPress={() => handleCleanupVisits("all")}
-          />
-
-          {reviews.length > 0 ? (
-            <>
-              <SectionTitle
-                icon="help-circle-outline"
-                title="Review Timeline places"
-                style={{ marginTop: spacing.lg }}
+          <View style={styles.toolbar}>
+            <View style={styles.toolbarForm}>
+              <SearchField
+                value={instagramUsername}
+                onChange={setInstagramUsername}
+                placeholder="Instagram username"
               />
-              <Text style={styles.subtitle}>
-                Ambiguous imports — keep trip memories, discard everyday stops. Suggestions are
-                hints only.
-              </Text>
-              {reviews.map((item) => (
-                <View key={item.visit.visit_id} style={styles.reviewCard}>
-                  <View style={styles.chipRow}>
-                    <TagChip category={item.place?.category} />
-                  </View>
-                  <Text style={styles.suggestionName}>{item.visit.place_name}</Text>
-                  <Text style={styles.suggestionMeta}>
-                    {formatVisitDates(item.visit.visited_from, item.visit.visited_to)}
-                  </Text>
-                  {item.suggestion ? (
-                    <Text style={styles.suggestionMeta}>
-                      Suggested: {item.suggestion}
-                      {item.suggestion_reason ? ` — ${item.suggestion_reason}` : ""}
-                    </Text>
-                  ) : null}
-                  <View style={styles.reviewActions}>
-                    <Button
-                      label="Keep"
-                      icon="checkmark"
-                      loading={reviewBusyId === item.visit.visit_id}
-                      onPress={() => handleAcceptReview(item.visit.visit_id)}
-                    />
-                    <Button
-                      label="Discard"
-                      icon="close"
-                      variant="danger"
-                      loading={reviewBusyId === item.visit.visit_id}
-                      onPress={() => handleDiscardReview(item.visit.visit_id)}
-                    />
-                  </View>
-                </View>
-              ))}
-            </>
-          ) : null}
-
-          <SectionTitle
-            icon="add-circle-outline"
-            title="Add a place you’ve visited"
-            style={{ marginTop: spacing.lg }}
-          />
-          <Text style={styles.subtitle}>
-            Pick a library place or type a new destination. Dates are optional.
-          </Text>
-
-          <Text style={styles.label}>Destination</Text>
-          <TextInput
-            style={styles.input}
-            value={selectedPlace?.display_name ?? destination}
-            onChangeText={(value) => {
-              setSelectedPlace(null);
-              setDestination(value);
-            }}
-            placeholder="Search your places or type a name"
-            placeholderTextColor={colors.muted}
-          />
-          {suggestions.map((place) => (
-            <Pressable
-              key={place.place_id}
-              style={styles.suggestion}
-              onPress={() => {
-                setSelectedPlace(place);
-                setDestination(place.display_name);
-              }}
-            >
-              <Text style={styles.suggestionName}>{place.display_name}</Text>
-              <Text style={styles.suggestionMeta}>
-                {[place.location.city, place.location.country].filter(Boolean).join(", ")}
-              </Text>
-            </Pressable>
-          ))}
-
-          <Text style={styles.label}>From (optional)</Text>
-          <Pressable style={styles.dateInput} onPress={() => setShowFromPicker(true)}>
-            <Ionicons name="calendar-outline" size={16} color={colors.muted} />
-            <Text style={[styles.dateText, !visitedFrom && styles.datePlaceholder]}>
-              {visitedFrom || "No date"}
-            </Text>
-          </Pressable>
-          {showFromPicker ? (
-            <DateTimePicker
-              value={visitedFrom ? new Date(visitedFrom) : new Date()}
-              mode="date"
-              display={Platform.OS === "ios" ? "spinner" : "default"}
-              onChange={(_, date) => {
-                setShowFromPicker(Platform.OS === "ios");
-                if (date) {
-                  setVisitedFrom(toDateInput(date));
-                }
-              }}
-            />
-          ) : null}
-
-          <Text style={styles.label}>To (optional)</Text>
-          <Pressable style={styles.dateInput} onPress={() => setShowToPicker(true)}>
-            <Ionicons name="calendar-outline" size={16} color={colors.muted} />
-            <Text style={[styles.dateText, !visitedTo && styles.datePlaceholder]}>
-              {visitedTo || "No date"}
-            </Text>
-          </Pressable>
-          {showToPicker ? (
-            <DateTimePicker
-              value={visitedTo ? new Date(visitedTo) : new Date()}
-              mode="date"
-              display={Platform.OS === "ios" ? "spinner" : "default"}
-              onChange={(_, date) => {
-                setShowToPicker(Platform.OS === "ios");
-                if (date) {
-                  setVisitedTo(toDateInput(date));
-                }
-              }}
-            />
-          ) : null}
-
-          <Text style={styles.label}>Notes</Text>
-          <TextInput
-            style={[styles.input, styles.notes]}
-            multiline
-            value={notes}
-            onChangeText={setNotes}
-            placeholder="Optional notes"
-            placeholderTextColor={colors.muted}
-          />
-          <Button
-            label="Mark as visited"
-            icon="checkmark-circle-outline"
-            loading={saving}
-            onPress={() => void handleSave()}
-          />
-          <SectionTitle
-            icon="albums-outline"
-            title="Your visits"
-            style={{ marginTop: spacing.lg }}
-          />
-          {categoryCounts.length > 1 ? (
-            <View style={styles.filterRow}>
-              <Pressable onPress={() => setCategoryFilter("all")}>
-                <TagChip label={categoryFilter === "all" ? "All ✓" : `All (${visits.length})`} />
+              <Pressable
+                style={[styles.toolbarBtn, busy && styles.toolbarBtnDisabled]}
+                onPress={() => void handleImportInstagram()}
+                disabled={busy}
+              >
+                <Text style={styles.toolbarBtnText}>{busy ? "Importing…" : "Import Instagram"}</Text>
               </Pressable>
-              {categoryCounts.map(([key, count]) => (
-                <Pressable key={key} onPress={() => setCategoryFilter(key)}>
-                  <TagChip
-                    label={`${key === "uncategorized" ? "Uncategorized" : categoryLabel(key)} (${count})${categoryFilter === key ? " ✓" : ""}`}
-                  />
+            </View>
+            <View style={styles.toolbarForm}>
+              <SearchField value={placeQuery} onChange={setPlaceQuery} placeholder="Log a visit" />
+              <Pressable
+                style={[styles.toolbarBtn, busy && styles.toolbarBtnDisabled]}
+                onPress={() => void handleQuickLogVisit()}
+                disabled={busy}
+              >
+                <Text style={styles.toolbarBtnText}>Log visit</Text>
+              </Pressable>
+            </View>
+          </View>
+
+          {visits.length > 0 ? null : (
+            <EmptyState
+              title="No visits logged yet"
+              body="Mark places as visited or import from Instagram."
+            />
+          )}
+        </View>
+      }
+      renderItem={({ item, index }) => {
+        const { visit, place } = item;
+        const dateLabel =
+          formatDate(visit.visited_from ?? visit.created_at) ?? "—";
+        const metaLine =
+          [place ? locationLine(place) : null, visit.notes].filter(Boolean).join(" · ") ||
+          visit.source;
+        const canOpen = Boolean(visit.place_id);
+
+        return (
+          <Pressable
+            style={styles.timelineRow}
+            disabled={!canOpen}
+            onPress={() => visit.place_id && router.push(`/places/${visit.place_id}`)}
+          >
+            <Text style={styles.timelineDate}>{dateLabel}</Text>
+            <View style={styles.timelineRail}>
+              <View style={styles.timelineDot} />
+              {index < visits.length - 1 ? <View style={styles.timelineLine} /> : null}
+            </View>
+            <View style={styles.timelineBody}>
+              <Text style={styles.timelineTitle}>{visit.place_name}</Text>
+              {metaLine ? <Text style={styles.timelineMeta}>{metaLine}</Text> : null}
+            </View>
+          </Pressable>
+        );
+      }}
+      ListFooterComponent={
+        <View style={styles.footer}>
+          <Pressable style={styles.moreToggle} onPress={() => setShowMore((value) => !value)}>
+            <Text style={styles.moreToggleText}>
+              {showMore ? "Hide import & tools" : "Import & tools"}
+            </Text>
+            <Ionicons
+              name={showMore ? "chevron-up" : "chevron-down"}
+              size={16}
+              color={colors.brand}
+            />
+          </Pressable>
+
+          {showMore ? (
+            <View style={styles.morePanel}>
+              <Text style={styles.moreTitle}>Google Maps Timeline</Text>
+              <Text style={styles.moreSubtitle}>
+                Upload a Timeline .json or Takeout .zip. Processes in the background.
+              </Text>
+              <Button
+                label={timelineImporting ? "Uploading…" : "Choose Timeline file"}
+                icon="cloud-upload-outline"
+                loading={timelineImporting}
+                onPress={() => void handleImportTimeline()}
+              />
+
+              {reviews.length > 0 ? (
+                <>
+                  <Text style={[styles.moreTitle, { marginTop: spacing.lg }]}>
+                    Review Timeline places
+                  </Text>
+                  <Text style={styles.moreSubtitle}>
+                    Ambiguous imports — keep trip memories, discard everyday stops.
+                  </Text>
+                  {reviews.map((item) => (
+                    <View key={item.visit.visit_id} style={styles.reviewCard}>
+                      <TagChip category={item.place?.category} />
+                      <Text style={styles.reviewName}>{item.visit.place_name}</Text>
+                      {item.suggestion ? (
+                        <Text style={styles.reviewMeta}>Suggested: {item.suggestion}</Text>
+                      ) : null}
+                      <View style={styles.reviewActions}>
+                        <Button
+                          label="Keep"
+                          icon="checkmark"
+                          loading={reviewBusyId === item.visit.visit_id}
+                          onPress={() => handleAcceptReview(item.visit.visit_id)}
+                        />
+                        <Button
+                          label="Discard"
+                          icon="close"
+                          variant="danger"
+                          loading={reviewBusyId === item.visit.visit_id}
+                          onPress={() => handleDiscardReview(item.visit.visit_id)}
+                        />
+                      </View>
+                    </View>
+                  ))}
+                </>
+              ) : null}
+
+              <Text style={[styles.moreTitle, { marginTop: spacing.lg }]}>
+                Log visit with dates
+              </Text>
+              <Text style={styles.label}>Destination</Text>
+              <TextInput
+                style={styles.input}
+                value={selectedPlace?.display_name ?? destination}
+                onChangeText={(value) => {
+                  setSelectedPlace(null);
+                  setDestination(value);
+                }}
+                placeholder="Search your places or type a name"
+                placeholderTextColor={colors.muted}
+              />
+              {suggestions.map((place) => (
+                <Pressable
+                  key={place.place_id}
+                  style={styles.suggestion}
+                  onPress={() => {
+                    setSelectedPlace(place);
+                    setDestination(place.display_name);
+                  }}
+                >
+                  <Text style={styles.suggestionName}>{place.display_name}</Text>
+                  <Text style={styles.suggestionMeta}>{locationLine(place)}</Text>
                 </Pressable>
               ))}
+
+              <Text style={styles.label}>From (optional)</Text>
+              <Pressable style={styles.dateInput} onPress={() => setShowFromPicker(true)}>
+                <Ionicons name="calendar-outline" size={16} color={colors.muted} />
+                <Text style={[styles.dateText, !visitedFrom && styles.datePlaceholder]}>
+                  {visitedFrom || "No date"}
+                </Text>
+              </Pressable>
+              {showFromPicker ? (
+                <DateTimePicker
+                  value={visitedFrom ? new Date(visitedFrom) : new Date()}
+                  mode="date"
+                  display={Platform.OS === "ios" ? "spinner" : "default"}
+                  onChange={(_, date) => {
+                    setShowFromPicker(Platform.OS === "ios");
+                    if (date) setVisitedFrom(toDateInput(date));
+                  }}
+                />
+              ) : null}
+
+              <Text style={styles.label}>To (optional)</Text>
+              <Pressable style={styles.dateInput} onPress={() => setShowToPicker(true)}>
+                <Ionicons name="calendar-outline" size={16} color={colors.muted} />
+                <Text style={[styles.dateText, !visitedTo && styles.datePlaceholder]}>
+                  {visitedTo || "No date"}
+                </Text>
+              </Pressable>
+              {showToPicker ? (
+                <DateTimePicker
+                  value={visitedTo ? new Date(visitedTo) : new Date()}
+                  mode="date"
+                  display={Platform.OS === "ios" ? "spinner" : "default"}
+                  onChange={(_, date) => {
+                    setShowToPicker(Platform.OS === "ios");
+                    if (date) setVisitedTo(toDateInput(date));
+                  }}
+                />
+              ) : null}
+
+              <Text style={styles.label}>Notes</Text>
+              <TextInput
+                style={[styles.input, styles.notes]}
+                multiline
+                value={notes}
+                onChangeText={setNotes}
+                placeholder="Optional notes"
+                placeholderTextColor={colors.muted}
+              />
+              <Button
+                label="Mark as visited"
+                icon="checkmark-circle-outline"
+                loading={saving}
+                onPress={() => void handleSaveDetailed()}
+              />
+
+              <View style={styles.cleanupRow}>
+                <Button
+                  label="Clear Timeline visits"
+                  icon="trash-outline"
+                  variant="danger"
+                  onPress={() => handleCleanupVisits("timeline")}
+                />
+                <Button
+                  label="Clear all visit history"
+                  icon="trash-outline"
+                  variant="danger"
+                  onPress={() => handleCleanupVisits("all")}
+                />
+              </View>
             </View>
           ) : null}
         </View>
       }
-      ListEmptyComponent={
-        <EmptyState title="No visits yet" body="Mark places as visited from here or a place page." />
-      }
-      renderItem={({ item }) => {
-        const { visit, place } = item;
-        const canOpen = Boolean(visit.place_id);
-        return (
-          <View style={styles.card}>
-            <View style={styles.cardTopRow}>
-              <View style={styles.chipRow}>
-                <TagChip category={place?.category} />
-                {visit.source === "timeline" || visit.source === "instagram" || visit.source === "manual" ? (
-                  <TagChip
-                    label={
-                      visit.source === "timeline"
-                        ? "Timeline"
-                        : visit.source === "instagram"
-                          ? "Instagram"
-                          : "Manual"
-                    }
-                  />
-                ) : null}
-              </View>
-              <IconButton
-                icon="trash-outline"
-                onPress={() => handleDelete(visit.visit_id)}
-                color={colors.faint}
-                size={16}
-                accessibilityLabel="Delete trip"
-              />
-            </View>
-            <Pressable
-              disabled={!canOpen}
-              onPress={() => visit.place_id && router.push(`/places/${visit.place_id}`)}
-              style={styles.cardTitleRow}
-            >
-              <Text style={styles.cardTitle}>{visit.place_name}</Text>
-              {canOpen ? (
-                <Ionicons name="chevron-forward" size={16} color={colors.brand} />
-              ) : null}
-            </Pressable>
-            {place ? (
-              <View style={styles.cardMetaRow}>
-                <Ionicons name="location-outline" size={13} color={colors.muted} />
-                <Text style={styles.cardMeta}>
-                  {[place.location.city, place.location.country].filter(Boolean).join(", ")}
-                </Text>
-              </View>
-            ) : null}
-            <View style={styles.cardMetaRow}>
-              <Ionicons name="calendar-outline" size={13} color={colors.ink} />
-              <Text style={styles.cardDates}>
-                {formatVisitDates(visit.visited_from, visit.visited_to)}
-              </Text>
-            </View>
-            {visit.notes ? <Text style={styles.cardNotes}>{visit.notes}</Text> : null}
-          </View>
-        );
-      }}
     />
   );
 }
@@ -604,19 +535,104 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: colors.bg,
   },
-  list: { padding: spacing.md, flexGrow: 1 },
-  form: {
+  list: { padding: spacing.md, flexGrow: 1, paddingBottom: spacing.xl },
+  header: { gap: spacing.md, marginBottom: spacing.md },
+  statsRow: { flexDirection: "row", gap: 8 },
+  statCard: {
+    flex: 1,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.lg,
+    paddingVertical: 14,
+    paddingHorizontal: 10,
+    alignItems: "center",
+    ...shadow(1),
+  },
+  statValue: {
+    fontSize: 28,
+    fontWeight: "400",
+    color: colors.ink,
+    lineHeight: 30,
+  },
+  statLabel: { color: colors.muted, fontSize: 10, marginTop: 4 },
+  toolbar: { gap: 9 },
+  toolbarForm: { flexDirection: "row", alignItems: "center", gap: 9 },
+  toolbarBtn: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    backgroundColor: colors.surface,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    minWidth: 120,
+    alignItems: "center",
+  },
+  toolbarBtnDisabled: { opacity: 0.6 },
+  toolbarBtnText: { color: colors.brand, fontWeight: "700", fontSize: 12 },
+  timelineRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 12,
+    minHeight: 78,
+    paddingVertical: 10,
+  },
+  timelineDate: {
+    width: 62,
+    color: colors.muted,
+    fontSize: 9,
+    paddingTop: 6,
+  },
+  timelineRail: {
+    width: 12,
+    alignItems: "center",
+    position: "relative",
+    minHeight: 60,
+  },
+  timelineDot: {
+    width: 9,
+    height: 9,
+    borderRadius: 5,
+    borderWidth: 2,
+    borderColor: colors.brand,
+    backgroundColor: colors.bg,
+    marginTop: 6,
+  },
+  timelineLine: {
+    position: "absolute",
+    top: 16,
+    width: 1,
+    bottom: -10,
+    backgroundColor: colors.border,
+  },
+  timelineBody: { flex: 1, paddingTop: 2 },
+  timelineTitle: {
+    fontSize: 22,
+    fontWeight: "400",
+    color: colors.ink,
+    lineHeight: 24,
+  },
+  timelineMeta: { color: colors.muted, fontSize: 9, marginTop: 5, lineHeight: 14 },
+  footer: { marginTop: spacing.lg },
+  moreToggle: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: spacing.sm,
+  },
+  moreToggleText: { color: colors.brand, fontWeight: "700", fontSize: 13 },
+  morePanel: {
+    marginTop: spacing.sm,
     backgroundColor: colors.surface,
     borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: colors.border,
     padding: spacing.md,
-    marginBottom: spacing.lg,
     ...shadow(1),
   },
-  sectionTitleRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  title: { fontSize: 18, fontWeight: "800", color: colors.ink },
-  subtitle: { marginTop: 4, marginBottom: spacing.md, color: colors.muted, fontSize: 14 },
+  moreTitle: { fontSize: 16, fontWeight: "800", color: colors.ink, marginBottom: 4 },
+  moreSubtitle: { color: colors.muted, fontSize: 13, marginBottom: spacing.sm, lineHeight: 18 },
   label: {
     marginTop: spacing.sm,
     marginBottom: 6,
@@ -663,29 +679,10 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     padding: spacing.md,
     marginBottom: spacing.sm,
+    gap: 6,
   },
+  reviewName: { color: colors.ink, fontWeight: "700", fontSize: 15 },
+  reviewMeta: { color: colors.muted, fontSize: 12 },
   reviewActions: { marginTop: spacing.sm, gap: spacing.sm },
-  chipRow: { flexDirection: "row", flexWrap: "wrap", alignItems: "center" },
-  filterRow: { flexDirection: "row", flexWrap: "wrap", marginTop: spacing.sm },
-  card: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: spacing.md,
-    marginBottom: spacing.md,
-    ...shadow(1),
-  },
-  cardTopRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 2,
-  },
-  cardTitleRow: { flexDirection: "row", alignItems: "center", gap: 4 },
-  cardTitle: { flex: 1, fontSize: 16, fontWeight: "700", color: colors.brand },
-  cardMetaRow: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 5 },
-  cardMeta: { color: colors.muted, fontSize: 13 },
-  cardDates: { color: colors.ink, fontWeight: "500", fontSize: 13 },
-  cardNotes: { marginTop: 8, color: colors.muted, lineHeight: 20 },
+  cleanupRow: { marginTop: spacing.lg, gap: spacing.sm },
 });

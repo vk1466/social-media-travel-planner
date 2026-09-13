@@ -14,12 +14,10 @@ export function getPostTitle(post: SavedPost): string {
 }
 
 export function getPlatformLabel(post: SavedPost): string {
-  if (post.platform === "instagram") {
-    return "Instagram";
-  }
-  if (post.platform === "web") {
-    return "Web";
-  }
+  if (post.platform === "instagram") return "Instagram";
+  if (post.platform === "tiktok") return "TikTok";
+  if (post.platform === "youtube") return "YouTube";
+  if (post.platform === "web") return "Web";
   return post.platform;
 }
 
