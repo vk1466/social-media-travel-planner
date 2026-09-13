@@ -260,13 +260,27 @@ class TravelPlannerStack(Stack):
       )
     )
 
+    ingest_state_machine_name = f"{Stack.of(self).stack_name}-ingest"
+    timeline_state_machine_name = f"{Stack.of(self).stack_name}-timeline"
+    ingest_state_machine_arn = (
+      f"arn:aws:states:{region}:{Stack.of(self).account}:stateMachine:{ingest_state_machine_name}"
+    )
+    timeline_state_machine_arn = (
+      f"arn:aws:states:{region}:{Stack.of(self).account}:stateMachine:{timeline_state_machine_name}"
+    )
+
     state_machine = self._create_state_machine(ingest_fn, finalize_fn)
     timeline_state_machine = self._create_timeline_state_machine(
       timeline_batch_fn,
       timeline_finalize_fn,
     )
-    finalize_fn.add_environment("STATE_MACHINE_ARN", state_machine.state_machine_arn)
-    state_machine.grant_start_execution(finalize_fn)
+    finalize_fn.add_environment("STATE_MACHINE_ARN", ingest_state_machine_arn)
+    finalize_fn.add_to_role_policy(
+      iam.PolicyStatement(
+        actions=["states:StartExecution"],
+        resources=[ingest_state_machine_arn],
+      )
+    )
 
     api_fn = lambda_.DockerImageFunction(
       self,
@@ -282,8 +296,8 @@ class TravelPlannerStack(Stack):
       timeout=Duration.seconds(900),
       environment={
         **shared_env,
-        "STATE_MACHINE_ARN": state_machine.state_machine_arn,
-        "TIMELINE_STATE_MACHINE_ARN": timeline_state_machine.state_machine_arn,
+        "STATE_MACHINE_ARN": ingest_state_machine_arn,
+        "TIMELINE_STATE_MACHINE_ARN": timeline_state_machine_arn,
         "CORS_ORIGINS": cors_origins,
         "CLERK_ISSUER": clerk_issuer,
         "CLERK_SECRET_KEY": clerk_secret_key,
@@ -294,8 +308,12 @@ class TravelPlannerStack(Stack):
     )
     for table in tables.values():
       table.grant_read_write_data(api_fn)
-    state_machine.grant_start_execution(api_fn)
-    timeline_state_machine.grant_start_execution(api_fn)
+    api_fn.add_to_role_policy(
+      iam.PolicyStatement(
+        actions=["states:StartExecution"],
+        resources=[ingest_state_machine_arn, timeline_state_machine_arn],
+      )
+    )
     timeline_bucket.grant_put(api_fn)
     timeline_bucket.grant_read(api_fn)
     media_bucket.grant_read_write(api_fn)
