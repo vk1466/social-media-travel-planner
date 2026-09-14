@@ -99,7 +99,16 @@ export function PlaceDetail({
   const children = detail?.children ?? [];
   const mapUrl = place.google_maps_url || googleMapsUrl(place.location);
   const facts = place.facts;
-  const whyGoDetails = compactMentionDetails(place.details, place.display_name);
+  const whyGoDetails = useMemo(() => {
+    const rawDetails = compactMentionDetails(place.details, place.display_name);
+    if (!place.summary) return rawDetails;
+    const lowerSummary = place.summary.toLowerCase();
+    return rawDetails.filter((detail) => {
+      const lower = detail.toLowerCase().trim();
+      if (!lower) return false;
+      return !lowerSummary.includes(lower) && !lower.includes(lowerSummary);
+    });
+  }, [place.details, place.display_name, place.summary]);
   const factRows =
     facts && facts.status !== "empty" ? factsStructuredRows(facts) : [];
 
@@ -261,33 +270,30 @@ export function PlaceDetail({
         <div className="place-decision-grid">
           <main className="place-decision-main">
             {place.summary && (
-              <div
-                className="place-intuitive-summary"
-                style={{
-                  background: "var(--theme-soft, rgba(255, 255, 255, 0.04))",
-                  borderLeft: "3px solid var(--accent, #2dd4bf)",
-                  padding: "12px 16px",
-                  borderRadius: "0 8px 8px 0",
-                  fontSize: "0.95rem",
-                  lineHeight: "1.6",
-                  marginBottom: "20px",
-                  color: "var(--text, #f0f3f1)",
-                }}
-              >
-                <span
-                  style={{
-                    display: "block",
-                    fontSize: "0.75rem",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.08em",
-                    color: "var(--text-muted, #8d9a94)",
-                    marginBottom: "4px",
-                    fontWeight: 600,
-                  }}
-                >
-                  Overview
+              <div className="place-intuitive-summary">
+                <span className="place-intuitive-summary-label">
+                  <span aria-hidden="true">✦</span> Overview
                 </span>
-                <p style={{ margin: 0 }}>{place.summary}</p>
+                <p className="place-intuitive-summary-text">{place.summary}</p>
+              </div>
+            )}
+
+            {factRows.length > 0 && (
+              <div className="place-quick-facts-grid">
+                {factRows.map((row) => (
+                  <div key={row.label} className="place-quick-fact-card">
+                    <span className="place-quick-fact-label">{row.label}</span>
+                    <span className="place-quick-fact-value">
+                      {row.label === "Website" ? (
+                        <a href={row.value} target="_blank" rel="noreferrer">
+                          Visit website ↗
+                        </a>
+                      ) : (
+                        row.value
+                      )}
+                    </span>
+                  </div>
+                ))}
               </div>
             )}
 
@@ -334,8 +340,13 @@ export function PlaceDetail({
             ) : null}
 
             {place.tips.length > 0 && (
-              <details className="place-decision-section">
-                <summary><h3>Creator tips</h3></summary>
+              <details className="place-decision-section" open>
+                <summary>
+                  <h3>
+                    Creator tips &amp; insights{" "}
+                    <span className="place-section-count">{place.tips.length}</span>
+                  </h3>
+                </summary>
                 <ul className="place-flip-tips-cards">
                   {place.tips.map((tip, index) => (
                     <li key={index} className="place-flip-tip-card">

@@ -2167,3 +2167,210 @@
   line-height: 1.4;
   color: rgb(var(--wf-cream-rgb) / 0.9);
 }
+
+/* Place Intuitive Summary */
+.place-intuitive-summary {
+  background: var(--theme-soft, rgba(255, 255, 255, 0.04));
+  border: 1px solid var(--theme-line);
+  border-left: 3px solid var(--theme-accent, #2dd4bf);
+  padding: 14px 18px;
+  border-radius: 0 10px 10px 0;
+  margin-bottom: 22px;
+}
+
+.place-intuitive-summary-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--theme-accent, #2dd4bf);
+  margin-bottom: 6px;
+  font-weight: 700;
+}
+
+.place-intuitive-summary-text {
+  margin: 0;
+  font-size: 0.94rem;
+  line-height: 1.6;
+  color: var(--theme-ink);
+}
+
+/* Place Quick Facts Grid */
+.place-quick-facts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+  margin-bottom: 22px;
+}
+
+.place-quick-fact-card {
+  background: var(--theme-soft, rgba(255, 255, 255, 0.03));
+  border: 1px solid var(--theme-line);
+  padding: 10px 14px;
+  border-radius: 8px;
+}
+
+.place-quick-fact-label {
+  display: block;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--theme-muted);
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+
+.place-quick-fact-value {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--theme-ink);
+  font-weight: 500;
+  word-break: break-word;
+}
+
+.place-quick-fact-value a {
+  color: var(--theme-accent, #2dd4bf);
+  text-decoration: none;
+}
+
+.place-quick-fact-value a:hover {
+  text-decoration: underline;
+}
+
+/* Post Content Assets Drawer & Tabs */
+.post-flip-assets-wrap {
+  margin: 10px 0 14px;
+}
+
+.post-flip-assets-toggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.post-flip-asset-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 11px;
+  border-radius: 20px;
+  border: 1px solid var(--theme-line);
+  background: var(--theme-soft, rgba(255, 255, 255, 0.04));
+  color: var(--theme-ink);
+  font-size: 0.74rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.post-flip-asset-tab:hover {
+  border-color: var(--theme-accent, #2dd4bf);
+  background: var(--theme-mid, rgba(255, 255, 255, 0.08));
+}
+
+.post-flip-asset-tab.is-active {
+  border-color: var(--theme-accent, #2dd4bf);
+  background: rgba(45, 212, 191, 0.15);
+  color: var(--theme-accent, #2dd4bf);
+}
+
+.post-flip-asset-drawer {
+  margin-top: 10px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--theme-line);
+  border-radius: 8px;
+  padding: 12px 14px;
+  animation: fadeIn 0.15s ease;
+}
+
+.post-flip-asset-drawer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  border-bottom: 1px solid var(--theme-line);
+  padding-bottom: 6px;
+}
+
+.post-flip-asset-drawer-title {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  color: var(--theme-accent, #2dd4bf);
+}
+
+.post-flip-asset-drawer-close {
+  background: transparent;
+  border: none;
+  color: var(--theme-muted);
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+}
+
+.post-flip-asset-drawer-close:hover {
+  color: var(--theme-ink);
+}
+
+.post-flip-asset-drawer-content {
+  font-size: 0.82rem;
+  line-height: 1.55;
+  color: var(--theme-ink);
+  max-height: 200px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  scrollbar-width: thin;
+}
+
+/* Slide Nav for multi-slide posts */
+.post-flip-slide-nav {
+  position: absolute;
+  bottom: 24px;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.post-flip-slide-btn {
+  background: rgba(10, 16, 14, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #fff;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1.1rem;
+  line-height: 1;
+  transition: all 0.15s ease;
+}
+
+.post-flip-slide-btn:hover {
+  background: rgba(10, 16, 14, 0.95);
+  border-color: #fff;
+  transform: scale(1.08);
+}
+
+.post-flip-slide-counter {
+  font-size: 0.75rem;
+  background: rgba(10, 16, 14, 0.75);
+  color: #fff;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+

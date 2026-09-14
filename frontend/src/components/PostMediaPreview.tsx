@@ -17,13 +17,25 @@ function PlayIcon() {
 }
 
 export function PostReelFace({ post, active }: PostReelFaceProps) {
-  const sourceUrl = post.thumbnail_url?.trim() || null;
-  const thumbnailUrl = proxiedMediaUrl(sourceUrl);
+  const slides =
+    post.slide_media_urls && post.slide_media_urls.length > 0
+      ? post.slide_media_urls
+      : post.thumbnail_url
+        ? [post.thumbnail_url]
+        : [];
+  const [slideIndex, setSlideIndex] = useState(0);
+
+  const currentSource = slides[slideIndex] || post.thumbnail_url?.trim() || null;
+  const thumbnailUrl = proxiedMediaUrl(currentSource);
   const [thumbnailFailed, setThumbnailFailed] = useState(false);
 
   useEffect(() => {
     setThumbnailFailed(false);
   }, [thumbnailUrl]);
+
+  useEffect(() => {
+    setSlideIndex(0);
+  }, [post.post_id]);
 
   if (!active) {
     return <div className="post-flip-reel" aria-hidden="true" />;
@@ -48,8 +60,38 @@ export function PostReelFace({ post, active }: PostReelFaceProps) {
           <span className="post-flip-reel-play-icon">
             <PlayIcon />
           </span>
-          <span>Watch on Instagram</span>
+          <span>Watch on {post.platform === "youtube" ? "YouTube" : "Instagram"}</span>
         </a>
+
+        {slides.length > 1 && (
+          <div className="post-flip-slide-nav">
+            <button
+              type="button"
+              className="post-flip-slide-btn"
+              onClick={(e) => {
+                e.stopPropagation();
+                setSlideIndex((i) => (i - 1 + slides.length) % slides.length);
+              }}
+              aria-label="Previous slide"
+            >
+              ‹
+            </button>
+            <span className="post-flip-slide-counter">
+              Slide {slideIndex + 1} of {slides.length}
+            </span>
+            <button
+              type="button"
+              className="post-flip-slide-btn"
+              onClick={(e) => {
+                e.stopPropagation();
+                setSlideIndex((i) => (i + 1) % slides.length);
+              }}
+              aria-label="Next slide"
+            >
+              ›
+            </button>
+          </div>
+        )}
       </div>
     );
   }
@@ -60,10 +102,10 @@ export function PostReelFace({ post, active }: PostReelFaceProps) {
         <span className="post-flip-reel-play-icon">
           <PlayIcon />
         </span>
-        <span>Watch on Instagram</span>
+        <span>Watch on {post.platform === "youtube" ? "YouTube" : "Instagram"}</span>
       </a>
       <p className="post-flip-reel-empty-note">
-        {sourceUrl
+        {currentSource
           ? "Couldn't load the preview image."
           : "No preview image saved for this post yet."}
       </p>

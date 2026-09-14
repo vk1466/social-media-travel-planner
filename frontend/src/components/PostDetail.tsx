@@ -314,6 +314,7 @@ function PostFlipFront({
 }: PostFlipFrontProps) {
   const { reelSummary, llmSummary, summaryExcerpt } = buildReelSummary(post);
   const [tripTipsOpen, setTripTipsOpen] = useState(false);
+  const [activeAssetTab, setActiveAssetTab] = useState<"transcript" | "ocr" | "video" | null>(null);
   const heading = shortHeading(post);
   const showHeading =
     Boolean(heading) &&
@@ -350,6 +351,11 @@ function PostFlipFront({
           </p>
           <div className="detail-badges">
             <span className="badge badge-muted">{post.media_kind}</span>
+            {post.slide_media_urls && post.slide_media_urls.length > 1 && (
+              <span className="badge badge-muted">
+                📷 {post.slide_media_urls.length} slides
+              </span>
+            )}
             {dateLabel && <span className="badge badge-muted">{dateLabel}</span>}
             <button type="button" className="post-flip-reel-pill" onClick={onFlip}>
               <PlayIcon />
@@ -418,6 +424,65 @@ function PostFlipFront({
                     </li>
                   ))}
                 </ul>
+              )}
+            </div>
+          )}
+
+          {/* Content Assets: Transcript / OCR Text / Visual analysis */}
+          {(post.transcript || post.image_text || post.video_analysis) && (
+            <div className="post-flip-assets-wrap">
+              <div className="post-flip-assets-toggles">
+                {post.transcript && (
+                  <button
+                    type="button"
+                    className={`post-flip-asset-tab ${activeAssetTab === "transcript" ? "is-active" : ""}`}
+                    onClick={() => setActiveAssetTab((cur) => (cur === "transcript" ? null : "transcript"))}
+                  >
+                    🎙️ Transcript
+                  </button>
+                )}
+                {post.image_text && (
+                  <button
+                    type="button"
+                    className={`post-flip-asset-tab ${activeAssetTab === "ocr" ? "is-active" : ""}`}
+                    onClick={() => setActiveAssetTab((cur) => (cur === "ocr" ? null : "ocr"))}
+                  >
+                    📷 Slide &amp; Graphic Text
+                  </button>
+                )}
+                {post.video_analysis && (
+                  <button
+                    type="button"
+                    className={`post-flip-asset-tab ${activeAssetTab === "video" ? "is-active" : ""}`}
+                    onClick={() => setActiveAssetTab((cur) => (cur === "video" ? null : "video"))}
+                  >
+                    🎬 Visual Notes
+                  </button>
+                )}
+              </div>
+              {activeAssetTab && (
+                <div className="post-flip-asset-drawer">
+                  <div className="post-flip-asset-drawer-header">
+                    <span className="post-flip-asset-drawer-title">
+                      {activeAssetTab === "transcript" && "🎙️ Spoken Audio Transcript"}
+                      {activeAssetTab === "ocr" && "📷 OCR Text from Slides / Graphic"}
+                      {activeAssetTab === "video" && "🎬 Video Analysis & Visual Notes"}
+                    </span>
+                    <button
+                      type="button"
+                      className="post-flip-asset-drawer-close"
+                      onClick={() => setActiveAssetTab(null)}
+                      aria-label="Close text view"
+                    >
+                      ×
+                    </button>
+                  </div>
+                  <div className="post-flip-asset-drawer-content">
+                    {activeAssetTab === "transcript" && post.transcript}
+                    {activeAssetTab === "ocr" && post.image_text}
+                    {activeAssetTab === "video" && post.video_analysis}
+                  </div>
+                </div>
               )}
             </div>
           )}

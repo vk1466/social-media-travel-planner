@@ -138,7 +138,12 @@ export default function PlaceDetailScreen() {
   }
 
   const { place, parent, children, source_posts: sourcePosts } = detail;
-  const whyGoDetails = compactMentionDetails(place.details, place.display_name);
+  const whyGoDetails = compactMentionDetails(place.details, place.display_name).filter((item) => {
+    if (!place.summary) return true;
+    const lowerSummary = place.summary.toLowerCase();
+    const lowerItem = item.toLowerCase().trim();
+    return !lowerSummary.includes(lowerItem) && !lowerItem.includes(lowerSummary);
+  });
   const mapUrl = place.google_maps_url || googleMapsUrl(place.location);
   const breadcrumb = locationBreadcrumb(place);
   return (
@@ -191,6 +196,16 @@ export default function PlaceDetailScreen() {
             <TagChip key={attr} label={attr} />
           ))}
         </View>
+
+        {place.summary ? (
+          <View style={styles.summaryCard}>
+            <View style={styles.summaryHeader}>
+              <Ionicons name="sparkles" size={13} color={colors.brand} />
+              <Text style={styles.summaryTitle}>Overview</Text>
+            </View>
+            <Text style={styles.summaryText}>{place.summary}</Text>
+          </View>
+        ) : null}
 
         <SectionBlock icon="flash-outline" title="At a glance">
           {detail.facts_refresh_queued ? (
@@ -409,6 +424,34 @@ const styles = StyleSheet.create({
   insightLabel: { color: colors.brand, fontSize: 11, fontWeight: "800", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 3 },
   caveatRow: { backgroundColor: colors.dangerSoft, borderRadius: radius.sm, paddingHorizontal: spacing.sm, borderBottomWidth: 0 },
   caveatLabel: { color: colors.danger, fontSize: 11, fontWeight: "800", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 3 },
+  summaryCard: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    borderLeftWidth: 3,
+    borderLeftColor: colors.brand,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.md,
+    gap: 6,
+    ...shadow(1),
+  },
+  summaryHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  summaryTitle: {
+    fontSize: 11,
+    fontWeight: "800",
+    color: colors.brand,
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+  },
+  summaryText: {
+    color: colors.ink,
+    fontSize: 14,
+    lineHeight: 22,
+  },
   surface: {
     backgroundColor: colors.surface,
     borderRadius: radius.lg,
