@@ -52,6 +52,8 @@ function AppRoutes({ authReady }: { authReady: boolean }) {
       setPosts(nextPosts);
       setPlaces(nextPlaces);
       setVisits(nextVisits);
+    } catch (err) {
+      console.error("Failed to fetch library data:", err);
     } finally {
       setLoadingPosts(false);
     }

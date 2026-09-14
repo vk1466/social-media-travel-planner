@@ -130,8 +130,13 @@ export function PostPlacesMap({
       </MapContainer>
       <div className="post-flip-live-map-chip">
         <p>{active.display_name}</p>
-        <a href={mapsUrl} target="_blank" rel="noreferrer">
-          Directions
+        <a
+          href={mapsUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="post-flip-live-map-directions-btn"
+        >
+          Directions ↗
         </a>
       </div>
     </div>

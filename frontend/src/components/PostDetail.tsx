@@ -2,10 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { fetchPlaceDetail, fetchPost, nativePostId, type Place, type SavedPost } from "../api";
 import { mappablePlaces } from "../placeMapUtils";
-import { readPostCardLayout } from "../postCardLayout";
 import { formatPostDate, getPlatformLabel, proxiedMediaUrl } from "../postDisplayUtils";
 import { DetailModal } from "./DetailModal";
-import { PostReelFace } from "./PostMediaPreview";
 import { PostPlacesMap } from "./PostPlacesMap";
 import { TrailerModal } from "./movies/TrailerModal";
 import { RecipeDetailModal } from "./food/RecipeDetailModal";
@@ -13,10 +11,8 @@ import { GroceryListModal } from "./food/GroceryListModal";
 import {
   buildPlaceSummaries,
   buildReelDetailItems,
-  buildReelSummary,
   mapPlaceStub,
   shortHeading,
-  windowedDotIndices,
   type LinkedPlace,
   type ReelDetailItem,
 } from "./postDetailUtils";
@@ -33,30 +29,12 @@ interface PostDetailProps {
 
 function DeleteIcon() {
   return (
-    <svg width="15" height="15" viewBox="0 0 14 14" aria-hidden="true">
-      <path
-        d="M2.5 4h9M5.5 4V2.5h3V4M5 4v7.5h4V4"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function FlipIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
-      <path
-        d="M3 5.5h7.5M10.5 5.5 8.5 3.5M10.5 5.5 8.5 7.5M13 10.5H5.5M5.5 10.5 7.5 8.5M5.5 10.5 7.5 12.5"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.4"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M3 6h18" />
+      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+      <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+      <line x1="10" y1="11" x2="10" y2="17" />
+      <line x1="14" y1="11" x2="14" y2="17" />
     </svg>
   );
 }
@@ -101,139 +79,109 @@ function PlayIcon() {
 
 function GoogleMapsIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+    <svg width="10" height="10" viewBox="0 0 24 24" aria-hidden="true">
       <path fill="#34A853" d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7z" />
       <path fill="#FBBC04" d="M12 2v20s7-7.75 7-13a7 7 0 0 0-7-7z" />
       <path fill="#EA4335" d="M12 9v13s7-7.75 7-13H12z" />
       <path fill="#4285F4" d="M5 9a7 7 0 0 0 1.76 4.7L12 22V9H5z" />
       <circle cx="12" cy="9" r="3.15" fill="#1A73E8" />
-      <circle cx="12" cy="9" r="1.45" fill="var(--on-fill)" />
+      <circle cx="12" cy="9" r="1.45" fill="#ffffff" />
     </svg>
   );
 }
 
-function WanderfilePlaceIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
-      <rect width="16" height="16" rx="4" fill="currentColor" opacity="0.22" />
-      <path
-        d="M3.4 4.2h1.55l1.42 5.35L8 6.05l1.63 3.5 1.42-5.35H12.6L10.7 12.1H9.05L8 9.55 6.95 12.1H5.3Z"
-        fill="currentColor"
-      />
-    </svg>
-  );
-}
 
-// ── FlipDetailCard: one stop / title / reel-detail in the scroll list ────────
+// ── ReadingDeckPlaceCard: Individual Place / Stop in Right Column ────────────
 
-interface FlipDetailCardProps {
+interface ReadingDeckPlaceCardProps {
   item: ReelDetailItem;
+  stopNumber: number;
   isActive: boolean;
-  expanded: boolean;
-  onToggleExpand: () => void;
   onNavigateToPlace?: (placeId: string) => void;
   onPlayTrailer?: (key: string) => void;
+  onHighlight: () => void;
 }
 
-function FlipDetailCard({
+function ReadingDeckPlaceCard({
   item,
+  stopNumber,
   isActive,
-  expanded,
-  onToggleExpand,
   onNavigateToPlace,
   onPlayTrailer,
-}: FlipDetailCardProps) {
+  onHighlight,
+}: ReadingDeckPlaceCardProps) {
   const canOpenPlace = Boolean(item.placeId && onNavigateToPlace);
   const metaLine = [item.category, ...item.metaParts].filter(Boolean).join(" · ");
-  const hasActions = Boolean(item.mapUrl || item.actionHref || canOpenPlace || (item.trailerKey && onPlayTrailer));
-  const itemClass = [
-    "post-flip-place-item",
+  const cardClass = [
+    "post-deck-place-card",
     isActive ? "is-active" : "",
-    expanded ? "is-expanded" : "",
     item.posterUrl ? "has-movie-poster" : "",
   ]
     .filter(Boolean)
     .join(" ");
 
   return (
-    <li className={itemClass}>
-      <div className="post-flip-place-title-row">
-        {item.posterUrl && (
-          <img
-            src={item.posterUrl}
-            alt=""
-            className="movie-flip-poster-thumb"
-            loading="lazy"
-          />
-        )}
-        <div className="post-flip-place-title-col">
-          <button
-            type="button"
-            className="post-flip-place-name"
-            aria-expanded={expanded}
-            onClick={onToggleExpand}
-          >
-            {item.name}
-          </button>
-          {!expanded && metaLine && (
-            <p className="post-flip-place-compact-meta">{metaLine}</p>
+    <li className={cardClass} onMouseEnter={onHighlight} id={`post-place-${item.key}`}>
+      <div className="post-deck-place-header">
+        <div className="post-deck-place-identity">
+          <span className="post-deck-stop-badge">{stopNumber}</span>
+          <div>
+            {canOpenPlace ? (
+              <button
+                type="button"
+                className="post-deck-place-name-btn"
+                onClick={() => onNavigateToPlace?.(item.placeId!)}
+                title="Open place page"
+              >
+                {item.name} ↗
+              </button>
+            ) : (
+              <strong className="post-deck-place-name-btn" style={{ cursor: "default" }}>
+                {item.name}
+              </strong>
+            )}
+            {metaLine && <div className="post-deck-place-meta">{metaLine}</div>}
+          </div>
+        </div>
+
+        <div className="post-deck-place-actions">
+          {item.trailerKey && onPlayTrailer && (
+            <button
+              type="button"
+              className="post-deck-action-btn"
+              onClick={() => onPlayTrailer(item.trailerKey!)}
+              title="Watch trailer"
+            >
+              <PlayIcon /> Trailer
+            </button>
+          )}
+          {item.mapUrl && (
+            <a
+              className="post-deck-action-btn"
+              href={item.mapUrl}
+              target="_blank"
+              rel="noreferrer"
+              title="Open in Google Maps"
+            >
+              <GoogleMapsIcon /> Google Maps ↗
+            </a>
+          )}
+          {item.actionHref && (
+            <a
+              className="post-deck-action-btn"
+              href={item.actionHref}
+              target="_blank"
+              rel="noreferrer"
+            >
+              {item.actionLabel ?? "Open ↗"}
+            </a>
           )}
         </div>
-        {hasActions && (
-          <div className="post-flip-place-actions">
-            {item.trailerKey && onPlayTrailer && (
-              <button
-                type="button"
-                className="text-button movie-trailer-pill-btn"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onPlayTrailer(item.trailerKey!);
-                }}
-                title="Watch trailer"
-              >
-                <PlayIcon />
-                Trailer
-              </button>
-            )}
-            {item.mapUrl && (
-              <a
-                className="post-flip-icon-btn"
-                href={item.mapUrl}
-                target="_blank"
-                rel="noreferrer"
-                aria-label="Open in Google Maps"
-                title="Maps"
-              >
-                <GoogleMapsIcon />
-              </a>
-            )}
-            {item.actionHref && (
-              <a
-                className="text-button post-flip-maps-link"
-                href={item.actionHref}
-                target="_blank"
-                rel="noreferrer"
-              >
-                {item.actionLabel ?? "Open"}
-              </a>
-            )}
-            {canOpenPlace && (
-              <button
-                type="button"
-                className="post-flip-icon-btn"
-                aria-label="Open place"
-                title="Place"
-                onClick={() => onNavigateToPlace?.(item.placeId!)}
-              >
-                <WanderfilePlaceIcon />
-              </button>
-            )}
-          </div>
-        )}
       </div>
-      {expanded && metaLine && <p className="post-flip-place-meta">{metaLine}</p>}
-      {expanded && (Boolean(item.directors?.length) || Boolean(item.cast?.length)) && (
-        <p className="movie-crew-line">
+
+      {/* Movie Crew & Streaming Info */}
+      {(Boolean(item.directors?.length) || Boolean(item.cast?.length)) && (
+        <p className="movie-crew-line" style={{ margin: "4px 0 0", fontSize: "11px" }}>
           {item.directors && item.directors.length > 0 && (
             <span><strong>Dir:</strong> {item.directors.join(", ")}</span>
           )}
@@ -243,331 +191,36 @@ function FlipDetailCard({
           )}
         </p>
       )}
-      {expanded && item.watchProviders && item.watchProviders.length > 0 && (
-        <div className="movie-watch-providers">
+
+      {item.watchProviders && item.watchProviders.length > 0 && (
+        <div className="movie-watch-providers" style={{ marginTop: "4px" }}>
           <span className="movie-provider-label">Stream on:</span>
           {item.watchProviders.map((provider) => (
             <span key={provider} className="movie-provider-pill">{provider}</span>
           ))}
         </div>
       )}
-      {expanded && item.details && <p className="post-flip-place-blurb">{item.details}</p>}
-      {expanded && (item.tips && item.tips.length > 0 ? (
-        <div className="post-flip-tips-wrap">
-          <ul className="post-flip-place-tips-list">
-            {item.tips.map((tipText, tipIdx) => (
-              <li key={tipIdx} className="post-flip-place-tip-item">
-                <span className="post-flip-tip-dot" aria-hidden="true">💡</span>
-                <span>{tipText}</span>
-              </li>
-            ))}
-          </ul>
+
+      {/* Details / description spanning full width */}
+      {item.details && <p className="post-deck-place-details">{item.details}</p>}
+
+      {/* Attached Tips from the Creator */}
+      {item.tips && item.tips.length > 0 ? (
+        <div className="post-deck-place-tip">
+          <span>💡</span>
+          <div>{item.tips.join(" · ")}</div>
         </div>
       ) : item.tip ? (
-        <p className="post-flip-place-tip">
-          <span className="post-flip-tip-dot" aria-hidden="true">💡</span>
-          <span>{item.tip}</span>
-        </p>
-      ) : null)}
+        <div className="post-deck-place-tip">
+          <span>💡</span>
+          <div>{item.tip}</div>
+        </div>
+      ) : null}
     </li>
   );
 }
 
-// ── PostFlipFront: detail + map face ──────────────────────────────────────────
-
-interface PostFlipFrontProps {
-  post: SavedPost;
-  flipped: boolean;
-  detailItems: ReelDetailItem[];
-  overviewPlaces: Place[];
-  pinIndexByPlaceId: Record<string, number>;
-  activeItemIndex: number;
-  activePlaceId: string | null;
-  cardsExpanded: boolean;
-  placeListRef: React.RefObject<HTMLUListElement | null>;
-  onFlip: () => void;
-  onClose: () => void;
-  onDelete: () => void;
-  scrollToItemIndex: (index: number) => void;
-  onToggleExpand: () => void;
-  onNavigateToPlace?: (placeId: string) => void;
-  onPlayTrailer?: (key: string) => void;
-}
-
-function PostFlipFront({
-  post,
-  flipped,
-  detailItems,
-  overviewPlaces,
-  pinIndexByPlaceId,
-  activeItemIndex,
-  activePlaceId,
-  cardsExpanded,
-  placeListRef,
-  onFlip,
-  onClose,
-  onDelete,
-  scrollToItemIndex,
-  onToggleExpand,
-  onNavigateToPlace,
-  onPlayTrailer,
-}: PostFlipFrontProps) {
-  const { reelSummary, llmSummary, summaryExcerpt } = buildReelSummary(post);
-  const [tripTipsOpen, setTripTipsOpen] = useState(false);
-  const [activeAssetTab, setActiveAssetTab] = useState<"transcript" | "ocr" | "video" | null>(null);
-  const heading = shortHeading(post);
-  const showHeading =
-    Boolean(heading) &&
-    (!reelSummary ||
-      Boolean(llmSummary) ||
-      !reelSummary.toLowerCase().startsWith(heading.replace(/…$/, "").toLowerCase().slice(0, 24)));
-
-  const dateLabel = formatPostDate(post);
-  const platformLabel = getPlatformLabel(post);
-  const thumbUrl = proxiedMediaUrl(post.thumbnail_url);
-  const thumbStyle = thumbUrl ? { backgroundImage: `url("${thumbUrl}")` } : undefined;
-  const showMap = mappablePlaces(overviewPlaces).length > 0;
-  const showCards = detailItems.length > 0;
-  const activeItem = detailItems[activeItemIndex] ?? detailItems[0];
-  const activeBackdropUrl = activeItem?.backdropUrl;
-
-  return (
-    <section
-      className="post-flip-face post-flip-front"
-      data-card-layout={readPostCardLayout()}
-      aria-hidden={flipped}
-    >
-      {thumbStyle && (
-        <div className="post-flip-front-thumb" style={thumbStyle} aria-hidden="true" />
-      )}
-      <div className="post-flip-front-wash" aria-hidden="true" />
-      <div className="post-flip-front-glow" aria-hidden="true" />
-
-      <header className="post-flip-header">
-        <div className="post-flip-meta">
-          <p className="post-flip-eyebrow">
-            {platformLabel}
-            {post.author_handle ? ` · @${post.author_handle}` : ""}
-          </p>
-          <div className="detail-badges">
-            <span className="badge badge-muted">{post.media_kind}</span>
-            {post.slide_media_urls && post.slide_media_urls.length > 1 && (
-              <span className="badge badge-muted">
-                📷 {post.slide_media_urls.length} slides
-              </span>
-            )}
-            {dateLabel && <span className="badge badge-muted">{dateLabel}</span>}
-            <button type="button" className="post-flip-reel-pill" onClick={onFlip}>
-              <PlayIcon />
-              Watch
-            </button>
-          </div>
-        </div>
-        <div className="post-flip-header-actions">
-          <button
-            type="button"
-            className="icon-button post-flip-delete-icon"
-            aria-label="Delete post"
-            title="Delete"
-            onClick={onDelete}
-          >
-            <DeleteIcon />
-          </button>
-          <button
-            type="button"
-            className="icon-button icon-button-close post-flip-front-close"
-            onClick={onClose}
-            aria-label="Close"
-          />
-        </div>
-      </header>
-
-      <div className={showMap ? "post-flip-map-fill" : "post-flip-map-fill is-cover"}>
-        <div className="post-flip-map-intro">
-          {showHeading && (
-            <h2 id="post-detail-title" className="post-flip-heading">
-              {heading}
-            </h2>
-          )}
-          {reelSummary && (
-            <p
-              id={showHeading ? undefined : "post-detail-title"}
-              className="post-flip-summary"
-            >
-              {summaryExcerpt.text}
-            </p>
-          )}
-          {!showHeading && !reelSummary && (
-            <h2 id="post-detail-title" className="post-flip-heading">
-              {heading || "Saved post"}
-            </h2>
-          )}
-          {post.trip_tips && post.trip_tips.length > 0 && (
-            <div className="post-flip-trip-tips-wrap">
-              <button
-                type="button"
-                className="post-flip-trip-tips-btn"
-                onClick={() => setTripTipsOpen((prev) => !prev)}
-                aria-expanded={tripTipsOpen}
-              >
-                <span className="post-flip-trip-tips-badge">✈️ Trip Advice ({post.trip_tips.length})</span>
-                <span className="post-flip-trip-tips-chevron" aria-hidden="true">
-                  {tripTipsOpen ? "▲ Hide" : "▼ View"}
-                </span>
-              </button>
-              {tripTipsOpen && (
-                <ul className="post-flip-trip-tips-list">
-                  {post.trip_tips.map((tip, idx) => (
-                    <li key={idx} className="post-flip-trip-tip-item">
-                      <span className="post-flip-trip-tip-bullet">✦</span>
-                      <span>{tip}</span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          )}
-
-          {/* Content Assets: Transcript / OCR Text / Visual analysis */}
-          {(post.transcript || post.image_text || post.video_analysis) && (
-            <div className="post-flip-assets-wrap">
-              <div className="post-flip-assets-toggles">
-                {post.transcript && (
-                  <button
-                    type="button"
-                    className={`post-flip-asset-tab ${activeAssetTab === "transcript" ? "is-active" : ""}`}
-                    onClick={() => setActiveAssetTab((cur) => (cur === "transcript" ? null : "transcript"))}
-                  >
-                    🎙️ Transcript
-                  </button>
-                )}
-                {post.image_text && (
-                  <button
-                    type="button"
-                    className={`post-flip-asset-tab ${activeAssetTab === "ocr" ? "is-active" : ""}`}
-                    onClick={() => setActiveAssetTab((cur) => (cur === "ocr" ? null : "ocr"))}
-                  >
-                    📷 Slide &amp; Graphic Text
-                  </button>
-                )}
-                {post.video_analysis && (
-                  <button
-                    type="button"
-                    className={`post-flip-asset-tab ${activeAssetTab === "video" ? "is-active" : ""}`}
-                    onClick={() => setActiveAssetTab((cur) => (cur === "video" ? null : "video"))}
-                  >
-                    🎬 Visual Notes
-                  </button>
-                )}
-              </div>
-              {activeAssetTab && (
-                <div className="post-flip-asset-drawer">
-                  <div className="post-flip-asset-drawer-header">
-                    <span className="post-flip-asset-drawer-title">
-                      {activeAssetTab === "transcript" && "🎙️ Spoken Audio Transcript"}
-                      {activeAssetTab === "ocr" && "📷 OCR Text from Slides / Graphic"}
-                      {activeAssetTab === "video" && "🎬 Video Analysis & Visual Notes"}
-                    </span>
-                    <button
-                      type="button"
-                      className="post-flip-asset-drawer-close"
-                      onClick={() => setActiveAssetTab(null)}
-                      aria-label="Close text view"
-                    >
-                      ×
-                    </button>
-                  </div>
-                  <div className="post-flip-asset-drawer-content">
-                    {activeAssetTab === "transcript" && post.transcript}
-                    {activeAssetTab === "ocr" && post.image_text}
-                    {activeAssetTab === "video" && post.video_analysis}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
-        {showMap ? (
-          <PostPlacesMap
-            places={overviewPlaces}
-            activePlaceId={activePlaceId}
-            pinIndexByPlaceId={pinIndexByPlaceId}
-            onSelectPlaceId={(placeId) => {
-              const index = detailItems.findIndex((item) => item.placeId === placeId || item.key === placeId);
-              if (index >= 0) {
-                scrollToItemIndex(index);
-              }
-            }}
-          />
-        ) : activeBackdropUrl ? (
-          <div className="post-flip-backdrop-wrap">
-            <img
-              className="post-flip-cover-image post-flip-backdrop-image"
-              src={activeBackdropUrl}
-              alt=""
-              decoding="async"
-            />
-            <div className="post-flip-backdrop-vignette" aria-hidden="true" />
-          </div>
-        ) : thumbUrl ? (
-          <img
-            className="post-flip-cover-image"
-            src={thumbUrl}
-            alt=""
-            decoding="async"
-          />
-        ) : (
-          <div className="post-flip-cover-empty" aria-hidden="true" />
-        )}
-
-        {showCards && (
-          <div className="post-flip-map-places">
-            <ul className="post-flip-place-list" ref={placeListRef}>
-              {detailItems.map((item, index) => (
-                <FlipDetailCard
-                  key={item.key}
-                  item={item}
-                  isActive={index === activeItemIndex}
-                  expanded={cardsExpanded}
-                  onToggleExpand={onToggleExpand}
-                  onNavigateToPlace={onNavigateToPlace}
-                  onPlayTrailer={onPlayTrailer}
-                />
-              ))}
-            </ul>
-            <div className="post-flip-place-pager">
-              <p className="post-flip-brief-meta">
-                {activeItemIndex + 1} / {detailItems.length}
-              </p>
-              {detailItems.length > 1 && (
-                <div className="post-flip-place-dots" role="tablist" aria-label="Details">
-                  {windowedDotIndices(detailItems.length, activeItemIndex).map((index) => (
-                    <button
-                      key={detailItems[index]!.key}
-                      type="button"
-                      role="tab"
-                      aria-label={detailItems[index]!.name}
-                      aria-selected={index === activeItemIndex}
-                      className={
-                        index === activeItemIndex
-                          ? "post-flip-place-dot is-active"
-                          : "post-flip-place-dot"
-                      }
-                      onClick={() => scrollToItemIndex(index)}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
-    </section>
-  );
-}
-
-// ── PostDetail: root component ────────────────────────────────────────────────
+// ── PostDetail: Root Component ──────────────────────────────────────────────
 
 export function PostDetail({
   post: initialPost,
@@ -580,9 +233,8 @@ export function PostDetail({
 }: PostDetailProps) {
   const [post, setPost] = useState(initialPost);
   const [linkedPlaces, setLinkedPlaces] = useState<LinkedPlace[]>([]);
-  const [flipped, setFlipped] = useState(false);
   const [activeItemIndex, setActiveItemIndex] = useState(0);
-  const [cardsExpanded, setCardsExpanded] = useState(false);
+  const [captionExpanded, setCaptionExpanded] = useState(false);
   const [activeTrailerKey, setActiveTrailerKey] = useState<string | null>(null);
   const [recipeOpen, setRecipeOpen] = useState(false);
   const [recipeGroceryOpen, setRecipeGroceryOpen] = useState(false);
@@ -591,9 +243,8 @@ export function PostDetail({
 
   useEffect(() => {
     let cancelled = false;
-    setFlipped(false);
     setActiveItemIndex(0);
-    setCardsExpanded(false);
+    setCaptionExpanded(false);
 
     async function loadFreshPost() {
       try {
@@ -679,46 +330,8 @@ export function PostDetail({
   const scrollToItemIndex = useCallback((index: number) => {
     setActiveItemIndex(index);
     const item = placeListRef.current?.children[index] as HTMLElement | undefined;
-    item?.scrollIntoView({ behavior: "smooth", inline: "start", block: "nearest" });
+    item?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "nearest" });
   }, []);
-
-  useEffect(() => {
-    const list = placeListRef.current;
-    if (!list) return;
-    const items = [...list.querySelectorAll<HTMLElement>(".post-flip-place-item")];
-    if (items.length === 0) return;
-
-    const mostVisibleIndex = () => {
-      const root = list.getBoundingClientRect();
-      let bestIndex = 0;
-      let bestOverlap = -1;
-      items.forEach((item, index) => {
-        const rect = item.getBoundingClientRect();
-        const overlap = Math.max(0, Math.min(rect.right, root.right) - Math.max(rect.left, root.left));
-        if (overlap > bestOverlap) {
-          bestOverlap = overlap;
-          bestIndex = index;
-        }
-      });
-      return bestIndex;
-    };
-
-    const syncActive = () => {
-      setActiveItemIndex(mostVisibleIndex());
-    };
-
-    syncActive();
-    list.addEventListener("scroll", syncActive, { passive: true });
-    const observer = new IntersectionObserver(syncActive, {
-      root: list,
-      threshold: [0, 0.25, 0.5, 0.75, 1],
-    });
-    items.forEach((item) => observer.observe(item));
-    return () => {
-      list.removeEventListener("scroll", syncActive);
-      observer.disconnect();
-    };
-  }, [detailItems.length, cardsExpanded]);
 
   const handleDelete = async () => {
     if (!window.confirm("Delete this saved post?")) return;
@@ -726,93 +339,227 @@ export function PostDetail({
     onClose();
   };
 
+  const heading = shortHeading(post);
+  const dateLabel = formatPostDate(post);
+  const platformLabel = getPlatformLabel(post);
+  const thumbUrl = proxiedMediaUrl(post.thumbnail_url);
+  const showMap = mappablePlaces(overviewPlaces).length > 0;
+
+  // Caption truncation logic
+  const rawCaption = post.caption?.trim() || "";
+  const isCaptionLong = rawCaption.length > 180 || rawCaption.split("\n").length > 3;
+  const displayCaption = !isCaptionLong || captionExpanded
+    ? rawCaption
+    : `${rawCaption.slice(0, 160).trimEnd()}…`;
+
+  // Combined Multi-Stop Google Maps route URL
+  const multiStopMapUrl = useMemo(() => {
+    const mappable = mappablePlaces(overviewPlaces);
+    if (mappable.length <= 1) return null;
+    const waypoints = mappable
+      .map((p) =>
+        p.location.latitude != null && p.location.longitude != null
+          ? `${p.location.latitude},${p.location.longitude}`
+          : encodeURIComponent(p.display_name),
+      )
+      .join("/");
+    return `https://www.google.com/maps/dir/${waypoints}`;
+  }, [overviewPlaces]);
+
   return (
     <DetailModal
       titleId="post-detail-title"
       onClose={onClose}
-      panelClassName="detail-panel-flip"
+      panelClassName="detail-panel-reading-deck"
     >
-      <div className={flipped ? "post-flip is-flipped" : "post-flip"}>
-        <div className="post-flip-inner">
-          <PostFlipFront
-            post={post}
-            flipped={flipped}
-            detailItems={detailItems}
-            overviewPlaces={overviewPlaces}
-            pinIndexByPlaceId={pinIndexByPlaceId}
-            activeItemIndex={activeItemIndex}
-            activePlaceId={activePlaceId}
-            cardsExpanded={cardsExpanded}
-            placeListRef={placeListRef}
-            onFlip={() => setFlipped(true)}
-            onClose={onClose}
-            onDelete={() => void handleDelete()}
-            scrollToItemIndex={scrollToItemIndex}
-            onToggleExpand={() => setCardsExpanded((open) => !open)}
-            onNavigateToPlace={onNavigateToPlace}
-            onPlayTrailer={setActiveTrailerKey}
+      {/* ── Header Provenance & Actions ─────────────────────────────────── */}
+      <header className="post-deck-header">
+        <div className="post-deck-provenance">
+          <span className="post-deck-platform-badge">{platformLabel}</span>
+          {post.author_handle && (
+            <span className="post-deck-author">@{post.author_handle}</span>
+          )}
+          {dateLabel && <span className="post-deck-date">· {dateLabel}</span>}
+          {post.slide_media_urls && post.slide_media_urls.length > 1 && (
+            <span className="post-deck-badge">📷 {post.slide_media_urls.length} slides</span>
+          )}
+        </div>
+        <div className="post-deck-header-actions">
+          <button
+            type="button"
+            className="post-deck-delete-btn"
+            aria-label="Delete post"
+            title="Delete post"
+            onClick={() => void handleDelete()}
+          >
+            <DeleteIcon />
+          </button>
+          <button
+            type="button"
+            className="icon-button icon-button-close post-deck-close-btn"
+            onClick={onClose}
+            aria-label="Close"
           />
+        </div>
+      </header>
+
+      {/* ── Two-Column Body ─────────────────────────────────────────────── */}
+      <div className="post-deck-body">
+        {/* ── Left Column: Cover & Caption ──────────────────────────────── */}
+        <div className="post-deck-left-col">
+          {thumbUrl && (
+            <div className="post-deck-cover-card">
+              <img
+                src={thumbUrl}
+                alt={heading || "Post thumbnail"}
+                className="post-deck-cover-img"
+                loading="lazy"
+              />
+              {post.post_url && (
+                <a
+                  href={post.post_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="post-deck-external-link"
+                >
+                  Watch on {platformLabel} ↗
+                </a>
+              )}
+            </div>
+          )}
 
           {post.extracted_recipe && (
             <button
               type="button"
-              className="post-flip-toggle"
-              style={{ bottom: "1rem", right: "1rem", left: "auto" }}
+              className="post-deck-recipe-btn"
               onClick={() => setRecipeOpen(true)}
             >
-              🍳 View recipe
+              🍳 View Recipe Details
             </button>
           )}
 
-          {/* ── BACK: reel preview ─────────────────────────────────────── */}
-          <section className="post-flip-face post-flip-back" aria-hidden={!flipped}>
-            <PostReelFace post={post} active={flipped} />
-            <div className="post-flip-back-scrim" aria-hidden="true" />
-            <header className="post-flip-header post-flip-header-back">
-              <div className="post-flip-meta" aria-hidden="true" />
-              <button
-                type="button"
-                className="icon-button icon-button-close post-flip-back-close"
-                onClick={onClose}
-                aria-label="Close"
-              />
-            </header>
-            <button
-              type="button"
-              className="post-flip-toggle post-flip-toggle-back"
-              onClick={() => setFlipped(false)}
-            >
-              <FlipIcon />
-              View details
-            </button>
-          </section>
+          {heading && <h2 id="post-detail-title" className="post-deck-heading">{heading}</h2>}
+
+          {/* Caption with Truncation & Toggle */}
+          {rawCaption && (
+            <div className="post-deck-caption-wrap">
+              <span className="post-deck-caption-label">Original Caption</span>
+              <p className="post-deck-caption-text">
+                {displayCaption}
+                {isCaptionLong && (
+                  <button
+                    type="button"
+                    className="post-deck-caption-toggle"
+                    onClick={() => setCaptionExpanded((prev) => !prev)}
+                  >
+                    {captionExpanded ? " Show less" : " More"}
+                  </button>
+                )}
+              </p>
+            </div>
+          )}
+
+          {/* Hashtags */}
+          {post.hashtags && post.hashtags.length > 0 && (
+            <div className="post-deck-hashtags">
+              {post.hashtags.slice(0, 6).map((tag, idx) => (
+                <span key={idx} className="post-deck-tag">
+                  {tag.startsWith("#") ? tag : `#${tag}`}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Map Preview */}
+          {showMap && (
+            <div className="post-deck-map-container">
+              <span className="post-deck-section-label">Stops on Map</span>
+              <div className="post-deck-map-wrap">
+                <PostPlacesMap
+                  places={overviewPlaces}
+                  activePlaceId={activePlaceId}
+                  pinIndexByPlaceId={pinIndexByPlaceId}
+                  onSelectPlaceId={(placeId) => {
+                    const index = detailItems.findIndex(
+                      (item) => item.placeId === placeId || item.key === placeId,
+                    );
+                    if (index >= 0) {
+                      scrollToItemIndex(index);
+                    }
+                  }}
+                />
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* ── Side nav arrows: prev / next post (desktop only) ──────── */}
-        {onPrevPost && (
-          <button
-            type="button"
-            className="post-flip-side-arrow post-flip-side-arrow-left"
-            onClick={onPrevPost}
-            aria-label="Previous post"
-            title="Previous post"
-          >
-            <ChevronLeftIcon />
-          </button>
-        )}
-        {onNextPost && (
-          <button
-            type="button"
-            className="post-flip-side-arrow post-flip-side-arrow-right"
-            onClick={onNextPost}
-            aria-label="Next post"
-            title="Next post"
-          >
-            <ChevronRightIcon />
-          </button>
-        )}
+        {/* ── Right Column: Places Directory ───────────────────────────── */}
+        <div className="post-deck-right-col">
+          <div className="post-deck-places-head">
+            <h3 className="post-deck-places-title">
+              {detailItems.length > 0
+                ? `Places Mentioned (${detailItems.length})`
+                : "Post Details"}
+            </h3>
+            {multiStopMapUrl && (
+              <a
+                href={multiStopMapUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="post-deck-route-btn"
+              >
+                Open Route in Maps ↗
+              </a>
+            )}
+          </div>
+
+          {detailItems.length > 0 ? (
+            <ul className="post-deck-places-list" ref={placeListRef}>
+              {detailItems.map((item, index) => (
+                <ReadingDeckPlaceCard
+                  key={item.key}
+                  item={item}
+                  stopNumber={index + 1}
+                  isActive={index === activeItemIndex}
+                  onNavigateToPlace={onNavigateToPlace}
+                  onPlayTrailer={setActiveTrailerKey}
+                  onHighlight={() => setActiveItemIndex(index)}
+                />
+              ))}
+            </ul>
+          ) : (
+            <div className="post-deck-empty-places">
+              <p>No specific locations were extracted from this post.</p>
+            </div>
+          )}
+        </div>
       </div>
 
+      {/* ── Side nav arrows: prev / next post (desktop only) ──────────── */}
+      {onPrevPost && (
+        <button
+          type="button"
+          className="post-flip-side-arrow post-flip-side-arrow-left"
+          onClick={onPrevPost}
+          aria-label="Previous post"
+          title="Previous post"
+        >
+          <ChevronLeftIcon />
+        </button>
+      )}
+      {onNextPost && (
+        <button
+          type="button"
+          className="post-flip-side-arrow post-flip-side-arrow-right"
+          onClick={onNextPost}
+          aria-label="Next post"
+          title="Next post"
+        >
+          <ChevronRightIcon />
+        </button>
+      )}
+
+      {/* ── Sub-Modals (Trailers, Recipes, Grocery) ────────────────────── */}
       {activeTrailerKey && (
         <TrailerModal
           youtubeKey={activeTrailerKey}

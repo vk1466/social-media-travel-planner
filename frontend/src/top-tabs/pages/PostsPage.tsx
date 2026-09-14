@@ -23,9 +23,9 @@ import {
   postTitle,
   proxiedMediaUrl,
 } from "../display";
-import { DetailSheet } from "../components/DetailSheet";
 import { EmptyState, FilterChrome, FilterPills, Toolbar } from "../components/Toolbar";
 import { useLabTheme } from "../theme";
+import { PostDetail as ProductionPostDetail } from "../../components/PostDetail";
 
 type PlaceStatus = "all" | "visited" | "inspiration";
 type DateMode = "saved" | "posted";
@@ -744,61 +744,30 @@ export function PostMediaCard({
 
 export function PostDetail({
   post,
-  placeNames,
+  placeNames: _placeNames,
   onClose,
   onDeleted,
 }: {
   post: SavedPost;
-  placeNames: Record<string, string>;
+  placeNames?: Record<string, string>;
   onClose: () => void;
   onDeleted: () => void;
 }) {
   const navigate = useNavigate();
   const { basePath } = useLabTheme();
-  const image = proxiedMediaUrl(post.thumbnail_url);
-  const [busy, setBusy] = useState(false);
 
   return (
-    <DetailSheet title={postTitle(post)} onClose={onClose}>
-      {image ? <div className="sheet-hero" style={{ backgroundImage: `url('${image}')` }} /> : null}
-      <p className="eyebrow">{platformLabel(post.platform)}</p>
-      <h2 className="sheet-title">{postTitle(post)}</h2>
-      <p className="sheet-meta">
-        {[post.author_handle, formatDate(post.posted_at ?? post.fetched_at)].filter(Boolean).join(" · ")}
-      </p>
-      {post.reel_summary ? <p className="sheet-copy">{post.reel_summary}</p> : null}
-      {post.caption ? <p className="sheet-copy">{post.caption}</p> : null}
-      {post.place_ids.length > 0 ? (
-        <ul className="sheet-list">
-          {post.place_ids.map((placeId) => (
-            <li key={placeId}>
-              <button type="button" onClick={() => navigate(`${basePath}/travel/${placeId}`)}>
-                {placeNames[placeId] ?? "Place"}
-              </button>
-            </li>
-          ))}
-        </ul>
-      ) : null}
-      <div className="sheet-actions">
-        <a href={post.post_url} target="_blank" rel="noreferrer">
-          Open original
-        </a>
-        <button
-          type="button"
-          disabled={busy}
-          onClick={async () => {
-            setBusy(true);
-            try {
-              await deletePost(post.platform, nativePostId(post));
-              onDeleted();
-            } finally {
-              setBusy(false);
-            }
-          }}
-        >
-          {busy ? "Removing…" : "Remove from library"}
-        </button>
-      </div>
-    </DetailSheet>
+    <ProductionPostDetail
+      post={post}
+      onClose={onClose}
+      onDelete={async () => {
+        await deletePost(post.platform, nativePostId(post));
+        onDeleted();
+      }}
+      onNavigateToPlace={(placeId) => {
+        onClose();
+        navigate(`${basePath}/travel/${placeId}`);
+      }}
+    />
   );
 }

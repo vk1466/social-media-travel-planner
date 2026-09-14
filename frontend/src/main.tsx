@@ -35,6 +35,7 @@ import "./styles.css";
 import "./signed-out-gate.css";
 import "./post-card.css";
 import "./post-flip-modal.css";
+import "./post-reading-deck.css";
 import "./post-card-layouts.css";
 import "./place-browse.css";
 import "./detail-modal.css";

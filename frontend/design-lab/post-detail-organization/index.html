@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#1a2e26" />
+    <title>Post Detail Organization &amp; Cross-Linking · Wanderfile Design Lab</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300..700;1,9..40,300..700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="topbar-left">
+        <a class="back-link" href="../index.html" aria-label="Back to design lab">← Design Lab</a>
+        <span class="topbar-divider">/</span>
+        <span class="top-label">Post Detail Organization · Real Data &amp; Intra-Post Cross-Links</span>
+      </div>
+      <div class="topbar-right">
+        <span class="top-count" id="header-count">01 — 10</span>
+      </div>
+    </header>
+
+    <main>
+      <!-- Hero Intro -->
+      <section class="intro" aria-labelledby="page-title">
+        <p class="eyebrow">Wanderfile · Post Detail System Design</p>
+        <h1 id="page-title">The post page,<br /><em>clean &amp; interconnected.</em></h1>
+        <div class="intro-content">
+          <p class="intro-copy">
+            Opening a saved post shouldn't dump unorganized badges, raw pipeline text, or awkward flip cards.
+            Here are <strong>ten design directions</strong> built around actual post data: 
+            <strong>post cover thumbnail</strong>, <strong>creator caption</strong>, <strong>extracted places</strong>, 
+            <strong>practical tips</strong>, <strong>interactive map</strong>, and an external 
+            <strong>"Watch on Instagram ↗"</strong> link.
+          </p>
+          <div class="dataset-picker-bar">
+            <span class="picker-label">Switch test reel:</span>
+            <div class="picker-pills" id="dataset-picker" role="radiogroup" aria-label="Select post dataset">
+              <button type="button" class="dataset-pill is-active" data-dataset="kyoto" aria-checked="true" role="radio">
+                🏯 Kyoto: 4 Secret Spots (Multi-Stop Reel)
+              </button>
+              <button type="button" class="dataset-pill" data-dataset="amalfi" aria-checked="false" role="radio">
+                🍋 Amalfi Coast: Cliff Walk &amp; Bakery (3 Stops)
+              </button>
+              <button type="button" class="dataset-pill" data-dataset="paris" aria-checked="false" role="radio">
+                🥐 Paris: Covered Passages Walk (3 Stops)
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Interactive Concept Gallery -->
+      <section class="gallery" aria-label="Post detail concept systems">
+        <!-- Gallery Header & Navigation -->
+        <div class="gallery-head">
+          <div class="gallery-title-col">
+            <div class="kicker-row">
+              <span class="concept-kicker-pill" id="concept-kicker">Recommended Direction</span>
+              <span class="concept-paradigm" id="concept-paradigm">Visual Split-Dossier</span>
+            </div>
+            <h2 id="concept-title">—</h2>
+          </div>
+          <div class="gallery-controls">
+            <button id="prev-btn" type="button" aria-label="Previous concept" title="Previous concept (← key)">←</button>
+            <span id="position" class="position-indicator">01 / 10</span>
+            <button id="next-btn" type="button" aria-label="Next concept" title="Next concept (→ key)">→</button>
+          </div>
+        </div>
+
+        <!-- 10 Direction Tabs -->
+        <nav id="concept-nav" class="concept-nav" aria-label="Choose a post detail direction"></nav>
+
+        <!-- Concept Meta & Rationale Strip -->
+        <div class="concept-meta-bar" id="concept-meta-bar">
+          <div class="meta-block">
+            <span class="meta-label">Information Architecture</span>
+            <p id="concept-philosophy" class="meta-text">—</p>
+          </div>
+          <div class="meta-block">
+            <span class="meta-label">Intra-Post Cross-Link</span>
+            <p id="concept-crosslink" class="meta-text highlighted">—</p>
+          </div>
+          <div class="meta-block">
+            <span class="meta-label">Best Suited For</span>
+            <p id="concept-best-for" class="meta-text">—</p>
+          </div>
+        </div>
+
+        <!-- Surface Toggle: Desktop Modal vs Mobile View -->
+        <div class="surface-toggle-bar">
+          <span class="toggle-hint">Render Surface:</span>
+          <div class="surface-toggles">
+            <button type="button" class="surface-toggle-btn is-active" data-surface="desktop">
+              💻 Desktop Modal (Sidecar View)
+            </button>
+            <button type="button" class="surface-toggle-btn" data-surface="mobile">
+              📱 Mobile Sheet (Responsive View)
+            </button>
+          </div>
+        </div>
+
+        <!-- Active Concept Interactive Stage -->
+        <article id="concept-stage" class="concept-stage" aria-live="polite">
+          <!-- Dynamic rendering by app.js -->
+        </article>
+      </section>
+
+      <!-- Cross-Link Taxonomy Breakdown Section -->
+      <section class="crosslink-matrix-section">
+        <header class="section-heading">
+          <span class="eyebrow">Real Post Cross-Linking Taxonomy</span>
+          <h2>Six bi-directional connections inside the post</h2>
+          <p>Organizing raw social content into an actionable, interconnected travel dossier.</p>
+        </header>
+        <div class="taxonomy-grid">
+          <div class="tax-card">
+            <div class="tax-icon">📍</div>
+            <h3>Place ↔ Map Pin Sync</h3>
+            <p>Hovering or clicking any place card activates its corresponding numbered pin on the map and pans the viewport.</p>
+            <span class="tax-badge">Spatial Feedback</span>
+          </div>
+          <div class="tax-card">
+            <div class="tax-icon">💡</div>
+            <h3>Tips ↔ Specific Places</h3>
+            <p>Tips are not dumped in a generic list; each tip is explicitly attached to the place it applies to (e.g. reservation notice on Saiho-ji).</p>
+            <span class="tax-badge">Direct Attribution</span>
+          </div>
+          <div class="tax-card">
+            <div class="tax-icon">🗺️</div>
+            <h3>Post Sequence ↔ Route Line</h3>
+            <p>If the creator presents a multi-stop route, it renders in chronological order (Stop 1 → 2 → 3) with a route path connecting the pins.</p>
+            <span class="tax-badge">Narrative Order</span>
+          </div>
+          <div class="tax-card">
+            <div class="tax-icon">💬</div>
+            <h3>Caption ↔ Place Highlights</h3>
+            <p>Places mentioned in the creator's caption are interactive pills. Clicking a mention highlights its card and map pin.</p>
+            <span class="tax-badge">Text Entity Links</span>
+          </div>
+          <div class="tax-card">
+            <div class="tax-icon">↗️</div>
+            <h3>Place ↔ Google Maps Navigation</h3>
+            <p>Each place has a direct Google Maps action with exact coordinates for instant turn-by-turn navigation.</p>
+            <span class="tax-badge">Actionable Link</span>
+          </div>
+          <div class="tax-card">
+            <div class="tax-icon">📸</div>
+            <h3>Cover ↔ Instagram Provenance</h3>
+            <p>A crisp post cover image with creator avatar, post date, and a prominent "Watch Reel on Instagram ↗" external action.</p>
+            <span class="tax-badge">Original Provenance</span>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

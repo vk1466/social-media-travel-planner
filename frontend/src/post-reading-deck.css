@@ -1,0 +1,578 @@
+/* ── Concept 06: Two-Column Reading Deck Post Detail Modal ─────────────── */
+
+.detail-panel.detail-panel-reading-deck {
+  width: min(880px, calc(100vw - 2.5rem));
+  max-height: min(88vh, 800px);
+  padding: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface, #ffffff);
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.12));
+  border-radius: var(--radius-lg, 16px);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+  color: var(--text, #192722);
+}
+
+/* ── Header Bar ───────────────────────────────────────────────────────────── */
+
+.post-deck-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: var(--surface-subtle, #faf8f5);
+  border-bottom: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.post-deck-provenance {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.post-deck-platform-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border-radius: 99px;
+  background: rgba(224, 111, 83, 0.14);
+  color: var(--wf-coral, #e06f53);
+  font-weight: 650;
+  font-size: 10.5px;
+}
+
+.post-deck-author {
+  font-weight: 600;
+  color: var(--text, #192722);
+}
+
+.post-deck-date {
+  color: var(--text-subtle, #6e7e77);
+}
+
+.post-deck-badge {
+  font-size: 10.5px;
+  color: var(--text-subtle, #6e7e77);
+  background: rgba(255, 255, 255, 0.06);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.post-deck-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.post-deck-delete-btn,
+.post-deck-close-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-muted, rgba(255, 255, 255, 0.08));
+  color: var(--text-subtle, #8da098);
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.12));
+  cursor: pointer;
+  transition: all 0.15s ease;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.post-deck-delete-btn:hover {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.35);
+  transform: scale(1.04);
+}
+
+.post-deck-close-btn:hover {
+  color: var(--text, #f4f6f5);
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: scale(1.04);
+}
+
+/* ── Two-Column Layout ────────────────────────────────────────────────────── */
+
+.post-deck-body {
+  display: grid;
+  grid-template-columns: 340px minmax(0, 1fr);
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ── Left Column: Cover & Provenance ──────────────────────────────────────── */
+
+.post-deck-left-col {
+  padding: 14px 16px;
+  background: var(--surface-subtle, #faf8f5);
+  border-right: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.post-deck-cover-card {
+  position: relative;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #000;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+  aspect-ratio: 16 / 10;
+  max-height: 230px;
+}
+
+.post-deck-cover-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.post-deck-external-link {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  background: rgba(18, 34, 27, 0.9);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 999px;
+  text-decoration: none;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  transition: all 0.15s ease;
+}
+
+.post-deck-external-link:hover {
+  background: #12221b;
+  border-color: #fff;
+  transform: scale(1.02);
+}
+
+.post-deck-recipe-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 7px;
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.12));
+  background: var(--surface, #fff);
+  color: var(--text, #192722);
+  font-size: 11.5px;
+  font-weight: 600;
+  transition: all 0.15s ease;
+}
+
+.post-deck-recipe-btn:hover {
+  background: #f4eee1;
+  border-color: #d1b570;
+}
+
+.post-deck-heading {
+  font-family: var(--font-serif, "Instrument Serif", Georgia, serif);
+  font-size: 21px;
+  font-weight: 400;
+  line-height: 1.15;
+  margin: 0;
+  color: var(--text, #192722);
+}
+
+/* Caption with Truncation & Toggle */
+
+.post-deck-caption-wrap {
+  background: var(--surface, #ffffff);
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.post-deck-caption-label {
+  display: block;
+  font-size: 9.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-subtle, #6e7e77);
+  margin-bottom: 5px;
+}
+
+.post-deck-caption-text {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--text, #192722);
+  white-space: pre-line;
+}
+
+.post-deck-caption-toggle {
+  display: inline;
+  margin-left: 6px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--wf-coral, #e06f53);
+  font-weight: 700;
+  font-size: 11.5px;
+  cursor: pointer;
+}
+
+.post-deck-caption-toggle:hover {
+  text-decoration: underline;
+}
+
+.post-deck-hashtags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.post-deck-tag {
+  font-size: 10.5px;
+  color: var(--text-subtle, #6e7e77);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+/* Map Preview in Left Column */
+
+.post-deck-map-container {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.post-deck-section-label {
+  font-size: 9.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-subtle, #6e7e77);
+}
+
+.post-deck-map-wrap {
+  height: 170px;
+  border-radius: 9px;
+  overflow: hidden;
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.12));
+  position: relative;
+}
+
+/* Ensure map Directions link is crystal clear */
+.post-deck-map-wrap .post-flip-live-map-chip {
+  background: rgba(12, 18, 16, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+}
+
+.post-deck-map-wrap .post-flip-live-map-chip a,
+.post-deck-map-wrap .post-flip-live-map-directions-btn {
+  background: #ffffff !important;
+  color: #101915 !important;
+  border: 1px solid rgba(255, 255, 255, 0.9) !important;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.35) !important;
+  font-weight: 700 !important;
+  font-size: 0.68rem !important;
+  letter-spacing: 0.03em !important;
+  padding: 0.25rem 0.65rem !important;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+
+.post-deck-map-wrap .post-flip-live-map-chip a:hover,
+.post-deck-map-wrap .post-flip-live-map-directions-btn:hover {
+  background: #e4eae6 !important;
+  color: #0c1410 !important;
+}
+
+/* ── Right Column: Places Directory ───────────────────────────────────────── */
+
+.post-deck-right-col {
+  padding: 14px 16px;
+  background: var(--surface, #ffffff);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.post-deck-places-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+  flex-shrink: 0;
+}
+
+.post-deck-places-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  margin: 0;
+  color: var(--text, #192722);
+}
+
+.post-deck-route-btn {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text, #192722);
+  background: var(--surface-subtle, rgba(255, 255, 255, 0.06));
+  padding: 2.5px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.12));
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+
+.post-deck-route-btn:hover {
+  background: var(--text, #12221b);
+  color: var(--surface, #fff);
+  border-color: var(--text, #12221b);
+}
+
+/* Places List: Full-width horizontal cards extending to container end */
+.post-deck-places-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  max-inline-size: none;
+}
+
+.post-deck-place-card {
+  width: 100%;
+  max-inline-size: none;
+  box-sizing: border-box;
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.1));
+  border-radius: 9px;
+  padding: 10px 13px;
+  background: var(--surface, #ffffff);
+  transition: all 0.15s ease;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.post-deck-place-card:hover,
+.post-deck-place-card.is-active {
+  border-color: var(--wf-coral, #e06f53);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+}
+
+.post-deck-place-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.post-deck-place-identity {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  min-width: 0;
+  flex: 1 1 180px;
+}
+
+/* Stop badge with high-contrast accent theme */
+.post-deck-stop-badge {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(224, 111, 83, 0.18);
+  color: var(--wf-coral, #e06f53);
+  border: 1px solid rgba(224, 111, 83, 0.35);
+  font-size: 9.5px;
+  font-weight: 700;
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.post-deck-place-name-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text, #192722);
+  text-align: left;
+  cursor: pointer;
+  line-height: 1.25;
+}
+
+.post-deck-place-name-btn:hover {
+  color: var(--wf-coral, #e06f53);
+  text-decoration: underline;
+}
+
+.post-deck-place-meta {
+  font-size: 10px;
+  color: var(--text-subtle, #6e7e77);
+  margin-top: 1px;
+}
+
+/* Actions in top-right of horizontal card */
+.post-deck-place-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.lab-pages .post-deck-place-actions .post-deck-action-btn,
+.post-deck-place-actions .post-deck-action-btn,
+.post-deck-place-actions button,
+.post-deck-place-actions a,
+button.post-deck-action-btn,
+a.post-deck-action-btn,
+.post-deck-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3.5px;
+  height: 20px;
+  line-height: 1;
+  padding: 0 6px;
+  margin: 0;
+  box-sizing: border-box;
+  border-radius: 4px;
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.12));
+  background: var(--surface-subtle, rgba(255, 255, 255, 0.05));
+  color: var(--text, #192722);
+  font-family: var(--wf-font-body, var(--wf-font-sans, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif));
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  vertical-align: middle;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.post-deck-place-actions .post-deck-action-btn svg,
+.post-deck-action-btn svg {
+  width: 10px;
+  height: 10px;
+  flex-shrink: 0;
+}
+
+.lab-pages .post-deck-place-actions .post-deck-action-btn:hover,
+.post-deck-place-actions .post-deck-action-btn:hover,
+.post-deck-action-btn:hover {
+  background: var(--text, #12221b);
+  color: var(--surface, #fff);
+  border-color: var(--text, #12221b);
+}
+
+/* Attached Practical Tip */
+.post-deck-place-tip {
+  margin: 2px 0 0;
+  background: rgba(236, 216, 137, 0.18);
+  border-left: 3px solid #cca93a;
+  padding: 4px 7px;
+  border-radius: 0 4px 4px 0;
+  font-size: 11px;
+  line-height: 1.35;
+  color: #5c4a12;
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.post-deck-place-details {
+  margin: 2px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text, #192722);
+  width: 100%;
+  max-inline-size: none;
+}
+
+.post-deck-empty-places {
+  padding: 28px 16px;
+  text-align: center;
+  color: var(--text-subtle, #6e7e77);
+  font-size: 12.5px;
+}
+
+/* ── Responsive Mobile (Horizontal Place Scroll) ─────────────────────────── */
+
+@media (max-width: 768px) {
+  .detail-panel.detail-panel-reading-deck {
+    width: 100vw;
+    max-width: 100vw;
+    max-height: 94vh;
+    border-radius: 18px 18px 0 0;
+    margin-top: auto;
+  }
+
+  .post-deck-body {
+    grid-template-columns: 1fr;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .post-deck-left-col {
+    border-right: none;
+    border-bottom: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+    overflow-y: visible;
+    padding: 16px;
+    gap: 12px;
+  }
+
+  .post-deck-right-col {
+    overflow-y: visible;
+    padding: 16px;
+    gap: 10px;
+  }
+
+  /* Horizontal scroll for places in mobile/app view */
+  .post-deck-places-list {
+    display: flex;
+    flex-direction: row;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    gap: 12px;
+    padding: 4px 4px 14px 4px;
+    scrollbar-width: thin;
+  }
+
+  .post-deck-place-card {
+    flex: 0 0 min(290px, 80vw);
+    scroll-snap-align: start;
+    min-height: 150px;
+  }
+}
