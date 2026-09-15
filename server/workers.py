@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import logging
 from typing import Any
 
@@ -288,3 +289,129 @@ def enrich_one_place(event: dict[str, Any], context: Any = None) -> dict[str, An
     else:
       skipped += 1
   return {"enriched": enriched, "skipped": skipped}
+
+
+def optimize_route_worker(event: dict[str, Any], context: Any = None) -> dict[str, Any]:
+  """Lambda handler for distance-optimized route planning with Google OR-Tools.
+
+  Supports:
+  1. Direct Lambda invocation payload:
+     {
+       "stops": [{"id": "...", "name": "...", "lat": 52.35, "lng": 4.88}, ...],
+       "place_ids": ["nl-amsterdam-moco-museum", ...],
+       "post_id": "instagram:DOd5nuWDAuP",
+       "start_mode": "fixed" | "any" | "custom",
+       "custom_start": {"lat": ..., "lng": ...},
+       "custom_end": {"lat": ..., "lng": ...},
+       "round_trip": false,
+       "travel_mode": "driving" | "walking" | "bicycling"
+     }
+  2. API Gateway / Function URL proxy format (event['body'] is a JSON string).
+  """
+  del context
+  from travelplanner.routing import (
+    RouteOptimizationRequest,
+    RouteStop,
+    StartMode,
+    TravelMode,
+    optimize_route,
+  )
+
+  # Check if invoked via HTTP (API Gateway / Function URL)
+  is_http = (
+    "body" in event
+    or "requestContext" in event
+    or "rawPath" in event
+    or "httpMethod" in event
+  )
+
+  raw_payload = event
+  if "body" in event and event["body"]:
+    if isinstance(event["body"], str):
+      try:
+        raw_payload = json.loads(event["body"])
+      except Exception as err:
+        logger.warning("optimize_route_worker invalid JSON body: %s", err)
+        if is_http:
+          return {
+            "statusCode": 400,
+            "headers": {
+              "Content-Type": "application/json",
+              "Access-Control-Allow-Origin": "*",
+            },
+            "body": json.dumps({"error": f"Invalid JSON body: {err}"}),
+          }
+        return {"error": f"Invalid JSON body: {err}"}
+    elif isinstance(event["body"], dict):
+      raw_payload = event["body"]
+
+  try:
+    # Parse stops
+    stops_input = raw_payload.get("stops") or []
+    stops: list[RouteStop] = []
+    for s in stops_input:
+      if isinstance(s, dict):
+        stops.append(RouteStop.from_dict(s))
+
+    # Parse custom start / end
+    custom_start = None
+    if raw_payload.get("custom_start"):
+      custom_start = RouteStop.from_dict(raw_payload["custom_start"])
+
+    custom_end = None
+    if raw_payload.get("custom_end"):
+      custom_end = RouteStop.from_dict(raw_payload["custom_end"])
+
+    start_mode_str = str(raw_payload.get("start_mode") or "fixed").lower()
+    start_mode = StartMode.FIXED
+    if start_mode_str == "any":
+      start_mode = StartMode.ANY
+    elif start_mode_str == "custom":
+      start_mode = StartMode.CUSTOM
+
+    travel_mode_str = str(raw_payload.get("travel_mode") or "driving").lower()
+    travel_mode = TravelMode.DRIVING
+    if travel_mode_str == "walking":
+      travel_mode = TravelMode.WALKING
+    elif travel_mode_str == "bicycling":
+      travel_mode = TravelMode.BICYCLING
+
+    req = RouteOptimizationRequest(
+      stops=stops,
+      place_ids=raw_payload.get("place_ids") or [],
+      post_id=raw_payload.get("post_id"),
+      start_mode=start_mode,
+      custom_start=custom_start,
+      custom_end=custom_end,
+      round_trip=bool(raw_payload.get("round_trip", False)),
+      travel_mode=travel_mode,
+    )
+
+    result = optimize_route(req)
+    result_dict = result.to_dict()
+
+    if is_http:
+      return {
+        "statusCode": 200,
+        "headers": {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+        },
+        "body": json.dumps(result_dict),
+      }
+
+    return result_dict
+
+  except Exception as e:
+    logger.exception("optimize_route_worker error: %s", e)
+    if is_http:
+      return {
+        "statusCode": 500,
+        "headers": {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+        },
+        "body": json.dumps({"error": str(e)}),
+      }
+    return {"error": str(e)}
+

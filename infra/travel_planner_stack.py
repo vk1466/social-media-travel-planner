@@ -241,12 +241,33 @@ class TravelPlannerStack(Stack):
       environment=shared_env,
     )
 
+    route_optimizer_fn = lambda_.DockerImageFunction(
+      self,
+      "RouteOptimizerWorker",
+      code=lambda_.DockerImageCode.from_image_asset(
+        str(REPO_ROOT),
+        file="infra/Dockerfile",
+        cmd=["server.workers.optimize_route_worker"],
+        platform=LAMBDA_PLATFORM,
+      ),
+      architecture=lambda_.Architecture.X86_64,
+      memory_size=1024,
+      timeout=Duration.seconds(60),
+      environment={
+        "DYNAMODB_REGION": region,
+        "DYNAMODB_STAGE": stage,
+        "LOG_LEVEL": "INFO",
+      },
+    )
+
     for table in tables.values():
       table.grant_read_write_data(ingest_fn)
       table.grant_read_write_data(finalize_fn)
       table.grant_read_write_data(timeline_batch_fn)
       table.grant_read_write_data(timeline_finalize_fn)
       table.grant_read_write_data(enrich_fn)
+      table.grant_read_data(route_optimizer_fn)
+
 
     timeline_bucket.grant_read(timeline_batch_fn)
     media_bucket.grant_read_write(ingest_fn)
@@ -330,11 +351,26 @@ class TravelPlannerStack(Stack):
       auth_type=lambda_.FunctionUrlAuthType.NONE,
     )
 
+    route_optimizer_url = route_optimizer_fn.add_function_url(
+      auth_type=lambda_.FunctionUrlAuthType.NONE,
+      cors=lambda_.FunctionUrlCorsOptions(
+        allowed_origins=cors_origin_list,
+        allowed_methods=[lambda_.HttpMethod.POST],
+        allowed_headers=["*"],
+      ),
+    )
+
     CfnOutput(
       self,
       "ApiEndpoint",
       description="Lambda Function URL (set as VITE_API_BASE_URL)",
       value=api_url.url,
+    )
+    CfnOutput(
+      self,
+      "RouteOptimizerEndpoint",
+      description="Route Optimizer Lambda Function URL",
+      value=route_optimizer_url.url,
     )
     CfnOutput(
       self,

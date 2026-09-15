@@ -607,6 +607,62 @@ export async function fetchCategories(): Promise<string[]> {
   return request<string[]>("/api/categories");
 }
 
+export interface RouteStopInput {
+  stop_id?: string;
+  name?: string;
+  latitude: number;
+  longitude: number;
+  category?: string | null;
+  address?: string | null;
+}
+
+export interface RouteLegOutput {
+  from_stop_id: string;
+  to_stop_id: string;
+  from_name: string;
+  to_name: string;
+  distance_meters: number;
+  est_walking_minutes: number;
+  est_driving_minutes: number;
+}
+
+export interface RouteOptimizationResult {
+  ordered_stops: RouteStopInput[];
+  legs: RouteLegOutput[];
+  total_distance_meters: number;
+  total_distance_km: number;
+  original_distance_meters: number;
+  savings_meters: number;
+  savings_percent: number;
+  google_maps_url: string;
+  apple_maps_url: string;
+  round_trip: boolean;
+  travel_mode: string;
+  solver_time_ms: number;
+}
+
+export interface RouteOptimizationRequest {
+  stops?: RouteStopInput[];
+  place_ids?: string[];
+  post_id?: string | null;
+  start_mode?: "fixed" | "any" | "custom";
+  custom_start?: RouteStopInput | null;
+  custom_end?: RouteStopInput | null;
+  round_trip?: boolean;
+  travel_mode?: "driving" | "walking" | "bicycling";
+}
+
+export async function optimizeRoute(
+  req: RouteOptimizationRequest,
+): Promise<RouteOptimizationResult> {
+  return request<RouteOptimizationResult>("/api/routes/optimize", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(req),
+  });
+}
+
+
 export interface Visit {
   visit_id: string;
   place_id: string;

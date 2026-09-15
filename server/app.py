@@ -82,6 +82,8 @@ from server.schemas import (
   VisitsCleanupRequest,
   VisitsCleanupResultSchema,
   TimelineReviewDetailSchema,
+  RouteOptimizationRequestSchema,
+  RouteOptimizationResultSchema,
 )
 from server.timeline_runner import create_and_start_timeline_job
 
@@ -888,4 +890,74 @@ def refresh_place_facts(place_id: str, user_id: AdminUserId) -> PlaceFactsRefres
     note=result.note,
     facts=facts_schema,
   )
+
+
+@app.post(
+  "/api/routes/optimize",
+  response_model=RouteOptimizationResultSchema,
+  summary="Optimize route stops for distance and generate navigation links",
+)
+def optimize_travel_route(
+  request: RouteOptimizationRequestSchema,
+  user_id: CurrentUserId = None,
+) -> RouteOptimizationResultSchema:
+  """Optimizes a list of route stops using Google OR-Tools to minimize travel distance."""
+  del user_id
+  from travelplanner.routing import (
+    RouteOptimizationRequest,
+    RouteStop,
+    StartMode,
+    TravelMode,
+    optimize_route,
+  )
+
+  stops = [
+    RouteStop(
+      stop_id=s.stop_id,
+      name=s.name,
+      latitude=s.latitude,
+      longitude=s.longitude,
+      category=s.category,
+      address=s.address,
+    )
+    for s in request.stops
+  ]
+  custom_start = (
+    RouteStop(
+      stop_id=request.custom_start.stop_id,
+      name=request.custom_start.name,
+      latitude=request.custom_start.latitude,
+      longitude=request.custom_start.longitude,
+      category=request.custom_start.category,
+      address=request.custom_start.address,
+    )
+    if request.custom_start
+    else None
+  )
+  custom_end = (
+    RouteStop(
+      stop_id=request.custom_end.stop_id,
+      name=request.custom_end.name,
+      latitude=request.custom_end.latitude,
+      longitude=request.custom_end.longitude,
+      category=request.custom_end.category,
+      address=request.custom_end.address,
+    )
+    if request.custom_end
+    else None
+  )
+
+  req = RouteOptimizationRequest(
+    stops=stops,
+    place_ids=request.place_ids,
+    post_id=request.post_id,
+    start_mode=StartMode(request.start_mode),
+    custom_start=custom_start,
+    custom_end=custom_end,
+    round_trip=request.round_trip,
+    travel_mode=TravelMode(request.travel_mode),
+  )
+  result = optimize_route(req)
+  return RouteOptimizationResultSchema(**result.to_dict())
+
 

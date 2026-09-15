@@ -5,12 +5,14 @@ import { mappablePlaces } from "../placeMapUtils";
 import { formatPostDate, getPlatformLabel, proxiedMediaUrl } from "../postDisplayUtils";
 import { DetailModal } from "./DetailModal";
 import { PostPlacesMap } from "./PostPlacesMap";
+import { RoadTripModal } from "./RoadTripModal";
 import { TrailerModal } from "./movies/TrailerModal";
 import { RecipeDetailModal } from "./food/RecipeDetailModal";
 import { GroceryListModal } from "./food/GroceryListModal";
 import {
   buildPlaceSummaries,
   buildReelDetailItems,
+  isEnclosingParentPlace,
   mapPlaceStub,
   shortHeading,
   type LinkedPlace,
@@ -110,12 +112,35 @@ function MountainIcon() {
   );
 }
 
+function CarIcon() {
+  return (
+    <svg
+      width="12"
+      height="12"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      style={{ marginRight: 4, flexShrink: 0 }}
+    >
+      <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2" />
+      <circle cx="7" cy="17" r="2" />
+      <path d="M9 17h6" />
+      <circle cx="17" cy="17" r="2" />
+    </svg>
+  );
+}
+
+
 
 // ── ReadingDeckPlaceCard: Individual Place / Stop in Right Column ────────────
 
 interface ReadingDeckPlaceCardProps {
   item: ReelDetailItem;
-  stopNumber: number;
+  stopNumber?: number;
   isActive: boolean;
   onNavigateToPlace?: (placeId: string) => void;
   onPlayTrailer?: (key: string) => void;
@@ -144,7 +169,16 @@ function ReadingDeckPlaceCard({
     <li className={cardClass} onMouseEnter={onHighlight} id={`post-place-${item.key}`}>
       <div className="post-deck-place-header">
         <div className="post-deck-place-identity">
-          <span className="post-deck-stop-badge">{stopNumber}</span>
+          {stopNumber != null ? (
+            <span className="post-deck-stop-badge">{stopNumber}</span>
+          ) : (
+            <span
+              className="post-deck-stop-badge post-deck-stop-badge--parent"
+              title="Parent Area"
+            >
+              🏞️
+            </span>
+          )}
           <div>
             {canOpenPlace ? (
               <button
@@ -299,6 +333,7 @@ export function PostDetail({
   const [activeItemIndex, setActiveItemIndex] = useState(0);
   const [captionExpanded, setCaptionExpanded] = useState(false);
   const [activeTrailerKey, setActiveTrailerKey] = useState<string | null>(null);
+  const [roadTripOpen, setRoadTripOpen] = useState(false);
   const [recipeOpen, setRecipeOpen] = useState(false);
   const [recipeGroceryOpen, setRecipeGroceryOpen] = useState(false);
   const [groceryRecipePostId, setGroceryRecipePostId] = useState<string | null>(null);
@@ -344,11 +379,13 @@ export function PostDetail({
               placeId,
               displayName: detail.place.display_name,
               city: detail.place.location.city,
+              stateProvince: detail.place.location.state_province,
               country: detail.place.location.country,
               latitude: detail.place.location.latitude,
               longitude: detail.place.location.longitude,
               providerPlaceId: detail.place.location.provider_place_id,
               facts: detail.place.facts,
+              parentPlaceId: detail.place.parent_place_id ?? null,
             };
           } catch {
             return { placeId, displayName: placeId };
@@ -378,18 +415,93 @@ export function PostDetail({
     () => placeSummaries.map(mapPlaceStub).filter((place): place is Place => place != null),
     [placeSummaries],
   );
-  const activeItem = detailItems[activeItemIndex] ?? detailItems[0];
-  const activePlaceId = activeItem ? (activeItem.placeId ?? activeItem.key) : null;
-  const pinIndexByPlaceId = useMemo(() => {
-    const indexes: Record<string, number> = {};
-    detailItems.forEach((item, index) => {
-      indexes[item.key] = index;
-      if (item.placeId) {
-        indexes[item.placeId] = index;
+  const heading = shortHeading(post);
+  const rawCaption = post.caption?.trim() || "";
+
+  const textCorpus = useMemo(
+    () =>
+      [
+        heading,
+        rawCaption,
+        post.reel_summary,
+        post.video_analysis,
+        post.transcript,
+        ...(post.hashtags || []),
+      ]
+        .filter(Boolean)
+        .join(" "),
+    [
+      heading,
+      rawCaption,
+      post.reel_summary,
+      post.video_analysis,
+      post.transcript,
+      post.hashtags,
+    ],
+  );
+
+  const { parentPlaceIds, parentPlaceNames } = useMemo(() => {
+    const ids = new Set<string>();
+    const names = new Set<string>();
+
+    placeSummaries.forEach((ps) => {
+      if (ps.parentPlaceId?.trim()) {
+        ids.add(ps.parentPlaceId.trim().toLowerCase());
+      }
+      if (ps.parentPlaceName?.trim()) {
+        names.add(ps.parentPlaceName.trim().toLowerCase());
       }
     });
+
+    overviewPlaces.forEach((p) => {
+      if (p.parent_place_id?.trim()) {
+        ids.add(p.parent_place_id.trim().toLowerCase());
+      }
+    });
+
+    post.extracted_places?.forEach((ep) => {
+      if (ep.parent_place_name?.trim()) {
+        names.add(ep.parent_place_name.trim().toLowerCase());
+      }
+    });
+
+    return { parentPlaceIds: ids, parentPlaceNames: names };
+  }, [placeSummaries, overviewPlaces, post.extracted_places]);
+
+  // Road trip map places: if the list has a parent place (like Yellowstone National Park)
+  // along with its child places (Fishing Cone, West Thumb Geyser Basin), ignore that parent place!
+  const mapPlaces = useMemo(() => {
+    const nonParents = overviewPlaces.filter(
+      (p) =>
+        !isEnclosingParentPlace(
+          p,
+          overviewPlaces,
+          parentPlaceIds,
+          parentPlaceNames,
+          textCorpus,
+        ),
+    );
+    return nonParents.length > 0 ? nonParents : overviewPlaces;
+  }, [overviewPlaces, parentPlaceIds, parentPlaceNames, textCorpus]);
+
+  const activeItem = detailItems[activeItemIndex] ?? detailItems[0];
+  const activePlaceId = useMemo(() => {
+    if (!activeItem) return mapPlaces[0]?.place_id ?? null;
+    const directKey = activeItem.placeId ?? activeItem.key;
+    if (mapPlaces.some((p) => p.place_id === directKey || p.display_name === activeItem.name)) {
+      return directKey;
+    }
+    return mapPlaces[0]?.place_id ?? null;
+  }, [activeItem, mapPlaces]);
+
+  const pinIndexByPlaceId = useMemo(() => {
+    const indexes: Record<string, number> = {};
+    mapPlaces.forEach((place, index) => {
+      indexes[place.place_id] = index;
+      indexes[place.display_name] = index;
+    });
     return indexes;
-  }, [detailItems]);
+  }, [mapPlaces]);
 
   const scrollToItemIndex = useCallback((index: number) => {
     setActiveItemIndex(index);
@@ -403,84 +515,181 @@ export function PostDetail({
     onClose();
   };
 
-  const heading = shortHeading(post);
   const dateLabel = formatPostDate(post);
   const platformLabel = getPlatformLabel(post);
   const thumbUrl = proxiedMediaUrl(post.thumbnail_url);
-  const showMap = mappablePlaces(overviewPlaces).length > 0;
+  const showMap = mappablePlaces(mapPlaces).length > 0;
 
   // Caption truncation logic
-  const rawCaption = post.caption?.trim() || "";
-  const isCaptionLong = rawCaption.length > 180 || rawCaption.split("\n").length > 3;
+  const isCaptionLong = rawCaption.length > 160;
   const displayCaption = !isCaptionLong || captionExpanded
     ? rawCaption
     : `${rawCaption.slice(0, 160).trimEnd()}…`;
 
-  // Combined Multi-Stop Google Maps route URL
-  const multiStopMapUrl = useMemo(() => {
-    const mappable = mappablePlaces(overviewPlaces);
-    if (mappable.length <= 1) return null;
-    const waypoints = mappable
-      .map((p) =>
-        p.location.latitude != null && p.location.longitude != null
-          ? `${p.location.latitude},${p.location.longitude}`
-          : encodeURIComponent(p.display_name),
-      )
-      .join("/");
-    return `https://www.google.com/maps/dir/${waypoints}`;
-  }, [overviewPlaces]);
+  // Contextual Top Action: Hike Details vs Road Trip Directions
+  const topAction = useMemo(() => {
+    // 1. Road Trip intent
+    const isExplicitRoadTrip =
+      /\b(road\s*trip|roadtrip|scenic\s+drive|scenic\s+byway|driving\s+route|car\s+trip|vanlife|rv\s+trip|cross\s*country\s+drive)\b/i.test(
+        textCorpus,
+      );
+    const hasDriveKeywords =
+      /\b(drive|driving|itinerary|route|loop|stops?\s+(along|on|from)|from\s+[\w\s]+\s+to\s+[\w\s]+)\b/i.test(
+        textCorpus,
+      );
 
-  // Hike details URL (e.g. AllTrails search) for hike posts
-  const hikeInfo = useMemo(() => {
-    // 1. Check activeItem or detailItems or overviewPlaces for a place with category === "hike"
-    const targetItem =
-      (activeItem?.category?.toLowerCase() === "hike" ? activeItem : null) ??
-      detailItems.find((item) => item.category?.toLowerCase() === "hike");
-    const targetPlace = overviewPlaces.find(
-      (p) => p.category?.toLowerCase() === "hike",
-    );
-    const targetExtracted = post.extracted_places?.find(
-      (ep) => ep.category?.toLowerCase() === "hike",
+    // 2. Hike intent
+    const isHikeText =
+      /\b(hike|hiking|trail|trails|dayhike|day\s+hike|thruhike|thru-hike|trek|trekking|summit\s+trail|trailhead|ridge\s+walk)\b/i.test(
+        textCorpus,
+      );
+    const hasHikeHashtags = post.hashtags?.some((t) =>
+      /hike|hiking|trail|trails|thruhike|backpacking/i.test(t),
     );
 
-    let hikeName =
-      targetItem?.name || targetPlace?.display_name || targetExtracted?.place_name;
+    // Place categorization using mapPlaces (which already excluded enclosing parent places)
+    const places = mapPlaces.length > 0 ? mapPlaces : overviewPlaces;
+    const hikePlaces = places.filter(
+      (p) =>
+        p.category?.toLowerCase() === "hike" ||
+        p.category?.toLowerCase() === "trail" ||
+        Boolean(p.facts?.website_url?.includes("alltrails.com")),
+    );
+    const totalPlacesCount = Math.max(
+      places.length,
+      detailItems.length,
+      post.extracted_places?.length || 0,
+    );
 
-    // 2. Fallback: check if post itself is a hike post based on hashtags, caption, or heading
-    if (!hikeName) {
-      const isHikePost =
-        post.hashtags?.some((t) => /hike|hiking|trail/i.test(t)) ||
-        /\bhike\b|\btrail\b/i.test(heading) ||
-        /\bhike\b|\btrail\b/i.test(rawCaption);
-      if (isHikePost && detailItems.length > 0) {
-        hikeName = detailItems[0].name;
+    const isHeadingHike = /\b(hike|hiking|trail|trails|summit)\b/i.test(heading);
+    const areAllPlacesHikes = totalPlacesCount > 0 && hikePlaces.length === totalPlacesCount;
+    const isDedicatedHike =
+      !isExplicitRoadTrip &&
+      (isHeadingHike ||
+        areAllPlacesHikes ||
+        (hikePlaces.length > 0 && totalPlacesCount <= 2) ||
+        ((isHikeText || hasHikeHashtags) && totalPlacesCount <= 1));
+
+    // 3. Build waypoints for Google Maps directions using mapPlaces (excluding parent place)
+    const waypoints: string[] = [];
+    places.forEach((p) => {
+      if (p.location?.latitude != null && p.location?.longitude != null) {
+        waypoints.push(`${p.location.latitude},${p.location.longitude}`);
+      } else if (p.display_name?.trim()) {
+        const parts = [
+          p.display_name.trim(),
+          p.location?.city,
+          p.location?.state_province,
+        ].filter(Boolean);
+        waypoints.push(encodeURIComponent(parts.join(", ")));
       }
+    });
+
+    // Multi-stop directions URL
+    const roadTripUrl =
+      waypoints.length >= 2
+        ? `https://www.google.com/maps/dir/${waypoints.join("/")}`
+        : waypoints.length === 1 && (isExplicitRoadTrip || hasDriveKeywords)
+          ? `https://www.google.com/maps/dir/?api=1&destination=${waypoints[0]}`
+          : null;
+
+    // 5. If post is a Road Trip -> Road Trip button
+    if (isExplicitRoadTrip && roadTripUrl) {
+      return {
+        type: "road_trip" as const,
+        label: "Road Trip ↗",
+        title: `Open road trip directions for all ${waypoints.length} locations in Google Maps`,
+        url: roadTripUrl,
+      };
     }
 
-    if (!hikeName) return null;
+    // 6. If post is primarily about a Hike -> Hike Details button
+    if (isDedicatedHike || ((isHikeText || hasHikeHashtags) && !roadTripUrl)) {
+      const targetItem =
+        (activeItem?.category?.toLowerCase() === "hike" ? activeItem : null) ??
+        detailItems.find((item) => item.category?.toLowerCase() === "hike") ??
+        detailItems[0];
+      const targetPlace =
+        places.find((p) => p.category?.toLowerCase() === "hike") ?? places[0];
+      const targetExtracted =
+        post.extracted_places?.find(
+          (ep) => ep.category?.toLowerCase() === "hike",
+        ) ?? post.extracted_places?.[0];
 
-    // Location context (city or state) to make AllTrails search accurate
-    const stateOrCity =
-      targetExtracted?.state_province ||
-      targetPlace?.location?.state_province ||
-      targetExtracted?.city ||
-      targetPlace?.location?.city ||
-      (targetItem?.metaParts && targetItem.metaParts.length > 0
-        ? targetItem.metaParts[0].split(",")[0].trim()
-        : "");
+      const hikeName =
+        targetItem?.name ||
+        targetPlace?.display_name ||
+        targetExtracted?.place_name ||
+        heading ||
+        "Trail";
 
-    const query = stateOrCity ? `${hikeName} ${stateOrCity}` : hikeName;
-    const resolvedUrl =
-      targetItem?.trailStats?.alltrailsUrl ||
-      (targetPlace?.facts?.website_url && targetPlace.facts.website_url.includes("alltrails.com/trail/")
-        ? targetPlace.facts.website_url
-        : null);
+      const stateOrCity =
+        targetExtracted?.state_province ||
+        targetPlace?.location?.state_province ||
+        targetExtracted?.city ||
+        targetPlace?.location?.city ||
+        (targetItem?.metaParts && targetItem.metaParts.length > 0
+          ? targetItem.metaParts[0].split(",")[0].trim()
+          : "");
 
-    return {
-      name: hikeName,
-      url: resolvedUrl || `https://www.google.com/search?q=site:alltrails.com/trail/+${encodeURIComponent(query)}`,
-    };
-  }, [activeItem, detailItems, overviewPlaces, post, heading, rawCaption]);
+      const query = stateOrCity ? `${hikeName} ${stateOrCity}` : hikeName;
+      const resolvedUrl =
+        targetItem?.trailStats?.alltrailsUrl ||
+        (targetPlace?.facts?.website_url &&
+        targetPlace.facts.website_url.includes("alltrails.com/trail/")
+          ? targetPlace.facts.website_url
+          : null);
+
+      return {
+        type: "hike" as const,
+        label: "Hike Details ↗",
+        title: `View ${hikeName} on AllTrails`,
+        url:
+          resolvedUrl ||
+          `https://www.google.com/search?q=site:alltrails.com/trail/+${encodeURIComponent(query)}`,
+      };
+    }
+
+    // 7. If post has multiple locations (road trip / multi-stop route)
+    if (roadTripUrl) {
+      return {
+        type: "road_trip" as const,
+        label: "Road Trip ↗",
+        title: `Open directions for all ${waypoints.length} locations in Google Maps`,
+        url: roadTripUrl,
+      };
+    }
+
+    // 8. Fallback: if single place is a hike or has trailStats
+    if (hikePlaces.length > 0 || detailItems.some((it) => Boolean(it.trailStats))) {
+      const targetItem =
+        detailItems.find((it) => Boolean(it.trailStats)) ?? detailItems[0];
+      const hikeName = targetItem?.name || heading || "Trail";
+      const resolvedUrl = targetItem?.trailStats?.alltrailsUrl;
+      return {
+        type: "hike" as const,
+        label: "Hike Details ↗",
+        title: `View ${hikeName} on AllTrails`,
+        url:
+          resolvedUrl ||
+          `https://www.google.com/search?q=site:alltrails.com/trail/+${encodeURIComponent(hikeName)}`,
+      };
+    }
+
+    return null;
+  }, [
+    heading,
+    rawCaption,
+    post.reel_summary,
+    post.video_analysis,
+    post.transcript,
+    post.hashtags,
+    post.extracted_places,
+    overviewPlaces,
+    placeSummaries,
+    detailItems,
+    activeItem,
+  ]);
 
   return (
     <DetailModal
@@ -592,12 +801,15 @@ export function PostDetail({
               <span className="post-deck-section-label">Stops on Map</span>
               <div className="post-deck-map-wrap">
                 <PostPlacesMap
-                  places={overviewPlaces}
+                  places={mapPlaces}
                   activePlaceId={activePlaceId}
                   pinIndexByPlaceId={pinIndexByPlaceId}
                   onSelectPlaceId={(placeId) => {
                     const index = detailItems.findIndex(
-                      (item) => item.placeId === placeId || item.key === placeId,
+                      (item) =>
+                        item.placeId === placeId ||
+                        item.key === placeId ||
+                        item.name === placeId,
                     );
                     if (index >= 0) {
                       scrollToItemIndex(index);
@@ -617,41 +829,52 @@ export function PostDetail({
                 ? `Places Mentioned (${detailItems.length})`
                 : "Post Details"}
             </h3>
-            {hikeInfo ? (
-              <a
-                href={hikeInfo.url}
-                target="_blank"
-                rel="noreferrer"
-                className="post-deck-route-btn post-deck-hike-btn"
-                title={`View ${hikeInfo.name} on AllTrails`}
-              >
-                <MountainIcon /> Hike Details ↗
-              </a>
-            ) : multiStopMapUrl ? (
-              <a
-                href={multiStopMapUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="post-deck-route-btn"
-              >
-                Open Route in Maps ↗
-              </a>
-            ) : null}
+            {topAction && (
+              topAction.type === "road_trip" ? (
+                <button
+                  type="button"
+                  onClick={() => setRoadTripOpen(true)}
+                  className="post-deck-route-btn post-deck-roadtrip-btn"
+                  title="View shortest distance route options and open in Google Maps"
+                >
+                  <CarIcon />
+                  {topAction.label}
+                </button>
+              ) : (
+                <a
+                  href={topAction.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="post-deck-route-btn post-deck-hike-btn"
+                  title={topAction.title}
+                >
+                  <MountainIcon />
+                  {topAction.label}
+                </a>
+              )
+            )}
           </div>
 
           {detailItems.length > 0 ? (
             <ul className="post-deck-places-list" ref={placeListRef}>
-              {detailItems.map((item, index) => (
-                <ReadingDeckPlaceCard
-                  key={item.key}
-                  item={item}
-                  stopNumber={index + 1}
-                  isActive={index === activeItemIndex}
-                  onNavigateToPlace={onNavigateToPlace}
-                  onPlayTrailer={setActiveTrailerKey}
-                  onHighlight={() => setActiveItemIndex(index)}
-                />
-              ))}
+              {detailItems.map((item, index) => {
+                const pinIndex =
+                  (item.placeId && pinIndexByPlaceId[item.placeId] != null)
+                    ? pinIndexByPlaceId[item.placeId]
+                    : pinIndexByPlaceId[item.name];
+                const stopNumber = pinIndex != null ? pinIndex + 1 : undefined;
+                return (
+                  <ReadingDeckPlaceCard
+                    key={item.key}
+                    item={item}
+                    stopNumber={stopNumber}
+                    isActive={index === activeItemIndex}
+                    onNavigateToPlace={onNavigateToPlace}
+                    onPlayTrailer={setActiveTrailerKey}
+                    onHighlight={() => setActiveItemIndex(index)}
+                  />
+                );
+              })}
             </ul>
           ) : (
             <div className="post-deck-empty-places">
@@ -725,6 +948,15 @@ export function PostDetail({
         <GroceryListModal
           recipes={[{ key: post.post_id, post, recipe: post.extracted_recipe }]}
           onClose={() => setRecipeGroceryOpen(false)}
+        />
+      )}
+      {roadTripOpen && (
+        <RoadTripModal
+          isOpen={roadTripOpen}
+          onClose={() => setRoadTripOpen(false)}
+          postTitle={heading}
+          postId={post.post_id}
+          places={mapPlaces.length > 0 ? mapPlaces : overviewPlaces}
         />
       )}
     </DetailModal>

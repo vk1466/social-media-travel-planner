@@ -16,11 +16,13 @@ export interface LinkedPlace {
   placeId: string;
   displayName: string;
   city?: string | null;
+  stateProvince?: string | null;
   country?: string | null;
   latitude?: number | null;
   longitude?: number | null;
   providerPlaceId?: string | null;
   facts?: PlaceFacts | null;
+  parentPlaceId?: string | null;
 }
 
 export interface TrailStats {
@@ -37,6 +39,7 @@ export interface PlaceSummary {
   key: string;
   name: string;
   placeId?: string;
+  parentPlaceId?: string | null;
   locationLine?: string;
   parentPlaceName?: string | null;
   category?: string | null;
@@ -46,6 +49,9 @@ export interface PlaceSummary {
   mapUrl?: string | null;
   latitude?: number | null;
   longitude?: number | null;
+  city?: string | null;
+  stateProvince?: string | null;
+  country?: string | null;
   facts?: PlaceFacts | null;
 }
 
@@ -58,12 +64,8 @@ export interface ReelDetailItem {
   details?: string | null;
   tip?: string | null;
   tips?: string[];
-  placeId?: string;
-  mapUrl?: string | null;
-  facts?: PlaceFacts | null;
-  trailStats?: TrailStats | null;
-  actionLabel?: string | null;
-  actionHref?: string | null;
+  actionHref?: string;
+  actionLabel?: string;
   posterUrl?: string | null;
   backdropUrl?: string | null;
   trailerKey?: string | null;
@@ -72,10 +74,16 @@ export interface ReelDetailItem {
   watchProviders?: string[];
   imdbRating?: number | null;
   rottenTomatoesPercent?: number | null;
+  facts?: PlaceFacts | null;
+  trailStats?: TrailStats;
+  placeId?: string;
+  mapUrl?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
-export function locationFromExtracted(place: ExtractedPlace): string | undefined {
-  const parts = [place.city, place.state_province, place.country].filter(Boolean);
+export function locationFromExtracted(extracted: ExtractedPlace): string | undefined {
+  const parts = [extracted.city, extracted.state_province, extracted.country].filter(Boolean);
   return parts.length > 0 ? parts.join(", ") : undefined;
 }
 
@@ -84,8 +92,8 @@ export function locationFromTagged(place: PlatformPlace): string | undefined {
   return parts.length > 0 ? parts.join(", ") : undefined;
 }
 
-export function locationFromLinked(place: LinkedPlace): string | undefined {
-  const parts = [place.city, place.country].filter(Boolean);
+export function locationFromLinked(linked: LinkedPlace): string | undefined {
+  const parts = [linked.city, linked.stateProvince, linked.country].filter(Boolean);
   return parts.length > 0 ? parts.join(", ") : undefined;
 }
 
@@ -93,17 +101,17 @@ export function mapsQueryForSummary(
   name: string,
   extracted?: ExtractedPlace,
   linked?: LinkedPlace,
-  tagged?: PlatformPlace,
-): ReturnType<typeof googleMapsUrl> {
-  return googleMapsUrl({
+): string {
+  const url = googleMapsUrl({
     display_name: name,
-    city: extracted?.city ?? linked?.city ?? tagged?.city,
-    state_province: extracted?.state_province,
-    country: extracted?.country ?? linked?.country ?? tagged?.country,
-    latitude: linked?.latitude ?? tagged?.latitude,
-    longitude: linked?.longitude ?? tagged?.longitude,
-    provider_place_id: linked?.providerPlaceId,
+    city: extracted?.city ?? linked?.city ?? undefined,
+    state_province: extracted?.state_province ?? linked?.stateProvince ?? undefined,
+    country: extracted?.country ?? linked?.country ?? undefined,
+    latitude: linked?.latitude,
+    longitude: linked?.longitude,
+    provider_place_id: linked?.providerPlaceId ?? undefined,
   });
+  return url ?? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(name)}`;
 }
 
 export function mapPlaceStub(place: PlaceSummary): Place | null {
@@ -113,10 +121,12 @@ export function mapPlaceStub(place: PlaceSummary): Place | null {
   return {
     place_id: place.placeId ?? place.key,
     display_name: place.name,
+    parent_place_id: place.parentPlaceId ?? null,
     location: {
       display_name: place.name,
-      city: null,
-      country: null,
+      city: place.city ?? null,
+      state_province: place.stateProvince ?? null,
+      country: place.country ?? null,
       latitude: place.latitude,
       longitude: place.longitude,
     },
@@ -140,10 +150,11 @@ export function isPlaceIdSlug(value: string): boolean {
   return /^[a-z]{2}(?:-[a-z0-9]+){2,}$/.test(value.trim());
 }
 
-export function humanizePlaceSlug(placeId: string): string {
-  const parts = placeId.trim().toLowerCase().split("-").filter(Boolean);
-  if (parts[0] && parts[0].length === 2) {
-    parts.shift();
+export function humanizePlaceSlug(slug: string): string {
+  const raw = slug.trim().toLowerCase();
+  const parts = raw.split("-").filter(Boolean);
+  if (parts.length === 0) {
+    return "Unknown place";
   }
   const adminWords = new Set(["county", "parish", "borough", "municipality", "province"]);
   let start = 0;
@@ -194,6 +205,7 @@ export function buildPlaceSummaries(post: SavedPost, linkedPlaces: LinkedPlace[]
           key: linked?.placeId ?? `${extracted.place_name}-${index}`,
           name,
           placeId: linked?.placeId,
+          parentPlaceId: linked?.parentPlaceId ?? null,
           locationLine: locationFromExtracted(extracted) ?? (linked ? locationFromLinked(linked) : undefined),
           parentPlaceName: extracted.parent_place_name,
           category: extracted.category,
@@ -203,6 +215,9 @@ export function buildPlaceSummaries(post: SavedPost, linkedPlaces: LinkedPlace[]
           mapUrl: mapsQueryForSummary(name, extracted, linked),
           latitude: linked?.latitude,
           longitude: linked?.longitude,
+          city: extracted.city ?? linked?.city ?? null,
+          stateProvince: extracted.state_province ?? linked?.stateProvince ?? null,
+          country: extracted.country ?? linked?.country ?? null,
           facts: linked?.facts,
         });
         continue;
@@ -214,12 +229,16 @@ export function buildPlaceSummaries(post: SavedPost, linkedPlaces: LinkedPlace[]
           key: linked.placeId,
           name,
           placeId: linked.placeId,
+          parentPlaceId: linked.parentPlaceId ?? null,
           locationLine: locationFromLinked(linked),
           attributes: [],
           tips: [],
           mapUrl: mapsQueryForSummary(name, undefined, linked),
           latitude: linked.latitude,
           longitude: linked.longitude,
+          city: linked.city ?? null,
+          stateProvince: linked.stateProvince ?? null,
+          country: linked.country ?? null,
           facts: linked.facts,
         });
       }
@@ -447,7 +466,7 @@ export function buildTrailStats(
 export function placeSummaryToDetailItem(place: PlaceSummary): ReelDetailItem {
   const metaParts = [place.locationLine].filter((part): part is string => Boolean(part));
   const isHike = place.category?.toLowerCase() === "hike" || place.facts?.distance_km != null;
-  const trailStats = isHike ? buildTrailStats(place.facts, place.tips, place.details) : null;
+  const trailStats = isHike ? (buildTrailStats(place.facts, place.tips, place.details) ?? undefined) : undefined;
 
   return {
     key: place.key,
@@ -522,3 +541,165 @@ export function windowedDotIndices(count: number, active: number, maxVisible = 7
   const start = Math.max(0, Math.min(active - half, count - maxVisible));
   return Array.from({ length: maxVisible }, (_, i) => start + i);
 }
+
+function approxDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const dLat = (lat2 - lat1) * (Math.PI / 180);
+  const dLon = (lon2 - lon1) * (Math.PI / 180);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return 6371 * c;
+}
+
+/**
+ * Detects if a place in a post's place list is an enclosing/parent entity
+ * (such as a containing National Park, State Park, or City) when more specific
+ * child places (landmarks, trails, attractions) within it are also present.
+ */
+export function isEnclosingParentPlace(
+  place: Place,
+  allPlaces: Place[],
+  parentPlaceIds: Set<string>,
+  parentPlaceNames: Set<string>,
+  postTextCorpus: string,
+): boolean {
+  if (allPlaces.length <= 1) {
+    return false;
+  }
+
+  const pid = place.place_id?.trim().toLowerCase();
+  const rawName = place.display_name?.trim().toLowerCase() || "";
+  const clean = rawName.replace(/['’]/g, "").replace(/\s+/g, " ");
+
+  // 1. Explicit parent match by ID
+  if (pid && parentPlaceIds.has(pid)) {
+    return true;
+  }
+
+  // 2. Explicit parent match by name
+  if (clean) {
+    for (const parentName of parentPlaceNames) {
+      const cleanParent = parentName.replace(/['’]/g, "").replace(/\s+/g, " ");
+      if (
+        clean === cleanParent ||
+        clean.startsWith(cleanParent) ||
+        cleanParent.startsWith(clean)
+      ) {
+        return true;
+      }
+    }
+  }
+
+  // 3. Category / Name based broad parent detection:
+  // Check if this place is a broad container (Park, National Park, City, Region)
+  const category = (place.category || "").toLowerCase().trim();
+  const isParkCategory =
+    category === "park" ||
+    category === "national_park" ||
+    category === "state_park" ||
+    category === "provincial_park" ||
+    category === "protected_area";
+  const isCityOrRegionCategory =
+    category === "city" ||
+    category === "town" ||
+    category === "administrative" ||
+    category === "region" ||
+    category === "county";
+  const hasParkInName =
+    /\b(national park|state park|provincial park|national forest|national monument|national preserve)\b/i.test(
+      place.display_name,
+    );
+
+  const isBroadContainer = isParkCategory || isCityOrRegionCategory || hasParkInName;
+
+  if (isBroadContainer) {
+    // Check if there are other more specific places in the list that belong to this broad area
+    const otherPlaces = allPlaces.filter(
+      (other) => (other.place_id || other.display_name) !== (place.place_id || place.display_name),
+    );
+
+    const specificChildren = otherPlaces.filter((other) => {
+      const otherCategory = (other.category || "").toLowerCase().trim();
+      const otherIsBroad =
+        otherCategory === "park" ||
+        otherCategory === "national_park" ||
+        otherCategory === "city" ||
+        /\b(national park|state park)\b/i.test(other.display_name);
+
+      if (!otherIsBroad) {
+        // Name keyword of the broad container (e.g. "Yellowstone", "Banff", "Zion")
+        const coreName = place.display_name
+          .replace(/\b(national park|state park|provincial park|park|city|county|region)\b/gi, "")
+          .trim()
+          .toLowerCase();
+
+        // 1. Direct name match (e.g. "Yellowstone Lake" contains "yellowstone")
+        if (coreName.length >= 3 && other.display_name.toLowerCase().includes(coreName)) {
+          return true;
+        }
+
+        // 2. Geographic proximity (e.g. within 90km for park or 35km for city)
+        if (
+          place.location?.latitude != null &&
+          place.location?.longitude != null &&
+          other.location?.latitude != null &&
+          other.location?.longitude != null
+        ) {
+          const distKm = approxDistanceKm(
+            place.location.latitude,
+            place.location.longitude,
+            other.location.latitude,
+            other.location.longitude,
+          );
+          const maxDistance = isParkCategory || hasParkInName ? 90 : 35;
+          if (distKm <= maxDistance) {
+            const sameState = Boolean(
+              place.location.state_province &&
+              other.location.state_province &&
+              place.location.state_province === other.location.state_province,
+            );
+            const corpusMentionsParent =
+              coreName.length >= 3 && postTextCorpus.toLowerCase().includes(coreName);
+
+            if (sameState || corpusMentionsParent) {
+              return true;
+            }
+          }
+        }
+
+        // 3. Matching city or same parent area
+        const sameCity = Boolean(
+          place.location?.city &&
+          other.location?.city &&
+          place.location.city.toLowerCase() === other.location.city.toLowerCase(),
+        );
+        if (sameCity) {
+          return true;
+        }
+
+        // 4. Mentioned in caption alongside core name if state matches
+        const sameState = Boolean(
+          place.location?.state_province &&
+          other.location?.state_province &&
+          place.location.state_province === other.location.state_province,
+        );
+        const corpusMentionsParent =
+          coreName.length >= 3 && postTextCorpus.toLowerCase().includes(coreName);
+        if (sameState && corpusMentionsParent) {
+          return true;
+        }
+      }
+      return false;
+    });
+
+    if (specificChildren.length > 0) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+

@@ -517,3 +517,49 @@ class PlaceCandidateSchema(BaseModel):
 class PlaceCandidateListResponse(BaseModel):
   candidates: list[PlaceCandidateSchema]
   count: int
+
+
+class RouteStopSchema(BaseModel):
+  stop_id: str = "stop"
+  name: str = "Unnamed Stop"
+  latitude: float
+  longitude: float
+  category: str | None = None
+  address: str | None = None
+
+
+class RouteLegSchema(BaseModel):
+  from_stop_id: str
+  to_stop_id: str
+  from_name: str
+  to_name: str
+  distance_meters: int
+  est_walking_minutes: int
+  est_driving_minutes: int
+
+
+class RouteOptimizationRequestSchema(BaseModel):
+  stops: list[RouteStopSchema] = Field(default_factory=list)
+  place_ids: list[str] = Field(default_factory=list)
+  post_id: str | None = None
+  start_mode: Literal["fixed", "any", "custom"] = "fixed"
+  custom_start: RouteStopSchema | None = None
+  custom_end: RouteStopSchema | None = None
+  round_trip: bool = False
+  travel_mode: Literal["driving", "walking", "bicycling"] = "driving"
+
+
+class RouteOptimizationResultSchema(BaseModel):
+  ordered_stops: list[RouteStopSchema]
+  legs: list[RouteLegSchema]
+  total_distance_meters: int
+  total_distance_km: float
+  original_distance_meters: int
+  savings_meters: int
+  savings_percent: float
+  google_maps_url: str
+  apple_maps_url: str
+  round_trip: bool
+  travel_mode: str
+  solver_time_ms: float
+

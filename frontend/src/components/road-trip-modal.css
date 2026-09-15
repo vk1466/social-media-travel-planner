@@ -1,0 +1,480 @@
+/* Road Trip Route Optimizer Modal */
+
+.roadtrip-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(4, 8, 7, 0.78);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 16px;
+  animation: roadtripFadeIn 0.2s ease-out;
+}
+
+@keyframes roadtripFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes roadtripSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.roadtrip-modal-panel {
+  background: #111a17;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  width: 100%;
+  max-width: 620px;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(76, 175, 130, 0.15);
+  animation: roadtripSlideUp 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+  color: #e9f0ec;
+  font-family: inherit;
+}
+
+/* Header */
+.roadtrip-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(180deg, rgba(34, 56, 48, 0.25) 0%, transparent 100%);
+}
+
+.roadtrip-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.roadtrip-icon-badge {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: rgba(76, 175, 130, 0.15);
+  border: 1px solid rgba(76, 175, 130, 0.3);
+  color: #4caf82;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.roadtrip-modal-title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #f2f7f4;
+  letter-spacing: -0.01em;
+}
+
+.roadtrip-modal-subtitle {
+  margin: 3px 0 0;
+  font-size: 0.8rem;
+  color: #8da498;
+}
+
+.roadtrip-modal-close {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #a3b8ad;
+  border-radius: 8px;
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.roadtrip-modal-close:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Strategy Choice Tabs */
+.roadtrip-strategy-bar {
+  display: flex;
+  gap: 8px;
+  padding: 14px 24px;
+  background: rgba(0, 0, 0, 0.2);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  overflow-x: auto;
+}
+
+.roadtrip-strategy-tab {
+  flex: 1;
+  min-width: 140px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 8px 12px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s ease;
+  color: #b0c2b8;
+}
+
+.roadtrip-strategy-tab:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.16);
+  color: #e5f0ea;
+}
+
+.roadtrip-strategy-tab.active {
+  background: rgba(76, 175, 130, 0.15);
+  border-color: #4caf82;
+  color: #ffffff;
+  box-shadow: 0 0 14px rgba(76, 175, 130, 0.2);
+}
+
+.roadtrip-tab-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.roadtrip-tab-title {
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.roadtrip-best-badge {
+  background: #4caf82;
+  color: #0b1a13;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 999px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.roadtrip-tab-metric {
+  font-size: 0.72rem;
+  color: #829a8e;
+}
+
+.roadtrip-strategy-tab.active .roadtrip-tab-metric {
+  color: #9fe2bf;
+}
+
+/* Controls Bar (Travel Mode + Meta) */
+.roadtrip-controls-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 24px;
+  background: rgba(0, 0, 0, 0.15);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.roadtrip-travel-modes {
+  display: flex;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 3px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.roadtrip-mode-btn {
+  background: transparent;
+  border: none;
+  color: #8da498;
+  font-size: 0.74rem;
+  font-weight: 500;
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.roadtrip-mode-btn:hover {
+  color: #e5f0ea;
+}
+
+.roadtrip-mode-btn.active {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.roadtrip-savings-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(76, 175, 130, 0.15);
+  color: #5ed69e;
+  border: 1px solid rgba(76, 175, 130, 0.3);
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 600;
+}
+
+/* Summary Metrics */
+.roadtrip-metrics-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 24px;
+  background: rgba(255, 255, 255, 0.02);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.roadtrip-metric-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.roadtrip-metric-val {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.01em;
+}
+
+.roadtrip-metric-lbl {
+  font-size: 0.68rem;
+  color: #7b9487;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.roadtrip-metric-divider {
+  width: 1px;
+  height: 24px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Stops Itinerary List */
+.roadtrip-stops-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 24px;
+}
+
+.roadtrip-stops-list {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.roadtrip-stop-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  position: relative;
+}
+
+.roadtrip-pin-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 28px;
+  flex-shrink: 0;
+}
+
+.roadtrip-pin-number {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #192923;
+  border: 2px solid #4caf82;
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  box-shadow: 0 0 8px rgba(76, 175, 130, 0.3);
+}
+
+.roadtrip-stop-row:first-child .roadtrip-pin-number {
+  background: #4caf82;
+  color: #0b1a13;
+}
+
+.roadtrip-stop-row:last-child .roadtrip-pin-number {
+  border-color: #e59d43;
+}
+
+.roadtrip-leg-line {
+  width: 2px;
+  min-height: 48px;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(76, 175, 130, 0.6) 0px,
+    rgba(76, 175, 130, 0.6) 4px,
+    transparent 4px,
+    transparent 8px
+  );
+  margin: 2px 0;
+}
+
+.roadtrip-stop-body {
+  flex: 1;
+  padding-bottom: 20px;
+}
+
+.roadtrip-stop-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.roadtrip-stop-name {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #f0f6f2;
+}
+
+.roadtrip-stop-category {
+  font-size: 0.65rem;
+  background: rgba(255, 255, 255, 0.08);
+  color: #a8beaf;
+  padding: 2px 7px;
+  border-radius: 999px;
+  text-transform: capitalize;
+}
+
+.roadtrip-stop-address {
+  font-size: 0.75rem;
+  color: #7b9487;
+  margin-top: 2px;
+}
+
+.roadtrip-leg-info {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  color: #9ab4a5;
+}
+
+/* Footer / Actions */
+.roadtrip-modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(10, 16, 14, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.roadtrip-footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.roadtrip-gmaps-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #4caf82;
+  color: #0b1a13;
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 10px 18px;
+  border-radius: 10px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: none;
+}
+
+.roadtrip-gmaps-btn:hover {
+  background: #5ed69e;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(76, 175, 130, 0.35);
+}
+
+.roadtrip-apple-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #d8e5de;
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 10px 14px;
+  border-radius: 10px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.roadtrip-apple-btn:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+}
+
+.roadtrip-copy-btn {
+  background: transparent;
+  border: none;
+  color: #8da498;
+  font-size: 0.78rem;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 6px;
+  transition: all 0.15s ease;
+}
+
+.roadtrip-copy-btn:hover {
+  color: #e5f0ea;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* Loading & Empty states */
+.roadtrip-loading-box {
+  padding: 48px 24px;
+  text-align: center;
+  color: #8da498;
+}
+
+.roadtrip-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid rgba(76, 175, 130, 0.2);
+  border-top-color: #4caf82;
+  border-radius: 50%;
+  animation: roadtripSpin 0.7s linear infinite;
+  margin: 0 auto 12px;
+}
+
+@keyframes roadtripSpin {
+  to { transform: rotate(360deg); }
+}
