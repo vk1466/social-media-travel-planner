@@ -87,7 +87,7 @@ export function AddLinksPage({ authReady, onIngestComplete }: AddLinksPageProps)
       <PageHeader
         eyebrow="Add to your library"
         title="Paste a link. We'll do the rest."
-        lede="Drop in Instagram reels, TikToks, and YouTube links. We read each one for the places it mentions and add them to your saves and atlas."
+        lede="Drop in Instagram reels, TikToks, YouTube videos, or web links. We read each one, identify what it is about, and organize it in your library."
       />
 
       <div className="add-page-form-card">
@@ -130,15 +130,15 @@ export function AddLinksPage({ authReady, onIngestComplete }: AddLinksPageProps)
         <div className="add-page-success" role="status">
           <h2 className="add-page-success-title">You're all set</h2>
           <p className="add-page-success-copy">
-            Links are in your library. Open your saves to browse posts, or jump to the atlas to see
-            places on the map.
+            Links are in your library. Browse all your saved posts, or open Places to see locations
+            found in them.
           </p>
           <div className="add-page-success-actions">
             <Link to="/posts" className="add-page-success-link add-page-success-link-primary">
               View your saves
             </Link>
             <Link to="/places" className="add-page-success-link add-page-success-link-secondary">
-              Open the atlas
+              Open places
             </Link>
           </div>
         </div>

@@ -140,7 +140,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="travel"
         options={{
-          title: "Travel",
+          title: "Places",
           href: tabHref(counts.travel),
           tabBarIcon: ({ color, size }) => <Ionicons name="navigate" size={size} color={color} />,
         }}
@@ -164,7 +164,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="history"
         options={{
-          title: "History",
+          title: "Visits",
           href: tabHref(counts.history),
           tabBarIcon: ({ color, size }) => <Ionicons name="time" size={size} color={color} />,
         }}

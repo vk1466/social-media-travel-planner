@@ -70,8 +70,8 @@ export const EMPTY_LIBRARY_META: LibraryShellMeta = {
 export const LIBRARY_SHELL_COPY = {
   places: {
     eyebrow: "Places from your saves",
-    title: "Places to go",
-    lede: "Browse every place we found, mark where you’ve been, and turn the rest into a trip.",
+    title: "Saved places",
+    lede: "Browse the places found in your posts, explore them on a map, and mark where you’ve been.",
     searchPlaceholder: "Search places",
     searchLabel: "Search places",
     pillAll: "All types",

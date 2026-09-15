@@ -33,7 +33,7 @@ export function TimelineReviewPanel({
       tone="notice"
       icon={<ReviewIcon />}
       title="Review Timeline places"
-      subtitle="Ambiguous imports — keep the trip memories, discard the everyday stops. Suggestions are hints only."
+      subtitle="Ambiguous imports — keep meaningful visits, discard everyday stops. Suggestions are hints only."
       actions={
         <span className="history-review-badge">{reviews.length} waiting</span>
       }

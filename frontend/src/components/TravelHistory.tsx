@@ -82,7 +82,7 @@ export function TravelHistory({
       setPlaces(nextPlaces);
       setReviews(nextReviews);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load travel history");
+      setError(err instanceof Error ? err.message : "Failed to load visits");
     } finally {
       setLoading(false);
     }
@@ -203,7 +203,7 @@ export function TravelHistory({
       setTimelineSummary(
         scope === "timeline"
           ? `Cleared ${visitLabel}${placeLabel} from Timeline.`
-          : `Cleared ${visitLabel}${placeLabel} from travel history.`,
+          : `Cleared ${visitLabel}${placeLabel} from your visits.`,
       );
       await refresh();
       onChanged?.();
@@ -413,7 +413,7 @@ export function TravelHistory({
         ) : null}
 
         {loading ? (
-          <p className="wf-note">Loading travel history…</p>
+          <p className="wf-note">Loading visits…</p>
         ) : visits.length === 0 ? (
           <p className="wf-note">
             No visits yet. Log one above, import from Instagram or Timeline, or mark a place as

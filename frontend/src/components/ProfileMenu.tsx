@@ -258,7 +258,7 @@ function ProfileMenuShell({
             ) : null}
             <MenuAction
               icon={<HistoryIcon />}
-              label="History"
+              label="Visits"
               hint="Timeline visits you’ve uploaded"
               to="/history"
               onClick={close}

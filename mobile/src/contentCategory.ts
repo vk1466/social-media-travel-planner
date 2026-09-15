@@ -10,7 +10,7 @@ export const CONTENT_CATEGORIES = [
 export type ContentCategory = (typeof CONTENT_CATEGORIES)[number];
 
 export const CONTENT_CATEGORY_LABELS: Record<ContentCategory, string> = {
-  travel: "Travel",
+  travel: "Places",
   movies: "Movies & TV",
   fashion: "Fashion",
   hairstyle: "Hairstyle",

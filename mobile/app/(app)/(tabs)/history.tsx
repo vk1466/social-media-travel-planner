@@ -173,7 +173,7 @@ export default function HistoryScreen() {
     void (async () => {
       try {
         await acceptTimelineReview(visitId);
-        setFormSuccess("Kept in travel history");
+        setFormSuccess("Kept in your visits");
         bumpRefresh();
       } catch (err) {
         setFormError(err instanceof Error ? err.message : "Failed to keep place");
@@ -276,8 +276,8 @@ export default function HistoryScreen() {
         <View style={styles.header}>
           <PageHeading
             kicker="Places you’ve been"
-            title="Travel history"
-            lede="Keep a personal record of past trips, then use it to shape what comes next."
+            title="Your visits"
+            lede="Keep a personal record of places you’ve visited and the memories connected to them."
             count={{ value: visits.length, label: "visits" }}
           />
 
@@ -394,7 +394,7 @@ export default function HistoryScreen() {
                     Review Timeline places
                   </Text>
                   <Text style={styles.moreSubtitle}>
-                    Ambiguous imports — keep trip memories, discard everyday stops.
+                    Ambiguous imports — keep meaningful visits, discard everyday stops.
                   </Text>
                   {reviews.map((item) => (
                     <View key={item.visit.visit_id} style={styles.reviewCard}>

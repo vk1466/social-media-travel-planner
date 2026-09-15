@@ -1,6 +1,10 @@
-# Social Media Travel Planner
+# Wanderfile
 
-Ingest social media travel inspiration and build itineraries.
+Save reels, posts, videos, and articles in an AI-organized, searchable library.
+
+Travel maps, recipes, and watchlists are specialized views within the broader
+saved-content library. See the [product evolution roadmap](docs/product-evolution-roadmap.md)
+for the staged expansion of AI organization features.
 
 ## Layout
 

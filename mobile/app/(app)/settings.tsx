@@ -100,7 +100,7 @@ export default function SettingsScreen() {
   const handleCleanup = () => {
     Alert.alert(
       "Clean up data",
-      "Delete all saved posts, places, and travel history? This cannot be undone.",
+      "Delete all saved posts, places, and visits? This cannot be undone.",
       [
         { text: "Cancel", style: "cancel" },
         {

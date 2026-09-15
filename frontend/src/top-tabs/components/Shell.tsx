@@ -102,9 +102,9 @@ export function Shell({
             <button type="button" aria-label="Search" onClick={() => navigate("/search")}>
               {icon("search")}
             </button>
-            <NavLink to="/add" className="queue-button" aria-label="Open processing">
+            <NavLink to="/add" className="queue-button" aria-label="Open save queue">
               {icon("queue")}
-              <span className="queue-button-label">Processing</span>
+              <span className="queue-button-label">Queue</span>
             </NavLink>
             {clerkEnabled ? <UserButton appearance={clerkAppearance} /> : null}
           </div>

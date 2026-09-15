@@ -85,10 +85,10 @@ export default function SearchScreen() {
       />
       <View style={styles.jumps}>
         <Jump label="Posts" onPress={() => router.replace(appHref("/(app)/(tabs)/posts"))} />
-        <Jump label="Travel" onPress={() => router.replace(appHref("/(app)/(tabs)/travel"))} />
+        <Jump label="Places" onPress={() => router.replace(appHref("/(app)/(tabs)/travel"))} />
         <Jump label="Food" onPress={() => router.replace(appHref("/(app)/(tabs)/food"))} />
         <Jump label="Watch" onPress={() => router.replace(appHref("/(app)/(tabs)/movies"))} />
-        <Jump label="History" onPress={() => router.replace(appHref("/(app)/(tabs)/history"))} />
+        <Jump label="Visits" onPress={() => router.replace(appHref("/(app)/(tabs)/history"))} />
       </View>
       {results.map((hit) => (
         <Pressable key={hit.key} style={styles.row} onPress={() => router.push(appHref(hit.to))}>

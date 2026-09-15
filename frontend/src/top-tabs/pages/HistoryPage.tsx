@@ -34,8 +34,8 @@ export function HistoryPage({
     <div className="top-history-page">
       <PageHeading
         kicker="Places you’ve been"
-        title="Travel history"
-        lede="Keep a personal record of past trips, then use it to shape what comes next."
+        title="Your visits"
+        lede="Keep a personal record of places you’ve visited and the memories connected to them."
         count={{ value: visits.length, label: "visits" }}
         platformFilter={false}
       />

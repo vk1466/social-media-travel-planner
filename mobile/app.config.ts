@@ -2,7 +2,8 @@ import type { ConfigContext, ExpoConfig } from "expo/config";
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
-  name: "Travel Planner",
+  name: "Wanderfile",
+  description: "Save reels, posts, videos, and articles in an AI-organized library.",
   slug: "travel-planner",
   version: "1.0.0",
   orientation: "portrait",
@@ -58,7 +59,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
           NSExtensionActivationSupportsText: true,
         },
         androidIntentFilters: ["text/*"],
-        iosShareExtensionName: "Travel Planner Share",
+        iosShareExtensionName: "Save to Wanderfile",
       },
     ],
     "@react-native-community/datetimepicker",

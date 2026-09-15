@@ -1,7 +1,7 @@
 [project]
 name = "social-media-travel-planner"
 version = "0.1.0"
-description = "Turn saved social media posts into structured travel plans"
+description = "Turn saved social media posts into an AI-organized content library"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [

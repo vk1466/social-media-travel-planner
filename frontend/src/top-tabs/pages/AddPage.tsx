@@ -147,9 +147,9 @@ export function AddPage({
   return (
     <div className="top-add-page">
       <PageHeading
-        kicker="Wanderfile queue"
-        title="Processing"
-        lede="Add links anytime. They join your queue and stay there on every device you sign in with."
+        kicker="Add to Wanderfile"
+        title="Save and organize"
+        lede="Add links anytime. Wanderfile reads and organizes them, and your queue stays available on every signed-in device."
         count={{ value: queuedPending, label: "pending" }}
         platformFilter={false}
       />

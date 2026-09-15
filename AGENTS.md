@@ -1,6 +1,7 @@
-# Social Media Travel Planner
+# Wanderfile
 
-Ingest social media travel inspiration and build itineraries.
+Save social media posts and web content in an AI-organized library. Travel is
+one supported category alongside recipes, movies, fashion, and other topics.
 
 ## Pipeline design (agents)
 

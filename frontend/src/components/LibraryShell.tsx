@@ -225,7 +225,7 @@ export function LibraryShell({
       {!authReady ? (
         <div className="lib-shell-banner">
           <span>
-            <strong>Sign in</strong> · Load your atlas and saves with the same Clerk account.
+            <strong>Sign in</strong> · Load your saved library with the same Clerk account.
           </span>
           {clerkEnabled ? (
             <SignInButton mode="modal">

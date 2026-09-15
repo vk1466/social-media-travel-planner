@@ -33,7 +33,7 @@ export function DataMaintenance({ disabled = false, onComplete }: DataMaintenanc
 
   const handleCleanup = async () => {
     const confirmed = window.confirm(
-      "Delete all saved posts, places, and travel history? This cannot be undone.",
+      "Delete all saved posts, places, and visits? This cannot be undone.",
     );
     if (!confirmed) {
       return;

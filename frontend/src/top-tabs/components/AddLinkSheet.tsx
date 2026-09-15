@@ -142,7 +142,7 @@ export function AddLinkSheet({
             navigate("/add");
           }}
         >
-          Open processing
+          Open queue
         </button>
       </div>
       {error ? <p className="inline-errors">{error}</p> : null}

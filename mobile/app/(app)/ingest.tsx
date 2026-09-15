@@ -113,10 +113,10 @@ export default function IngestScreen() {
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
-      <Text style={styles.kicker}>Wanderfile queue</Text>
-      <Text style={styles.title}>Processing</Text>
+      <Text style={styles.kicker}>Add to Wanderfile</Text>
+      <Text style={styles.title}>Save and organize</Text>
       <Text style={styles.lede}>
-        Paste links anytime. They join your queue and stay there on every device you sign in with.
+        Add links anytime. Wanderfile reads and organizes them, and your queue stays available on every signed-in device.
       </Text>
       {submitError ? <ErrorBanner message={submitError} /> : null}
       {jobError ? <ErrorBanner message={jobError} /> : null}

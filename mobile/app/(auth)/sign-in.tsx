@@ -175,9 +175,9 @@ function ClerkSignInForm() {
     >
       <View style={styles.card}>
         <View style={styles.logoMark}>
-          <Ionicons name="airplane" size={26} color={colors.onFill} />
+          <Ionicons name="bookmark" size={26} color={colors.onFill} />
         </View>
-        <Text style={styles.brand}>Travel Planner</Text>
+        <Text style={styles.brand}>Wanderfile</Text>
         <Text style={styles.title}>Welcome back</Text>
         <Text style={styles.subtitle}>Same Clerk account as the web app — Google works best.</Text>
         {error ? <ErrorBanner message={error} /> : null}

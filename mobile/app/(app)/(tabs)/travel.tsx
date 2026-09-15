@@ -231,8 +231,8 @@ export default function TravelScreen() {
 
       <View style={styles.chrome}>
         <PageHeading
-          kicker="Places to go"
-          title="Travel"
+          kicker="From your saves"
+          title="Saved places"
           count={{ value: scope.total, label: "places" }}
         />
         <FilterBar

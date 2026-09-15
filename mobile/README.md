@@ -1,7 +1,7 @@
-# Travel Planner — mobile (Expo)
+# Wanderfile — mobile (Expo)
 
 Native **iOS / Android** client (not web). Full parity with the Vite app plus
-**share-to-app** for Instagram reels. Talks to the same TravelPlanner AWS API
+**share-to-app** for Instagram reels. Talks to the existing TravelPlanner AWS API
 with a Clerk JWT.
 
 ## Setup
@@ -39,17 +39,17 @@ npx expo run:ios
 npx expo run:android
 ```
 
-Then in Instagram: Share → Travel Planner.
+Then in Instagram: Share → Save to Wanderfile.
 
 ## Features
 
 - Sign in with Clerk (same account as the web app)
-- Native tabs: Posts, Travel, Food, Watch, History (shown only when that library has items)
+- Native tabs: Posts, Places, Food, Watch, Visits (shown only when that library has items)
 - Search, processing queue, share-to-app for Instagram reels
 - Posts library with filters, detail, and delete
-- Travel browse / filters / map (`react-native-maps`) + detail
+- Place browse / filters / map (`react-native-maps`) + detail
 - Food recipes and Watch titles from saves
-- Travel history (add / import / delete visits)
+- Place visits (add / import / delete visits)
 - Settings: reprocess places, cleanup data, sign out; admin tools when allowed
 
 ## Env

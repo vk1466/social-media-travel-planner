@@ -46,7 +46,7 @@ export function SiteFooter({
               <span className="wf-brand-name">Wanderfile</span>
             </Link>
             <p className="wf-footer-tagline">
-              Travel inspiration from your feed, turned into places you can actually go.
+              Reels, posts, and ideas from your feed, organized into a library you can use.
             </p>
           </div>
 
@@ -65,12 +65,12 @@ export function SiteFooter({
               </li>
               <li>
                 <Link to="/places" className="wf-footer-link">
-                  Atlas
+                  Places
                 </Link>
               </li>
               <li>
                 <Link to="/history" className="wf-footer-link">
-                  History
+                  Visits
                 </Link>
               </li>
             </ul>

@@ -34,7 +34,7 @@ export function LinkSubmitForm({
     <View style={styles.panel}>
       <View style={styles.titleRow}>
         <Ionicons name="link" size={18} color={colors.brand} />
-        <Text style={styles.title}>Paste travel links</Text>
+        <Text style={styles.title}>Paste links to save</Text>
       </View>
       <Text style={styles.subtitle}>
         One per line. Instagram reels work best — or share a reel to this app.
@@ -69,7 +69,7 @@ export function LinkSubmitForm({
         </View>
       </View>
       <Button
-        label="Analyze links"
+        label="Save and organize"
         icon="sparkles"
         disabled={disabled || parsed.valid.length === 0}
         onPress={() => onSubmit(parsed.valid, refresh)}

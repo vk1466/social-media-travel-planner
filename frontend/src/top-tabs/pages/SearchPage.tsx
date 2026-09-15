@@ -53,7 +53,7 @@ export function SearchPage({ posts, places }: { posts: SavedPost[]; places: Plac
       <PageHeading
         kicker="Search Wanderfile"
         title="Find anything you saved"
-        lede="Search posts, places, recipes, movies, and travel history from one place."
+        lede="Search posts, places, recipes, movies, and visits from one place."
         count={{ value: results.length, label: "results" }}
       />
       <FilterBar
@@ -67,10 +67,10 @@ export function SearchPage({ posts, places }: { posts: SavedPost[]; places: Plac
       />
       <nav className="jump-links">
         <Link to={`${basePath}/posts`}>Posts</Link>
-        <Link to={`${basePath}/travel`}>Travel</Link>
+        <Link to={`${basePath}/travel`}>Places</Link>
         <Link to={`${basePath}/food`}>Food</Link>
         <Link to={`${basePath}/movies`}>Watch</Link>
-        <Link to={`${basePath}/history`}>History</Link>
+        <Link to={`${basePath}/history`}>Visits</Link>
       </nav>
       <ul className="sheet-list">
         {results.map((hit) => (

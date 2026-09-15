@@ -1,25 +1,25 @@
 import { SignInButton, SignUpButton } from "@clerk/react";
 
-const MOSAIC_PLACES = [
+const MOSAIC_ITEMS = [
   {
-    name: "Kyoto, Japan",
-    src: "https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=900&h=1200&fit=crop&auto=format&q=70",
+    name: "Weeknight recipes",
+    src: "https://images.unsplash.com/photo-1547592180-85f173990554?w=900&h=1200&fit=crop&auto=format&q=70",
   },
   {
-    name: "Lisbon, Portugal",
+    name: "Movies to watch",
+    src: "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=700&h=520&fit=crop&auto=format&q=70",
+  },
+  {
+    name: "Style ideas",
+    src: "https://images.unsplash.com/photo-1445205170230-053b83016050?w=700&h=520&fit=crop&auto=format&q=70",
+  },
+  {
+    name: "Places to try",
     src: "https://images.unsplash.com/photo-1580323956656-26bbb1206e34?w=700&h=520&fit=crop&auto=format&q=70",
   },
   {
-    name: "Cappadocia, Türkiye",
-    src: "https://images.unsplash.com/photo-1523592121529-f6dde35f079e?w=700&h=520&fit=crop&auto=format&q=70",
-  },
-  {
-    name: "Patagonia, Chile",
-    src: "https://images.unsplash.com/photo-1520962880247-cfaf541c8724?w=700&h=520&fit=crop&auto=format&q=70",
-  },
-  {
-    name: "Positano, Italy",
-    src: "https://images.unsplash.com/photo-1533106497176-45ae19e68ba2?w=700&h=520&fit=crop&auto=format&q=70",
+    name: "Home inspiration",
+    src: "https://images.unsplash.com/photo-1524758631624-e2822e304c36?w=700&h=520&fit=crop&auto=format&q=70",
   },
 ] as const;
 
@@ -33,9 +33,9 @@ export function SignedOutGate() {
           </span>
           Wanderfile
         </div>
-        <h1 className="signed-out-title">Every reel you saved, finally on a map.</h1>
+        <h1 className="signed-out-title">Everything you save, organized automatically.</h1>
         <p className="signed-out-sub">
-          Sign in to save posts, places, and trips to your library.
+          Turn reels, posts, videos, and articles into a useful, searchable library.
         </p>
         <div className="signed-out-actions">
           <SignInButton mode="modal" forceRedirectUrl="/">
@@ -51,10 +51,10 @@ export function SignedOutGate() {
         </div>
       </main>
       <div className="signed-out-mosaic" aria-hidden="true">
-        {MOSAIC_PLACES.map((place, index) => (
-          <figure key={place.name}>
-            <img src={place.src} alt="" loading={index === 0 ? "eager" : "lazy"} />
-            <figcaption>{place.name}</figcaption>
+        {MOSAIC_ITEMS.map((item, index) => (
+          <figure key={item.name}>
+            <img src={item.src} alt="" loading={index === 0 ? "eager" : "lazy"} />
+            <figcaption>{item.name}</figcaption>
           </figure>
         ))}
       </div>

@@ -53,9 +53,9 @@ export function HomePage({
   return (
     <div className="top-home-page">
       <PageHeading
-        kicker="Your travel library"
-        title="Save the spark. Plan the trip."
-        lede="Turn reels, posts, and guides into places you can map, plan, and remember."
+        kicker="Your saved-content library"
+        title="Save anything. Find it when you need it."
+        lede="Turn reels, posts, videos, and articles into an AI-organized library."
         count={{ value: scopedPosts.length, label: "saves" }}
       />
       {continuePlace ? (
