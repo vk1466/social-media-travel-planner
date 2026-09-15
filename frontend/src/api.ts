@@ -614,6 +614,18 @@ export interface RouteStopInput {
   longitude: number;
   category?: string | null;
   address?: string | null;
+  snapped_latitude?: number | null;
+  snapped_longitude?: number | null;
+  road_distance_meters?: number | null;
+}
+
+export interface ExcludedRouteStop {
+  stop_id: string;
+  name: string;
+  latitude: number;
+  longitude: number;
+  reason: string;
+  road_distance_meters?: number | null;
 }
 
 export interface RouteLegOutput {
@@ -639,6 +651,7 @@ export interface RouteOptimizationResult {
   round_trip: boolean;
   travel_mode: string;
   solver_time_ms: number;
+  excluded_stops?: ExcludedRouteStop[];
 }
 
 export interface RouteOptimizationRequest {
@@ -650,6 +663,8 @@ export interface RouteOptimizationRequest {
   custom_end?: RouteStopInput | null;
   round_trip?: boolean;
   travel_mode?: "driving" | "walking" | "bicycling";
+  filter_unreachable?: boolean;
+  max_road_distance_meters?: number;
 }
 
 export async function optimizeRoute(

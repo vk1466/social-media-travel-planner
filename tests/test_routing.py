@@ -188,6 +188,7 @@ def test_fastapi_optimize_endpoint():
     "start_mode": "fixed",
     "round_trip": False,
     "travel_mode": "driving",
+    "filter_unreachable": False,
   }
   response = client.post("/api/routes/optimize", json=payload)
   assert response.status_code == 200
@@ -198,3 +199,110 @@ def test_fastapi_optimize_endpoint():
   assert len(data["legs"]) == 2
   assert "google_maps_url" in data
   assert data["total_distance_km"] > 0
+  assert "excluded_stops" in data
+
+
+def test_osrm_check_nearest_road(monkeypatch):
+  from travelplanner.clients.osrm import check_nearest_road
+
+  class FakeResponse:
+    status_code = 200
+
+    def json(self):
+      return {
+        "code": "Ok",
+        "waypoints": [
+          {
+            "distance": 42.5,
+            "name": "Paulus Potterstraat",
+            "location": [4.8820, 52.3588],
+          }
+        ],
+      }
+
+  class FakeClient:
+    def get(self, url):
+      return FakeResponse()
+
+  res = check_nearest_road(52.3587, 4.8819, http_client=FakeClient())
+  assert res.has_road is True
+  assert res.distance_meters == 42.5
+  assert res.snapped_latitude == 52.3588
+  assert res.road_name == "Paulus Potterstraat"
+
+
+def test_osrm_check_nearest_road_offroad(monkeypatch):
+  from travelplanner.clients.osrm import check_nearest_road
+
+  # Distance 3200m > default 1500m threshold
+  class FakeResponse:
+    status_code = 200
+
+    def json(self):
+      return {
+        "code": "Ok",
+        "waypoints": [
+          {
+            "distance": 3200.0,
+            "name": "Wilderness Path",
+            "location": [-119.53, 37.74],
+          }
+        ],
+      }
+
+  class FakeClient:
+    def get(self, url):
+      return FakeResponse()
+
+  res = check_nearest_road(37.74, -119.53, max_distance_meters=1500.0, http_client=FakeClient())
+  assert res.has_road is False
+  assert res.distance_meters == 3200.0
+
+
+def test_osrm_network_error_fail_open(monkeypatch):
+  from travelplanner.clients.osrm import check_nearest_road
+
+  class FaultyClient:
+    def get(self, url):
+      raise ConnectionError("Network unreachable")
+
+  res = check_nearest_road(52.3587, 4.8819, http_client=FaultyClient())
+  # Should fail open so we don't crash optimization when OSRM is unreachable
+  assert res.has_road is True
+  assert "Network unreachable" in str(res.error)
+
+
+def test_optimize_route_filters_offroad_stop(monkeypatch):
+  """Tests that off-road coordinate is excluded when filter_unreachable is True."""
+  from travelplanner.clients.osrm import OsrmNearestResult
+
+  def fake_check(latitude=None, longitude=None, **kwargs):
+    # If it's the wilderness stop, simulate far off-road
+    if latitude is not None and abs(latitude - 37.745) < 0.01:
+      return OsrmNearestResult(has_road=False, distance_meters=3500.0)
+    return OsrmNearestResult(has_road=True, distance_meters=20.0, snapped_latitude=latitude, snapped_longitude=longitude)
+
+  monkeypatch.setattr("travelplanner.clients.osrm.check_nearest_road", fake_check)
+
+  stops = [
+    AMSTERDAM_STOPS[0],
+    AMSTERDAM_STOPS[1],
+    RouteStop("remote-peak", "Wilderness Peak", 37.745, -119.533),
+  ]
+
+  # 1. With filtering enabled (default)
+  res_filtered = optimize_route(
+    RouteOptimizationRequest(stops=stops, filter_unreachable=True, travel_mode=TravelMode.DRIVING)
+  )
+  assert len(res_filtered.ordered_stops) == 2
+  assert len(res_filtered.excluded_stops) == 1
+  assert res_filtered.excluded_stops[0]["stop_id"] == "remote-peak"
+  assert "No drivable road" in res_filtered.excluded_stops[0]["reason"]
+
+  # 2. With filtering disabled
+  res_unfiltered = optimize_route(
+    RouteOptimizationRequest(stops=stops, filter_unreachable=False, travel_mode=TravelMode.DRIVING)
+  )
+  assert len(res_unfiltered.ordered_stops) == 3
+  assert len(res_unfiltered.excluded_stops) == 0
+

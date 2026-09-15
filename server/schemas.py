@@ -526,6 +526,18 @@ class RouteStopSchema(BaseModel):
   longitude: float
   category: str | None = None
   address: str | None = None
+  snapped_latitude: float | None = None
+  snapped_longitude: float | None = None
+  road_distance_meters: float | None = None
+
+
+class ExcludedRouteStopSchema(BaseModel):
+  stop_id: str
+  name: str
+  latitude: float
+  longitude: float
+  reason: str
+  road_distance_meters: float | None = None
 
 
 class RouteLegSchema(BaseModel):
@@ -547,6 +559,8 @@ class RouteOptimizationRequestSchema(BaseModel):
   custom_end: RouteStopSchema | None = None
   round_trip: bool = False
   travel_mode: Literal["driving", "walking", "bicycling"] = "driving"
+  filter_unreachable: bool = True
+  max_road_distance_meters: float = 1500.0
 
 
 class RouteOptimizationResultSchema(BaseModel):
@@ -562,4 +576,5 @@ class RouteOptimizationResultSchema(BaseModel):
   round_trip: bool
   travel_mode: str
   solver_time_ms: float
+  excluded_stops: list[ExcludedRouteStopSchema] = Field(default_factory=list)
 

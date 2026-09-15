@@ -17,6 +17,11 @@ import urllib.parse
 
 from ortools.constraint_solver import pywrapcp, routing_enums_pb2
 
+from travelplanner.clients.osrm import (
+  DEFAULT_MAX_ROAD_DISTANCE_METERS,
+  filter_stops_by_road_access,
+)
+
 logger = logging.getLogger(__name__)
 
 EARTH_RADIUS_METERS = 6371000
@@ -44,9 +49,19 @@ class RouteStop:
   longitude: float
   category: Optional[str] = None
   address: Optional[str] = None
+  snapped_latitude: Optional[float] = None
+  snapped_longitude: Optional[float] = None
+  road_distance_meters: Optional[float] = None
 
   def to_dict(self) -> dict[str, Any]:
-    return asdict(self)
+    d = asdict(self)
+    if self.snapped_latitude is not None:
+      d["snapped_latitude"] = self.snapped_latitude
+    if self.snapped_longitude is not None:
+      d["snapped_longitude"] = self.snapped_longitude
+    if self.road_distance_meters is not None:
+      d["road_distance_meters"] = self.road_distance_meters
+    return d
 
   @classmethod
   def from_dict(cls, data: dict[str, Any]) -> RouteStop:
@@ -57,6 +72,9 @@ class RouteStop:
       longitude=float(data["longitude"] if "longitude" in data else data["lng"]),
       category=data.get("category"),
       address=data.get("address") or data.get("display_address"),
+      snapped_latitude=data.get("snapped_latitude"),
+      snapped_longitude=data.get("snapped_longitude"),
+      road_distance_meters=data.get("road_distance_meters"),
     )
 
 
@@ -88,6 +106,8 @@ class RouteOptimizationRequest:
   custom_end: Optional[RouteStop] = None
   round_trip: bool = False
   travel_mode: TravelMode = TravelMode.DRIVING
+  filter_unreachable: bool = True
+  max_road_distance_meters: float = DEFAULT_MAX_ROAD_DISTANCE_METERS
 
 
 @dataclass
@@ -106,6 +126,7 @@ class RouteOptimizationResult:
   round_trip: bool
   travel_mode: str
   solver_time_ms: float
+  excluded_stops: list[dict[str, Any]] = field(default_factory=list)
 
   def to_dict(self) -> dict[str, Any]:
     return {
@@ -121,6 +142,7 @@ class RouteOptimizationResult:
       "round_trip": self.round_trip,
       "travel_mode": self.travel_mode,
       "solver_time_ms": round(self.solver_time_ms, 2),
+      "excluded_stops": self.excluded_stops,
     }
 
 
@@ -351,6 +373,15 @@ def optimize_route(request: RouteOptimizationRequest) -> RouteOptimizationResult
         stops.remove(s)
     stops.append(request.custom_end)
 
+  # 3. Filter off-road / unreachable stops via OSRM if requested and driving
+  excluded_stops: list[dict[str, Any]] = []
+  if request.filter_unreachable and request.travel_mode == TravelMode.DRIVING and stops:
+    stops, excluded_stops = filter_stops_by_road_access(
+      stops,
+      profile="driving",
+      max_distance_meters=request.max_road_distance_meters,
+    )
+
   n = len(stops)
 
   # Handle edge cases: 0 or 1 stop
@@ -369,9 +400,10 @@ def optimize_route(request: RouteOptimizationRequest) -> RouteOptimizationResult
       round_trip=request.round_trip,
       travel_mode=request.travel_mode.value,
       solver_time_ms=elapsed_ms,
+      excluded_stops=excluded_stops,
     )
 
-  # 3. Distance Matrix
+  # 4. Distance Matrix
   dist_matrix = build_distance_matrix(stops)
 
   # Original sequence distance
@@ -381,7 +413,7 @@ def optimize_route(request: RouteOptimizationRequest) -> RouteOptimizationResult
   if request.round_trip and n > 2:
     original_distance += dist_matrix[n - 1][0]
 
-  # 4. Determine Start & End parameters
+  # 5. Determine Start & End parameters
   best_route_indices: list[int] = []
 
   if request.start_mode == StartMode.ANY and not request.round_trip and not request.custom_end:
@@ -407,7 +439,7 @@ def optimize_route(request: RouteOptimizationRequest) -> RouteOptimizationResult
       round_trip=request.round_trip,
     )
 
-  # 5. Build Ordered Stops & Legs
+  # 6. Build Ordered Stops & Legs
   ordered_stops = [stops[i] for i in best_route_indices]
 
   legs: list[RouteLeg] = []
@@ -450,4 +482,5 @@ def optimize_route(request: RouteOptimizationRequest) -> RouteOptimizationResult
     round_trip=request.round_trip,
     travel_mode=request.travel_mode.value,
     solver_time_ms=elapsed_ms,
+    excluded_stops=excluded_stops,
   )

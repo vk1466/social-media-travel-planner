@@ -956,6 +956,8 @@ def optimize_travel_route(
     custom_end=custom_end,
     round_trip=request.round_trip,
     travel_mode=TravelMode(request.travel_mode),
+    filter_unreachable=request.filter_unreachable,
+    max_road_distance_meters=request.max_road_distance_meters,
   )
   result = optimize_route(req)
   return RouteOptimizationResultSchema(**result.to_dict())

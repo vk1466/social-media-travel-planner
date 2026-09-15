@@ -222,6 +222,52 @@
   font-weight: 600;
 }
 
+.roadtrip-controls-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.roadtrip-filter-roads-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #8da498;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 0.74rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.roadtrip-filter-roads-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #e5f0ea;
+}
+
+.roadtrip-filter-roads-btn.active {
+  background: rgba(59, 130, 246, 0.14);
+  border-color: rgba(96, 165, 250, 0.4);
+  color: #93c5fd;
+}
+
+.roadtrip-filter-badge {
+  font-size: 0.62rem;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  letter-spacing: 0.03em;
+}
+
+.roadtrip-filter-roads-btn.active .roadtrip-filter-badge {
+  background: rgba(59, 130, 246, 0.3);
+  color: #dbeafe;
+}
+
 .roadtrip-savings-pill {
   display: inline-flex;
   align-items: center;
@@ -233,6 +279,56 @@
   border-radius: 999px;
   font-size: 0.74rem;
   font-weight: 600;
+}
+
+/* Excluded Stops Warning Banner */
+.roadtrip-excluded-banner {
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.28);
+  border-radius: 10px;
+  margin: 12px 24px 4px;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  animation: roadtripFadeIn 0.2s ease-out;
+}
+
+.roadtrip-excluded-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #fbbf24;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.roadtrip-excluded-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.roadtrip-excluded-pill {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  padding: 3px 9px;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #fef3c7;
+}
+
+.roadtrip-excluded-name {
+  font-weight: 600;
+}
+
+.roadtrip-excluded-reason {
+  color: #f59e0b;
+  font-size: 0.68rem;
+  opacity: 0.9;
 }
 
 /* Summary Metrics */

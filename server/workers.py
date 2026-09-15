@@ -385,6 +385,8 @@ def optimize_route_worker(event: dict[str, Any], context: Any = None) -> dict[st
       custom_end=custom_end,
       round_trip=bool(raw_payload.get("round_trip", False)),
       travel_mode=travel_mode,
+      filter_unreachable=bool(raw_payload.get("filter_unreachable", True)),
+      max_road_distance_meters=float(raw_payload.get("max_road_distance_meters", 1500.0)),
     )
 
     result = optimize_route(req)

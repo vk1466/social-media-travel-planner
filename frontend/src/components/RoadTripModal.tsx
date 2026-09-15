@@ -27,6 +27,7 @@ export function RoadTripModal({
 }: RoadTripModalProps) {
   const [strategy, setStrategy] = useState<Strategy>("shortest");
   const [travelMode, setTravelMode] = useState<TravelMode>("driving");
+  const [filterOffRoad, setFilterOffRoad] = useState(true);
   const [cache, setCache] = useState<Record<string, RouteOptimizationResult>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -37,12 +38,14 @@ export function RoadTripModal({
     (p) => p.location?.latitude != null && p.location?.longitude != null,
   );
 
-  const cacheKey = `${strategy}-${travelMode}`;
+  const filterKey = travelMode === "driving" ? (filterOffRoad ? "filtered" : "all") : "all";
+  const cacheKey = `${strategy}-${travelMode}-${filterKey}`;
   const currentResult = cache[cacheKey];
 
   const fetchOptimization = useCallback(
-    async (strat: Strategy, mode: TravelMode) => {
-      const key = `${strat}-${mode}`;
+    async (strat: Strategy, mode: TravelMode, filterRoads: boolean) => {
+      const fKey = mode === "driving" ? (filterRoads ? "filtered" : "all") : "all";
+      const key = `${strat}-${mode}-${fKey}`;
       if (cache[key]) return;
 
       setLoading(true);
@@ -67,6 +70,7 @@ export function RoadTripModal({
           start_mode: strat === "first" ? "fixed" : "any",
           round_trip: strat === "loop",
           travel_mode: mode,
+          filter_unreachable: mode === "driving" ? filterRoads : false,
         });
 
         setCache((prev) => ({ ...prev, [key]: res }));
@@ -82,8 +86,8 @@ export function RoadTripModal({
 
   useEffect(() => {
     if (!isOpen || validPlaces.length === 0) return;
-    fetchOptimization(strategy, travelMode);
-  }, [isOpen, strategy, travelMode, fetchOptimization, validPlaces.length]);
+    fetchOptimization(strategy, travelMode, filterOffRoad);
+  }, [isOpen, strategy, travelMode, filterOffRoad, fetchOptimization, validPlaces.length]);
 
   // Handle escape key
   useEffect(() => {
@@ -105,9 +109,9 @@ export function RoadTripModal({
     }
   };
 
-  const shortestRes = cache[`shortest-${travelMode}`];
-  const firstRes = cache[`first-${travelMode}`];
-  const loopRes = cache[`loop-${travelMode}`];
+  const shortestRes = cache[`shortest-${travelMode}-${filterKey}`];
+  const firstRes = cache[`first-${travelMode}-${filterKey}`];
+  const loopRes = cache[`loop-${travelMode}-${filterKey}`];
 
   return (
     <div
@@ -236,13 +240,53 @@ export function RoadTripModal({
             </button>
           </div>
 
-          {currentResult && currentResult.savings_meters > 0 && (
-            <div className="roadtrip-savings-pill">
-              <span>⚡ Saved {(currentResult.savings_meters / 1000).toFixed(1)} km</span>
-              <span>({currentResult.savings_percent}%)</span>
-            </div>
-          )}
+          <div className="roadtrip-controls-right">
+            {travelMode === "driving" && (
+              <button
+                type="button"
+                className={`roadtrip-filter-roads-btn ${filterOffRoad ? "active" : ""}`}
+                onClick={() => setFilterOffRoad((prev) => !prev)}
+                title="Detect and filter out coordinates that have no drivable road access via OSRM"
+              >
+                <span>🛣️</span>
+                <span>Filter Off-Road</span>
+                <span className="roadtrip-filter-badge">{filterOffRoad ? "ON" : "OFF"}</span>
+              </button>
+            )}
+
+            {currentResult && currentResult.savings_meters > 0 && (
+              <div className="roadtrip-savings-pill">
+                <span>⚡ Saved {(currentResult.savings_meters / 1000).toFixed(1)} km</span>
+                <span>({currentResult.savings_percent}%)</span>
+              </div>
+            )}
+          </div>
         </div>
+
+        {/* Excluded Stops Warning Banner */}
+        {currentResult?.excluded_stops && currentResult.excluded_stops.length > 0 && (
+          <div className="roadtrip-excluded-banner">
+            <div className="roadtrip-excluded-header">
+              <span className="roadtrip-warning-icon">⚠️</span>
+              <span className="roadtrip-excluded-title">
+                {currentResult.excluded_stops.length}{" "}
+                {currentResult.excluded_stops.length === 1 ? "stop" : "stops"} excluded (no road access)
+              </span>
+            </div>
+            <div className="roadtrip-excluded-items">
+              {currentResult.excluded_stops.map((exc) => (
+                <div key={exc.stop_id} className="roadtrip-excluded-pill" title={exc.reason}>
+                  <span className="roadtrip-excluded-name">{exc.name}</span>
+                  <span className="roadtrip-excluded-reason">
+                    {exc.road_distance_meters
+                      ? `${(exc.road_distance_meters / 1000).toFixed(1)} km from road`
+                      : "off-road"}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Metric Summary Row */}
         {currentResult && (
