@@ -135,6 +135,9 @@ class PlaceFacts:
   distance_km: float | None = None
   elevation_gain_m: int | None = None
   difficulty: str | None = None  # easy | moderate | hard
+  route_type: str | None = None  # out_and_back | loop | point_to_point
+  rating: float | None = None
+  reviews_count: int | None = None
   # Insights (LLM pass; still cited)
   highlights: tuple[str, ...] = ()
   caveats: tuple[str, ...] = ()

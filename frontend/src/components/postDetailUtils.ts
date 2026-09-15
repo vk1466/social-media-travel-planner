@@ -2,6 +2,7 @@ import type {
   ExtractedMovie,
   ExtractedPlace,
   Place,
+  PlaceFacts,
   PlatformPlace,
   ResolvedMovie,
   SavedPost,
@@ -19,6 +20,17 @@ export interface LinkedPlace {
   latitude?: number | null;
   longitude?: number | null;
   providerPlaceId?: string | null;
+  facts?: PlaceFacts | null;
+}
+
+export interface TrailStats {
+  distance?: string;
+  elevation?: string;
+  difficulty?: string;
+  routeType?: string;
+  rating?: number;
+  reviewsCount?: number;
+  alltrailsUrl?: string;
 }
 
 export interface PlaceSummary {
@@ -34,6 +46,7 @@ export interface PlaceSummary {
   mapUrl?: string | null;
   latitude?: number | null;
   longitude?: number | null;
+  facts?: PlaceFacts | null;
 }
 
 /** Bottom-strip card for travel stops, movies, or generic reel details. */
@@ -47,6 +60,8 @@ export interface ReelDetailItem {
   tips?: string[];
   placeId?: string;
   mapUrl?: string | null;
+  facts?: PlaceFacts | null;
+  trailStats?: TrailStats | null;
   actionLabel?: string | null;
   actionHref?: string | null;
   posterUrl?: string | null;
@@ -188,6 +203,7 @@ export function buildPlaceSummaries(post: SavedPost, linkedPlaces: LinkedPlace[]
           mapUrl: mapsQueryForSummary(name, extracted, linked),
           latitude: linked?.latitude,
           longitude: linked?.longitude,
+          facts: linked?.facts,
         });
         continue;
       }
@@ -204,6 +220,7 @@ export function buildPlaceSummaries(post: SavedPost, linkedPlaces: LinkedPlace[]
           mapUrl: mapsQueryForSummary(name, undefined, linked),
           latitude: linked.latitude,
           longitude: linked.longitude,
+          facts: linked.facts,
         });
       }
     }
@@ -372,8 +389,66 @@ export function buildMovieDetailItems(post: SavedPost): ReelDetailItem[] {
   return items;
 }
 
+export function buildTrailStats(
+  facts?: PlaceFacts | null,
+  tips?: string[],
+  details?: string | null,
+): TrailStats | null {
+  let distance: string | undefined;
+  let elevation: string | undefined;
+  let difficulty: string | undefined = facts?.difficulty ?? undefined;
+  let routeType: string | undefined = facts?.route_type ? facts.route_type.replace(/_/g, " ") : undefined;
+  const rating = facts?.rating ?? undefined;
+  const reviewsCount = facts?.reviews_count ?? undefined;
+  const alltrailsUrl =
+    facts?.website_url && facts.website_url.includes("alltrails.com") ? facts.website_url : undefined;
+
+  if (facts?.distance_km != null) {
+    const mi = (facts.distance_km * 0.621371).toFixed(1);
+    distance = `${mi} mi (${facts.distance_km.toFixed(1)} km)`;
+  }
+  if (facts?.elevation_gain_m != null) {
+    const ft = Math.round(facts.elevation_gain_m * 3.28084);
+    elevation = `↗ ${ft} ft (${facts.elevation_gain_m} m)`;
+  }
+
+  // Fallback to text parsing from creator tips/details if structured facts aren't populated yet
+  if (!distance || !elevation) {
+    const combined = [...(tips ?? []), details ?? ""].join(" ");
+    if (!distance) {
+      const distMatch = combined.match(/(\d+(?:\.\d+)?)\s*(?:mi(?:les)?\b|rt\b|round\s*trip)/i);
+      if (distMatch) {
+        distance = `${distMatch[1]} mi rt`;
+      }
+    }
+    if (!elevation) {
+      const elevMatch = combined.match(/(\d+(?:,\d+)?)\s*(?:ft|feet|m|meters)?\s*(?:of\s*)?(?:gain|elevation)/i);
+      if (elevMatch) {
+        elevation = `↗ ${elevMatch[1]} ft gain`;
+      }
+    }
+  }
+
+  if (!distance && !elevation && !difficulty && !routeType && !rating && !alltrailsUrl) {
+    return null;
+  }
+
+  return {
+    distance,
+    elevation,
+    difficulty,
+    routeType,
+    rating,
+    reviewsCount,
+    alltrailsUrl,
+  };
+}
+
 export function placeSummaryToDetailItem(place: PlaceSummary): ReelDetailItem {
   const metaParts = [place.locationLine].filter((part): part is string => Boolean(part));
+  const isHike = place.category?.toLowerCase() === "hike" || place.facts?.distance_km != null;
+  const trailStats = isHike ? buildTrailStats(place.facts, place.tips, place.details) : null;
+
   return {
     key: place.key,
     name: place.name,
@@ -384,6 +459,8 @@ export function placeSummaryToDetailItem(place: PlaceSummary): ReelDetailItem {
     tips: place.tips,
     placeId: place.placeId,
     mapUrl: place.mapUrl,
+    facts: place.facts,
+    trailStats,
   };
 }
 

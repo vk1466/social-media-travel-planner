@@ -52,6 +52,18 @@ def usda_fooddata_api_key() -> str | None:
   return value.strip() if value else None
 
 
+def browserless_api_key() -> str | None:
+  """Optional Browserless API token for headless web scraping/search."""
+  value = os.getenv("BROWSERLESS_API_KEY")
+  return value.strip() if value else None
+
+
+def browserless_endpoint() -> str:
+  """Base URL for Browserless (defaults to chrome.browserless.io)."""
+  value = os.getenv("BROWSERLESS_ENDPOINT", "https://chrome.browserless.io").strip()
+  return value.rstrip("/")
+
+
 def openai_model() -> str:
   return os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 

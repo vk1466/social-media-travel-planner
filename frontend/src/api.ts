@@ -293,6 +293,9 @@ export interface PlaceFacts {
   distance_km?: number | null;
   elevation_gain_m?: number | null;
   difficulty?: string | null;
+  route_type?: string | null;
+  rating?: number | null;
+  reviews_count?: number | null;
   highlights?: string[];
   caveats?: string[];
   recommendations?: string[];

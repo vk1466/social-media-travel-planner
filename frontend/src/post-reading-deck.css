@@ -339,9 +339,17 @@
   border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.12));
   text-decoration: none;
   transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
 }
 
 .post-deck-route-btn:hover {
+  background: var(--text, #12221b);
+  color: var(--surface, #fff);
+  border-color: var(--text, #12221b);
+}
+
+.post-deck-hike-btn:hover {
   background: var(--text, #12221b);
   color: var(--surface, #fff);
   border-color: var(--text, #12221b);
@@ -434,6 +442,54 @@
   font-size: 10px;
   color: var(--text-subtle, #6e7e77);
   margin-top: 1px;
+}
+
+/* ── Trail Stats Rail (Distance, Elevation, Difficulty, Rating) ────────── */
+.post-deck-trail-stats {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+  width: 100%;
+}
+
+.post-deck-trail-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1;
+  padding: 2.5px 7px;
+  border-radius: 999px;
+  background: rgba(16, 185, 129, 0.09);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.22);
+}
+
+.post-deck-trail-pill.post-deck-difficulty--easy {
+  background: rgba(34, 197, 94, 0.1);
+  color: #22c55e;
+  border-color: rgba(34, 197, 94, 0.25);
+}
+
+.post-deck-trail-pill.post-deck-difficulty--moderate {
+  background: rgba(245, 158, 11, 0.1);
+  color: #f59e0b;
+  border-color: rgba(245, 158, 11, 0.25);
+}
+
+.post-deck-trail-pill.post-deck-difficulty--hard {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.25);
+}
+
+.post-deck-trail-pill.post-deck-trail-rating {
+  background: rgba(251, 191, 36, 0.1);
+  color: #fbbf24;
+  border-color: rgba(251, 191, 36, 0.25);
 }
 
 /* Actions in top-right of horizontal card */

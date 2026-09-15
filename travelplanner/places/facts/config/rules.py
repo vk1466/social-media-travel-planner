@@ -55,6 +55,12 @@ FIELD_RULES: dict[str, FieldRule] = {
     kind="enum",
     enum_values=frozenset({"easy", "moderate", "hard"}),
   ),
+  "route_type": FieldRule(
+    kind="enum",
+    enum_values=frozenset({"out_and_back", "loop", "point_to_point"}),
+  ),
+  "rating": FieldRule(kind="number", min_value=1.0, max_value=5.0),
+  "reviews_count": FieldRule(kind="int", min_value=0),
   "highlights": FieldRule(kind="string_list", max_item_len=280),
   "caveats": FieldRule(kind="string_list", max_item_len=280),
   "recommendations": FieldRule(kind="string_list", max_item_len=280),

@@ -209,8 +209,53 @@ def _map_wikipedia(document: SourceDocument, draft: dict[str, Any], evidence: li
   _cite(draft, evidence, field_name="famous_for", value=text, document=document)
 
 
+def _map_alltrails(document: SourceDocument, draft: dict[str, Any], evidence: list[dict[str, Any]]) -> None:
+  content = document.content
+  _cite(
+    draft,
+    evidence,
+    field_name="website_url",
+    value=_website_url(content.get("website")),
+    document=document,
+  )
+  _cite(
+    draft,
+    evidence,
+    field_name="famous_for",
+    value=_optional_str(content.get("description")),
+    document=document,
+  )
+  difficulty = _optional_str(content.get("difficulty"))
+  if difficulty:
+    _cite(draft, evidence, field_name="difficulty", value=difficulty, document=document)
+  distance_km = _float_or_none(content.get("distance_km"))
+  if distance_km is not None:
+    _cite(draft, evidence, field_name="distance_km", value=distance_km, document=document)
+  elevation = content.get("elevation_gain_m")
+  try:
+    if elevation is not None and str(elevation).strip() != "":
+      gain = int(float(elevation))
+      _cite(draft, evidence, field_name="elevation_gain_m", value=gain, document=document)
+  except (TypeError, ValueError):
+    pass
+  route_type = _optional_str(content.get("route_type"))
+  if route_type:
+    _cite(draft, evidence, field_name="route_type", value=route_type, document=document)
+  rating = _float_or_none(content.get("rating"))
+  if rating is not None:
+    _cite(draft, evidence, field_name="rating", value=rating, document=document)
+  reviews_count = content.get("reviews_count")
+  try:
+    if reviews_count is not None and str(reviews_count).strip() != "":
+      count = int(reviews_count)
+      _cite(draft, evidence, field_name="reviews_count", value=count, document=document)
+  except (TypeError, ValueError):
+    pass
+
+
 _MAPPERS = {
   "google_places": _map_google,
+  "alltrails": _map_alltrails,
   "osm": _map_osm,
   "wikipedia": _map_wikipedia,
 }

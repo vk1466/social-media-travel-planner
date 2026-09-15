@@ -90,6 +90,26 @@ function GoogleMapsIcon() {
   );
 }
 
+function MountainIcon() {
+  return (
+    <svg
+      width="12"
+      height="12"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      style={{ marginRight: 4, flexShrink: 0 }}
+    >
+      <path d="m8 3 4 8 5-5 5 15H2L8 3z" />
+      <path d="M4.14 15.08c2.62-1.57 5.24-1.43 7.86.42 2.74 1.94 5.49 2 8.23.19" />
+    </svg>
+  );
+}
+
 
 // ── ReadingDeckPlaceCard: Individual Place / Stop in Right Column ────────────
 
@@ -155,6 +175,17 @@ function ReadingDeckPlaceCard({
               <PlayIcon /> Trailer
             </button>
           )}
+          {item.trailStats?.alltrailsUrl && (
+            <a
+              className="post-deck-action-btn"
+              href={item.trailStats.alltrailsUrl}
+              target="_blank"
+              rel="noreferrer"
+              title="Open on AllTrails"
+            >
+              AllTrails ↗
+            </a>
+          )}
           {item.mapUrl && (
             <a
               className="post-deck-action-btn"
@@ -178,6 +209,38 @@ function ReadingDeckPlaceCard({
           )}
         </div>
       </div>
+
+      {/* Trail Stats Rail */}
+      {item.trailStats && (
+        <div className="post-deck-trail-stats">
+          {item.trailStats.distance && (
+            <span className="post-deck-trail-pill">
+              🥾 {item.trailStats.distance}
+            </span>
+          )}
+          {item.trailStats.elevation && (
+            <span className="post-deck-trail-pill">
+              {item.trailStats.elevation}
+            </span>
+          )}
+          {item.trailStats.difficulty && (
+            <span className={`post-deck-trail-pill post-deck-difficulty--${item.trailStats.difficulty.toLowerCase()}`}>
+              {item.trailStats.difficulty.charAt(0).toUpperCase() + item.trailStats.difficulty.slice(1)}
+            </span>
+          )}
+          {item.trailStats.routeType && (
+            <span className="post-deck-trail-pill">
+              🔁 {item.trailStats.routeType}
+            </span>
+          )}
+          {item.trailStats.rating != null && (
+            <span className="post-deck-trail-pill post-deck-trail-rating">
+              ★ {item.trailStats.rating.toFixed(1)}
+              {item.trailStats.reviewsCount ? ` (${item.trailStats.reviewsCount.toLocaleString()})` : ""}
+            </span>
+          )}
+        </div>
+      )}
 
       {/* Movie Crew & Streaming Info */}
       {(Boolean(item.directors?.length) || Boolean(item.cast?.length)) && (
@@ -285,6 +348,7 @@ export function PostDetail({
               latitude: detail.place.location.latitude,
               longitude: detail.place.location.longitude,
               providerPlaceId: detail.place.location.provider_place_id,
+              facts: detail.place.facts,
             };
           } catch {
             return { placeId, displayName: placeId };
@@ -365,6 +429,58 @@ export function PostDetail({
       .join("/");
     return `https://www.google.com/maps/dir/${waypoints}`;
   }, [overviewPlaces]);
+
+  // Hike details URL (e.g. AllTrails search) for hike posts
+  const hikeInfo = useMemo(() => {
+    // 1. Check activeItem or detailItems or overviewPlaces for a place with category === "hike"
+    const targetItem =
+      (activeItem?.category?.toLowerCase() === "hike" ? activeItem : null) ??
+      detailItems.find((item) => item.category?.toLowerCase() === "hike");
+    const targetPlace = overviewPlaces.find(
+      (p) => p.category?.toLowerCase() === "hike",
+    );
+    const targetExtracted = post.extracted_places?.find(
+      (ep) => ep.category?.toLowerCase() === "hike",
+    );
+
+    let hikeName =
+      targetItem?.name || targetPlace?.display_name || targetExtracted?.place_name;
+
+    // 2. Fallback: check if post itself is a hike post based on hashtags, caption, or heading
+    if (!hikeName) {
+      const isHikePost =
+        post.hashtags?.some((t) => /hike|hiking|trail/i.test(t)) ||
+        /\bhike\b|\btrail\b/i.test(heading) ||
+        /\bhike\b|\btrail\b/i.test(rawCaption);
+      if (isHikePost && detailItems.length > 0) {
+        hikeName = detailItems[0].name;
+      }
+    }
+
+    if (!hikeName) return null;
+
+    // Location context (city or state) to make AllTrails search accurate
+    const stateOrCity =
+      targetExtracted?.state_province ||
+      targetPlace?.location?.state_province ||
+      targetExtracted?.city ||
+      targetPlace?.location?.city ||
+      (targetItem?.metaParts && targetItem.metaParts.length > 0
+        ? targetItem.metaParts[0].split(",")[0].trim()
+        : "");
+
+    const query = stateOrCity ? `${hikeName} ${stateOrCity}` : hikeName;
+    const resolvedUrl =
+      targetItem?.trailStats?.alltrailsUrl ||
+      (targetPlace?.facts?.website_url && targetPlace.facts.website_url.includes("alltrails.com/trail/")
+        ? targetPlace.facts.website_url
+        : null);
+
+    return {
+      name: hikeName,
+      url: resolvedUrl || `https://www.google.com/search?q=site:alltrails.com/trail/+${encodeURIComponent(query)}`,
+    };
+  }, [activeItem, detailItems, overviewPlaces, post, heading, rawCaption]);
 
   return (
     <DetailModal
@@ -501,7 +617,17 @@ export function PostDetail({
                 ? `Places Mentioned (${detailItems.length})`
                 : "Post Details"}
             </h3>
-            {multiStopMapUrl && (
+            {hikeInfo ? (
+              <a
+                href={hikeInfo.url}
+                target="_blank"
+                rel="noreferrer"
+                className="post-deck-route-btn post-deck-hike-btn"
+                title={`View ${hikeInfo.name} on AllTrails`}
+              >
+                <MountainIcon /> Hike Details ↗
+              </a>
+            ) : multiStopMapUrl ? (
               <a
                 href={multiStopMapUrl}
                 target="_blank"
@@ -510,7 +636,7 @@ export function PostDetail({
               >
                 Open Route in Maps ↗
               </a>
-            )}
+            ) : null}
           </div>
 
           {detailItems.length > 0 ? (

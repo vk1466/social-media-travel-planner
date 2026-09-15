@@ -7,11 +7,21 @@ import os
 from travelplanner.places.facts.tools.google import fetch_google_place_details
 from travelplanner.places.facts.tools.nps import fetch_nps_park
 from travelplanner.places.facts.tools.osm import fetch_osm_tags
+from travelplanner.places.facts.tools.trail_search import fetch_trail_details
 from travelplanner.places.facts.tools.wikipedia import fetch_wikipedia_summary
 from travelplanner.places.facts.tools.wikivoyage import fetch_wikivoyage_summary
 from travelplanner.places.facts.types import FactTool
 
 FACT_TOOLS: tuple[FactTool, ...] = (
+  FactTool(
+    tool_id="trail_search",
+    description="AllTrails canonical trail URL and trail metrics via Browserless",
+    source_name="alltrails",
+    categories=frozenset({"hike"}),
+    cost_class="paid",
+    requires_setting="BROWSERLESS_API_KEY",
+    fetch=fetch_trail_details,
+  ),
   FactTool(
     tool_id="osm_tags",
     description="OpenStreetMap tags near the pin (hours, fee, website, cuisine)",

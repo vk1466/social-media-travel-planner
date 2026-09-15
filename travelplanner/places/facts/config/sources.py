@@ -6,6 +6,7 @@ from __future__ import annotations
 SOURCE_PRIORITY: dict[str, int] = {
   "nps": 40,
   "google_places": 30,
+  "alltrails": 25,
   "osm": 20,
   "wikipedia": 10,
 }
