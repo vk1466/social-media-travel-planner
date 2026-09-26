@@ -99,16 +99,26 @@ def test_library_drops_places_beyond_a_day_trip(dynamodb) -> None:
     place_id="sintra",
     display_name="Sintra",
     location=PlaceLocation(display_name="Sintra", latitude=38.8029, longitude=-9.3817),
+    category="landmark",
   )
   far = Place(
     place_id="porto",
     display_name="Porto",
     location=PlaceLocation(display_name="Porto", latitude=41.1579, longitude=-8.6291),
+    category="landmark",
+  )
+  meal = Place(
+    place_id="cafe",
+    display_name="A nearby cafe",
+    location=PlaceLocation(display_name="A nearby cafe", latitude=38.71, longitude=-9.14),
+    category="cafe",
   )
   places_repo.save_place(near)
   places_repo.save_place(far)
+  places_repo.save_place(meal)
   user_places_repo.link_user_place(user_id, near.place_id)
   user_places_repo.link_user_place(user_id, far.place_id)
+  user_places_repo.link_user_place(user_id, meal.place_id)
 
   client = TestClient(app)
   response = client.get("/api/for-travel/library")

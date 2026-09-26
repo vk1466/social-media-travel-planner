@@ -18,7 +18,7 @@ from travelplanner.db import user_places_repo, user_settings_repo
 from travelplanner.library import list_user_places, list_user_posts
 from travelplanner.models import Place, SavedPost
 from travelplanner.places.mention_details import compact_mention_details
-from travelplanner.places.nearby import place_is_nearby
+from travelplanner.places.nearby import place_is_nearby, place_is_tourist_destination
 from travelplanner.places import place_to_dict
 from travelplanner.sources.instagram_search import search_city_reels
 from travelplanner.store import post_to_dict
@@ -70,29 +70,38 @@ def _post_to_schema(post: SavedPost) -> SavedPostSchema:
 
 
 def _places_near_search(user_id: str, places: list[Place]) -> list[Place]:
-  """Drop places that are not in the searched city or a day trip away."""
+  """Drop places outside a day trip, and anything that is not a tourist destination."""
   anchor = user_settings_repo.get_city_search_anchor(user_id)
-  if anchor is None:
-    return places
-  _query, latitude, longitude = anchor
   radius_km = settings.city_nearby_km()
   kept: list[Place] = []
   for place in places:
-    if place_is_nearby(
-      place,
-      latitude=latitude,
-      longitude=longitude,
-      radius_km=radius_km,
-    ):
-      kept.append(place)
+    if not place_is_tourist_destination(place):
+      logger.info(
+        "for-travel drop non-destination user_id=%s place_id=%s name=%s category=%s",
+        user_id,
+        place.place_id,
+        place.display_name,
+        place.category,
+      )
+      user_places_repo.unlink_user_place(user_id, place.place_id)
       continue
-    logger.info(
-      "for-travel drop far place user_id=%s place_id=%s name=%s",
-      user_id,
-      place.place_id,
-      place.display_name,
-    )
-    user_places_repo.unlink_user_place(user_id, place.place_id)
+    if anchor is not None:
+      _query, latitude, longitude = anchor
+      if not place_is_nearby(
+        place,
+        latitude=latitude,
+        longitude=longitude,
+        radius_km=radius_km,
+      ):
+        logger.info(
+          "for-travel drop far place user_id=%s place_id=%s name=%s",
+          user_id,
+          place.place_id,
+          place.display_name,
+        )
+        user_places_repo.unlink_user_place(user_id, place.place_id)
+        continue
+    kept.append(place)
   return kept
 
 
