@@ -185,6 +185,37 @@ def log_level() -> str:
   return "INFO"
 
 
+def jev_api_key() -> str | None:
+  """TypeSafe / Jev key. TYPESAFE_API_KEY is the name used by the extractor."""
+  for name in ("JEV_API_KEY", "TYPESAFE_API_KEY"):
+    value = os.getenv(name, "").strip()
+    if value:
+      return value
+  return None
+
+
+def jev_base_url() -> str:
+  value = os.getenv("JEV_BASE_URL", "https://api.typesafe.ai/v1/systemone").strip()
+  return value or "https://api.typesafe.ai/v1/systemone"
+
+
+def jev_model() -> str:
+  value = os.getenv("JEV_MODEL", "jev-latest").strip()
+  return value or "jev-latest"
+
+
+def city_query_reel_limit() -> int:
+  """How many reels to fetch for each city search phrase (default 20)."""
+  raw = os.getenv("CITY_QUERY_REEL_LIMIT", "20").strip()
+  try:
+    limit = int(raw)
+  except ValueError as exc:
+    raise RuntimeError(f"CITY_QUERY_REEL_LIMIT must be an integer, got {raw!r}") from exc
+  if limit < 1 or limit > 80:
+    raise RuntimeError("CITY_QUERY_REEL_LIMIT must be between 1 and 80")
+  return limit
+
+
 def city_reel_limit() -> int:
   """How many Instagram search reels a city search sends through ingest (default 20)."""
   raw = os.getenv("CITY_REEL_LIMIT", "20").strip()

@@ -44,6 +44,7 @@ class TravelPlannerStack(Stack):
     omdb_api_key: str = "",
     usda_fooddata_api_key: str = "",
     for_travel_api_key: str = "",
+    jev_api_key: str = "",
     city_reel_limit: str = "20",
     **kwargs,
   ) -> None:
@@ -332,7 +333,9 @@ class TravelPlannerStack(Stack):
         "INSTAGRAM_PROFILE_POST_LIMIT": "5",
         "PLACE_FACTS_QUEUE_URL": facts_queue_url,
         "FOR_TRAVEL_API_KEY": for_travel_api_key,
+        "JEV_API_KEY": jev_api_key,
         "CITY_REEL_LIMIT": city_reel_limit or "20",
+        "CITY_QUERY_REEL_LIMIT": "20",
       },
     )
     for table in tables.values():
