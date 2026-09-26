@@ -46,6 +46,7 @@ from travelplanner.visits import (
 )
 
 from server.auth import AdminUserId, AuthenticatedUserId, CurrentUserId, SuperAdminUserId
+from server.for_travel import router as for_travel_router
 from server.ingest_runner import start_ingest_job
 from server import jobs
 from server import timeline_staging
@@ -99,6 +100,8 @@ app.add_middleware(
   allow_methods=["*"],
   allow_headers=["*"],
 )
+
+app.include_router(for_travel_router)
 
 
 def _dedupe_links(links: list[str]) -> list[str]:

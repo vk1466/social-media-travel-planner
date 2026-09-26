@@ -43,6 +43,8 @@ class TravelPlannerStack(Stack):
     tmdb_api_key: str = "",
     omdb_api_key: str = "",
     usda_fooddata_api_key: str = "",
+    for_travel_api_key: str = "",
+    city_reel_limit: str = "20",
     **kwargs,
   ) -> None:
     super().__init__(scope, construct_id, **kwargs)
@@ -55,6 +57,10 @@ class TravelPlannerStack(Stack):
     cors_origin_list = [o.strip() for o in cors_origins.split(",") if o.strip()] or [
       "http://localhost:5173"
     ]
+    for extra in ("http://localhost:5182", "http://127.0.0.1:5182"):
+      if extra not in cors_origin_list:
+        cors_origin_list.append(extra)
+    cors_origins = ",".join(cors_origin_list)
 
     timeline_bucket = s3.Bucket(
       self,
@@ -325,6 +331,8 @@ class TravelPlannerStack(Stack):
         "ADMIN_USER_IDS": admin_user_ids,
         "INSTAGRAM_PROFILE_POST_LIMIT": "5",
         "PLACE_FACTS_QUEUE_URL": facts_queue_url,
+        "FOR_TRAVEL_API_KEY": for_travel_api_key,
+        "CITY_REEL_LIMIT": city_reel_limit or "20",
       },
     )
     for table in tables.values():

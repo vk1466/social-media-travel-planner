@@ -578,3 +578,26 @@ class RouteOptimizationResultSchema(BaseModel):
   solver_time_ms: float
   excluded_stops: list[ExcludedRouteStopSchema] = Field(default_factory=list)
 
+
+class ForTravelSearchRequest(BaseModel):
+  query: str = Field(..., min_length=1)
+
+
+class ForTravelReelSchema(BaseModel):
+  post_url: str
+  author: str | None = None
+  caption: str | None = None
+  thumbnail_url: str | None = None
+
+
+class ForTravelSearchResponse(BaseModel):
+  job_id: str
+  query: str
+  reel_limit: int
+  reels: list[ForTravelReelSchema]
+
+
+class ForTravelLibrarySchema(BaseModel):
+  places: list[PlaceSchema]
+  posts: list[SavedPostSchema]
+

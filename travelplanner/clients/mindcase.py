@@ -54,6 +54,18 @@ def fetch_post(*, post_url: str | None = None, shortcode: str | None = None) -> 
   return rows[0]
 
 
+def search_reels(query: str, *, limit: int) -> list[dict[str, Any]]:
+  """Instagram keyword search over Reels (Mindcase posts ``query`` mode)."""
+  term = query.strip()
+  if not term:
+    raise ValueError("query is required")
+  if limit < 1:
+    raise ValueError("limit must be >= 1")
+  # About 10–12 reels per page, and Mindcase caps pages at 8.
+  pages = min(8, max(1, (limit + 9) // 10))
+  return _run_job(POSTS_RUN_PATH, {"query": term, "maxPages": pages})
+
+
 def fetch_posts_for_handle(username: str, *, max_results: int) -> list[dict[str, Any]]:
   """Recent public posts for a username (newest first when the API orders that way)."""
   handle = username.strip().lstrip("@")

@@ -67,4 +67,6 @@ jobs:
           TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
           OMDB_API_KEY: ${{ secrets.OMDB_API_KEY }}
           USDA_FOODDATA_API_KEY: ${{ secrets.USDA_FOODDATA_API_KEY }}
+          FOR_TRAVEL_API_KEY: ${{ secrets.FOR_TRAVEL_API_KEY }}
+          CITY_REEL_LIMIT: "20"
         run: cdk deploy TravelPlanner-dev --require-approval never

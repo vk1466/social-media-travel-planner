@@ -185,6 +185,30 @@ def log_level() -> str:
   return "INFO"
 
 
+def city_reel_limit() -> int:
+  """How many Instagram search reels a city search sends through ingest (default 20)."""
+  raw = os.getenv("CITY_REEL_LIMIT", "20").strip()
+  try:
+    limit = int(raw)
+  except ValueError as exc:
+    raise RuntimeError(f"CITY_REEL_LIMIT must be an integer, got {raw!r}") from exc
+  if limit < 1 or limit > 80:
+    raise RuntimeError("CITY_REEL_LIMIT must be between 1 and 80")
+  return limit
+
+
+def for_travel_api_key() -> str | None:
+  """Shared key for the For Travel app. Empty when auth is disabled locally."""
+  value = os.getenv("FOR_TRAVEL_API_KEY", "").strip()
+  return value or None
+
+
+def for_travel_user_id() -> str:
+  """Library owner for city searches until For Travel has its own accounts."""
+  value = os.getenv("FOR_TRAVEL_USER_ID", "for-travel-planning").strip()
+  return value or "for-travel-planning"
+
+
 def instagram_profile_post_limit() -> int:
   """How many latest Instagram posts to import from a profile (default 5).
 

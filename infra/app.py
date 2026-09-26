@@ -34,6 +34,8 @@ shared = {
   "tmdb_api_key": _env_str("TMDB_API_KEY"),
   "omdb_api_key": _env_str("OMDB_API_KEY"),
   "usda_fooddata_api_key": _env_str("USDA_FOODDATA_API_KEY"),
+  "for_travel_api_key": _env_str("FOR_TRAVEL_API_KEY"),
+  "city_reel_limit": _env_str("CITY_REEL_LIMIT", "20"),
   "env": aws_env,
 }
 
