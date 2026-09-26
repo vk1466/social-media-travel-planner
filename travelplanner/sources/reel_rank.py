@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import logging
 from concurrent.futures import ThreadPoolExecutor
-from typing import Any
 
 from travelplanner.clients.jev import system_one
 
@@ -28,19 +27,6 @@ _IS_TRAVEL = {
       "travel": "About visiting this city or a day trip from it.",
       "not_travel": "Not a travel reel for this city.",
     },
-  }
-}
-
-_PLACE_COUNT = {
-  "places": {
-    "type": "noul",
-    "instructions": (
-      "How many distinct tourist destinations does this reel name? "
-      "Count landmarks, museums, parks, beaches, neighborhoods, markets, "
-      "viewpoints, and hikes in the city or on a day trip from it. "
-      "Do not count the city itself, hotels, restaurants, cafes, or bars. "
-      "Answer 0 when it names none."
-    ),
   }
 }
 
@@ -80,19 +66,6 @@ def _is_travel(reel: dict[str, str | None], *, city: str) -> bool:
   except Exception:
     logger.exception("jev travel check failed url=%s", reel.get("post_url"))
     return False
-
-
-def _count_places(reel: dict[str, str | None], *, city: str) -> int:
-  state = f"CITY: {city}\n\nREEL:\n{_snippet(reel)}"
-  try:
-    payload = system_one(state=state, questions=_PLACE_COUNT)
-    answer = payload["answers"].get("places") or {}
-    count = answer.get("noul")
-    if isinstance(count, (int, float)):
-      return max(0, int(count))
-  except Exception:
-    logger.exception("jev place count failed url=%s", reel.get("post_url"))
-  return 0
 
 
 def _adds_place(
@@ -140,37 +113,19 @@ def select_diverse_reels(
   if not travel_reels:
     return []
 
-  workers = min(8, len(travel_reels))
-  with ThreadPoolExecutor(max_workers=workers) as pool:
-    counts = list(pool.map(lambda reel: _count_places(reel, city=city), travel_reels))
-
-  ranked = sorted(
-    zip(counts, travel_reels, strict=True),
-    key=lambda item: item[0],
-    reverse=True,
-  )
-  ranked = [(count, reel) for count, reel in ranked if count > 0]
-  if not ranked:
-    return []
-
   selected: list[dict[str, str | None]] = []
   covered: list[str] = []
-  for count, reel in ranked:
+  for reel in travel_reels:
     if len(selected) >= limit:
       break
     if covered and not _adds_place(reel, city=city, covered=covered):
-      logger.info(
-        "jev skip repeat reel url=%s places=%d",
-        reel.get("post_url"),
-        count,
-      )
+      logger.info("jev skip overlapping reel url=%s", reel.get("post_url"))
       continue
     selected.append(reel)
     covered.append(_snippet(reel))
     logger.info(
-      "jev keep reel url=%s places=%d selected=%d",
+      "jev keep reel url=%s selected=%d",
       reel.get("post_url"),
-      count,
       len(selected),
     )
   return selected
