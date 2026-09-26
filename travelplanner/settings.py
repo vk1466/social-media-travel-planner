@@ -203,6 +203,21 @@ def for_travel_api_key() -> str | None:
   return value or None
 
 
+def city_nearby_km() -> float:
+  """How far from the searched city a place can sit and still count (default 150).
+
+  Covers the city itself and a day trip, and drops places farther than that.
+  """
+  raw = os.getenv("CITY_NEARBY_KM", "150").strip()
+  try:
+    radius = float(raw)
+  except ValueError as exc:
+    raise RuntimeError(f"CITY_NEARBY_KM must be a number, got {raw!r}") from exc
+  if radius <= 0 or radius > 500:
+    raise RuntimeError("CITY_NEARBY_KM must be between 0 and 500")
+  return radius
+
+
 def for_travel_user_id() -> str:
   """Library owner for city searches until For Travel has its own accounts."""
   value = os.getenv("FOR_TRAVEL_USER_ID", "for-travel-planning").strip()

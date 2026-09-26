@@ -13,9 +13,12 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Header, HTTPException
 
 from travelplanner import settings
+from travelplanner.clients.geocoder import geocode_normalized
+from travelplanner.db import user_places_repo, user_settings_repo
 from travelplanner.library import list_user_places, list_user_posts
 from travelplanner.models import Place, SavedPost
 from travelplanner.places.mention_details import compact_mention_details
+from travelplanner.places.nearby import place_is_nearby
 from travelplanner.places import place_to_dict
 from travelplanner.sources.instagram_search import search_city_reels
 from travelplanner.store import post_to_dict
@@ -66,6 +69,33 @@ def _post_to_schema(post: SavedPost) -> SavedPostSchema:
   return SavedPostSchema(**post_to_dict(post))
 
 
+def _places_near_search(user_id: str, places: list[Place]) -> list[Place]:
+  """Drop places that are not in the searched city or a day trip away."""
+  anchor = user_settings_repo.get_city_search_anchor(user_id)
+  if anchor is None:
+    return places
+  _query, latitude, longitude = anchor
+  radius_km = settings.city_nearby_km()
+  kept: list[Place] = []
+  for place in places:
+    if place_is_nearby(
+      place,
+      latitude=latitude,
+      longitude=longitude,
+      radius_km=radius_km,
+    ):
+      kept.append(place)
+      continue
+    logger.info(
+      "for-travel drop far place user_id=%s place_id=%s name=%s",
+      user_id,
+      place.place_id,
+      place.display_name,
+    )
+    user_places_repo.unlink_user_place(user_id, place.place_id)
+  return kept
+
+
 @router.post(
   "/searches",
   response_model=ForTravelSearchResponse,
@@ -78,6 +108,16 @@ def start_city_search(
   query = request.query.strip()
   if not query:
     raise HTTPException(status_code=400, detail="Enter a city or place")
+
+  located = geocode_normalized(query, fallback_name=query)
+  if located is None:
+    raise HTTPException(status_code=400, detail="Couldn't find that city on the map")
+  user_settings_repo.set_city_search_anchor(
+    user_id,
+    query=query,
+    latitude=located.latitude,
+    longitude=located.longitude,
+  )
 
   reel_limit = settings.city_reel_limit()
   try:
@@ -128,7 +168,7 @@ def get_city_job(job_id: str, user_id: ForTravelUserId) -> JobSchema:
 
 @router.get("/library", response_model=ForTravelLibrarySchema)
 def get_library(user_id: ForTravelUserId) -> ForTravelLibrarySchema:
-  places = list_user_places(user_id)
+  places = _places_near_search(user_id, list_user_places(user_id))
   posts = list_user_posts(user_id)
   return ForTravelLibrarySchema(
     places=[_place_to_schema(place) for place in places],
