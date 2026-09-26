@@ -1,7 +1,7 @@
-"""Pick reels that add the most new tourist places.
+"""Two caption filters before a reel is fetched in full.
 
-Jev counts places in each caption, then decides whether the next reel still
-adds somewhere the earlier reels did not name.
+Jev first drops reels that are not travel. It then drops travel reels whose
+places mostly repeat ones already chosen. Only the survivors are ingested.
 """
 
 from __future__ import annotations
@@ -13,6 +13,23 @@ from typing import Any
 from travelplanner.clients.jev import system_one
 
 logger = logging.getLogger(__name__)
+
+_IS_TRAVEL = {
+  "travel": {
+    "type": "choice",
+    "instructions": (
+      "Decide from the caption alone, before any transcript. "
+      "Travel means the reel is about visiting this city or a day trip from it: "
+      "sights, neighborhoods, itineraries, or day trips. "
+      "Not travel means another topic, a different place, an ad, a meme, "
+      "or nothing a visitor would go see."
+    ),
+    "criteria": {
+      "travel": "About visiting this city or a day trip from it.",
+      "not_travel": "Not a travel reel for this city.",
+    },
+  }
+}
 
 _PLACE_COUNT = {
   "places": {
@@ -31,15 +48,16 @@ _ADDS_PLACE = {
   "adds": {
     "type": "choice",
     "instructions": (
-      "Keep this reel only when it names at least one tourist destination "
-      "that is not already covered. Skip when it only repeats covered places, "
-      "or names none. Tourist destinations are landmarks, museums, parks, "
-      "beaches, neighborhoods, markets, viewpoints, and hikes. "
-      "Ignore the city itself, hotels, restaurants, cafes, and bars."
+      "Skip this reel when too many of its tourist places are already covered. "
+      "Keep it when most of the places it names are still new. "
+      "Tourist destinations are landmarks, museums, parks, beaches, "
+      "neighborhoods, markets, viewpoints, and hikes. "
+      "Ignore the city itself, hotels, restaurants, cafes, and bars. "
+      "One repeated landmark plus several new places is still keep."
     ),
     "criteria": {
-      "keep": "Names at least one new tourist destination.",
-      "skip": "No new tourist destination beyond the covered reels.",
+      "keep": "Most of its tourist places are not already covered.",
+      "skip": "Too much overlap with places already covered.",
     },
   }
 }
@@ -51,6 +69,17 @@ def _snippet(reel: dict[str, str | None]) -> str:
   query = reel.get("search_query") or ""
   via = f" via {query}" if query else ""
   return f"@{author}{via}: {caption[:220]}"
+
+
+def _is_travel(reel: dict[str, str | None], *, city: str) -> bool:
+  state = f"CITY: {city}\n\nREEL:\n{_snippet(reel)}"
+  try:
+    payload = system_one(state=state, questions=_IS_TRAVEL)
+    answer = payload["answers"].get("travel") or {}
+    return answer.get("choice") == "travel"
+  except Exception:
+    logger.exception("jev travel check failed url=%s", reel.get("post_url"))
+    return False
 
 
 def _count_places(reel: dict[str, str | None], *, city: str) -> int:
@@ -93,16 +122,30 @@ def select_diverse_reels(
   city: str,
   limit: int,
 ) -> list[dict[str, str | None]]:
-  """Rank reels with Jev and keep up to `limit` that add new places."""
+  """Drop non-travel reels, then drop overlapping ones, before ingest."""
   if limit < 1 or not reels:
     return []
 
   workers = min(8, len(reels))
   with ThreadPoolExecutor(max_workers=workers) as pool:
-    counts = list(pool.map(lambda reel: _count_places(reel, city=city), reels))
+    travel_flags = list(pool.map(lambda reel: _is_travel(reel, city=city), reels))
+  travel_reels = [reel for reel, is_travel in zip(reels, travel_flags, strict=True) if is_travel]
+  logger.info(
+    "jev travel filter city=%s candidates=%d travel=%d dropped=%d",
+    city,
+    len(reels),
+    len(travel_reels),
+    len(reels) - len(travel_reels),
+  )
+  if not travel_reels:
+    return []
+
+  workers = min(8, len(travel_reels))
+  with ThreadPoolExecutor(max_workers=workers) as pool:
+    counts = list(pool.map(lambda reel: _count_places(reel, city=city), travel_reels))
 
   ranked = sorted(
-    zip(counts, reels, strict=True),
+    zip(counts, travel_reels, strict=True),
     key=lambda item: item[0],
     reverse=True,
   )

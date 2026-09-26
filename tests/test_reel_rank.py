@@ -35,8 +35,14 @@ def test_city_search_fetches_each_phrase(monkeypatch) -> None:
 
 
 def test_jev_keeps_reels_that_add_places(monkeypatch) -> None:
+  place_counts: list[str] = []
+
   def fake_system_one(*, state: str, questions: dict) -> dict:
+    if "travel" in questions:
+      choice = "not_travel" if "hotel lobby" in state else "travel"
+      return {"answers": {"travel": {"type": "choice", "choice": choice}}}
     if "places" in questions:
+      place_counts.append(state)
       if "Sintra" in state:
         count = 2
       elif "Belem" in state:
@@ -61,3 +67,4 @@ def test_jev_keeps_reels_that_add_places(monkeypatch) -> None:
   )
   urls = [reel["post_url"] for reel in chosen]
   assert urls == ["https://ig/belem", "https://ig/sintra"]
+  assert all("hotel lobby" not in state for state in place_counts)
