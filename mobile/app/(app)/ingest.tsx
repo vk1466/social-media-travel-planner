@@ -155,6 +155,9 @@ export default function IngestScreen() {
                 <Text style={styles.jobMeta}>
                   {item.counts.saved} saved · {item.counts.linked} linked · {item.counts.error} errors
                 </Text>
+                <Text style={styles.jobMeta}>
+                  {item.links.filter((link) => link.status !== "pending" && link.status !== "fetching").length} of {item.links.length} processed
+                </Text>
               </View>
             ))}
         </View>

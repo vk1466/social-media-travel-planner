@@ -11,12 +11,20 @@ import { aggregateMovies } from "@/src/movies";
 import { appHref } from "@/src/nav";
 import { recipesFromPosts } from "@/src/recipes";
 import { colors, radius, spacing } from "@/src/theme";
+import { GroceryListSheet, RecipeDetailSheet } from "@/src/components/RecipeDetailSheet";
+import { MovieDetailSheet } from "./(tabs)/movies";
+import type { SavedRecipe } from "@/src/recipes";
+import type { AggregatedMovie } from "@/src/movies";
 
 export default function SearchScreen() {
   const router = useRouter();
   const { posts, places } = useLibrary();
   const { platforms } = useLibraryPlatform();
   const [query, setQuery] = useState("");
+  const [selectedRecipe, setSelectedRecipe] = useState<SavedRecipe | null>(null);
+  const [selectedMovie, setSelectedMovie] = useState<AggregatedMovie | null>(null);
+  const [groceryRecipeKeys, setGroceryRecipeKeys] = useState<Set<string>>(new Set());
+  const [groceryOpen, setGroceryOpen] = useState(false);
   const q = query.trim().toLowerCase();
   const scopedPosts = postsForPlatforms(posts, platforms);
   const recipes = recipesFromPosts(scopedPosts);
@@ -24,7 +32,7 @@ export default function SearchScreen() {
 
   const results = useMemo(() => {
     if (!q) return [];
-    const hits: { key: string; to: string; label: string; meta: string }[] = [];
+    const hits: { key: string; to: string; label: string; meta: string; recipe?: SavedRecipe; movie?: AggregatedMovie }[] = [];
     for (const post of scopedPosts) {
       if (`${postTitle(post)} ${post.caption}`.toLowerCase().includes(q)) {
         hits.push({
@@ -50,9 +58,10 @@ export default function SearchScreen() {
       if ((recipe.recipe.title ?? "").toLowerCase().includes(q)) {
         hits.push({
           key: `recipe-${recipe.key}`,
-          to: `/(app)/(tabs)/food`,
+          to: "",
           label: recipe.recipe.title ?? "Recipe",
           meta: "Recipe",
+          recipe,
         });
       }
     }
@@ -60,9 +69,10 @@ export default function SearchScreen() {
       if (movie.title.toLowerCase().includes(q)) {
         hits.push({
           key: `movie-${movie.key}`,
-          to: `/(app)/(tabs)/movies`,
+          to: "",
           label: movie.title,
           meta: "Movie",
+          movie,
         });
       }
     }
@@ -83,26 +93,40 @@ export default function SearchScreen() {
         onQuery={setQuery}
         autoFocus
       />
-      <View style={styles.jumps}>
+      {!q ? <View style={styles.jumps}>
         <Jump label="Posts" onPress={() => router.replace(appHref("/(app)/(tabs)/posts"))} />
         <Jump label="Places" onPress={() => router.replace(appHref("/(app)/(tabs)/travel"))} />
         <Jump label="Food" onPress={() => router.replace(appHref("/(app)/(tabs)/food"))} />
         <Jump label="Watch" onPress={() => router.replace(appHref("/(app)/(tabs)/movies"))} />
         <Jump label="Visits" onPress={() => router.replace(appHref("/(app)/(tabs)/history"))} />
-      </View>
+      </View> : null}
       {results.map((hit) => (
-        <Pressable key={hit.key} style={styles.row} onPress={() => router.push(appHref(hit.to))}>
+        <Pressable key={hit.key} style={styles.row} onPress={() => {
+          if (hit.recipe) setSelectedRecipe(hit.recipe);
+          else if (hit.movie) setSelectedMovie(hit.movie);
+          else router.push(appHref(hit.to));
+        }} accessibilityRole="button" accessibilityLabel={`Open ${hit.meta}: ${hit.label}`}>
           <Text style={styles.label}>{hit.label}</Text>
           <Text style={styles.meta}>{hit.meta}</Text>
         </Pressable>
       ))}
+      {q && results.length === 0 ? (
+        <Text style={styles.empty} accessibilityRole="text">No saved items match “{query.trim()}”.</Text>
+      ) : null}
+      {selectedRecipe ? <RecipeDetailSheet item={selectedRecipe} onClose={() => setSelectedRecipe(null)}
+        isInGroceryList={groceryRecipeKeys.has(selectedRecipe.key)}
+        onAddToGrocery={() => setGroceryRecipeKeys((keys) => new Set(keys).add(selectedRecipe.key))}
+        onViewGrocery={() => setGroceryOpen(true)} /> : null}
+      {selectedMovie ? <MovieDetailSheet movie={selectedMovie} onClose={() => setSelectedMovie(null)}
+        onOpenPost={(platform, postId) => { setSelectedMovie(null); router.push(`/posts/${platform}/${postId}`); }} /> : null}
+      {groceryOpen ? <GroceryListSheet recipes={recipes.filter((item) => groceryRecipeKeys.has(item.key))} onClose={() => setGroceryOpen(false)} /> : null}
     </ScrollView>
   );
 }
 
 function Jump({ label, onPress }: { label: string; onPress: () => void }) {
   return (
-    <Pressable onPress={onPress} style={styles.jump}>
+    <Pressable onPress={onPress} style={styles.jump} accessibilityRole="button">
       <Text style={styles.jumpText}>{label}</Text>
     </Pressable>
   );
@@ -128,12 +152,16 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     paddingHorizontal: 12,
+    minHeight: 44,
+    justifyContent: "center",
     paddingVertical: 8,
   },
   jumpText: { color: colors.brand, fontWeight: "700", fontSize: 13 },
   row: {
     backgroundColor: colors.surface,
     borderRadius: radius.md,
+    minHeight: 56,
+    justifyContent: "center",
     padding: spacing.md,
     marginBottom: spacing.sm,
     borderWidth: 1,
@@ -141,4 +169,5 @@ const styles = StyleSheet.create({
   },
   label: { color: colors.ink, fontWeight: "700" },
   meta: { color: colors.muted, marginTop: 4, fontSize: 12 },
+  empty: { color: colors.muted, fontSize: 14, marginTop: spacing.md },
 });

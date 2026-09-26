@@ -26,6 +26,7 @@ export function AddPage({
   const { basePath } = useLabTheme();
   const [text, setText] = useState("");
   const [refresh, setRefresh] = useState(false);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loadingJobs, setLoadingJobs] = useState(false);
   const [starting, setStarting] = useState(false);
@@ -147,6 +148,7 @@ export function AddPage({
   return (
     <div className="top-add-page">
       <PageHeading
+        backLink={{ to: "/", label: "Home" }}
         kicker="Add to Wanderfile"
         title="Save and organize"
         lede="Add links anytime. Wanderfile reads and organizes them, and your queue stays available on every signed-in device."
@@ -167,10 +169,13 @@ export function AddPage({
           {parsed.invalid.length > 0 ? (
             <p className="inline-errors">Not a valid URL: {parsed.invalid.join(", ")}</p>
           ) : null}
-          <label className="refresh-row">
-            <input type="checkbox" checked={refresh} onChange={(event) => setRefresh(event.target.checked)} />
-            Re-fetch if already saved
-          </label>
+          <details className="advanced-options" open={advancedOpen} onToggle={(event) => setAdvancedOpen(event.currentTarget.open)}>
+            <summary>Advanced options</summary>
+            <label className="refresh-row">
+              <input type="checkbox" checked={refresh} onChange={(event) => setRefresh(event.target.checked)} />
+              Re-fetch if already saved
+            </label>
+          </details>
           <div className="queue-actions">
             <button
               type="button"
@@ -180,7 +185,7 @@ export function AddPage({
             >
               {starting
                 ? "Adding…"
-                : `Add ${parsed.valid.length} link${parsed.valid.length === 1 ? "" : "s"} to queue`}
+                : `Save ${parsed.valid.length} link${parsed.valid.length === 1 ? "" : "s"} to queue`}
             </button>
           </div>
           {startError ? <p className="inline-errors">{startError}</p> : null}
@@ -207,11 +212,11 @@ export function AddPage({
             ))}
           </section>
 
-          <section className="queue-panel">
-            <div className="queue-section-heading">
+          <details className="queue-panel completed-history">
+            <summary className="queue-section-heading">
               <h2>History</h2>
               <span>Last 7 days</span>
-            </div>
+            </summary>
             {!loadingJobs && historicJobs.length === 0 ? (
               <p className="empty-copy">No recent processing.</p>
             ) : null}
@@ -222,7 +227,7 @@ export function AddPage({
                 onOpen={() => navigate(`${basePath}/posts`)}
               />
             ))}
-          </section>
+          </details>
           {jobsError ? <p className="inline-errors">{jobsError}</p> : null}
         </div>
       </div>
@@ -244,6 +249,8 @@ function JobCard({
     `${job.counts.linked} linked`,
     `${job.counts.error} errors`,
   ].join(" · ");
+  const processed = job.links.filter((link) => link.status !== "pending" && link.status !== "fetching").length;
+  const total = job.links.length;
 
   return (
     <article className="job-card">
@@ -251,6 +258,8 @@ function JobCard({
         <div>
           <b>{job.status === "running" ? "Processing" : "Complete"}</b>
           <span>{summary}</span>
+          <span className="job-progress-label">{processed} of {total} processed</span>
+          <progress aria-label={`${processed} of ${total} links processed`} max={Math.max(total, 1)} value={processed} />
         </div>
         {job.created_at ? <time dateTime={job.created_at}>{formatJobDate(job.created_at)}</time> : null}
       </header>

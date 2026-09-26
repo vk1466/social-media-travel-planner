@@ -33,6 +33,7 @@ export function TopTabsApp({
 }) {
   const counts = useMemo(
     () => ({
+      home: posts.length,
       posts: posts.length,
       travel: places.length,
       food: postsOfCategory(posts, "food").length,

@@ -97,7 +97,7 @@ function RtBadge({ percent }: { percent: number }) {
   );
 }
 
-function MovieDetailSheet({
+export function MovieDetailSheet({
   movie,
   onClose,
   onOpenPost,

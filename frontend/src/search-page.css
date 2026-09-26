@@ -2,6 +2,34 @@
   min-height: 50vh;
 }
 
+.lab-pages .top-search-page .sheet-list {
+  padding: 0;
+  list-style: none;
+}
+
+.lab-pages .top-search-page .sheet-list li {
+  border-bottom: 1px solid var(--line);
+}
+
+.lab-pages .top-search-page .sheet-list a,
+.lab-pages .top-search-page .sheet-list button {
+  display: flex;
+  width: 100%;
+  min-height: 44px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+  color: var(--ink);
+  font: inherit;
+  text-decoration: none;
+}
+
+.lab-pages .top-search-page .sheet-list :is(a, button):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 @media (max-width: 760px) {
   .top-search-page .search-field { padding: 0.7rem 1rem; }
   .top-search-page .search-section { margin-bottom: 1rem; }

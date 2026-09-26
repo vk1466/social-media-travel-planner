@@ -128,6 +128,26 @@ html.top-tabs-active,
   padding-left: 16px;
   border-left: 4px solid var(--accent);
 }
+.lab-pages .page-heading-back {
+  margin-bottom: 6px;
+}
+.lab-pages .page-heading-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  text-decoration: none;
+  transition: color 140ms ease;
+}
+.lab-pages .page-heading-back-link:hover {
+  color: var(--accent);
+}
+.lab-pages .page-heading-back-link svg {
+  display: inline-block;
+  vertical-align: middle;
+}
 .lab-pages .eyebrow { margin: 0 0 10px; color: var(--accent); font: 700 var(--label)/1 var(--wf-font-body); letter-spacing: var(--tracking); text-transform: uppercase; }
 .lab-pages .page-heading h1 { margin: 0; font: 400 clamp(2.5rem, 4.5vw, 3.25rem)/0.94 var(--wf-font-headline); letter-spacing: -0.035em; }
 .lab-pages .page-heading-lede { max-width: 660px; margin: 5px 0 0; color: var(--muted); font-size: 0.9em; line-height: 1.4; }
@@ -760,6 +780,8 @@ html.top-tabs-active,
   margin-bottom: 12px;
 }
 .lab-pages .refresh-row { display: flex; align-items: center; gap: 8px; margin: 8px 0 16px; font-size: 12px; color: var(--muted); }
+.lab-pages .advanced-options { margin: 8px 0 14px; color: var(--muted); font-size: 12px; }
+.lab-pages .advanced-options summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; color: var(--ink); font-weight: 700; }
 .lab-pages .inline-errors { color: var(--accent); font-size: 12px; }
 .lab-pages .job-list { display: grid; gap: 8px; margin-top: 24px; }
 .lab-pages .job-list article {
@@ -829,7 +851,7 @@ html.top-tabs-active,
 .lab-pages .queue-actions button,
 .lab-pages .draft-list button,
 .lab-pages .job-list button {
-  min-height: 34px;
+  min-height: 44px;
   padding: 0 12px;
   border: 1px solid var(--line);
   border-radius: 999px;
@@ -860,6 +882,12 @@ html.top-tabs-active,
 .lab-pages .job-card > header b { font-size: 13px; }
 .lab-pages .job-card > header span,
 .lab-pages .job-card time { color: var(--muted); font-size: 10px; }
+.lab-pages .job-card > header .job-progress-label { color: var(--ink); font-weight: 700; }
+.lab-pages .job-card progress { width: min(220px, 100%); height: 7px; accent-color: var(--accent); }
+.lab-pages .completed-history > summary { list-style: none; cursor: pointer; }
+.lab-pages .completed-history > summary::-webkit-details-marker { display: none; }
+.lab-pages .completed-history > summary::before { content: "＋"; margin-right: 9px; color: var(--accent); font-size: 18px; }
+.lab-pages .completed-history[open] > summary::before { content: "−"; }
 .lab-pages .job-card .job-list { margin-top: 10px; }
 .lab-pages .job-card .job-list article { grid-template-columns: 78px minmax(0, 1fr) auto; }
 .lab-pages .job-card .job-list small { grid-column: 2 / 4; color: var(--accent); }
@@ -923,7 +951,7 @@ html.top-tabs-active,
 .lab-pages .sheet-steps li { margin-bottom: 10px; font-size: 14px; line-height: 1.5; }
 .lab-pages .sheet-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 22px; }
 .lab-pages .sheet-actions a, .lab-pages .sheet-actions button {
-  min-height: 38px;
+  min-height: 44px;
   display: inline-flex;
   align-items: center;
   padding: 0 14px;
@@ -1106,7 +1134,8 @@ html.top-tabs-active,
   .lab-pages .top-search-page .jump-links a { padding: 6px 10px; border: 1px solid var(--line); border-radius: 999px; background: var(--panel); }
   .lab-pages .top-search-page .sheet-list { padding-left: 0; list-style: none; }
   .lab-pages .top-search-page .sheet-list li { border-bottom: 1px solid var(--line); }
-  .lab-pages .top-search-page .sheet-list a { display: flex; justify-content: space-between; gap: 10px; padding: 12px 0; }
+  .lab-pages .top-search-page .sheet-list a,
+  .lab-pages .top-search-page .sheet-list button { display: flex; width: 100%; min-height: 44px; justify-content: space-between; align-items: center; gap: 10px; padding: 12px 0; color: inherit; font: inherit; }
   .lab-pages .top-add-page .processing-layout { gap: 12px; }
   .lab-pages .top-add-page .queue-panel { padding: 16px; border-radius: 16px; }
   .lab-pages .top-add-page .queue-panel > h2 { font-size: 25px; }

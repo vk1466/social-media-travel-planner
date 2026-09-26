@@ -74,6 +74,7 @@ export function RecipeCard({ item, onOpen }: RecipeCardProps): JSX.Element {
       imageUrl={thumbnail && !imageFailed ? thumbnail : null}
       onOpen={onOpen}
       ariaLabel={`Open full recipe for ${title}`}
+      aspectRatio="4 / 5"
     />
   );
 }

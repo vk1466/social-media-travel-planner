@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { Link } from "react-router-dom";
 
 import { PlatformMenu } from "./library";
 
@@ -18,6 +19,7 @@ export function PageHeading({
   aside,
   count,
   platformFilter = true,
+  backLink,
 }: {
   kicker: string;
   title: string;
@@ -27,12 +29,23 @@ export function PageHeading({
   count?: { value: number | string; label: string };
   /** Source-aware pages inherit the shared app switcher; opt out for unrelated workflows. */
   platformFilter?: boolean;
+  backLink?: { to: string; label: string };
 }) {
   const hasActions = platformFilter || aside || action || count;
 
   return (
     <header className="page-heading action-rail">
       <div className="page-heading-copy">
+        {backLink ? (
+          <nav className="page-heading-back" aria-label="Back navigation">
+            <Link to={backLink.to} className="page-heading-back-link">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="m15 18-6-6 6-6" />
+              </svg>
+              <span>{backLink.label}</span>
+            </Link>
+          </nav>
+        ) : null}
         <p className="eyebrow">{kicker}</p>
         <h1>{title}</h1>
         <p className="page-heading-lede">{lede}</p>

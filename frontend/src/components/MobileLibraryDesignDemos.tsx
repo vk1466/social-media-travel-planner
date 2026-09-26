@@ -77,7 +77,7 @@ function Phone({ demo, index }: { demo: Demo; index: number }) {
 }
 
 export function MobileLibraryDesignDemos() {
-  return <div className="mld-page"><header className="mld-intro"><a href="/travel">← Back to Travel</a><p className="mld-eyebrow">Mobile-only design gallery</p><h1>Ten smaller ways into the atlas.</h1><p>The selected editorial category rail now shapes the mobile app while preserving Wanderfile’s cream paper, forest ink, coral signal, and editorial serif. Desktop layouts above 760px stay unchanged.</p></header><div className="mld-grid">{demos.map((demo, index) => <Phone key={demo.title} demo={demo} index={index} />)}</div></div>;
+  return <div className="mld-page"><header className="mld-intro"><div style={{ display: "flex", gap: "12px", alignItems: "center" }}><a href="/">← Home</a><span>·</span><a href="/travel">Travel</a></div><p className="mld-eyebrow">Mobile-only design gallery</p><h1>Ten smaller ways into the atlas.</h1><p>The selected editorial category rail now shapes the mobile app while preserving Wanderfile’s cream paper, forest ink, coral signal, and editorial serif. Desktop layouts above 760px stay unchanged.</p></header><div className="mld-grid">{demos.map((demo, index) => <Phone key={demo.title} demo={demo} index={index} />)}</div></div>;
 }
 
 export default MobileLibraryDesignDemos;

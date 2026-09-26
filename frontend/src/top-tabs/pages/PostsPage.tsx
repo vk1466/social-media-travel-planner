@@ -11,6 +11,7 @@ import {
 } from "../../api";
 import { categoryLabel } from "../../categoryLabels";
 import { CoverCard } from "../../components/CoverCard";
+import { MasonryGrid, postAspectRatio, postAspectRatioValue } from "../../components/MasonryGrid";
 import {
   contentCategoryTabs,
   effectiveContentCategory,
@@ -70,6 +71,7 @@ export function PostsPage({
   const [facetKeys, setFacetKeys] = useState<string[]>([]);
   const [selected, setSelected] = useState<SavedPost | null>(null);
   const [visitedIds, setVisitedIds] = useState<Set<string>>(new Set());
+  const [forceTouchMode, setForceTouchMode] = useState(false);
   const [monthKey, setMonthKey] = useState<string | null>(null);
   const monthIndexRef = useRef<HTMLElement>(null);
   const monthKeyRef = useRef<string | null>(null);
@@ -279,6 +281,7 @@ export function PostsPage({
   return (
     <>
       <PageHeading
+        backLink={{ to: "/", label: "Home" }}
         kicker="Your inspiration library"
         title="Saved posts"
         lede={`${posts.length} ${posts.length === 1 ? "idea" : "ideas"} ready to revisit.`}
@@ -327,6 +330,21 @@ export function PostsPage({
               ]
             : []),
         ]}
+        trailing={
+          <button
+            type="button"
+            className={`wf-touch-toggle-btn ${forceTouchMode ? "is-active" : ""}`}
+            onClick={() => setForceTouchMode((value) => !value)}
+            title={
+              forceTouchMode
+                ? "Touch Mode is ON: Hover is disabled; tap card to reveal metadata, second tap to open"
+                : "Simulate mobile touch mode without a touch device"
+            }
+            aria-pressed={forceTouchMode}
+          >
+            📱 {forceTouchMode ? "Touch Mode: ON" : "Simulate Touch"}
+          </button>
+        }
       />
       {secondLevel.pills.length > 0 ? (
         <FilterPills
@@ -409,16 +427,20 @@ export function PostsPage({
                 </span>
               </p>
             )}
-            <div className="cover-grid">
-              {activePeriod.posts.map((post) => (
+            <MasonryGrid
+              items={activePeriod.posts}
+              getItemKey={(p) => p.post_id}
+              getItemAspectRatioValue={(post) => postAspectRatioValue(post, contentCategory)}
+              renderItem={(post) => (
                 <PostMediaCard
-                  key={post.post_id}
                   post={post}
                   dateMode={dateMode}
                   onOpen={openPost}
+                  forceTouchMode={forceTouchMode}
+                  contentCategory={contentCategory}
                 />
-              ))}
-            </div>
+              )}
+            />
           </div>
         </div>
       )}
@@ -432,6 +454,20 @@ export function PostsPage({
             onDeleted();
             navigate(`${basePath}/posts`);
           }}
+          onPrevPost={
+            (() => {
+              const idx = activePeriod.posts.findIndex((p) => p.post_id === selected.post_id);
+              return idx > 0 ? () => setSelected(activePeriod.posts[idx - 1]) : undefined;
+            })()
+          }
+          onNextPost={
+            (() => {
+              const idx = activePeriod.posts.findIndex((p) => p.post_id === selected.post_id);
+              return idx >= 0 && idx < activePeriod.posts.length - 1
+                ? () => setSelected(activePeriod.posts[idx + 1])
+                : undefined;
+            })()
+          }
         />
       ) : null}
     </>
@@ -720,10 +756,14 @@ export function PostMediaCard({
   post,
   dateMode = "saved",
   onOpen,
+  forceTouchMode = false,
+  contentCategory,
 }: {
   post: SavedPost;
   dateMode?: DateMode;
   onOpen: (post: SavedPost) => void;
+  forceTouchMode?: boolean;
+  contentCategory?: string;
 }) {
   const handle = post.author_handle?.trim();
   const dateRaw = dateMode === "posted" ? post.posted_at : post.fetched_at ?? post.posted_at;
@@ -738,6 +778,8 @@ export function PostMediaCard({
       imageUrl={proxiedMediaUrl(post.thumbnail_url)}
       onOpen={() => onOpen(post)}
       ariaLabel={`Open post ${postTitle(post)}`}
+      aspectRatio={postAspectRatio(post, contentCategory)}
+      forceTouchMode={forceTouchMode}
     />
   );
 }
@@ -747,11 +789,15 @@ export function PostDetail({
   placeNames: _placeNames,
   onClose,
   onDeleted,
+  onPrevPost,
+  onNextPost,
 }: {
   post: SavedPost;
   placeNames?: Record<string, string>;
   onClose: () => void;
   onDeleted: () => void;
+  onPrevPost?: () => void;
+  onNextPost?: () => void;
 }) {
   const navigate = useNavigate();
   const { basePath } = useLabTheme();
@@ -768,6 +814,8 @@ export function PostDetail({
         onClose();
         navigate(`${basePath}/travel/${placeId}`);
       }}
+      onPrevPost={onPrevPost}
+      onNextPost={onNextPost}
     />
   );
 }

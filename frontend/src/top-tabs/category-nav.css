@@ -15,52 +15,52 @@
 
 .category-nav-card {
   flex: 1 1 0;
-  min-width: 160px;
+  min-width: 120px;
   scroll-snap-align: start;
   display: grid;
   grid-template-columns: auto 1fr auto;
   align-items: center;
   gap: 10px;
-  min-height: 96px;
-  padding: 14px;
+  height: 40px;
+  min-height: 40px;
+  padding: 6px 14px;
   overflow: hidden;
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: 12px;
   background: var(--panel);
   color: inherit;
   text-align: left;
   text-decoration: none;
+  transition: all 150ms ease;
 }
 
 .category-nav-logo {
   display: grid;
   place-items: center;
-  width: 28px;
-  height: 28px;
+  width: 20px;
+  height: 20px;
   color: var(--muted);
 }
 
 .category-nav-logo svg {
-  width: 24px;
-  height: 24px;
+  width: 17px;
+  height: 17px;
 }
 
 .category-nav-card b {
   display: block;
-  font-size: 16px;
+  font-size: 13.5px;
   font-weight: 600;
-}
-
-.category-nav-card small {
-  display: block;
-  margin-top: 3px;
-  color: var(--muted);
-  font-size: 12px;
+  white-space: nowrap;
 }
 
 .category-nav-card em {
-  font: 500 12px ui-monospace, SFMono-Regular, Menlo, monospace;
+  font: 500 11px ui-monospace, SFMono-Regular, Menlo, monospace;
   font-style: normal;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--muted);
 }
 
 .category-nav-card.is-on {
@@ -69,14 +69,18 @@
   color: var(--on-accent);
 }
 
-.category-nav-card.is-on .category-nav-logo,
-.category-nav-card.is-on small {
-  color: color-mix(in srgb, var(--on-accent) 70%, var(--panel));
+.category-nav-card.is-on .category-nav-logo {
+  color: var(--on-accent);
+}
+
+.category-nav-card.is-on em {
+  background: rgba(255, 255, 255, 0.25);
+  color: var(--on-accent);
 }
 
 @media (max-width: 760px) {
   .category-nav {
-    justify-content: safe center;
+    justify-content: flex-start;
     gap: 8px;
     margin-bottom: 14px;
     padding: 2px 0 8px;
@@ -85,74 +89,66 @@
     touch-action: pan-x;
   }
 
-  /* Center the group when it fits; auto margins collapse when it overflows so the first card stays reachable. */
-  .category-nav-card:first-child {
-    margin-inline-start: auto;
-  }
-
-  .category-nav-card:last-child {
-    margin-inline-end: auto;
-  }
-
   .category-nav::-webkit-scrollbar {
     display: none;
   }
 
   .category-nav-card {
-    position: relative;
     flex: 0 0 auto;
-    width: 60px;
-    min-width: 60px;
-    min-height: 60px;
-    padding: 7px 4px 6px;
-    gap: 2px;
-    grid-template-columns: 1fr;
-    grid-template-rows: 28px auto;
-    justify-items: center;
-    border-radius: 14px;
-    text-align: center;
-    scroll-snap-align: start;
-  }
-
-  .category-nav-card > span { min-width: 0; }
-
-  .category-nav-card small {
-    display: none;
+    min-width: 110px;
+    height: 44px;
+    min-height: 44px;
+    padding: 6px 12px;
+    border-radius: 12px;
+    grid-template-columns: auto 1fr auto;
+    gap: 8px;
   }
 
   .category-nav-card b {
-    font-size: 10px;
-    line-height: 1.1;
+    font-size: 13px;
   }
 
   .category-nav-card em {
-    position: absolute;
-    top: 4px;
-    right: 4px;
-    min-width: 15px;
-    padding: 1px 3px;
-    border-radius: 999px;
-    background: var(--bg);
-    color: var(--muted);
-    font-size: 9px;
+    font-size: 10.5px;
+    padding: 2px 6px;
+  }
+}
+
+@media (max-width: 600px) {
+  .lab-pages .lab-utility .invisible-feed-nav-btn {
+    width: 44px;
+    min-width: 44px;
+    justify-content: center;
+    padding: 0;
   }
 
-  .category-nav-card.is-on {
-    background: var(--accent-fill);
-    border-color: var(--accent);
-    color: var(--on-accent);
-    box-shadow: none;
+  .lab-pages .lab-utility .invisible-feed-nav-label {
+    display: none;
   }
+}
+.lab-pages .lab-utility .invisible-feed-nav-btn {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 160ms ease, border-color 160ms ease;
+}
 
-  .category-nav-card.is-on em { background: var(--panel); color: var(--on-accent); }
+.lab-pages .lab-utility .invisible-feed-nav-btn:hover {
+  background: var(--soft);
+  color: var(--ink);
+}
 
-  .category-nav-logo {
-    width: 22px;
-    height: 22px;
-  }
-
-  .category-nav-logo svg {
-    width: 20px;
-    height: 20px;
-  }
+.lab-pages .lab-utility .invisible-feed-nav-btn[aria-current="page"] {
+  border-color: var(--accent);
+  color: var(--ink);
 }

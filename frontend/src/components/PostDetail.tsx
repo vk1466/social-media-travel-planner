@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 import { fetchPlaceDetail, fetchPost, nativePostId, type Place, type SavedPost } from "../api";
 import { mappablePlaces } from "../placeMapUtils";
@@ -328,6 +329,7 @@ export function PostDetail({
   onNextPost,
   onPostUpdated,
 }: PostDetailProps) {
+  const navigate = useNavigate();
   const [post, setPost] = useState(initialPost);
   const [linkedPlaces, setLinkedPlaces] = useState<LinkedPlace[]>([]);
   const [activeItemIndex, setActiveItemIndex] = useState(0);
@@ -362,6 +364,29 @@ export function PostDetail({
       cancelled = true;
     };
   }, [initialPost.platform, initialPost.post_id, initialPost]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: globalThis.KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+      if (e.key === "ArrowLeft" && onPrevPost) {
+        e.preventDefault();
+        onPrevPost();
+      } else if (e.key === "ArrowRight" && onNextPost) {
+        e.preventDefault();
+        onNextPost();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onPrevPost, onNextPost]);
 
   useEffect(() => {
     let cancelled = false;
@@ -710,6 +735,21 @@ export function PostDetail({
           )}
         </div>
         <div className="post-deck-header-actions">
+          <button
+            type="button"
+            className="icon-button post-deck-home-btn"
+            aria-label="Go to Home view"
+            title="Go to Home view"
+            onClick={() => {
+              onClose();
+              navigate("/");
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+              <polyline points="9 22 9 12 15 12 15 22" />
+            </svg>
+          </button>
           <button
             type="button"
             className="post-deck-delete-btn"

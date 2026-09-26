@@ -1,7 +1,9 @@
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { useRouter } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  Pressable,
   RefreshControl,
   SectionList,
   StyleSheet,
@@ -18,7 +20,8 @@ import { contentCategoryTabs, effectiveContentCategory } from "@/src/contentCate
 import { useLibrary } from "@/src/context/LibraryContext";
 import { postTitle } from "@/src/display";
 import { postsForPlatforms, useLibraryPlatform } from "@/src/libraryPlatform";
-import { colors, spacing } from "@/src/theme";
+import { appHref } from "@/src/nav";
+import { colors, shadow, spacing } from "@/src/theme";
 
 type DateMode = "saved" | "posted";
 type PostGridRow = { key: string; posts: SavedPost[] };
@@ -244,7 +247,7 @@ export default function PostsScreen() {
         ListEmptyComponent={
           <EmptyState
             title="No posts yet"
-            body="Tap + to paste Instagram, TikTok, YouTube, or web links — or share a reel to Wanderfile."
+            body="Tap Save to paste Instagram, TikTok, YouTube, or web links — or share a reel to Wanderfile."
           />
         }
         renderSectionHeader={({ section }) => <Text style={styles.section}>{section.title}</Text>}
@@ -263,6 +266,15 @@ export default function PostsScreen() {
           </View>
         )}
       />
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Save links"
+        onPress={() => router.push(appHref("/(app)/ingest"))}
+        style={({ pressed }) => [styles.saveAction, pressed && styles.saveActionPressed]}
+      >
+        <Ionicons name="add" size={22} color={colors.onFill} />
+        <Text style={styles.saveActionLabel}>Save</Text>
+      </Pressable>
     </View>
   );
 }
@@ -299,7 +311,7 @@ function postFacetKeys(
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   centered: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.bg },
-  list: { paddingHorizontal: spacing.md, paddingBottom: spacing.md, flexGrow: 1 },
+  list: { paddingHorizontal: spacing.md, paddingBottom: 88, flexGrow: 1 },
   chrome: { paddingHorizontal: spacing.md, paddingTop: spacing.sm },
   section: {
     backgroundColor: colors.bg,
@@ -319,4 +331,21 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
   },
+  saveAction: {
+    position: "absolute",
+    right: spacing.md,
+    bottom: spacing.md,
+    minHeight: 56,
+    minWidth: 104,
+    paddingHorizontal: spacing.md,
+    borderRadius: 28,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.xs,
+    backgroundColor: colors.brand,
+    ...shadow(3),
+  },
+  saveActionPressed: { opacity: 0.8 },
+  saveActionLabel: { color: colors.onFill, fontSize: 16, fontWeight: "800" },
 });

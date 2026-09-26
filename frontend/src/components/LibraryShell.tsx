@@ -198,6 +198,7 @@ export function LibraryShell({
   return (
     <div className="lib-shell" data-mode={mode}>
       <PageHeading
+        backLink={{ to: "/", label: "Home" }}
         kicker={copy.eyebrow}
         title={copy.title}
         lede={copy.lede}

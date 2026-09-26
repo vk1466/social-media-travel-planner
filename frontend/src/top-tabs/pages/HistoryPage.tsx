@@ -33,6 +33,7 @@ export function HistoryPage({
   return (
     <div className="top-history-page">
       <PageHeading
+        backLink={{ to: "/", label: "Home" }}
         kicker="Places you’ve been"
         title="Your visits"
         lede="Keep a personal record of places you’ve visited and the memories connected to them."

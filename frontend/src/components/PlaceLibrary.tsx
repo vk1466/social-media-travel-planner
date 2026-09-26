@@ -255,6 +255,14 @@ export function PlaceLibrary({
 
   const hierarchyCrumbs = (
     <nav className={omitChrome ? "lib-shell-crumbs" : "wf-browse-context"} aria-label="Hierarchy">
+      <span>
+        <Link to="/" className="wf-crumb-home" title="Go to home view">
+          Home
+        </Link>
+      </span>
+      <span className="wf-crumb-sep" aria-hidden="true">
+        /
+      </span>
       {trail.map((node, index) => (
         <span key={node.key}>
           {index > 0 && (
@@ -466,7 +474,7 @@ export function PlaceLibrary({
                 onOpenPlace={(placeId) => navigate(placeHref(placeId))}
               />
             ) : (
-              <div className="cover-grid">
+              <div className="cover-grid place-covers-grid">
                 {children.map((node) => {
                   const isPlace = node.level === "place";
                   return (
@@ -490,6 +498,7 @@ export function PlaceLibrary({
                           ? `Open place: ${node.name}`
                           : `Explore ${node.total} places: ${node.name}`
                       }
+                      aspectRatio="16 / 9"
                     />
                   );
                 })}

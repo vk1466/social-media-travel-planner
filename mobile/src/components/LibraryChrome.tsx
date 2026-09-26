@@ -198,7 +198,7 @@ const styles = StyleSheet.create({
   search: {
     flex: 1,
     minWidth: 0,
-    height: 34,
+    height: 44,
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
@@ -231,8 +231,8 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   toggle: {
-    width: 34,
-    height: 34,
+    width: 44,
+    height: 44,
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: 9,
@@ -280,7 +280,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   segBtn: {
-    minHeight: 34,
+    minHeight: 44,
     paddingHorizontal: 11,
     borderRadius: 8,
     justifyContent: "center",

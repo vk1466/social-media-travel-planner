@@ -380,6 +380,7 @@ export function FlipCollapsedVariations() {
   return (
     <div className="flip-demo-page">
       <div className="flip-demo-intro">
+        <a href="/" style={{ color: "var(--accent, #6366f1)", textDecoration: "none", display: "inline-block", marginBottom: "8px", fontWeight: 600 }}>← Home</a>
         <p className="flip-demo-kicker">Collapsed snap · detail placement</p>
         <h1>Where the words sit</h1>
         <p>

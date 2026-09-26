@@ -75,6 +75,7 @@ export function MovieCard({ movie, onSelect, onPlayTrailer }: MovieCardProps): J
       imageUrl={displayPoster}
       onOpen={() => onSelect(movie)}
       ariaLabel={`View details for ${movie.title}`}
+      aspectRatio="2 / 3"
       badge={
         movie.trailer_youtube_key && onPlayTrailer ? (
           <button

@@ -24,6 +24,7 @@ export function AddLinkSheet({
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [text, setText] = useState("");
   const [refresh, setRefresh] = useState(false);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [job, setJob] = useState<Job | null>(null);
@@ -103,15 +104,18 @@ export function AddLinkSheet({
       {parsed.invalid.length > 0 ? (
         <p className="inline-errors">Not a valid URL: {parsed.invalid.join(", ")}</p>
       ) : null}
-      <label className="refresh-row">
-        <input
-          type="checkbox"
-          checked={refresh}
-          onChange={(event) => setRefresh(event.target.checked)}
-          disabled={starting}
-        />
-        Re-fetch if already saved
-      </label>
+      <details className="advanced-options" open={advancedOpen} onToggle={(event) => setAdvancedOpen(event.currentTarget.open)}>
+        <summary>Advanced options</summary>
+        <label className="refresh-row">
+          <input
+            type="checkbox"
+            checked={refresh}
+            onChange={(event) => setRefresh(event.target.checked)}
+            disabled={starting}
+          />
+          Re-fetch if already saved
+        </label>
+      </details>
       <div className="sheet-actions">
         <button
           type="button"
@@ -133,7 +137,7 @@ export function AddLinkSheet({
         >
           {starting
             ? "Adding…"
-            : `Add ${parsed.valid.length} link${parsed.valid.length === 1 ? "" : "s"} to queue`}
+            : `Save ${parsed.valid.length} link${parsed.valid.length === 1 ? "" : "s"} to queue`}
         </button>
         <button
           type="button"

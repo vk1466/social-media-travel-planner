@@ -59,24 +59,27 @@ export function Shell({
   const homeTo = TOP_TABS_BASE || "/";
   const [addOpen, setAddOpen] = useState(false);
   const tabKeys = useMemo(() => {
-    const hasAnyEntries = CATEGORY_NAV_ITEMS.some((item) => Number(counts[item.key] ?? 0) > 0);
-    const items =
-      loading && !hasAnyEntries
-        ? CATEGORY_NAV_ITEMS
-        : CATEGORY_NAV_ITEMS.filter((item) => Number(counts[item.key] ?? 0) > 0);
-    return items.map((item) => item.key);
+    return CATEGORY_NAV_ITEMS.filter(
+      (item) => item.key === "home" || loading || Number(counts[item.key] ?? 0) > 0,
+    ).map((item) => item.key);
   }, [counts, loading]);
-  const tabIndex = tabKeys.findIndex((key) => location.pathname === `${TOP_TABS_BASE}/${key}` || location.pathname === `/${key}`);
+  const isHome =
+    location.pathname === "/" ||
+    location.pathname === TOP_TABS_BASE ||
+    location.pathname === `${TOP_TABS_BASE}/`;
+  const tabIndex = isHome
+    ? tabKeys.indexOf("home")
+    : tabKeys.findIndex((key) => key !== "home" && (location.pathname === `${TOP_TABS_BASE}/${key}` || location.pathname === `/${key}`));
 
   useHorizontalSwipe(pageRef, {
     enabled: tabIndex >= 0 && !addOpen,
     onLeft: () => {
       const next = tabKeys[tabIndex + 1];
-      if (next) navigate(`${TOP_TABS_BASE}/${next}`);
+      if (next) navigate(next === "home" ? (TOP_TABS_BASE || "/") : `${TOP_TABS_BASE}/${next}`);
     },
     onRight: () => {
       const previous = tabKeys[tabIndex - 1];
-      if (previous) navigate(`${TOP_TABS_BASE}/${previous}`);
+      if (previous) navigate(previous === "home" ? (TOP_TABS_BASE || "/") : `${TOP_TABS_BASE}/${previous}`);
     },
   });
 
@@ -99,6 +102,13 @@ export function Shell({
                 Admin
               </NavLink>
             ) : null}
+            <NavLink
+              to="/invisible-feed"
+              className="classic-link invisible-feed-nav-btn"
+            >
+              <span aria-hidden="true">✨</span>
+              <span className="invisible-feed-nav-label">Invisible Feed</span>
+            </NavLink>
             <button type="button" aria-label="Search" onClick={() => navigate("/search")}>
               {icon("search")}
             </button>

@@ -160,6 +160,8 @@ function AppRoutes({ authReady }: { authReady: boolean }) {
       <Route path="/dev/travel-view-toggle" element={<TravelViewToggleDemos />} />
       <Route path="/dev/travel-filter-designs" element={<TravelFilterDesignDemos />} />
       <Route path="/dev/mobile-library-designs" element={<MobileLibraryDesignDemos />} />
+      <Route path="/dev/invisible-feed" element={<Navigate to="/invisible-feed" replace />} />
+      <Route path="/dev/feed" element={<Navigate to="/invisible-feed" replace />} />
       <Route
         path="/*"
         element={

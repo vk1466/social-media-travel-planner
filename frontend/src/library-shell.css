@@ -357,6 +357,19 @@
   padding: 0.2rem 0.35rem;
 }
 
+.lib-shell-crumbs a.wf-crumb-home {
+  color: var(--wf-copy-muted, inherit);
+  text-decoration: none;
+  font-weight: 600;
+  padding: 0.2rem 0.35rem;
+  transition: color 150ms ease;
+}
+
+.lib-shell-crumbs a.wf-crumb-home:hover {
+  color: var(--wf-copy);
+  text-decoration: underline;
+}
+
 .lib-shell-crumbs button.is-current,
 .lib-shell-crumbs button:hover {
   color: var(--wf-copy);

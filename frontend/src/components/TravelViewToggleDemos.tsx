@@ -125,7 +125,11 @@ export function TravelViewToggleDemos() {
   return (
     <main className="tvt-demo-page">
       <header className="tvt-intro">
-        <a href="/travel">← Travel</a>
+        <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+          <a href="/">← Home</a>
+          <span>·</span>
+          <a href="/travel">Travel</a>
+        </div>
         <p>View switch explorations</p>
         <h1>Map or covers?</h1>
         <span>Ten interactive directions. Switch each one to compare its placement and feel.</span>

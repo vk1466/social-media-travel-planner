@@ -1,7 +1,7 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Tabs, usePathname, useRouter } from "expo-router";
 import { useEffect, useMemo } from "react";
-import { Pressable } from "react-native";
+import { Pressable, Text } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { postsOfCategory } from "@/src/contentCategory";
@@ -16,35 +16,41 @@ function HeaderButton({
   color,
   onPress,
   side,
+  label,
 }: {
   icon: IconName;
   color: string;
   onPress: () => void;
   side: "left" | "right";
+  label?: string;
 }) {
   return (
     <Pressable
       onPress={onPress}
       hitSlop={12}
       accessibilityRole="button"
+      accessibilityLabel={icon === "add" ? "Save links" : icon === "search" ? "Search your library" : "Settings"}
       style={({ pressed }) => [
         {
           marginLeft: side === "left" ? 12 : 4,
           marginRight: side === "right" ? 12 : 4,
-          height: 36,
-          width: 36,
-          borderRadius: 18,
+          height: 44,
+          width: label ? 76 : 44,
+          borderRadius: 22,
           alignItems: "center",
           justifyContent: "center",
-          backgroundColor: colors.surface,
+          backgroundColor: label ? colors.brand : colors.surface,
           borderWidth: 1,
-          borderColor: colors.border,
+          borderColor: label ? colors.brand : colors.border,
+          flexDirection: "row",
+          gap: 4,
           opacity: pressed ? 0.7 : 1,
         },
         shadow(1),
       ]}
     >
       <Ionicons name={icon} size={20} color={color} />
+      {label ? <Text style={{ color, fontSize: 13, fontWeight: "800" }}>{label}</Text> : null}
     </Pressable>
   );
 }
@@ -106,7 +112,8 @@ export default function TabsLayout() {
         headerLeft: () => (
           <HeaderButton
             icon="add"
-            color={colors.accent}
+            color={colors.onFill}
+            label="Save"
             side="left"
             onPress={() => router.push(appHref("/(app)/ingest"))}
           />
@@ -133,6 +140,7 @@ export default function TabsLayout() {
         name="posts"
         options={{
           title: "Posts",
+          headerLeft: () => null,
           href: tabHref(counts.posts, true),
           tabBarIcon: ({ color, size }) => <Ionicons name="bookmark" size={size} color={color} />,
         }}

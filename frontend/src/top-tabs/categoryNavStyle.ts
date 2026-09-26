@@ -1,10 +1,11 @@
-export type CategoryNavKey = "posts" | "travel" | "food" | "movies" | "history";
+export type CategoryNavKey = "home" | "posts" | "travel" | "food" | "movies" | "history";
 
 export const CATEGORY_NAV_ITEMS: {
   key: CategoryNavKey;
   label: string;
   hint: string;
 }[] = [
+  { key: "home", label: "Home", hint: "Overview" },
   { key: "posts", label: "Posts", hint: "All saves" },
   { key: "travel", label: "Places", hint: "From your saves" },
   { key: "food", label: "Food", hint: "Recipes from saves" },

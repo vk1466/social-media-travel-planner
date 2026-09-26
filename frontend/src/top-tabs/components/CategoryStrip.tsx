@@ -8,6 +8,12 @@ import "../category-nav.css";
 
 /** Category marks drawn from Lucide (ISC) — https://lucide.dev */
 const CATEGORY_LOGOS: Record<CategoryNavKey, ReactNode> = {
+  home: (
+    <>
+      <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+      <polyline points="9 22 9 12 15 12 15 22" />
+    </>
+  ),
   posts: (
     <>
       <path d="m22 11-1.296-1.296a2.4 2.4 0 0 0-3.408 0L11 16" />
@@ -71,15 +77,21 @@ export function CategoryStrip({
   const { basePath } = useLabTheme();
   const location = useLocation();
   const navRef = useRef<HTMLElement>(null);
-  const hasAnyEntries = CATEGORY_NAV_ITEMS.some((item) => countFor(counts, item.key) > 0);
-  const visibleItems =
-    loading && !hasAnyEntries
-      ? CATEGORY_NAV_ITEMS
-      : CATEGORY_NAV_ITEMS.filter((item) => countFor(counts, item.key) > 0);
-  const activeKey = visibleItems.find((item) => {
-    const to = `${basePath}/${item.key}`;
-    return location.pathname === to || location.pathname.startsWith(`${to}/`);
-  })?.key;
+  const homePath = basePath || "/";
+  const isHome =
+    location.pathname === "/" ||
+    location.pathname === basePath ||
+    location.pathname === `${basePath}/`;
+  const visibleItems = CATEGORY_NAV_ITEMS.filter(
+    (item) => item.key === "home" || loading || countFor(counts, item.key) > 0,
+  );
+  const activeKey = isHome
+    ? "home"
+    : visibleItems.find((item) => {
+        if (item.key === "home") return false;
+        const to = `${basePath}/${item.key}`;
+        return location.pathname === to || location.pathname.startsWith(`${to}/`);
+      })?.key;
 
   useEffect(() => {
     const active = navRef.current?.querySelector<HTMLElement>(".is-on");
@@ -96,7 +108,7 @@ export function CategoryStrip({
   return (
     <nav ref={navRef} className="category-nav" aria-label="Library type">
       {visibleItems.map((item) => {
-        const to = `${basePath}/${item.key}`;
+        const to = item.key === "home" ? homePath : `${basePath}/${item.key}`;
         const active = item.key === activeKey;
         const count = countFor(counts, item.key);
         return (
@@ -109,7 +121,6 @@ export function CategoryStrip({
             <CategoryLogo name={item.key} />
             <span>
               <b>{item.label}</b>
-              <small>{item.hint}</small>
             </span>
             <em>{count}</em>
           </NavLink>

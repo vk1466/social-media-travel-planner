@@ -1,0 +1,292 @@
+/* ==========================================================================
+   Invisible Feed Styles
+   Zero-chrome masonry, natural aspect ratios, instant search & category chips
+   ========================================================================== */
+
+.invisible-feed-page {
+  width: 100%;
+  max-width: 1800px;
+  margin: 0 auto;
+  padding: 1.25rem 1.5rem 4rem;
+  box-sizing: border-box;
+}
+
+/* ── Top Toolbar: Header, Search, Simulate Touch ───────────────────────── */
+
+.invisible-feed-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.invisible-feed-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.invisible-feed-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.invisible-feed-home-link {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #94a3b8;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.55rem;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.15s ease;
+}
+
+.invisible-feed-home-link:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+.invisible-feed-title {
+  font-family: var(--wf-font-headline, inherit);
+  font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #ffffff;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.invisible-feed-subtitle {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.invisible-feed-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+/* ── Search Input ──────────────────────────────────────────────────────── */
+
+.invisible-feed-search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-width: 260px;
+  max-width: 420px;
+  flex: 1 1 auto;
+}
+
+.invisible-feed-search-icon {
+  position: absolute;
+  left: 0.85rem;
+  width: 16px;
+  height: 16px;
+  color: rgba(255, 255, 255, 0.45);
+  pointer-events: none;
+}
+
+.invisible-feed-search-input {
+  width: 100%;
+  padding: 0.55rem 2.2rem 0.55rem 2.35rem;
+  font-size: 0.88rem;
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 9999px;
+  outline: none;
+  transition: all 180ms ease;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.invisible-feed-search-input::placeholder {
+  color: rgba(255, 255, 255, 0.38);
+}
+
+.invisible-feed-search-input:focus {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--accent, #38bdf8);
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
+}
+
+.invisible-feed-search-clear {
+  position: absolute;
+  right: 0.75rem;
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  font-size: 0.85rem;
+  line-height: 1;
+}
+
+.invisible-feed-search-clear:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* ── Simulate Touch Button ─────────────────────────────────────────────── */
+
+.invisible-feed-touch-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.52rem 0.95rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.82);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 180ms ease;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.invisible-feed-touch-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.invisible-feed-touch-btn.is-active {
+  background: rgba(56, 189, 248, 0.18);
+  border-color: rgba(56, 189, 248, 0.5);
+  color: #38bdf8;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.25);
+}
+
+/* ── Category Filter Chips ─────────────────────────────────────────────── */
+
+.invisible-feed-chips {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding-bottom: 0.25rem;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.invisible-feed-chips::-webkit-scrollbar {
+  display: none;
+}
+
+.invisible-feed-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.42rem 0.9rem;
+  font-size: 0.82rem;
+  font-weight: 500;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.72);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 180ms cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+}
+
+.invisible-feed-chip:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.invisible-feed-chip.is-active {
+  background: #ffffff;
+  color: #0c0d0e;
+  border-color: #ffffff;
+  font-weight: 600;
+  box-shadow: 0 4px 14px rgba(255, 255, 255, 0.15);
+}
+
+.invisible-feed-chip-count {
+  display: inline-block;
+  padding: 0.1rem 0.4rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1.2;
+}
+
+.invisible-feed-chip.is-active .invisible-feed-chip-count {
+  background: rgba(0, 0, 0, 0.12);
+  color: #0c0d0e;
+}
+
+/* ── Feed Meta Bar ─────────────────────────────────────────────────────── */
+
+.invisible-feed-status-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* ── Empty State ───────────────────────────────────────────────────────── */
+
+.invisible-feed-empty {
+  text-align: center;
+  padding: 4rem 1rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.invisible-feed-empty h3 {
+  font-size: 1.25rem;
+  color: #ffffff;
+  margin-bottom: 0.5rem;
+}
+
+.invisible-feed-empty p {
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.invisible-feed-reset-btn {
+  padding: 0.45rem 1rem;
+  font-size: 0.82rem;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+}
+
+.invisible-feed-reset-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+@media (max-width: 760px) {
+  .invisible-feed-chip {
+    min-height: 44px;
+  }
+}

@@ -69,10 +69,21 @@ export function HomePage({
                 ? ` · ${continuePlace.source_post_ids.length} saves`
                 : ""}
             </p>
-            <Link to={`${basePath}/travel/${continuePlace.place_id}`}>View map →</Link>
+            <Link className="home-next-action" to={`${basePath}/travel/${continuePlace.place_id}`}>
+              Explore this place →
+            </Link>
           </div>
         </section>
-      ) : null}
+      ) : (
+        <section className="home-start" aria-labelledby="home-start-title">
+          <div>
+            <p className="eyebrow">Start with one idea</p>
+            <h2 id="home-start-title">Save a link to build your library</h2>
+            <p>Paste a post, video, or article. Wanderfile will organize it for you.</p>
+          </div>
+          <Link className="home-next-action" to={`${basePath}/add`}>Save a link →</Link>
+        </section>
+      )}
       {recentPosts.length > 0 ? (
         <section className="library-panel slim-panel home-recent">
           <div className="panel-heading">

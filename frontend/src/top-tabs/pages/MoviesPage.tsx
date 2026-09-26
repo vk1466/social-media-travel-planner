@@ -14,6 +14,7 @@ export function MoviesPage({ posts }: { posts: SavedPost[] }) {
   return (
     <div className="movie-library">
       <PageHeading
+        backLink={{ to: "/", label: "Home" }}
         kicker="Titles from your saves"
         title="What to watch next"
         lede="Keep films, series, and documentaries together, with streaming details and filming places when available."

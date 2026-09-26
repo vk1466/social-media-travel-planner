@@ -509,6 +509,7 @@ export function FlipDetailCardDemos() {
   return (
     <div className="flip-demo-page">
       <div className="flip-demo-intro">
+        <a href="/" style={{ color: "var(--accent, #6366f1)", textDecoration: "none", display: "inline-block", marginBottom: "8px", fontWeight: 600 }}>← Home</a>
         <p className="flip-demo-kicker">FlipDetailCard prototypes</p>
         <h1>Designs 1–5, live</h1>
         <p>

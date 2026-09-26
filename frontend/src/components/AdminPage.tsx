@@ -7,6 +7,7 @@ export function AdminPage() {
   return (
     <div className="grid gap-5 [&_.page-heading]:mb-0">
       <PageHeading
+        backLink={{ to: "/", label: "Home" }}
         kicker="Internal"
         title="Admin"
         lede="Tools for place pipeline validation."

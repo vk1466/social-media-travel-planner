@@ -22,6 +22,7 @@ export function LinkSubmitForm({
 }: LinkSubmitFormProps) {
   const [text, setText] = useState(initialText);
   const [refresh, setRefresh] = useState(false);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
   const parsed = useMemo(() => parseLinkLines(text), [text]);
 
   useEffect(() => {
@@ -58,21 +59,34 @@ export function LinkSubmitForm({
         <Text style={styles.count}>
           {parsed.valid.length} URL{parsed.valid.length === 1 ? "" : "s"}
         </Text>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityState={{ expanded: advancedOpen }}
+          onPress={() => setAdvancedOpen((open) => !open)}
+          style={styles.advancedToggle}
+        >
+          <Text style={styles.refreshLabel}>Advanced options</Text>
+          <Ionicons name={advancedOpen ? "chevron-up" : "chevron-down"} size={16} color={colors.muted} />
+        </Pressable>
+      </View>
+      {advancedOpen ? (
         <View style={styles.refreshRow}>
-          <Text style={styles.refreshLabel}>Re-fetch saved</Text>
+          <Text style={styles.refreshLabel}>Re-fetch if already saved</Text>
           <Switch
             value={refresh}
             onValueChange={setRefresh}
             disabled={disabled}
             trackColor={{ true: colors.brand }}
+            accessibilityLabel="Re-fetch links that are already saved"
           />
         </View>
-      </View>
+      ) : null}
       <Button
-        label="Save and organize"
+        label={`Save ${parsed.valid.length} link${parsed.valid.length === 1 ? "" : "s"} and organize`}
         icon="sparkles"
         disabled={disabled || parsed.valid.length === 0}
         onPress={() => onSubmit(parsed.valid, refresh)}
+        style={styles.submitButton}
       />
     </View>
   );
@@ -161,12 +175,24 @@ export function IngestProgress({
     return null;
   }
 
+  const processedCount = links.filter((link) => link.status !== "pending" && link.status !== "fetching").length;
+  const totalCount = links.length;
+
   return (
     <View style={styles.panel}>
       <View style={styles.progressHeader}>
         <View style={{ flex: 1 }}>
           <Text style={styles.title}>{title}</Text>
           {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+          <Text style={styles.progressCount}>{processedCount} of {totalCount} processed</Text>
+          <View
+            accessibilityRole="progressbar"
+            accessibilityLabel={`${processedCount} of ${totalCount} links processed`}
+            accessibilityValue={{ min: 0, max: totalCount, now: processedCount }}
+            style={styles.progressTrack}
+          >
+            <View style={[styles.progressFill, { width: `${totalCount ? (processedCount / totalCount) * 100 : 0}%` }]} />
+          </View>
         </View>
         {running ? (
           <View style={styles.runningBadge}>
@@ -260,6 +286,35 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
+  },
+  advancedToggle: {
+    minHeight: 44,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 7,
+  },
+  submitButton: {
+    minHeight: 54,
+    width: "100%",
+    marginTop: spacing.md,
+  },
+  progressCount: {
+    marginTop: 6,
+    color: colors.muted,
+    fontSize: 13,
+  },
+  progressTrack: {
+    height: 6,
+    marginTop: 7,
+    marginBottom: 8,
+    overflow: "hidden",
+    borderRadius: radius.pill,
+    backgroundColor: colors.border,
+  },
+  progressFill: {
+    height: "100%",
+    borderRadius: radius.pill,
+    backgroundColor: colors.brand,
   },
   refreshLabel: {
     color: colors.ink,

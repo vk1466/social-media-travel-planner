@@ -70,6 +70,7 @@
 }
 
 .post-deck-delete-btn,
+.post-deck-home-btn,
 .post-deck-close-btn {
   width: 28px;
   height: 28px;
@@ -84,6 +85,13 @@
   transition: all 0.15s ease;
   padding: 0;
   flex-shrink: 0;
+}
+
+.post-deck-home-btn:hover {
+  color: var(--accent, #6366f1);
+  background: rgba(255, 255, 255, 0.15);
+  border-color: var(--accent, rgba(255, 255, 255, 0.25));
+  transform: scale(1.04);
 }
 
 .post-deck-delete-btn:hover {

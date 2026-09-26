@@ -1,7 +1,8 @@
-import { Route, Routes, Navigate } from "react-router-dom";
+import { Route, Routes, Navigate, useLocation, Link } from "react-router-dom";
 
 import { type Place, type SavedPost, type VisitDetail } from "../api";
 import { AdminPage } from "../components/AdminPage";
+import { MasonrySkeletonGrid } from "../components/MasonryGrid";
 import { postsOfCategory } from "./display";
 import { AddPage } from "./pages/AddPage";
 import { FoodPage } from "./pages/FoodPage";
@@ -11,6 +12,7 @@ import { MoviesPage } from "./pages/MoviesPage";
 import { PostsPage } from "./pages/PostsPage";
 import { SearchPage } from "./pages/SearchPage";
 import { TravelPage } from "./pages/TravelPage";
+import { InvisibleFeedPage } from "./pages/InvisibleFeedPage";
 
 export function LabPagesRoutes({
   authReady,
@@ -29,9 +31,11 @@ export function LabPagesRoutes({
   onRefresh: () => void;
   isAdmin: boolean;
 }) {
+  const location = useLocation();
+  const isInvisibleFeed = location.pathname.replace(/\/+$/, "").endsWith("/invisible-feed");
   return (
     <>
-      {loading && posts.length === 0 ? <p className="empty-copy">Loading your library…</p> : null}
+      {loading && posts.length === 0 && !isInvisibleFeed ? <MasonrySkeletonGrid count={8} /> : null}
       <Routes>
         <Route
           index
@@ -88,6 +92,21 @@ export function LabPagesRoutes({
           element={<MoviesPage posts={postsOfCategory(posts, "movies")} />}
         />
         <Route
+          path="invisible-feed"
+          element={
+            <InvisibleFeedPage
+              posts={posts}
+              places={places}
+              loading={loading}
+              onRefresh={onRefresh}
+            />
+          }
+        />
+        <Route
+          path="feed"
+          element={<Navigate to="invisible-feed" replace />}
+        />
+        <Route
           path="history"
           element={<HistoryPage visits={visits} places={places} onChanged={onRefresh} />}
         />
@@ -96,7 +115,14 @@ export function LabPagesRoutes({
         <Route path="admin" element={isAdmin ? <AdminPage /> : <Navigate to="/" replace />} />
         <Route
           path="*"
-          element={<p className="empty-copy">That page doesn’t exist.</p>}
+          element={
+            <div style={{ textAlign: "center", padding: "4rem 1rem" }}>
+              <p className="empty-copy">That page doesn’t exist.</p>
+              <Link to="/" className="classic-link" style={{ display: "inline-block", marginTop: "1rem" }}>
+                ← Back to Home view
+              </Link>
+            </div>
+          }
         />
       </Routes>
     </>

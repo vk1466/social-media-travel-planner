@@ -19,6 +19,7 @@ export function FoodPage({
   return (
     <div className="food-library">
       <PageHeading
+        backLink={{ to: "/", label: "Home" }}
         kicker="Recipes from your saves"
         title="Food worth making"
         lede="Find a dish, check the ingredients, and cook from the post that inspired you."
