@@ -122,10 +122,18 @@ def test_library_drops_places_beyond_a_day_trip(dynamodb) -> None:
   user_places_repo.link_user_place(user_id, near.place_id)
   user_places_repo.link_user_place(user_id, far.place_id)
   user_places_repo.link_user_place(user_id, meal.place_id)
+  user_settings_repo.record_processed_city(
+    user_id,
+    query="Porto",
+    latitude=41.1579,
+    longitude=-8.6291,
+  )
 
   client = TestClient(app)
-  response = client.get("/api/for-travel/library")
+  response = client.get("/api/for-travel/library", params={"city": "Lisbon"})
   assert response.status_code == 200
   names = [place["display_name"] for place in response.json()["places"]]
   assert names == ["Sintra"]
-  assert set(user_places_repo.list_user_place_ids(user_id)) == {"sintra"}
+  porto = client.get("/api/for-travel/library", params={"city": "Porto"})
+  assert [place["display_name"] for place in porto.json()["places"]] == ["Porto"]
+  assert set(user_places_repo.list_user_place_ids(user_id)) == {"sintra", "porto"}

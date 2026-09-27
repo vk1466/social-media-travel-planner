@@ -10,7 +10,7 @@ import logging
 import secrets
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Header, HTTPException
+from fastapi import APIRouter, Depends, Header, HTTPException, Query
 
 from travelplanner import settings
 from travelplanner.clients.geocoder import geocode_normalized
@@ -70,9 +70,29 @@ def _post_to_schema(post: SavedPost) -> SavedPostSchema:
   return SavedPostSchema(**post_to_dict(post))
 
 
-def _places_near_search(user_id: str, places: list[Place]) -> list[Place]:
-  """Drop places outside a day trip, and anything that is not a tourist destination."""
+def _city_center(user_id: str, city: str | None) -> tuple[float, float] | None:
+  """Center used to show one city's places. Other cities stay in the library."""
+  name = (city or "").strip()
+  if name:
+    for saved in user_settings_repo.list_processed_cities(user_id):
+      if str(saved["query"]).casefold() != name.casefold():
+        continue
+      return float(saved["latitude"]), float(saved["longitude"])
+    raise HTTPException(status_code=404, detail="That city has not been processed")
   anchor = user_settings_repo.get_city_search_anchor(user_id)
+  if anchor is None:
+    return None
+  _query, latitude, longitude = anchor
+  return latitude, longitude
+
+
+def _places_near_search(
+  user_id: str,
+  places: list[Place],
+  *,
+  center: tuple[float, float] | None,
+) -> list[Place]:
+  """Hide places outside a day trip. Only non-destinations are removed for good."""
   radius_km = settings.city_nearby_km()
   kept: list[Place] = []
   for place in places:
@@ -86,21 +106,14 @@ def _places_near_search(user_id: str, places: list[Place]) -> list[Place]:
       )
       user_places_repo.unlink_user_place(user_id, place.place_id)
       continue
-    if anchor is not None:
-      _query, latitude, longitude = anchor
+    if center is not None:
+      latitude, longitude = center
       if not place_is_nearby(
         place,
         latitude=latitude,
         longitude=longitude,
         radius_km=radius_km,
       ):
-        logger.info(
-          "for-travel drop far place user_id=%s place_id=%s name=%s",
-          user_id,
-          place.place_id,
-          place.display_name,
-        )
-        user_places_repo.unlink_user_place(user_id, place.place_id)
         continue
     kept.append(place)
   return kept
@@ -196,9 +209,21 @@ def list_processed_cities(user_id: ForTravelUserId) -> list[ForTravelCitySchema]
 
 
 @router.get("/library", response_model=ForTravelLibrarySchema)
-def get_library(user_id: ForTravelUserId) -> ForTravelLibrarySchema:
-  places = _places_near_search(user_id, list_user_places(user_id))
-  posts = list_user_posts(user_id)
+def get_library(
+  user_id: ForTravelUserId,
+  city: Annotated[str | None, Query()] = None,
+) -> ForTravelLibrarySchema:
+  places = _places_near_search(
+    user_id,
+    list_user_places(user_id),
+    center=_city_center(user_id, city),
+  )
+  used_posts = {post_id for place in places for post_id in place.source_post_ids}
+  posts = [
+    post
+    for post in list_user_posts(user_id)
+    if not used_posts or post.post_id in used_posts
+  ]
   return ForTravelLibrarySchema(
     places=[_place_to_schema(place) for place in places],
     posts=[_post_to_schema(post) for post in posts],
