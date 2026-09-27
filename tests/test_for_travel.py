@@ -70,6 +70,9 @@ def test_city_search_starts_ingest(dynamodb, monkeypatch) -> None:
   assert started["post_urls"] == ["https://www.instagram.com/reel/one/"]
   assert started["user_id"] == "for-travel-planning"
   assert started["job_id"] == body["job_id"]
+  cities = client.get("/api/for-travel/cities")
+  assert cities.status_code == 200
+  assert [city["query"] for city in cities.json()] == ["Lisbon"]
 
 
 def test_city_search_requires_key_when_configured(dynamodb, monkeypatch) -> None:

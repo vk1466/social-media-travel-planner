@@ -26,6 +26,7 @@ from travelplanner.store import post_to_dict
 from server.ingest_runner import start_ingest_job
 from server import jobs
 from server.schemas import (
+  ForTravelCitySchema,
   ForTravelLibrarySchema,
   ForTravelReelSchema,
   ForTravelSearchRequest,
@@ -147,6 +148,12 @@ def start_city_search(
     )
 
   urls = [reel["post_url"] for reel in reels if reel.get("post_url")]
+  user_settings_repo.record_processed_city(
+    user_id,
+    query=query,
+    latitude=located.latitude,
+    longitude=located.longitude,
+  )
   job_id = jobs.enqueue_link_ingest(urls, user_id=user_id, refresh=False)
   to_start = jobs.reserve_runnable_links(job_id)
   if to_start:
@@ -173,6 +180,19 @@ def get_city_job(job_id: str, user_id: ForTravelUserId) -> JobSchema:
   if job is None:
     raise HTTPException(status_code=404, detail="Job not found")
   return job
+
+
+@router.get("/cities", response_model=list[ForTravelCitySchema])
+def list_processed_cities(user_id: ForTravelUserId) -> list[ForTravelCitySchema]:
+  return [
+    ForTravelCitySchema(
+      query=str(city["query"]),
+      processed_at=str(city.get("processed_at") or ""),
+      latitude=float(city["latitude"]) if city.get("latitude") is not None else None,
+      longitude=float(city["longitude"]) if city.get("longitude") is not None else None,
+    )
+    for city in user_settings_repo.list_processed_cities(user_id)
+  ]
 
 
 @router.get("/library", response_model=ForTravelLibrarySchema)

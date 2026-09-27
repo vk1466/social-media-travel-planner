@@ -590,6 +590,13 @@ class ForTravelReelSchema(BaseModel):
   thumbnail_url: str | None = None
 
 
+class ForTravelCitySchema(BaseModel):
+  query: str
+  processed_at: str = ""
+  latitude: float | None = None
+  longitude: float | None = None
+
+
 class ForTravelSearchResponse(BaseModel):
   job_id: str
   query: str
