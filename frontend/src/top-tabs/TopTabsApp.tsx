@@ -9,6 +9,7 @@ import { LibraryPlatformProvider } from "../libraryPlatform";
 import { LabThemeProvider } from "./theme";
 import "./top-tabs.css";
 import "./dashboard-chrome.css";
+import "./internal-editorial.css";
 
 export function TopTabsApp({
   authReady,
@@ -20,6 +21,9 @@ export function TopTabsApp({
   isAdmin,
   isSuperAdmin,
   onViewAsChange,
+  loadError,
+  libraryUnavailable,
+  onRetry,
 }: {
   authReady: boolean;
   loading: boolean;
@@ -30,6 +34,9 @@ export function TopTabsApp({
   isAdmin: boolean;
   isSuperAdmin: boolean;
   onViewAsChange: (userId: string | null) => void;
+  loadError: string | null;
+  libraryUnavailable: boolean;
+  onRetry: () => void;
 }) {
   const counts = useMemo(
     () => ({
@@ -54,7 +61,13 @@ export function TopTabsApp({
           onViewAsChange={onViewAsChange}
           onIngestComplete={onRefresh}
         >
-          <LabPagesRoutes
+          {loadError ? (
+            <div className="library-load-error" role="alert">
+              <div><strong>Your library couldn’t load.</strong><span>{loadError}</span></div>
+              <button type="button" onClick={onRetry}>Try again</button>
+            </div>
+          ) : null}
+          {!libraryUnavailable ? <LabPagesRoutes
             authReady={authReady}
             loading={loading}
             posts={posts}
@@ -62,7 +75,7 @@ export function TopTabsApp({
             visits={visits}
             onRefresh={onRefresh}
             isAdmin={isAdmin}
-          />
+          /> : null}
         </Shell>
       </LibraryPlatformProvider>
     </LabThemeProvider>

@@ -18,6 +18,7 @@ import { FlipDetailCardDemos } from "./components/FlipDetailCardDemos";
 import { TravelViewToggleDemos } from "./components/TravelViewToggleDemos";
 import { TravelFilterDesignDemos } from "./components/TravelFilterDesignDemos";
 import { MobileLibraryDesignDemos } from "./components/MobileLibraryDesignDemos";
+import { MobileSaveDesignDemos } from "./components/MobileSaveDesignDemos";
 import { clerkEnabled } from "./authMode";
 import { TopTabsApp } from "./top-tabs/TopTabsApp";
 
@@ -38,22 +39,36 @@ function AppRoutes({ authReady }: { authReady: boolean }) {
   const [places, setPlaces] = useState<Place[]>([]);
   const [visits, setVisits] = useState<VisitDetail[]>([]);
   const [loadingPosts, setLoadingPosts] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [libraryUnavailable, setLibraryUnavailable] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
   const refresh = useCallback(async () => {
     setLoadingPosts(true);
     try {
-      const [nextPosts, nextPlaces, nextVisits] = await Promise.all([
+      const [postsResult, placesResult, visitsResult] = await Promise.allSettled([
         fetchPosts(),
         fetchPlaces(),
         fetchVisits(),
       ]);
-      setPosts(nextPosts);
-      setPlaces(nextPlaces);
-      setVisits(nextVisits);
-    } catch (err) {
-      console.error("Failed to fetch library data:", err);
+      if (postsResult.status === "fulfilled") setPosts(postsResult.value);
+      if (placesResult.status === "fulfilled") setPlaces(placesResult.value);
+      if (visitsResult.status === "fulfilled") setVisits(visitsResult.value);
+
+      const failures: { name: string; reason: unknown }[] = [];
+      if (postsResult.status === "rejected") failures.push({ name: "posts", reason: postsResult.reason });
+      if (placesResult.status === "rejected") failures.push({ name: "places", reason: placesResult.reason });
+      if (visitsResult.status === "rejected") failures.push({ name: "visits", reason: visitsResult.reason });
+      setLibraryUnavailable(failures.length === 3);
+      if (failures.length > 0) {
+        const reason = failures[0].reason;
+        const detail = reason instanceof Error ? reason.message : "Unknown error";
+        console.error("Failed to fetch library data:", failures);
+        setLoadError(`Couldn't load ${failures.map(({ name }) => name).join(", ")}. ${detail}`);
+      } else {
+        setLoadError(null);
+      }
     } finally {
       setLoadingPosts(false);
     }
@@ -160,6 +175,7 @@ function AppRoutes({ authReady }: { authReady: boolean }) {
       <Route path="/dev/travel-view-toggle" element={<TravelViewToggleDemos />} />
       <Route path="/dev/travel-filter-designs" element={<TravelFilterDesignDemos />} />
       <Route path="/dev/mobile-library-designs" element={<MobileLibraryDesignDemos />} />
+      <Route path="/dev/mobile-save-designs" element={<MobileSaveDesignDemos />} />
       <Route path="/dev/invisible-feed" element={<Navigate to="/invisible-feed" replace />} />
       <Route path="/dev/feed" element={<Navigate to="/invisible-feed" replace />} />
       <Route
@@ -175,6 +191,9 @@ function AppRoutes({ authReady }: { authReady: boolean }) {
             isAdmin={isAdmin}
             isSuperAdmin={isSuperAdmin}
             onViewAsChange={handleViewAsChange}
+            loadError={loadError}
+            libraryUnavailable={libraryUnavailable}
+            onRetry={handleLibraryChanged}
           />
         }
       />

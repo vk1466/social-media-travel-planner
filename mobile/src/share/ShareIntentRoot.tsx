@@ -15,23 +15,34 @@ export function useShareIntentHandler(canOpenIngest: boolean): void {
     if (!hasShareIntent) {
       return;
     }
-    const text = [shareIntent.webUrl, shareIntent.text].filter(Boolean).join("\n");
-    const urls = extractShareUrls(text);
-    if (urls.length > 0) {
-      setPendingShare(urls, true);
-      if (canOpenIngest) {
-        const onIngest = (segments as string[]).includes("ingest");
-        if (!onIngest) {
-          router.replace({
-            pathname: "/(app)/ingest",
-            params: { shared: "1" },
-          });
+    let active = true;
+    void (async () => {
+      const text = [shareIntent.webUrl, shareIntent.text].filter(Boolean).join("\n");
+      const urls = extractShareUrls(text);
+      if (urls.length > 0) {
+        try {
+          await setPendingShare(urls, true);
+        } catch {
+          // Keep the native intent available so the share is not lost on storage failure.
+          return;
+        }
+        if (!active) return;
+        if (canOpenIngest) {
+          const onIngest = (segments as string[]).includes("ingest");
+          if (!onIngest) {
+            router.push({
+              pathname: "/(app)/ingest",
+              params: { shared: "1" },
+            });
+          }
         }
       }
-    }
-    // Clear the native share payload only — do not navigate away (onResetShareIntent
-    // used to send users back to Posts and cancel auto-ingest).
-    resetShareIntent();
+      // Persist first so an app restart cannot lose a share cleared from the OS.
+      if (active) resetShareIntent();
+    })();
+    return () => {
+      active = false;
+    };
   }, [
     hasShareIntent,
     shareIntent,
@@ -47,7 +58,7 @@ export function ShareIntentRoot({ children }: { children: ReactNode }) {
   return (
     <ShareIntentProvider
       options={{
-        resetOnBackground: true,
+        resetOnBackground: false,
       }}
     >
       {children}

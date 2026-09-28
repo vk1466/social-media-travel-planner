@@ -46,7 +46,7 @@ function ClerkAuthBridge({ children }: { children: ReactNode }) {
       }
     } else if (isSignedIn && autoSubmit && pendingUrls.length > 0 && !(segments as string[]).includes("ingest")) {
       // Share arrived while already signed in — open Add links for auto-ingest.
-      router.replace({ pathname: "/(app)/ingest", params: { shared: "1" } });
+      router.push({ pathname: "/(app)/ingest", params: { shared: "1" } });
     }
   }, [isLoaded, isSignedIn, segments, router, pendingUrls.length, autoSubmit]);
 
@@ -75,7 +75,7 @@ function LocalAuthBridge({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (autoSubmit && pendingUrls.length > 0 && !(segments as string[]).includes("ingest")) {
-      router.replace({ pathname: "/(app)/ingest", params: { shared: "1" } });
+      router.push({ pathname: "/(app)/ingest", params: { shared: "1" } });
     }
   }, [autoSubmit, pendingUrls.length, segments, router]);
 

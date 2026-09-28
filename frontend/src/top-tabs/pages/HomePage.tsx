@@ -40,6 +40,11 @@ export function HomePage({
     [places, posts, platforms],
   );
   const continuePlace = scopedPlaces[0];
+  const continuePlaceImage = continuePlace
+    ? scopedPosts.find((post) =>
+        post.place_ids?.includes(continuePlace.place_id) && post.thumbnail_url,
+      )?.thumbnail_url
+    : null;
   const [selected, setSelected] = useState<SavedPost | null>(null);
   const recentPosts = useMemo(
     () => [...scopedPosts].sort((a, b) => recency(b) - recency(a)).slice(0, 8),
@@ -53,15 +58,16 @@ export function HomePage({
   return (
     <div className="top-home-page">
       <PageHeading
-        kicker="Your saved-content library"
-        title="Save anything. Find it when you need it."
-        lede="Turn reels, posts, videos, and articles into an AI-organized library."
+        kicker="YOUR SECOND MEMORY ✳"
+        title="Good ideas, beautifully kept."
+        lede="A home for all the places, recipes, films, and ideas you want to come back to."
         count={{ value: scopedPosts.length, label: "saves" }}
       />
       {continuePlace ? (
         <section className="home-hero">
+          {continuePlaceImage ? <img className="home-hero-image" src={continuePlaceImage} alt="" /> : null}
           <div>
-            <p className="eyebrow">Pick up where you left off</p>
+            <p className="eyebrow">YOUR NEXT PLACE TO GO</p>
             <h2>{continuePlace.display_name}</h2>
             <p>
               {locationLine(continuePlace)}
@@ -70,26 +76,26 @@ export function HomePage({
                 : ""}
             </p>
             <Link className="home-next-action" to={`${basePath}/travel/${continuePlace.place_id}`}>
-              Explore this place →
+              Explore this place <span aria-hidden="true">↗</span>
             </Link>
           </div>
         </section>
       ) : (
         <section className="home-start" aria-labelledby="home-start-title">
           <div>
-            <p className="eyebrow">Start with one idea</p>
-            <h2 id="home-start-title">Save a link to build your library</h2>
-            <p>Paste a post, video, or article. Wanderfile will organize it for you.</p>
+            <p className="eyebrow">EVERY LIBRARY STARTS SOMEWHERE</p>
+            <h2 id="home-start-title">Found something worth keeping?</h2>
+            <p>Drop in a post, video, or article. We’ll make a place for it here.</p>
           </div>
-          <Link className="home-next-action" to={`${basePath}/add`}>Save a link →</Link>
+          <Link className="home-next-action" to={`${basePath}/add`}>Save your first link <span aria-hidden="true">↗</span></Link>
         </section>
       )}
       {recentPosts.length > 0 ? (
         <section className="library-panel slim-panel home-recent">
           <div className="panel-heading">
             <div>
-              <p className="eyebrow">Just saved</p>
-              <h2>Recent posts</h2>
+              <p className="eyebrow">FRESHLY FILED</p>
+              <h2>Recently saved</h2>
             </div>
             <Link to={`${basePath}/posts`}>See all →</Link>
           </div>

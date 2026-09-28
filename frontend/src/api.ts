@@ -3,10 +3,10 @@ let viewAsUserId: string | null = null;
 
 const VIEW_AS_STORAGE_KEY = "wf_view_as_user_id";
 
-/** API origin (TravelPlanner-dev/prod ApiEndpoint). Required for local Vite and Vercel. */
-export const API_BASE_URL = (
-  (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? ""
-).replace(/\/$/, "");
+/** Local Vite proxies /api to the configured AWS endpoint; builds call it directly. */
+export const API_BASE_URL = import.meta.env.DEV
+  ? ""
+  : ((import.meta.env.VITE_API_BASE_URL as string | undefined) ?? "").replace(/\/$/, "");
 
 /** Register a function that returns the current Clerk (or dev) bearer token. */
 export function setAuthTokenGetter(getter: (() => Promise<string | null>) | null): void {

@@ -1,5 +1,6 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { useEffect, useMemo, useState } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, Switch, Text, TextInput, View } from "react-native";
 
 import type { JobLink } from "../api";
@@ -7,29 +8,74 @@ import { parseLinkLines } from "../lib/shareUrl";
 import { colors, radius, shadow, spacing } from "../theme";
 import { Button, ErrorBanner } from "./ui";
 
+const MANUAL_DRAFT_KEY = "wanderfile.manual-link-draft.v1";
+
 type IconName = keyof typeof Ionicons.glyphMap;
 
 interface LinkSubmitFormProps {
   disabled?: boolean;
-  initialText?: string;
-  onSubmit: (links: string[], refresh: boolean) => void;
+  onSubmit: (links: string[], refresh: boolean) => Promise<boolean>;
 }
 
 export function LinkSubmitForm({
   disabled = false,
-  initialText = "",
   onSubmit,
 }: LinkSubmitFormProps) {
-  const [text, setText] = useState(initialText);
+  const [text, setText] = useState("");
+  const latestText = useRef("");
+  const draftWriteQueue = useRef(Promise.resolve());
+  const editedBeforeHydration = useRef(false);
+  const [draftHydrated, setDraftHydrated] = useState(false);
   const [refresh, setRefresh] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const parsed = useMemo(() => parseLinkLines(text), [text]);
 
   useEffect(() => {
-    if (initialText) {
-      setText(initialText);
-    }
-  }, [initialText]);
+    let mounted = true;
+    void AsyncStorage.getItem(MANUAL_DRAFT_KEY).then((saved) => {
+      if (!mounted) return;
+      if (!editedBeforeHydration.current && saved !== null) {
+        latestText.current = saved;
+        setText(saved);
+      }
+      setDraftHydrated(true);
+    }).catch(() => {
+      if (mounted) setDraftHydrated(true);
+    });
+    return () => { mounted = false; };
+  }, []);
+
+  useEffect(() => {
+    if (!draftHydrated) return;
+    const write = draftWriteQueue.current
+      .catch(() => undefined)
+      .then(() => AsyncStorage.setItem(MANUAL_DRAFT_KEY, text));
+    draftWriteQueue.current = write.catch(() => undefined);
+  }, [text, draftHydrated]);
+
+  const updateText = (nextText: string) => {
+    editedBeforeHydration.current = true;
+    latestText.current = nextText;
+    setText(nextText);
+  };
+
+  const submit = async () => {
+    const submittedText = latestText.current;
+    const submittedValid = parseLinkLines(submittedText).valid;
+    const accepted = await onSubmit(submittedValid, refresh);
+    if (!accepted) return;
+    const remainingAccepted = new Map<string, number>();
+    for (const url of submittedValid) remainingAccepted.set(url, (remainingAccepted.get(url) ?? 0) + 1);
+    const nextText = latestText.current.split("\n").filter((line) => {
+      const trimmed = line.trim();
+      const count = remainingAccepted.get(trimmed) ?? 0;
+      if (count === 0) return true;
+      remainingAccepted.set(trimmed, count - 1);
+      return false;
+    }).join("\n");
+    latestText.current = nextText;
+    setText(nextText);
+  };
 
   return (
     <View style={styles.panel}>
@@ -44,8 +90,8 @@ export function LinkSubmitForm({
         style={styles.input}
         multiline
         value={text}
-        onChangeText={setText}
-        editable={!disabled}
+        onChangeText={updateText}
+        editable
         placeholder={"https://www.instagram.com/reel/..."}
         placeholderTextColor={colors.muted}
         autoCapitalize="none"
@@ -85,7 +131,7 @@ export function LinkSubmitForm({
         label={`Save ${parsed.valid.length} link${parsed.valid.length === 1 ? "" : "s"} and organize`}
         icon="sparkles"
         disabled={disabled || parsed.valid.length === 0}
-        onPress={() => onSubmit(parsed.valid, refresh)}
+        onPress={() => void submit()}
         style={styles.submitButton}
       />
     </View>
@@ -119,6 +165,7 @@ interface IngestProgressProps {
   subtitle?: string;
   onOpenPost?: (platform: string, postId: string) => void;
   onRemovePending?: (postUrl: string) => void;
+  onRetry?: (postUrl: string) => void;
 }
 
 function statusLabel(link: JobLink): string {
@@ -170,6 +217,7 @@ export function IngestProgress({
   subtitle,
   onOpenPost,
   onRemovePending,
+  onRetry,
 }: IngestProgressProps) {
   if (links.length === 0) {
     return null;
@@ -224,6 +272,12 @@ export function IngestProgress({
               {link.status === "pending" && onRemovePending ? (
                 <Pressable onPress={() => onRemovePending(link.post_url)} style={styles.openRow}>
                   <Text style={styles.removeLink}>Remove</Text>
+                </Pressable>
+              ) : null}
+              {link.status === "error" && onRetry ? (
+                <Pressable accessibilityRole="button" onPress={() => onRetry(link.post_url)} style={styles.openRow}>
+                  <Text style={styles.openLink}>Retry this link</Text>
+                  <Ionicons name="refresh" size={14} color={colors.brand} />
                 </Pressable>
               ) : null}
             </View>

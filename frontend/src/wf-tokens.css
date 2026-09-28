@@ -1,40 +1,37 @@
 :root {
   /*
-   * Product theme — Ocean Dusk. Hex lives only in --theme-* below.
+   * Product theme — Wanderfile editorial. Hex lives only in --theme-* below.
    * Change this block to restyle the app. Components must use
    * var(--bg), var(--accent), var(--ink), … or the --wf-* aliases.
    */
 
-  --theme-paper: #112a35;
-  --theme-panel: #173a47;
-  --theme-ink: #f3fafc;
-  --theme-muted: #b2cbd0;
-  --theme-line: #2a5260;
-  --theme-accent: #4fe8f6;
-  --theme-accent-hover: #7cf0fa;
+  --theme-paper: #f8f8ed;
+  --theme-panel: #fffefa;
+  --theme-ink: #202820;
+  --theme-muted: #667066;
+  --theme-line: #dcded0;
+  --theme-accent: #2c5c4b;
+  --theme-accent-hover: #1b4739;
   --theme-accent-gloss: linear-gradient(
     165deg,
-    color-mix(in srgb, #ffffff 58%, var(--theme-accent)) 0%,
-    color-mix(in srgb, #ffffff 22%, var(--theme-accent)) 24%,
-    var(--theme-accent) 55%,
-    color-mix(in srgb, #083040 20%, var(--theme-accent)) 100%
+    #376f59 0%,
+    #2c5c4b 55%,
+    #234e40 100%
   );
   --theme-accent-sheen:
-    inset 0 1px 0 rgb(255 255 255 / 0.55),
-    inset 0 -1px 0 rgb(8 40 50 / 0.22),
-    0 0 0 1px rgb(255 255 255 / 0.12),
-    0 10px 22px rgb(var(--theme-accent-rgb) / 0.32);
-  --theme-soft: #2a5260;
-  --theme-fill: #0c222b;
-  --theme-mid: #1f4654;
-  --theme-fog: #224957;
-  --theme-chrome-muted: #214957;
-  --theme-on-fill: #f3fafc;
-  --theme-on-accent: #173a47;
-  --theme-overlay: #08171e;
-  --theme-overlay-rgb: 8 23 30;
+    inset 0 1px 0 rgb(255 255 255 / 0.18),
+    0 3px 9px rgb(var(--theme-accent-rgb) / 0.15);
+  --theme-soft: #e9eddd;
+  --theme-fill: #234e40;
+  --theme-mid: #47735d;
+  --theme-fog: #eef0e5;
+  --theme-chrome-muted: #eef0e5;
+  --theme-on-fill: #fffefa;
+  --theme-on-accent: #fffefa;
+  --theme-overlay: #16251b;
+  --theme-overlay-rgb: 22 37 27;
   --theme-mask: #000000;
-  --theme-cover: #173a47;
+  --theme-cover: #fffefa;
   --theme-tile: color-mix(in srgb, var(--theme-accent) 22%, var(--theme-panel));
   --theme-hero-frozen: linear-gradient(135deg, #4a1936 0%, #2b1636 50%, #151124 100%);
   --theme-hero-dessert: linear-gradient(135deg, #3d1b28 0%, #261324 50%, #17101e 100%);
@@ -43,16 +40,16 @@
   --theme-hero-italian: linear-gradient(135deg, #422019 0%, #2e1a17 50%, #191212 100%);
   --theme-hero-food: linear-gradient(135deg, #2b3038 0%, #1c2129 50%, #111419 100%);
 
-  --theme-paper-rgb: 17 42 53;
-  --theme-panel-rgb: 23 58 71;
-  --theme-ink-rgb: 243 250 252;
-  --theme-muted-rgb: 178 203 208;
-  --theme-accent-rgb: 79 232 246;
-  --theme-accent-hover-rgb: 124 240 250;
-  --theme-soft-rgb: 42 82 96;
-  --theme-fill-rgb: 12 34 43;
-  --theme-mid-rgb: 31 70 84;
-  --theme-on-fill-rgb: 243 250 252;
+  --theme-paper-rgb: 248 248 237;
+  --theme-panel-rgb: 255 254 250;
+  --theme-ink-rgb: 32 40 32;
+  --theme-muted-rgb: 102 112 102;
+  --theme-accent-rgb: 44 92 75;
+  --theme-accent-hover-rgb: 27 71 57;
+  --theme-soft-rgb: 233 237 221;
+  --theme-fill-rgb: 35 78 64;
+  --theme-mid-rgb: 71 115 93;
+  --theme-on-fill-rgb: 255 254 250;
 
   --theme-instagram-a: #7b43d6;
   --theme-instagram-b: #dc3d78;
@@ -153,7 +150,7 @@
   --wf-ink: var(--theme-ink);
   --wf-ink-rgb: var(--theme-ink-rgb);
   --wf-quiet: var(--theme-muted);
-  --wf-on-brand: var(--theme-ink);
+  --wf-on-brand: var(--theme-on-accent);
   --wf-copy: var(--theme-ink);
   --wf-copy-muted: var(--theme-muted);
   --wf-copy-accent: var(--theme-accent);
@@ -181,7 +178,7 @@
   --wf-coral-deep-rgb: var(--theme-accent-hover-rgb);
   --wf-success: var(--theme-success);
   --wf-danger: var(--theme-danger);
-  --wf-on-dark: var(--theme-muted);
+  --wf-on-dark: #a5afa3;
   --wf-on-dark-strong: color-mix(in srgb, var(--theme-on-fill) 92%, var(--theme-muted));
   --wf-border-dark: var(--theme-line);
   --wf-panel-dark: var(--theme-panel);

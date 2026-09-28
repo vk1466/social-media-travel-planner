@@ -1,6 +1,6 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { useRouter } from "expo-router";
-import { useCallback, useMemo, useState } from "react";
+import { useFocusEffect, useRouter } from "expo-router";
+import { useCallback, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -11,13 +11,14 @@ import {
   View,
 } from "react-native";
 
-import { nativePostId, type SavedPost } from "@/src/api";
+import { fetchActiveJob, fetchJobs, nativePostId, type Job, type SavedPost } from "@/src/api";
 import { categoryLabel } from "@/src/categoryLabels";
 import { FilterBar, MultiFilterChips, PageHeading } from "@/src/components/LibraryChrome";
 import { PostCard, postKey } from "@/src/components/PostCard";
 import { EmptyState, ErrorBanner } from "@/src/components/ui";
 import { contentCategoryTabs, effectiveContentCategory } from "@/src/contentCategory";
 import { useLibrary } from "@/src/context/LibraryContext";
+import { usePendingShare } from "@/src/context/PendingShareContext";
 import { postTitle } from "@/src/display";
 import { postsForPlatforms, useLibraryPlatform } from "@/src/libraryPlatform";
 import { appHref } from "@/src/nav";
@@ -62,13 +63,49 @@ function monthLabel(key: string): string {
 
 export default function PostsScreen() {
   const router = useRouter();
-  const { posts, places, loading, error, refresh } = useLibrary();
+  const { posts, places, loading, error, refresh, bumpRefresh } = useLibrary();
   const { platforms } = useLibraryPlatform();
+  const { pendingUrls } = usePendingShare();
+  const [activeJob, setActiveJob] = useState<Job | null>(null);
+  const [attentionJob, setAttentionJob] = useState<Job | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [query, setQuery] = useState("");
   const [contentCategory, setContentCategory] = useState("all");
   const [dateMode, setDateMode] = useState<DateMode>("saved");
   const [facetKeys, setFacetKeys] = useState<string[]>([]);
+  const refreshedCompletedJobs = useRef(new Set<string>());
+
+  useFocusEffect(useCallback(() => {
+    let focused = true;
+    let timer: ReturnType<typeof setTimeout>;
+    const refreshJobs = async () => {
+      try {
+        const [active, history] = await Promise.all([fetchActiveJob("link_ingest"), fetchJobs()]);
+        if (!focused) return;
+        setActiveJob(active?.status === "running" ? active : null);
+        const recentCutoff = Date.now() - 24 * 60 * 60 * 1000;
+        const newlyCompletedJobs = history.filter((job) => {
+          if (job.kind !== "link_ingest" || job.status !== "done" || !job.created_at) return false;
+          const createdAt = new Date(job.created_at).getTime();
+          if (!Number.isFinite(createdAt) || createdAt < recentCutoff) return false;
+          if (refreshedCompletedJobs.current.has(job.job_id)) return false;
+          refreshedCompletedJobs.current.add(job.job_id);
+          return true;
+        });
+        if (newlyCompletedJobs.length > 0) bumpRefresh();
+        setAttentionJob(history.find((job) => {
+          if (job.kind !== "link_ingest" || job.status !== "done" || !job.created_at) return false;
+          const createdAt = new Date(job.created_at).getTime();
+          return Number.isFinite(createdAt) && createdAt >= recentCutoff;
+        }) ?? null);
+      } catch {
+        // Keep the last known job status visible during transient network failures.
+      }
+      if (focused) timer = setTimeout(refreshJobs, 4000);
+    };
+    void refreshJobs();
+    return () => { focused = false; clearTimeout(timer); };
+  }, [bumpRefresh]));
 
   const topicTabs = useMemo(() => contentCategoryTabs(posts), [posts]);
   const placesById = useMemo(
@@ -165,7 +202,7 @@ export default function PostsScreen() {
     setRefreshing(false);
   }, [refresh]);
 
-  if (loading && posts.length === 0) {
+  if (loading && posts.length === 0 && pendingUrls.length === 0) {
     return (
       <View style={styles.centered}>
         <ActivityIndicator color={colors.brand} />
@@ -177,6 +214,25 @@ export default function PostsScreen() {
     <View style={styles.screen}>
       {error ? <ErrorBanner message={error} /> : null}
       <View style={styles.chrome}>
+        {pendingUrls.length > 0 ? (
+          <Pressable accessibilityRole="button" onPress={() => router.push({ pathname: "/(app)/ingest", params: { shared: "1" } })} style={styles.queueNotice}>
+            <Ionicons name="time-outline" size={18} color={colors.running} />
+            <Text style={styles.queueNoticeText}>{pendingUrls.length} shared {pendingUrls.length === 1 ? "link" : "links"} waiting on this device · Review queue</Text>
+            <Ionicons name="chevron-forward" size={17} color={colors.muted} />
+          </Pressable>
+        ) : activeJob ? (
+          <Pressable accessibilityRole="button" onPress={() => router.push({ pathname: "/(app)/ingest", params: { jobId: activeJob.job_id } })} style={styles.queueNotice}>
+            <ActivityIndicator size="small" color={colors.running} />
+            <Text style={styles.queueNoticeText}>{activeJob.counts.fetching + activeJob.counts.pending} links processing · View queue</Text>
+            <Ionicons name="chevron-forward" size={17} color={colors.muted} />
+          </Pressable>
+        ) : attentionJob ? (
+          <Pressable accessibilityRole="button" onPress={() => router.push({ pathname: "/(app)/ingest", params: { jobId: attentionJob.job_id } })} style={styles.queueNotice}>
+            <Ionicons name={attentionJob.counts.error + attentionJob.counts.unsupported > 0 ? "alert-circle-outline" : "checkmark-circle-outline"} size={18} color={attentionJob.counts.error + attentionJob.counts.unsupported > 0 ? colors.danger : colors.success} />
+            <Text style={styles.queueNoticeText}>{attentionJob.counts.error + attentionJob.counts.unsupported > 0 ? "A recent save needs attention" : "Recent save finished"} · Review details</Text>
+            <Ionicons name="chevron-forward" size={17} color={colors.muted} />
+          </Pressable>
+        ) : null}
         <PageHeading
           kicker="Your inspiration library"
           title="Saved posts"
@@ -310,6 +366,8 @@ function postFacetKeys(
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
+  queueNotice: { minHeight: 48, flexDirection: "row", alignItems: "center", gap: 9, paddingHorizontal: 12, marginBottom: spacing.sm, borderRadius: 12, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
+  queueNoticeText: { flex: 1, color: colors.ink, fontSize: 13, fontWeight: "700" },
   centered: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.bg },
   list: { paddingHorizontal: spacing.md, paddingBottom: 88, flexGrow: 1 },
   chrome: { paddingHorizontal: spacing.md, paddingTop: spacing.sm },

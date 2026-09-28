@@ -4,13 +4,13 @@ html.top-tabs-active,
 html.top-tabs-active body {
   background: var(--bg);
   color: var(--ink);
-  color-scheme: dark;
+  color-scheme: light;
   overflow-x: hidden;
 }
 
 html.top-tabs-active,
 .top-tabs-root {
-  color-scheme: dark;
+  color-scheme: light;
   --radius: 18px;
   --shadow: 0 14px 38px rgb(var(--theme-overlay-rgb) / 0.4);
   --hero: clamp(3.5rem, 7vw, 5.5rem);

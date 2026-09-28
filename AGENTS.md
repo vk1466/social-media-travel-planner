@@ -94,6 +94,14 @@ Keep it **simple, modular, and extendable**. Do not add layers you don't need ye
 - Prefer plain functions and dataclasses over factories, base classes, or plugin systems.
 - **Names must be contextual** — use domain terms (`place_name`, `post_url`, `day_number`) instead of generic ones (`id`, `value`, `parts`).
 
+## UX design
+
+When building or changing a user-facing feature in `frontend/` or `mobile/`, use
+[Wanderfile UX guidelines](docs/design/ux-patterns-and-laws.md). The document
+combines design options, current app findings, and research. Choose patterns
+that help the specific task; treat the app review as recommendations to verify
+against current behavior.
+
 ## Run
 
 ```bash

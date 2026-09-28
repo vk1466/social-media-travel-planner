@@ -674,3 +674,74 @@ export async function reprocessPlaces(): Promise<MaintenanceResult> {
 export async function cleanupData(): Promise<MaintenanceResult> {
   return request<MaintenanceResult>("/api/data/cleanup", { method: "POST" });
 }
+
+export interface RouteStopInput {
+  stop_id?: string;
+  name?: string;
+  latitude: number;
+  longitude: number;
+  category?: string | null;
+  address?: string | null;
+  snapped_latitude?: number | null;
+  snapped_longitude?: number | null;
+  road_distance_meters?: number | null;
+}
+
+export interface ExcludedRouteStop {
+  stop_id: string;
+  name: string;
+  latitude: number;
+  longitude: number;
+  reason: string;
+  road_distance_meters?: number | null;
+}
+
+export interface RouteLegOutput {
+  from_stop_id: string;
+  to_stop_id: string;
+  from_name: string;
+  to_name: string;
+  distance_meters: number;
+  est_walking_minutes: number;
+  est_driving_minutes: number;
+}
+
+export interface RouteOptimizationResult {
+  ordered_stops: RouteStopInput[];
+  legs: RouteLegOutput[];
+  total_distance_meters: number;
+  total_distance_km: number;
+  original_distance_meters: number;
+  savings_meters: number;
+  savings_percent: number;
+  google_maps_url: string;
+  apple_maps_url: string;
+  round_trip: boolean;
+  travel_mode: string;
+  solver_time_ms: number;
+  excluded_stops?: ExcludedRouteStop[];
+}
+
+export interface RouteOptimizationRequest {
+  stops?: RouteStopInput[];
+  place_ids?: string[];
+  post_id?: string | null;
+  start_mode?: "fixed" | "any" | "custom";
+  custom_start?: RouteStopInput | null;
+  custom_end?: RouteStopInput | null;
+  round_trip?: boolean;
+  travel_mode?: "driving" | "walking" | "bicycling";
+  filter_unreachable?: boolean;
+  max_road_distance_meters?: number;
+}
+
+export async function optimizeRoute(
+  req: RouteOptimizationRequest,
+): Promise<RouteOptimizationResult> {
+  return request<RouteOptimizationResult>("/api/routes/optimize", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(req),
+  });
+}
+
