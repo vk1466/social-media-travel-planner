@@ -1,6 +1,6 @@
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { UserButton } from "@clerk/react";
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, type ReactNode } from "react";
 
 import { clerkEnabled } from "../../authMode";
 import { wanderfileClerkAppearance } from "../../clerkAppearance";
@@ -8,8 +8,8 @@ import { ViewAsSwitcher } from "../../components/ViewAsSwitcher";
 import { useHorizontalSwipe } from "../../hooks/usePointerSwipe";
 import { CATEGORY_NAV_ITEMS } from "../categoryNavStyle";
 import { TOP_TABS_BASE } from "../paths";
-import { AddLinkSheet } from "./AddLinkSheet";
 import { CategoryStrip } from "./CategoryStrip";
+import { QuietSaveBanner } from "./QuietSaveBanner";
 
 const clerkAppearance = wanderfileClerkAppearance("dark");
 
@@ -43,7 +43,6 @@ export function Shell({
   isAdmin = false,
   isSuperAdmin = false,
   onViewAsChange,
-  onIngestComplete,
 }: {
   children: ReactNode;
   counts: Record<string, number | string>;
@@ -51,13 +50,11 @@ export function Shell({
   isAdmin?: boolean;
   isSuperAdmin?: boolean;
   onViewAsChange?: (userId: string | null) => void;
-  onIngestComplete: () => void;
 }) {
   const navigate = useNavigate();
   const location = useLocation();
   const pageRef = useRef<HTMLElement>(null);
   const homeTo = TOP_TABS_BASE || "/";
-  const [addOpen, setAddOpen] = useState(false);
   const tabKeys = useMemo(() => {
     return CATEGORY_NAV_ITEMS.filter(
       (item) => item.key === "home" || loading || Number(counts[item.key] ?? 0) > 0,
@@ -72,7 +69,7 @@ export function Shell({
     : tabKeys.findIndex((key) => key !== "home" && (location.pathname === `${TOP_TABS_BASE}/${key}` || location.pathname === `/${key}`));
 
   useHorizontalSwipe(pageRef, {
-    enabled: tabIndex >= 0 && !addOpen,
+    enabled: tabIndex >= 0,
     onLeft: () => {
       const next = tabKeys[tabIndex + 1];
       if (next) navigate(next === "home" ? (TOP_TABS_BASE || "/") : `${TOP_TABS_BASE}/${next}`);
@@ -123,19 +120,17 @@ export function Shell({
           <CategoryStrip counts={counts} loading={loading} />
         </div>
         <main ref={pageRef} className="page-content">
+          <QuietSaveBanner />
           {children}
         </main>
         <button
           type="button"
           className="processing-fab"
           aria-label="Add a link"
-          onClick={() => setAddOpen(true)}
+          onClick={() => navigate("/add")}
         >
           {icon("plus")}
         </button>
-        {addOpen ? (
-          <AddLinkSheet onClose={() => setAddOpen(false)} onComplete={onIngestComplete} />
-        ) : null}
       </div>
     </div>
   );

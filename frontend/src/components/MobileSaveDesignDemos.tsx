@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { DesktopQuietSaveDemo } from "./DesktopQuietSaveDemo";
 import "./mobile-save-design-demos.css";
 
 type MockSaveState = "running" | "completed" | "duplicate" | "batch";
@@ -109,6 +110,14 @@ const DESKTOP_OPTIONS: DemoOption[] = [
     description: "Add/Ingest opens as a slide-over panel from the right over your live Library or Map. Esc or backdrop click instantly returns you to where you were.",
     tradeoff: "Keeps the background page interactive and preserves scroll position.",
   },
+  {
+    id: "desk-quiet-save",
+    number: "06",
+    title: "Quiet Save Workspace",
+    principle: "Capture + Status + Recognition",
+    description: "A compact paste panel sits beside a browsable library. One persistent queue card shows what is waiting, organizing, ready, or needs attention.",
+    tradeoff: "Keeps everyday saving visible without taking over the whole desktop page.",
+  },
 ];
 
 export function MobileSaveDesignDemos() {
@@ -209,7 +218,7 @@ export function MobileSaveDesignDemos() {
             aria-pressed={viewport === "desktop"}
             onClick={() => setViewport("desktop")}
           >
-            💻 Desktop Web Views (5 Options)
+            💻 Desktop Web Views (6 Options)
           </button>
         </div>
 
@@ -812,7 +821,7 @@ export function MobileSaveDesignDemos() {
       </div>
       ) : (
       /* ========================================================
-         DESKTOP WEB VERSION: FIVE DESKTOP DIRECTIONS
+         DESKTOP WEB VERSION: SIX DESKTOP DIRECTIONS
          ======================================================== */
       <div className="msd-desktop-grid">
         {/* DESKTOP OPTION 1: The Intake Studio (Split Workspace) */}
@@ -1260,6 +1269,7 @@ export function MobileSaveDesignDemos() {
             </div>
           </div>
         </article>
+        <DesktopQuietSaveDemo option={DESKTOP_OPTIONS[5]} />
       </div>
       )}
     </div>

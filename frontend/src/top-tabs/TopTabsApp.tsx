@@ -59,7 +59,6 @@ export function TopTabsApp({
           isAdmin={isAdmin}
           isSuperAdmin={isSuperAdmin}
           onViewAsChange={onViewAsChange}
-          onIngestComplete={onRefresh}
         >
           {loadError ? (
             <div className="library-load-error" role="alert">

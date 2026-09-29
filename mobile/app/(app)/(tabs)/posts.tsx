@@ -13,6 +13,7 @@ import {
 
 import { fetchActiveJob, fetchJobs, nativePostId, type Job, type SavedPost } from "@/src/api";
 import { categoryLabel } from "@/src/categoryLabels";
+import { QuietSaveStatusCard } from "@/src/components/QuietSaveStatusCard";
 import { FilterBar, MultiFilterChips, PageHeading } from "@/src/components/LibraryChrome";
 import { PostCard, postKey } from "@/src/components/PostCard";
 import { EmptyState, ErrorBanner } from "@/src/components/ui";
@@ -214,25 +215,12 @@ export default function PostsScreen() {
     <View style={styles.screen}>
       {error ? <ErrorBanner message={error} /> : null}
       <View style={styles.chrome}>
-        {pendingUrls.length > 0 ? (
-          <Pressable accessibilityRole="button" onPress={() => router.push({ pathname: "/(app)/ingest", params: { shared: "1" } })} style={styles.queueNotice}>
-            <Ionicons name="time-outline" size={18} color={colors.running} />
-            <Text style={styles.queueNoticeText}>{pendingUrls.length} shared {pendingUrls.length === 1 ? "link" : "links"} waiting on this device · Review queue</Text>
-            <Ionicons name="chevron-forward" size={17} color={colors.muted} />
-          </Pressable>
-        ) : activeJob ? (
-          <Pressable accessibilityRole="button" onPress={() => router.push({ pathname: "/(app)/ingest", params: { jobId: activeJob.job_id } })} style={styles.queueNotice}>
-            <ActivityIndicator size="small" color={colors.running} />
-            <Text style={styles.queueNoticeText}>{activeJob.counts.fetching + activeJob.counts.pending} links processing · View queue</Text>
-            <Ionicons name="chevron-forward" size={17} color={colors.muted} />
-          </Pressable>
-        ) : attentionJob ? (
-          <Pressable accessibilityRole="button" onPress={() => router.push({ pathname: "/(app)/ingest", params: { jobId: attentionJob.job_id } })} style={styles.queueNotice}>
-            <Ionicons name={attentionJob.counts.error + attentionJob.counts.unsupported > 0 ? "alert-circle-outline" : "checkmark-circle-outline"} size={18} color={attentionJob.counts.error + attentionJob.counts.unsupported > 0 ? colors.danger : colors.success} />
-            <Text style={styles.queueNoticeText}>{attentionJob.counts.error + attentionJob.counts.unsupported > 0 ? "A recent save needs attention" : "Recent save finished"} · Review details</Text>
-            <Ionicons name="chevron-forward" size={17} color={colors.muted} />
-          </Pressable>
-        ) : null}
+        <QuietSaveStatusCard
+          pendingUrls={pendingUrls}
+          activeJob={activeJob}
+          attentionJob={attentionJob}
+          onDismissAttention={() => setAttentionJob(null)}
+        />
         <PageHeading
           kicker="Your inspiration library"
           title="Saved posts"

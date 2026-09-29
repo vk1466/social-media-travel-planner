@@ -1,6 +1,6 @@
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AppState, BackHandler, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, AppState, BackHandler, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 
 import { fetchActiveJob, fetchJobs, postRouteParts, removePendingJobLink, startIngest, type Job } from "@/src/api";
@@ -23,6 +23,7 @@ export default function IngestScreen() {
   const [submitting, setSubmitting] = useState(false);
   const { job, error: jobError } = useJob(jobId);
   const [jobs, setJobs] = useState<Job[]>([]);
+  const [progressOpen, setProgressOpen] = useState(false);
   const autoStarted = useRef(false);
   const failedAutoUrls = useRef(new Set<string>());
   const lastAppState = useRef(AppState.currentState);
@@ -142,6 +143,34 @@ export default function IngestScreen() {
       : job?.kind === "timeline_import"
         ? "Resolving places via OpenStreetMap · progress survives refresh"
         : undefined;
+  const processedLinks = job?.links.filter((link) => link.status !== "pending" && link.status !== "fetching").length ?? 0;
+  const failedLinks = job?.links.filter((link) => link.status === "error" || link.status === "unsupported").length ?? 0;
+  const savedOrLinked = (job?.counts.saved ?? 0) + (job?.counts.linked ?? 0);
+  const statusTitle = submitError
+    ? "Save needs attention"
+    : job?.status === "running"
+      ? "Organizing your saves"
+      : job?.status === "done"
+        ? failedLinks > 0
+          ? `${failedLinks} ${failedLinks === 1 ? "link needs" : "links need"} attention`
+          : savedOrLinked === 0 && job.counts.skipped > 0
+            ? "Already in your library"
+            : "Your saves are ready"
+        : pendingUrls.length > 0
+          ? "Waiting to send"
+          : "Your library is ready";
+  const statusDetail = submitError
+    ? "The link stays on this device. Retry when you’re ready."
+    : job?.status === "running"
+      ? `${processedLinks} of ${job.links.length} processed · you can browse while we finish`
+      : job?.status === "done"
+        ? failedLinks > 0
+          ? `${job.counts.saved} saved · ${job.counts.linked} added · ${failedLinks} with issues`
+          : `${job.counts.saved} saved · ${job.counts.linked} added · ${job.counts.skipped} already saved`
+        : pendingUrls.length > 0
+          ? `${pendingUrls.length} shared link${pendingUrls.length === 1 ? "" : "s"} will submit automatically`
+          : "Save a link or browse your saved items.";
+  const hasStatus = Boolean(job || submitError || pendingUrls.length > 0);
 
   return (
     <>
@@ -170,46 +199,80 @@ export default function IngestScreen() {
         </View>
 
         {!sharedEntry ? (
-          <Text style={styles.lede}>
-            Add links anytime. Wanderfile reads and organizes them, and your queue stays available on every signed-in device.
-          </Text>
+          <Text style={styles.lede}>Paste a link to save it. You can keep browsing while Wanderfile organizes it.</Text>
         ) : null}
 
         {sharedEntry ? (
           <View accessibilityLiveRegion="polite" style={styles.receipt}>
+            <View style={styles.receiptHeader}>
+              <View style={[styles.receiptBadge, (submitError || failedLinks > 0) ? styles.receiptBadgeError : job?.status === "done" ? styles.receiptBadgeDone : styles.receiptBadgeRunning]}>
+                {submitError || failedLinks > 0 ? (
+                  <Ionicons name="alert-circle" size={16} color={colors.danger} />
+                ) : job?.status === "done" ? (
+                  <Ionicons name="checkmark-circle" size={16} color={colors.brand} />
+                ) : (
+                  <ActivityIndicator size="small" color={colors.brand} />
+                )}
+                <Text style={[styles.receiptEyebrow, (submitError || failedLinks > 0) && styles.receiptEyebrowError]}>
+                  {submitError || failedLinks > 0
+                    ? "NEEDS ATTENTION"
+                    : job?.status === "done"
+                      ? savedOrLinked > 0 ? "READY TO OPEN" : "ALREADY SAVED"
+                      : "LINK RECEIVED"}
+                </Text>
+              </View>
+            </View>
+
             <Text style={styles.receiptTitle}>
               {submitError
                 ? "This link is still on your device"
-                : !jobId
-                  ? !hydrated ? "Checking your shared link…" : pendingUrls.length > 0 ? "Share received on this device" : "Sending link to Wanderfile…"
-                  : job?.status === "running"
-                    ? "Accepted · processing"
-                    : job?.status === "done"
-                      ? job.counts.error > 0 || job.counts.unsupported > 0
-                        ? "Processing finished with an issue"
-                        : job.counts.saved + job.counts.linked === 0 && job.counts.skipped > 0
-                          ? "Already in your library"
-                          : job.counts.saved > 0
-                            ? "Saved to your library"
-                            : job.counts.linked > 0
-                              ? "Added to your library"
-                              : "Processing finished"
-                      : "Accepted by Wanderfile"}
+                : job?.status === "running" || !job
+                  ? "Organizing your save"
+                  : job.status === "done"
+                    ? failedLinks > 0
+                      ? "Finished with an issue"
+                      : savedOrLinked > 0
+                        ? "Your save is ready"
+                        : "Already in your library"
+                    : "Link received"}
             </Text>
+
+            <View style={styles.receiptPreview}>
+              <View style={styles.receiptPreviewIcon}>
+                <Ionicons
+                  name={
+                    (pendingUrls[0] ?? job?.links[0]?.post_url ?? "").includes("instagram.com")
+                      ? "logo-instagram"
+                      : (pendingUrls[0] ?? job?.links[0]?.post_url ?? "").includes("tiktok.com")
+                        ? "videocam"
+                        : "link"
+                  }
+                  size={20}
+                  color={colors.brand}
+                />
+              </View>
+              <View style={styles.receiptPreviewCopy}>
+                <Text style={styles.receiptPreviewUrl} numberOfLines={1}>
+                  {pendingUrls[0] ?? job?.links[0]?.post_url ?? "Shared link"}
+                </Text>
+                <Text style={styles.receiptPreviewSub} numberOfLines={1}>
+                  {job?.status === "running" || !job
+                    ? "Wanderfile is organizing places and details in the background."
+                    : job.status === "done" && savedOrLinked > 0
+                      ? `${savedOrLinked} ${savedOrLinked === 1 ? "place/item added" : "places/items added"} to your atlas`
+                      : "Saved on this device · Tap below to continue"}
+                </Text>
+              </View>
+            </View>
+
             <Text style={styles.receiptSubtitle}>
               {submitError
-                ? "The request was not accepted. Retry when you’re ready."
-                : !jobId
-                  ? !hydrated
-                    ? "Checking the saved share on this device."
-                    : pendingUrls.length > 0
-                      ? "Saved on this device. Wanderfile will submit it automatically; you can close this screen."
-                      : "No local share is waiting here. Share the link again to retry."
-                  : job?.status === "running"
-                    ? "You can leave this screen; progress will remain in your library."
-                    : job?.status === "done"
-                      ? `${job.counts.saved} saved · ${job.counts.linked} added · ${job.counts.skipped} already in your library · ${job.counts.error + job.counts.unsupported} with issues`
-                      : "The job was accepted. Waiting for its status."}
+                ? "The request was not accepted. Your link is safely stored on this device."
+                : job?.status === "running" || !job
+                  ? "You can leave this screen now. Wanderfile organizes in the background while you browse."
+                  : job?.status === "done"
+                    ? `${job.counts.saved} saved · ${job.counts.linked} added · ${job.counts.skipped} already saved`
+                    : "The job was accepted by Wanderfile."}
             </Text>
           </View>
         ) : null}
@@ -217,6 +280,32 @@ export default function IngestScreen() {
         {submitError ? <ErrorBanner message={submitError} /> : null}
         {actionError ? <ErrorBanner message={actionError} /> : null}
         {jobError ? <ErrorBanner message={jobError} /> : null}
+        {!sharedEntry && hasStatus ? (
+          <View style={[styles.statusCard, failedLinks > 0 && styles.statusFailed]} accessibilityLiveRegion="polite">
+            <View style={[styles.statusIcon, failedLinks > 0 && styles.statusIconFailed]}>
+              {submitError || failedLinks > 0
+                ? <Ionicons name="alert-circle" size={19} color={colors.danger} />
+                : job?.status === "running" || !job
+                  ? <ActivityIndicator size="small" color={colors.brand} />
+                  : <Ionicons name="checkmark" size={19} color={colors.brand} />}
+            </View>
+            <View style={styles.statusCopy}>
+              <Text style={styles.statusEyebrow}>{failedLinks > 0 || submitError ? "NEEDS ATTENTION" : job?.status === "running" ? "IN PROGRESS" : job?.status === "done" ? "READY" : "ON THIS DEVICE"}</Text>
+              <Text style={styles.statusTitle}>{statusTitle}</Text>
+              <Text style={styles.statusDetail}>{statusDetail}</Text>
+            </View>
+            {job?.links.some((link) => link.status === "error") ? (
+              <Pressable accessibilityRole="button" disabled={submitting} onPress={() => void handleSubmit(job.links.filter((link) => link.status === "error").map((link) => link.post_url), false)} style={styles.statusRetry}>
+                <Text style={styles.statusRetryText}>{submitting ? "Retrying…" : "Retry"}</Text>
+              </Pressable>
+            ) : null}
+            {job?.links.length ? (
+              <Pressable accessibilityRole="button" accessibilityLabel={progressOpen ? "Hide save progress" : "View save progress"} onPress={() => setProgressOpen((open) => !open)} hitSlop={8} style={styles.statusToggle}>
+                <Ionicons name={progressOpen ? "chevron-up" : "chevron-forward"} size={20} color={colors.brand} />
+              </Pressable>
+            ) : null}
+          </View>
+        ) : null}
         {sharedEntry ? (
           submitError ? (
             <Pressable
@@ -233,16 +322,52 @@ export default function IngestScreen() {
           />
         )}
         {sharedEntry ? (
+          (() => {
+            const finishedPost = job?.links.find((l) => l.post_id && (l.status === "saved" || l.status === "linked"));
+            if (job?.status === "done" && finishedPost?.post_id) {
+              return (
+                <View style={styles.sharedActions}>
+                  <Pressable
+                    accessibilityRole="button"
+                    onPress={() => openPost("instagram", finishedPost.post_id!)}
+                    style={({ pressed }) => [styles.viewLibrary, pressed && { opacity: 0.75 }]}
+                  >
+                    <Text style={styles.viewLibraryText}>Open save</Text>
+                    <Ionicons name="arrow-forward" size={17} color={colors.onFill} />
+                  </Pressable>
+                  <Pressable
+                    accessibilityRole="button"
+                    onPress={() => router.replace(appHref("/(app)/(tabs)/posts"))}
+                    style={({ pressed }) => [styles.browseButton, pressed && { opacity: 0.75 }]}
+                  >
+                    <Text style={styles.browseButtonText}>Browse library</Text>
+                  </Pressable>
+                </View>
+              );
+            }
+            return (
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => router.replace(appHref("/(app)/(tabs)/posts"))}
+                style={({ pressed }) => [styles.viewLibrary, pressed && { opacity: 0.75 }]}
+              >
+                <Text style={styles.viewLibraryText}>Keep browsing</Text>
+                <Ionicons name="arrow-forward" size={17} color={colors.onFill} />
+              </Pressable>
+            );
+          })()
+        ) : null}
+        {!sharedEntry ? (
           <Pressable
             accessibilityRole="button"
             onPress={() => router.replace(appHref("/(app)/(tabs)/posts"))}
-            style={({ pressed }) => [styles.viewLibrary, pressed && { opacity: 0.75 }]}
+            style={({ pressed }) => [styles.browseButton, pressed && { opacity: 0.75 }]}
           >
-            <Text style={styles.viewLibraryText}>View library</Text>
-            <Ionicons name="arrow-forward" size={17} color={colors.onFill} />
+            <Text style={styles.browseButtonText}>Browse your library</Text>
+            <Ionicons name="arrow-forward" size={17} color={colors.brand} />
           </Pressable>
         ) : null}
-        <IngestProgress
+        {(sharedEntry || progressOpen) ? <IngestProgress
           links={job?.links ?? []}
           running={job?.status === "running"}
           title={progressTitle}
@@ -260,7 +385,7 @@ export default function IngestScreen() {
                 }
               : undefined
           }
-        />
+        /> : null}
         {jobs.filter((item) => item.job_id !== job?.job_id).length > 0 ? (
           <View>
             <Text style={styles.historyTitle}>Recent jobs</Text>
@@ -298,8 +423,34 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   receipt: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.brandSoft, borderRadius: radius.md, padding: spacing.md, marginBottom: spacing.md },
-  receiptTitle: { color: colors.ink, fontWeight: "800", fontSize: 15 },
-  receiptSubtitle: { color: colors.muted, fontSize: 13, lineHeight: 19, marginTop: 4 },
+  receiptHeader: { flexDirection: "row", alignItems: "center", marginBottom: spacing.xs },
+  receiptBadge: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 9, paddingVertical: 4, borderRadius: 12, backgroundColor: colors.surfaceAlt },
+  receiptBadgeRunning: { backgroundColor: colors.brandSoft },
+  receiptBadgeDone: { backgroundColor: colors.brandSoft },
+  receiptBadgeError: { backgroundColor: colors.dangerSoft },
+  receiptEyebrow: { color: colors.brand, fontWeight: "800", fontSize: 10, letterSpacing: 0.8 },
+  receiptEyebrowError: { color: colors.danger },
+  receiptTitle: { color: colors.ink, fontWeight: "800", fontSize: 18, marginTop: 4, marginBottom: 8 },
+  receiptSubtitle: { color: colors.muted, fontSize: 13, lineHeight: 18, marginTop: 8 },
+  receiptPreview: { flexDirection: "row", alignItems: "center", gap: 10, padding: 10, backgroundColor: colors.surfaceAlt, borderRadius: radius.sm, marginVertical: 4 },
+  receiptPreviewIcon: { width: 34, height: 34, borderRadius: 17, backgroundColor: colors.surface, alignItems: "center", justifyContent: "center" },
+  receiptPreviewCopy: { flex: 1 },
+  receiptPreviewUrl: { color: colors.ink, fontWeight: "700", fontSize: 13 },
+  receiptPreviewSub: { color: colors.muted, fontSize: 11, marginTop: 1 },
+  sharedActions: { gap: spacing.xs, marginBottom: spacing.md },
+  statusCard: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.brandSoft, borderRadius: radius.md, padding: spacing.md, marginBottom: spacing.md, flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  statusFailed: { borderColor: colors.danger },
+  statusIcon: { width: 34, height: 34, borderRadius: 17, backgroundColor: colors.surfaceAlt, alignItems: "center", justifyContent: "center" },
+  statusIconFailed: { backgroundColor: colors.dangerSoft },
+  statusCopy: { flex: 1 },
+  statusEyebrow: { color: colors.brand, fontWeight: "800", fontSize: 10, letterSpacing: 0.7 },
+  statusTitle: { color: colors.ink, fontWeight: "800", fontSize: 15, marginTop: 2 },
+  statusDetail: { color: colors.muted, fontSize: 12, lineHeight: 17, marginTop: 2 },
+  statusToggle: { minWidth: 36, minHeight: 44, alignItems: "center", justifyContent: "center" },
+  statusRetry: { backgroundColor: colors.dangerSoft, borderRadius: radius.sm, minHeight: 40, paddingHorizontal: 10, alignItems: "center", justifyContent: "center" },
+  statusRetryText: { color: colors.ink, fontSize: 12, fontWeight: "800" },
+  browseButton: { minHeight: 46, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, marginBottom: spacing.md, paddingHorizontal: spacing.md, flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8 },
+  browseButtonText: { color: colors.brand, fontWeight: "800", fontSize: 14 },
   viewLibrary: { minHeight: 48, borderRadius: radius.md, backgroundColor: colors.brand, marginBottom: spacing.md, paddingHorizontal: spacing.md, flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8 },
   viewLibraryText: { color: colors.onFill, fontWeight: "800", fontSize: 15 },
   retryButton: { minHeight: 46, alignItems: "center", justifyContent: "center", backgroundColor: colors.brand, borderRadius: radius.md, marginBottom: spacing.md },

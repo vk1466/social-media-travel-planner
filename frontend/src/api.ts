@@ -390,7 +390,11 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   if (init?.body instanceof FormData) {
     headers.delete("Content-Type");
   }
-  const response = await fetch(`${API_BASE_URL}${path}`, { ...init, headers });
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    credentials: "omit",
+    ...init,
+    headers,
+  });
   if (!response.ok) {
     let detail = response.statusText;
     try {

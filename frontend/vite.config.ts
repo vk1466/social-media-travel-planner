@@ -9,7 +9,17 @@ export default defineConfig(({ mode }) => {
     server: {
       port: 5173,
       proxy: apiBaseUrl
-        ? { "/api": { target: apiBaseUrl, changeOrigin: true } }
+        ? {
+            "/api": {
+              target: apiBaseUrl,
+              changeOrigin: true,
+              configure: (proxy) => {
+                proxy.on("proxyReq", (proxyReq) => {
+                  proxyReq.removeHeader("cookie");
+                });
+              },
+            },
+          }
         : undefined,
     },
   };
