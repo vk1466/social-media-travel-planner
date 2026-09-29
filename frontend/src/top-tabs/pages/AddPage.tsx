@@ -2,9 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import { fetchActiveJob, fetchJob, fetchJobs, fetchPosts, parsePostId, removePendingJobLink, startIngest, type Job, type JobLink, type SavedPost } from "../../api";
-import { PageHeading } from "../../components/PageHeading";
 import { useLabTheme } from "../theme";
 import "../../add-page.css";
+import "../../quiet-save-workspace.css";
 
 function isUrl(value: string): boolean {
   try {
@@ -23,6 +23,11 @@ function safeHost(value?: string | null): string {
     return "Saved link";
   }
 }
+
+const LINK_STATUS_LABELS: Record<JobLink["status"], string> = {
+  pending: "Waiting", fetching: "Organizing", saved: "Ready", linked: "Ready",
+  skipped: "Already saved", unsupported: "Needs attention", error: "Needs attention",
+};
 
 export function AddPage({
   authReady,
@@ -68,6 +73,18 @@ export function AddPage({
   }
   const needsAttention = [...latestLinkStatuses.values()].filter((status) => status === "error" || status === "unsupported").length;
   const activeCount = queuedPending + organizingCount;
+  const queueLinks: { job: Job; link: JobLink }[] = [];
+  const seenQueueUrls = new Set<string>();
+  for (const job of jobs) {
+    if (job.kind && job.kind !== "link_ingest") continue;
+    for (const link of job.links) {
+      if (seenQueueUrls.has(link.post_url)) continue;
+      seenQueueUrls.add(link.post_url);
+      queueLinks.push({ job, link });
+      if (queueLinks.length >= 8) break;
+    }
+    if (queueLinks.length >= 8) break;
+  }
 
   useEffect(() => {
     if (!authReady) return;
@@ -188,18 +205,15 @@ export function AddPage({
 
   return (
     <div className="top-add-page">
-      <PageHeading
-        backLink={{ to: "/", label: "Home" }}
-        kicker="Add to Wanderfile"
-        title="Ideas worth keeping."
-        lede="Save a link, then keep exploring. Your queue shows what is waiting, organizing, and ready."
-        count={{ value: activeCount, label: "in progress" }}
-        platformFilter={false}
-      />
+      <header className="save-workspace-topbar">
+        <Link className="save-workspace-wordmark" to={basePath || "/"}>Wanderfile<span aria-hidden="true">✳</span></Link>
+        <span className="save-workspace-nav-label">Your library</span>
+        <span className="save-workspace-header-note">Saved ideas, all in one place</span>
+      </header>
       <div className="processing-layout">
         <section className="queue-panel draft-panel">
           <span className="save-workspace-eyebrow">Save something new</span>
-          <h2>Keep the link.<br />Find it later.</h2>
+          <h2>Keep the link. <br />Find it later.</h2>
           <p>Paste one or more links. Wanderfile accepts them first, then organizes them while you browse.</p>
           <label className="save-workspace-label" htmlFor="save-workspace-links">Links to save</label>
           <textarea
@@ -240,39 +254,34 @@ export function AddPage({
 
         <div className="processing-jobs">
           <section className="queue-panel save-workspace-library">
-            <div className="save-workspace-heading"><div><span className="save-workspace-eyebrow">Your library</span><h2>Save queue</h2></div><Link to={`${basePath}/posts`}>Browse library →</Link></div>
+            <div className="save-workspace-heading"><div><span className="save-workspace-eyebrow">Your library</span><h2>Ideas worth keeping.</h2></div><Link to={`${basePath}/posts`}>Browse while saving →</Link></div>
             <div className={`save-workspace-status${needsAttention ? " has-issue" : ""}`} role="status" aria-live="polite">
               <span className="save-workspace-status-icon" aria-hidden="true">{needsAttention ? "!" : activeCount ? "↻" : "✓"}</span>
-              <div><strong>{needsAttention ? `${needsAttention} ${needsAttention === 1 ? "link needs" : "links need"} attention` : activeCount ? "Organizing your saves" : "All links processed"}</strong><span>{activeCount ? `${queuedPending} waiting · You can keep browsing` : "Your queue is up to date"}</span></div>
+              <div><strong>{needsAttention ? `${needsAttention} ${needsAttention === 1 ? "link needs" : "links need"} attention` : activeCount ? "Organizing your saves" : queueLinks.length ? "All links processed" : "Ready when you are"}</strong><span>{activeCount ? `${queuedPending} waiting · You can keep browsing` : queueLinks.length ? "Your queue is up to date" : "Paste a link to start saving"}</span></div>
             </div>
             {notice ? <p className="save-workspace-notice" role="status">{notice}</p> : null}
             {startError ? <p className="inline-errors" role="alert">{startError}</p> : null}
             {jobsError ? <p className="inline-errors" role="alert">{jobsError}</p> : null}
-            <h3 className="save-workspace-section-title">In progress</h3>
+            <h3 className="save-workspace-section-title">Save queue <span>{queueLinks.length} {queueLinks.length === 1 ? "link" : "links"}</span></h3>
             {loadingJobs ? <p className="empty-copy">Loading jobs…</p> : null}
-            {!loadingJobs && runningJobs.length === 0 ? (
-              <p className="empty-copy">Nothing is processing right now.</p>
+            {!loadingJobs && queueLinks.length === 0 ? (
+              <p className="empty-copy">Your saved links will appear here.</p>
             ) : null}
-            {runningJobs.map((job) => (
-              <JobCard
-                key={job.job_id}
-                job={job}
-                onOpen={(postId) => {
-                  if (postId) {
-                    const { platform, nativeId } = parsePostId(postId);
+            <div className="save-workspace-queue-list">
+              {queueLinks.map(({ job, link }) => (
+                <div className="save-workspace-queue-row" key={link.post_url}>
+                  <span className={`save-workspace-row-dot is-${link.status}`} aria-hidden="true" />
+                  <div className="save-workspace-row-main"><strong>{safeHost(link.post_url)}</strong><small title={link.post_url}>{link.error_message || link.post_url}</small></div>
+                  <span className={`save-workspace-row-status is-${link.status}`}>{LINK_STATUS_LABELS[link.status]}</span>
+                  {link.status === "pending" ? <button type="button" onClick={() => void removePending(job.job_id, link.post_url)}>Remove</button> : null}
+                  {link.status === "error" ? <button type="button" onClick={() => void retryLink(link.post_url)}>Retry</button> : null}
+                  {link.post_id ? <button type="button" onClick={() => {
+                    const { platform, nativeId } = parsePostId(link.post_id!);
                     navigate(`${basePath}/posts/${platform}/${nativeId}`);
-                  } else {
-                    navigate(`${basePath}/posts`);
-                  }
-                }}
-                onRetry={(postUrl) => void retryLink(postUrl)}
-                onRemovePending={
-                  (job.kind ?? "link_ingest") === "link_ingest"
-                    ? (postUrl) => void removePending(job.job_id, postUrl)
-                    : undefined
-                }
-              />
-            ))}
+                  }}>Open</button> : null}
+                </div>
+              ))}
+            </div>
             <div className="save-workspace-recent">
               <div className="save-workspace-heading"><h3 className="save-workspace-section-title">Recently saved</h3><Link to={`${basePath}/posts`}>Explore your library →</Link></div>
               {recentPosts.length ? <div className="save-workspace-recent-grid">{recentPosts.map((post) => {
@@ -372,13 +381,9 @@ function JobLinkRow({
   onRemovePending?: (postUrl: string) => void;
   onRetry: (postUrl: string) => void;
 }) {
-  const statusLabel: Record<JobLink["status"], string> = {
-    pending: "Waiting", fetching: "Organizing", saved: "Ready", linked: "Ready",
-    skipped: "Already saved", unsupported: "Needs attention", error: "Needs attention",
-  };
   return (
     <article>
-      <b>{statusLabel[link.status]}</b>
+      <b>{LINK_STATUS_LABELS[link.status]}</b>
       <span title={link.post_url}>{link.post_url}</span>
       {link.error_message ? <small>{link.error_message}</small> : null}
       {link.status === "pending" && onRemovePending ? (

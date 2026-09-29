@@ -1,6 +1,6 @@
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ActivityIndicator, AppState, BackHandler, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, AppState, BackHandler, Image, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 
 import { fetchActiveJob, fetchJobs, postRouteParts, removePendingJobLink, startIngest, type Job } from "@/src/api";
@@ -15,7 +15,7 @@ import { colors, radius, spacing } from "@/src/theme";
 export default function IngestScreen() {
   const router = useRouter();
   const { shared, jobId: routeJobId } = useLocalSearchParams<{ shared?: string; jobId?: string }>();
-  const { bumpRefresh } = useLibrary();
+  const { bumpRefresh, posts } = useLibrary();
   const { pendingUrls, autoSubmit, hydrated, clearPendingUrls } = usePendingShare();
   const [jobId, setJobId] = useState<string | null>(() => typeof routeJobId === "string" ? routeJobId : null);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -176,7 +176,7 @@ export default function IngestScreen() {
     <>
       <Stack.Screen
         options={{
-          title: sharedEntry ? "Save to Wanderfile" : "Save links",
+          title: sharedEntry ? "Save to Wanderfile" : "Your library",
           headerLeft: () => (
             <Pressable
               onPress={handleClose}
@@ -191,16 +191,12 @@ export default function IngestScreen() {
         }}
       />
       <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
-        <View style={styles.topRow}>
+        {sharedEntry ? <View style={styles.topRow}>
           <View style={styles.titleBlock}>
-            <Text style={styles.kicker}>{sharedEntry ? "Shared link" : "Add to Wanderfile"}</Text>
-            <Text style={styles.title}>{sharedEntry ? "Save to Wanderfile" : "Save links"}</Text>
+            <Text style={styles.kicker}>Shared link</Text>
+            <Text style={styles.title}>Save to Wanderfile</Text>
           </View>
-        </View>
-
-        {!sharedEntry ? (
-          <Text style={styles.lede}>Paste a link to save it. You can keep browsing while Wanderfile organizes it.</Text>
-        ) : null}
+        </View> : null}
 
         {sharedEntry ? (
           <View accessibilityLiveRegion="polite" style={styles.receipt}>
@@ -316,10 +312,43 @@ export default function IngestScreen() {
             ><Text style={styles.retryText}>{submitting ? "Retrying…" : "Retry save"}</Text></Pressable>
           ) : null
         ) : (
-          <LinkSubmitForm
-            disabled={submitting}
-            onSubmit={(links, refresh) => handleSubmit(links, refresh)}
-          />
+          <>
+            <View style={styles.manualSaveHeading}>
+              <Text style={styles.manualSectionTitle}>Save another link</Text>
+              <Text style={styles.manualSectionHint}>Paste a link and we’ll organize it in the background.</Text>
+            </View>
+            <LinkSubmitForm
+              disabled={submitting}
+              onSubmit={(links, refresh) => handleSubmit(links, refresh)}
+            />
+            <View style={styles.recentSection}>
+              <View style={styles.recentHeading}>
+                <Text style={styles.manualSectionTitle}>Recently saved</Text>
+                <Pressable accessibilityRole="button" onPress={() => router.replace(appHref("/(app)/(tabs)/posts"))}>
+                  <Text style={styles.seeAll}>See all →</Text>
+                </Pressable>
+              </View>
+              {posts.slice(0, 3).map((post) => (
+                <Pressable
+                  key={post.post_id}
+                  accessibilityRole="button"
+                  onPress={() => openPost(post.platform, post.post_id)}
+                  style={styles.recentPost}
+                >
+                  {post.thumbnail_url ? (
+                    <Image source={{ uri: post.thumbnail_url }} style={styles.recentThumb} />
+                  ) : (
+                    <View style={[styles.recentThumb, styles.recentThumbFallback]}><Ionicons name="bookmark" size={18} color={colors.brand} /></View>
+                  )}
+                  <View style={styles.recentCopy}>
+                    <Text style={styles.recentTitle} numberOfLines={2}>{post.caption || post.reel_summary || post.author_handle || "Saved idea"}</Text>
+                    <Text style={styles.recentMeta} numberOfLines={1}>{post.content_category || post.platform} · {post.extracted_places.length} {post.extracted_places.length === 1 ? "place" : "places"}</Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={17} color={colors.muted} />
+                </Pressable>
+              ))}
+            </View>
+          </>
         )}
         {sharedEntry ? (
           (() => {
@@ -438,7 +467,7 @@ const styles = StyleSheet.create({
   receiptPreviewUrl: { color: colors.ink, fontWeight: "700", fontSize: 13 },
   receiptPreviewSub: { color: colors.muted, fontSize: 11, marginTop: 1 },
   sharedActions: { gap: spacing.xs, marginBottom: spacing.md },
-  statusCard: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.brandSoft, borderRadius: radius.md, padding: spacing.md, marginBottom: spacing.md, flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  statusCard: { backgroundColor: colors.surface, borderWidth: 1, borderLeftWidth: 3, borderColor: colors.brand, borderRadius: radius.md, padding: spacing.md, marginBottom: spacing.md, flexDirection: "row", alignItems: "center", gap: spacing.sm },
   statusFailed: { borderColor: colors.danger },
   statusIcon: { width: 34, height: 34, borderRadius: 17, backgroundColor: colors.surfaceAlt, alignItems: "center", justifyContent: "center" },
   statusIconFailed: { backgroundColor: colors.dangerSoft },
@@ -475,6 +504,18 @@ const styles = StyleSheet.create({
   },
   title: { fontSize: 28, fontWeight: "800", color: colors.ink },
   lede: { marginTop: 6, marginBottom: spacing.md, color: colors.muted, fontSize: 15, lineHeight: 22 },
+  manualSaveHeading: { marginTop: spacing.xs, marginBottom: spacing.sm },
+  manualSectionTitle: { color: colors.ink, fontSize: 17, fontWeight: "800" },
+  manualSectionHint: { color: colors.muted, fontSize: 13, lineHeight: 18, marginTop: 3 },
+  recentSection: { marginTop: spacing.lg },
+  recentHeading: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: spacing.sm },
+  seeAll: { color: colors.brand, fontWeight: "700", fontSize: 13 },
+  recentPost: { flexDirection: "row", alignItems: "center", gap: spacing.sm, padding: spacing.sm, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.brandSoft, borderRadius: radius.md, marginBottom: spacing.xs },
+  recentThumb: { width: 48, height: 56, borderRadius: radius.sm, backgroundColor: colors.surfaceAlt },
+  recentThumbFallback: { alignItems: "center", justifyContent: "center" },
+  recentCopy: { flex: 1 },
+  recentTitle: { color: colors.ink, fontSize: 13, fontWeight: "700", lineHeight: 18 },
+  recentMeta: { color: colors.muted, fontSize: 11, marginTop: 4, textTransform: "capitalize" },
   historyTitle: {
     marginTop: spacing.lg,
     marginBottom: spacing.sm,

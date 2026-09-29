@@ -150,7 +150,7 @@ export function QuietSaveStatusCard({
 
 const styles = StyleSheet.create({
   card: {
-    minHeight: 64,
+    minHeight: 72,
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 14,
@@ -159,25 +159,28 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: colors.brandSoft,
+    borderColor: colors.brand,
+    borderLeftWidth: 3,
     gap: 12,
     ...shadow(1),
   },
   cardError: {
     borderColor: colors.danger,
+    borderLeftColor: colors.danger,
     backgroundColor: colors.surfaceAlt,
   },
   cardDone: {
     borderColor: colors.border,
+    borderLeftColor: colors.brand,
   },
   cardPressed: {
     opacity: 0.85,
   },
   iconWrap: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: colors.surfaceAlt,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.bg,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -206,7 +209,7 @@ const styles = StyleSheet.create({
   },
   title: {
     color: colors.ink,
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: "800",
     marginTop: 1,
   },

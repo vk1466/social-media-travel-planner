@@ -1,0 +1,248 @@
+.lab-pages .top-add-page {
+  --save-bg: #102833;
+  --save-header: #122f3b;
+  --save-rail: #173a47;
+  --save-row: #153642;
+  --save-card: #1a4654;
+  --save-border: #2a5260;
+  --save-cyan: #4fe8f6;
+  --save-copy: #f3fafc;
+  --save-muted: #b7d0d8;
+  overflow: hidden;
+  border: 1px solid var(--save-border);
+  border-radius: 18px;
+  background: var(--save-bg);
+  color: var(--save-copy);
+}
+.top-add-page .save-workspace-topbar {
+  display: flex;
+  min-height: 66px;
+  align-items: center;
+  gap: 32px;
+  padding: 0 30px;
+  border-bottom: 1px solid var(--save-border);
+  background: var(--save-header);
+}
+.top-add-page .save-workspace-wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--save-copy);
+  font: 27px/1 var(--wf-font-headline);
+  text-decoration: none;
+}
+.top-add-page .save-workspace-wordmark span { color: var(--save-cyan); font: 20px/1 sans-serif; }
+.top-add-page .save-workspace-nav-label {
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  border-bottom: 2px solid var(--save-cyan);
+  font-size: 13px;
+  font-weight: 800;
+}
+.top-add-page .save-workspace-header-note { margin-left: auto; color: #91b4c0; font-size: 12px; }
+.lab-pages .top-add-page .processing-layout {
+  display: grid;
+  grid-template-columns: minmax(255px, 330px) minmax(0, 1fr);
+  align-items: stretch;
+  gap: 0;
+}
+.lab-pages .top-add-page .draft-panel,
+.lab-pages .top-add-page .save-workspace-library,
+.lab-pages .top-add-page .completed-history {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+.lab-pages .top-add-page .draft-panel {
+  position: static;
+  padding: 34px 27px;
+  border-right: 1px solid var(--save-border);
+  background: var(--save-rail);
+  color: var(--save-copy);
+}
+.top-add-page .save-workspace-eyebrow {
+  display: block;
+  margin-bottom: 9px;
+  color: var(--save-cyan);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+.lab-pages .top-add-page .draft-panel > h2 {
+  margin: 0 0 12px;
+  color: #fff;
+  font: 400 31px/1.1 var(--wf-font-headline);
+  letter-spacing: 0;
+}
+.lab-pages .top-add-page .draft-panel > p:first-of-type {
+  margin: 0 0 28px;
+  color: var(--save-muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+.top-add-page .save-workspace-label { display: block; margin-bottom: 8px; color: #e7f4f6; font-size: 12px; font-weight: 800; }
+.lab-pages .top-add-page .draft-panel .links-input {
+  display: block;
+  width: 100%;
+  min-height: 126px;
+  padding: 12px;
+  border: 1px solid #3d7182;
+  border-radius: 10px;
+  background: #0e2630;
+  color: var(--save-copy);
+  font-size: 13px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.lab-pages .top-add-page .draft-panel .links-input::placeholder { color: #9fbdc7; }
+.lab-pages .top-add-page .draft-panel .links-input:focus-visible { outline: 2px solid var(--save-cyan); outline-offset: 2px; }
+.lab-pages .top-add-page .draft-panel .advanced-options {
+  margin-top: 12px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--save-muted);
+}
+.lab-pages .top-add-page .draft-panel .advanced-options summary {
+  width: 100%;
+  margin: 0;
+  padding: 8px 0;
+  background: transparent;
+  color: var(--save-muted);
+  font-size: 11px;
+}
+.lab-pages .top-add-page .refresh-row { color: var(--save-muted); font-size: 12px; }
+.lab-pages .top-add-page .queue-actions { margin-top: 12px; }
+.lab-pages .top-add-page .queue-actions .primary {
+  width: 100%;
+  min-height: 45px;
+  padding: 10px 15px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--save-cyan);
+  color: var(--save-bg);
+  font-size: 13px;
+  font-weight: 800;
+  text-align: left;
+}
+.lab-pages .top-add-page .queue-actions .primary:not(:disabled):hover { background: #a1f3f8; }
+.top-add-page .save-workspace-hint { display: block; margin-top: 10px; color: #a9c9d2; font-size: 11px; }
+.lab-pages .top-add-page .processing-jobs { display: block; min-width: 0; background: var(--save-bg); }
+.lab-pages .top-add-page .save-workspace-library { padding: 30px 33px 34px; background: var(--save-bg); color: var(--save-copy); }
+.top-add-page .save-workspace-heading { display: flex; align-items: end; justify-content: space-between; gap: 15px; }
+.top-add-page .save-workspace-heading h2 { margin: 0; color: #fff; font: 400 33px/1.1 var(--wf-font-headline); }
+.top-add-page .save-workspace-heading a { color: #9dedf3; font-size: 12px; font-weight: 800; text-decoration: none; white-space: nowrap; }
+.top-add-page .save-workspace-heading a:hover { text-decoration: underline; }
+.top-add-page .save-workspace-status {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 22px;
+  padding: 15px 17px;
+  border: 1px solid #408092;
+  border-radius: 13px;
+  background: var(--save-card);
+  color: var(--save-copy);
+}
+.top-add-page .save-workspace-status.has-issue { border-color: #ad7770; background: #443439; }
+.top-add-page .save-workspace-status-icon {
+  display: grid;
+  flex: 0 0 34px;
+  height: 34px;
+  place-items: center;
+  border-radius: 50%;
+  background: #2c6675;
+  color: #86e9f0;
+  font-size: 19px;
+}
+.top-add-page .save-workspace-status.has-issue .save-workspace-status-icon { background: #744d4b; color: #ffe0d6; }
+.top-add-page .save-workspace-status div { display: grid; gap: 4px; min-width: 0; }
+.top-add-page .save-workspace-status strong { font-size: 14px; }
+.top-add-page .save-workspace-status div span { color: #b8d4dc; font-size: 12px; }
+.top-add-page .save-workspace-notice { min-height: 18px; margin: 10px 2px 0; color: #a6c4cd; font-size: 12px; }
+.top-add-page .save-workspace-section-title {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 25px 0 10px;
+  color: var(--save-copy);
+  font-size: 15px;
+}
+.top-add-page .save-workspace-section-title span { color: #91b4c0; font-size: 11px; font-weight: 400; }
+.top-add-page .save-workspace-queue-list { overflow: hidden; border-radius: 10px; }
+.top-add-page .save-workspace-queue-row {
+  display: flex;
+  min-height: 55px;
+  align-items: center;
+  gap: 11px;
+  padding: 8px 11px;
+  border-top: 1px solid #294e5a;
+  background: var(--save-row);
+}
+.top-add-page .save-workspace-queue-row:first-child { border-top: 0; }
+.top-add-page .save-workspace-row-dot { flex: 0 0 8px; height: 8px; border-radius: 50%; background: #69c8a1; }
+.top-add-page .save-workspace-row-dot.is-fetching { background: var(--save-cyan); }
+.top-add-page .save-workspace-row-dot.is-pending { background: #c8a66f; }
+.top-add-page .save-workspace-row-dot.is-error,
+.top-add-page .save-workspace-row-dot.is-unsupported { background: #e59a8e; }
+.top-add-page .save-workspace-row-main { display: grid; flex: 1; min-width: 0; gap: 3px; }
+.top-add-page .save-workspace-row-main strong,
+.top-add-page .save-workspace-row-main small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.top-add-page .save-workspace-row-main strong { font-size: 12px; }
+.top-add-page .save-workspace-row-main small { color: #a0c0ca; font-size: 11px; }
+.top-add-page .save-workspace-row-status { color: var(--save-muted); font-size: 11px; font-weight: 700; white-space: nowrap; }
+.top-add-page .save-workspace-row-status.is-error,
+.top-add-page .save-workspace-row-status.is-unsupported { color: #ffd2c8; }
+.top-add-page .save-workspace-queue-row button { min-height: 34px; padding: 6px 10px; border: 1px solid #6d9aa6; border-radius: 8px; background: transparent; color: var(--save-copy); font-size: 11px; font-weight: 800; cursor: pointer; }
+.lab-pages .top-add-page .empty-copy { color: var(--save-muted); }
+.lab-pages .top-add-page .job-card { margin-top: 10px; padding: 13px; border: 1px solid var(--save-border); border-radius: 10px; background: var(--save-row); }
+.lab-pages .top-add-page .job-card > header b,
+.lab-pages .top-add-page .job-card > header .job-progress-label { color: var(--save-copy); }
+.lab-pages .top-add-page .job-card > header span,
+.lab-pages .top-add-page .job-card time { color: var(--save-muted); }
+.lab-pages .top-add-page .job-card .job-list { margin-top: 10px; }
+.lab-pages .top-add-page .job-card .job-list article {
+  grid-template-columns: 104px minmax(0, 1fr) auto;
+  border-color: var(--save-border);
+  background: var(--save-bg);
+  color: var(--save-copy);
+}
+.lab-pages .top-add-page .job-list b { color: var(--save-cyan); text-transform: none; }
+.lab-pages .top-add-page .job-list span { color: var(--save-muted); }
+.lab-pages .top-add-page .job-list button { border-color: #6d9aa6; border-radius: 8px; background: transparent; color: var(--save-copy); }
+.top-add-page .save-workspace-recent { margin-top: 27px; }
+.top-add-page .save-workspace-recent-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.top-add-page .save-workspace-recent-card { display: grid; gap: 7px; min-width: 0; overflow: hidden; border: 1px solid var(--save-border); border-radius: 10px; background: var(--save-rail); color: var(--save-copy); text-decoration: none; }
+.top-add-page .save-workspace-recent-card img,
+.top-add-page .save-workspace-recent-placeholder { display: block; width: 100%; height: 70px; object-fit: cover; background: linear-gradient(135deg, #355d71, #78b1ad); }
+.top-add-page .save-workspace-recent-card strong { padding: 0 10px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 12px; }
+.top-add-page .save-workspace-recent-card small { padding: 0 10px 10px; color: #a9c5cf; font-size: 11px; text-transform: capitalize; }
+.lab-pages .top-add-page .completed-history { padding: 16px 33px 30px; border-top: 1px solid var(--save-border); background: var(--save-bg); color: var(--save-copy); }
+.lab-pages .top-add-page .completed-history > summary { background: var(--save-rail); color: var(--save-copy); }
+.lab-pages .top-add-page .queue-section-heading span { color: var(--save-muted); }
+.lab-pages .top-add-page .completed-history .queue-section-heading h2 { color: var(--save-copy); font-size: 16px; font-family: var(--wf-font-body); font-weight: 700; }
+.lab-pages .top-add-page .inline-errors { color: #ffd2b7; }
+.lab-pages .top-add-page :is(button, a, textarea, summary):focus-visible { outline: 2px solid var(--save-cyan); outline-offset: 2px; }
+@media (max-width: 900px) {
+  .lab-pages .top-add-page .processing-layout { grid-template-columns: minmax(0, 1fr); }
+  .lab-pages .top-add-page .draft-panel { border-right: 0; border-bottom: 1px solid var(--save-border); }
+  .lab-pages .top-add-page .draft-panel > h2 br { display: none; }
+}
+@media (max-width: 560px) {
+  .top-add-page .save-workspace-topbar { gap: 12px; padding: 0 14px; }
+  .top-add-page .save-workspace-wordmark { font-size: 23px; }
+  .top-add-page .save-workspace-header-note { display: none; }
+  .lab-pages .top-add-page .draft-panel,
+  .lab-pages .top-add-page .save-workspace-library { padding: 22px 16px; }
+  .top-add-page .save-workspace-heading h2 { font-size: 27px; }
+  .top-add-page .save-workspace-heading > a { display: none; }
+  .top-add-page .save-workspace-recent-grid { grid-template-columns: minmax(0, 1fr); }
+  .top-add-page .save-workspace-recent-card img,
+  .top-add-page .save-workspace-recent-placeholder { height: 45px; }
+  .lab-pages .top-add-page .job-card .job-list article { grid-template-columns: 82px minmax(0, 1fr) auto; }
+  .top-add-page .save-workspace-queue-row { flex-wrap: wrap; }
+  .top-add-page .save-workspace-row-main { flex-basis: calc(100% - 28px); }
+  .top-add-page .save-workspace-row-status { margin-left: 19px; }
+}

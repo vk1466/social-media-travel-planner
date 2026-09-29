@@ -293,7 +293,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.brandSoft,
     padding: spacing.md,
     marginBottom: spacing.md,
     ...shadow(1),
@@ -323,7 +323,7 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     fontSize: 14,
     color: colors.ink,
-    backgroundColor: colors.bg,
+    backgroundColor: "#102833",
     marginBottom: spacing.md,
   },
   metaRow: {
