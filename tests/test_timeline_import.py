@@ -32,8 +32,8 @@ USER = "user-a"
 
 
 def _patch_timeline_locate(monkeypatch, fake_locate) -> None:
+  from travelplanner.places import mention_gate
   from travelplanner.places.locate import LocateDebugResult
-  from travelplanner.steps import locate_by_name
 
   def fake_debug(mention, anchor_cache=None):
     location = fake_locate(mention)
@@ -41,7 +41,7 @@ def _patch_timeline_locate(monkeypatch, fake_locate) -> None:
       return LocateDebugResult(status="unresolved")
     return LocateDebugResult(status="resolved", location=location)
 
-  monkeypatch.setattr(locate_by_name, "locate_mention_debug", fake_debug)
+  monkeypatch.setattr(mention_gate, "locate_mention_debug", fake_debug)
 
 
 def _patch_timeline_reverse(monkeypatch, fake_reverse) -> None:

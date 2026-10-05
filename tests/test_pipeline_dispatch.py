@@ -16,13 +16,9 @@ def test_instagram_tail_by_resource_type() -> None:
   ]
   assert [step.name for step in INSTAGRAM_TAIL_BY_RESOURCE_TYPE["reel"]] == [
     "fetch_transcript",
-    "analyze_video",
-    "extract_reel_frame_text",
   ]
   assert [step.name for step in INSTAGRAM_TAIL_BY_RESOURCE_TYPE["video"]] == [
     "fetch_transcript",
-    "analyze_video",
-    "extract_reel_frame_text",
   ]
   assert [step.name for step in INSTAGRAM_TAIL_BY_RESOURCE_TYPE["image"]] == [
     "extract_image_text",
@@ -31,9 +27,14 @@ def test_instagram_tail_by_resource_type() -> None:
     "extract_image_text",
   ]
   assert [step.name for step in PLACE_CLOSE_STEPS] == [
+    "detect_named_places",
+    "analyze_video",
+    "extract_reel_frame_text",
     "extract_places",
     "process_place_mentions",
   ]
+  assert "analyze_video" not in {step.name for step in MOVIE_CLOSE_STEPS}
+  assert "analyze_video" not in {step.name for step in RECIPE_CLOSE_STEPS}
   assert [step.name for step in MOVIE_CLOSE_STEPS] == [
     "extract_movies",
     "resolve_movies",

@@ -141,7 +141,7 @@ def test_timeline_batch_uses_whole_export_for_trip_context(monkeypatch, dynamodb
   import boto3
 
   from travelplanner.models import PlaceLocation
-  from travelplanner.steps import locate_by_name
+  from travelplanner.places import mention_gate
   from travelplanner.visits import list_visits
 
   from server import timeline_staging
@@ -167,7 +167,7 @@ def test_timeline_batch_uses_whole_export_for_trip_context(monkeypatch, dynamodb
       ),
     )
 
-  monkeypatch.setattr(locate_by_name, "locate_mention_debug", fake_locate_debug)
+  monkeypatch.setattr(mention_gate, "locate_mention_debug", fake_locate_debug)
 
   def cluster(latitude, longitude, day, name, semantic_type):
     return {

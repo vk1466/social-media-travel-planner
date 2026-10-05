@@ -7,9 +7,7 @@ from travelplanner.flow.context import TimelineContext
 from travelplanner.flow.outcomes import LocateOutcome
 from travelplanner.flow.step import Step
 from travelplanner.place_hints import PlaceMention
-from travelplanner.places.locate import locate_mention_debug
-from travelplanner.places.shop_travel_gate import llm_ambiguous_shop_is_travel
-from travelplanner.places.store import is_ambiguous_shop, is_visitable_place
+from travelplanner.places.mention_gate import locate_mention_for_library
 
 logger = logging.getLogger(__name__)
 
@@ -28,57 +26,26 @@ def locate_by_name(ctx: TimelineContext) -> TimelineContext:
     category=ctx.category,
   )
   ctx.mention = mention
-  debug = locate_mention_debug(mention)
-  if debug.location is None or debug.status == "unresolved":
-    ctx.locate_outcome = LocateOutcome(
-      status="unresolved",
-      mention=mention,
-      location=debug.location,
-      match_confidence=debug.match_confidence,
-      reason="; ".join(debug.notes[-3:]) if debug.notes else None,
-    )
+  gated = locate_mention_for_library(mention)
+  outcome = gated.outcome
+  if outcome.status in {"unresolved", "rejected"} or outcome.location is None:
+    ctx.locate_outcome = outcome
     return ctx
-  if not is_visitable_place(debug.location):
-    if is_ambiguous_shop(debug.location):
-      keep, gate_reason = llm_ambiguous_shop_is_travel(debug.location, mention)
-      if not keep:
-        ctx.locate_outcome = LocateOutcome(
-          status="rejected",
-          mention=mention,
-          location=debug.location,
-          match_confidence=debug.match_confidence,
-          reason=f"ambiguous shop rejected: {gate_reason}",
-        )
-        return ctx
-    else:
-      ctx.locate_outcome = LocateOutcome(
-        status="rejected",
-        mention=mention,
-        location=debug.location,
-        match_confidence=debug.match_confidence,
-        reason="non-travel OSM match",
-      )
-      return ctx
-  if ctx.needs_osm_gate and not _passes_osm_travel_gate(debug.location):
+  if ctx.needs_osm_gate and not gated.jev_kept and not _passes_osm_travel_gate(outcome.location):
     ctx.locate_outcome = LocateOutcome(
       status="rejected",
       mention=mention,
-      location=debug.location,
-      match_confidence=debug.match_confidence,
+      location=outcome.location,
+      match_confidence=outcome.match_confidence,
       reason="OSM category not in travel gate",
     )
     return ctx
-  ctx.locate_outcome = LocateOutcome(
-    status=debug.status,  # type: ignore[arg-type]
-    mention=mention,
-    location=debug.location,
-    match_confidence=debug.match_confidence,
-  )
+  ctx.locate_outcome = outcome
   logger.info(
     "locate_by_name %s place_name=%r confidence=%s",
-    ctx.locate_outcome.status,
+    outcome.status,
     ctx.place_name,
-    debug.match_confidence,
+    outcome.match_confidence,
   )
   return ctx
 

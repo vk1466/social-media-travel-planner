@@ -40,7 +40,7 @@ def test_process_mentions_keeps_bakery_shop(monkeypatch, dynamodb) -> None:
   )
 
   monkeypatch.setattr(
-    "travelplanner.steps.process_mentions.locate_mention_debug",
+    "travelplanner.places.mention_gate.locate_mention_debug",
     lambda mention, **_: LocateDebugResult(
       status="resolved",
       location=location,
@@ -69,7 +69,7 @@ def test_process_mentions_llm_gates_ambiguous_shop(monkeypatch, dynamodb) -> Non
   )
 
   monkeypatch.setattr(
-    "travelplanner.steps.process_mentions.locate_mention_debug",
+    "travelplanner.places.mention_gate.locate_mention_debug",
     lambda mention, **_: LocateDebugResult(
       status="resolved",
       location=location,
@@ -80,7 +80,7 @@ def test_process_mentions_llm_gates_ambiguous_shop(monkeypatch, dynamodb) -> Non
 
   ctx = IngestContext(post_url=post.post_url, user_id="u1", post=post, place_library=[])
   with patch(
-    "travelplanner.steps.process_mentions.llm_ambiguous_shop_is_travel",
+    "travelplanner.places.mention_gate.llm_ambiguous_shop_is_travel",
     return_value=(False, "everyday clothing store"),
   ) as mock_gate:
     result = process_mentions(ctx)
@@ -90,7 +90,7 @@ def test_process_mentions_llm_gates_ambiguous_shop(monkeypatch, dynamodb) -> Non
   assert "ambiguous shop rejected" in (result.place_outcomes[0].reason or "")
 
   with patch(
-    "travelplanner.steps.process_mentions.llm_ambiguous_shop_is_travel",
+    "travelplanner.places.mention_gate.llm_ambiguous_shop_is_travel",
     return_value=(True, "destination boutique mentioned in travel reel"),
   ):
     kept = process_mentions(

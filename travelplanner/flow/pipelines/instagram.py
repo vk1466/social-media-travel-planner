@@ -1,3 +1,4 @@
+from travelplanner.steps.detect_named_places import DETECT_NAMED_PLACES_STEP
 from travelplanner.steps.extract_movies import EXTRACT_MOVIES_STEP
 from travelplanner.steps.extract_places import EXTRACT_PLACES_STEP
 from travelplanner.steps.resolve_movies import RESOLVE_MOVIES_STEP
@@ -24,6 +25,9 @@ INSTAGRAM_HEAD_STEPS = (
 )
 
 PLACE_CLOSE_STEPS = (
+  DETECT_NAMED_PLACES_STEP,
+  ANALYZE_VIDEO_STEP,
+  EXTRACT_REEL_FRAME_TEXT_STEP,
   EXTRACT_PLACES_STEP,
   PROCESS_MENTIONS_STEP,
 )
@@ -42,16 +46,8 @@ RECIPE_CLOSE_STEPS = (
 )
 
 INSTAGRAM_TAIL_BY_RESOURCE_TYPE: dict[str, tuple] = {
-  "reel": (
-    FETCH_TRANSCRIPT_STEP,
-    ANALYZE_VIDEO_STEP,
-    EXTRACT_REEL_FRAME_TEXT_STEP,
-  ),
-  "video": (
-    FETCH_TRANSCRIPT_STEP,
-    ANALYZE_VIDEO_STEP,
-    EXTRACT_REEL_FRAME_TEXT_STEP,
-  ),
+  "reel": (FETCH_TRANSCRIPT_STEP,),
+  "video": (FETCH_TRANSCRIPT_STEP,),
   "image": (EXTRACT_IMAGE_TEXT_STEP,),
   "carousel": (EXTRACT_IMAGE_TEXT_STEP,),
 }

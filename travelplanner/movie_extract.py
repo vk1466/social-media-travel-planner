@@ -8,16 +8,12 @@ from __future__ import annotations
 
 import json
 import logging
-import time
 from typing import Any, Sequence
 
 from travelplanner.extract import ContentSnippet, format_content_snippets
 from travelplanner.movie_hints import ExtractedMovie, normalize_title_kind
 
 logger = logging.getLogger(__name__)
-
-_OPENAI_MAX_RETRIES = 2
-_OPENAI_RETRY_BACKOFF_SECONDS = 1.5
 
 MOVIE_EXTRACT_SCHEMA: dict[str, Any] = {
   "type": "object",
@@ -138,44 +134,16 @@ def _parse_extracted_movies(data: dict[str, Any] | None) -> tuple[ExtractedMovie
 
 
 def _create_completion(client: Any, content: str) -> Any | None:
-  from travelplanner import settings
+  from travelplanner.clients.openai import create_json_completion
 
-  request: dict[str, Any] = {
-    "model": settings.openai_model(),
-    "messages": [
-      {"role": "system", "content": MOVIE_EXTRACT_PROMPT},
-      {"role": "user", "content": content},
-    ],
-    "response_format": {
-      "type": "json_schema",
-      "json_schema": {
-        "name": "extracted_movies",
-        "strict": True,
-        "schema": MOVIE_EXTRACT_SCHEMA,
-      },
-    },
-    "temperature": settings.openai_temperature(),
-  }
-
-  attempt = 0
-  while True:
-    try:
-      return client.chat.completions.create(**request)
-    except Exception as exc:
-      if "temperature" in request and "temperature" in str(exc).lower():
-        request.pop("temperature")
-        continue
-      attempt += 1
-      if attempt > _OPENAI_MAX_RETRIES:
-        logger.exception("movie extract openai call failed after %d attempts", attempt)
-        return None
-      logger.warning(
-        "movie extract openai call failed (attempt %d/%d), retrying: %s",
-        attempt,
-        _OPENAI_MAX_RETRIES,
-        exc,
-      )
-      time.sleep(_OPENAI_RETRY_BACKOFF_SECONDS * attempt)
+  return create_json_completion(
+    client,
+    system_prompt=MOVIE_EXTRACT_PROMPT,
+    user_content=content,
+    schema_name="extracted_movies",
+    schema=MOVIE_EXTRACT_SCHEMA,
+    log_label="movie extract",
+  )
 
 
 def fetch_movies_from_snippets(

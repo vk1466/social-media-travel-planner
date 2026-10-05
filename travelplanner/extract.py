@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import logging
-import time
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Sequence
 
@@ -19,9 +18,6 @@ if TYPE_CHECKING:
   from travelplanner.models import SavedPost
 
 logger = logging.getLogger(__name__)
-
-_OPENAI_MAX_RETRIES = 2
-_OPENAI_RETRY_BACKOFF_SECONDS = 1.5
 
 PLACE_EXTRACT_SCHEMA: dict[str, Any] = {
   "type": "object",
@@ -465,6 +461,11 @@ def _parse_extracted_places(data: dict[str, Any] | None) -> tuple[ExtractedPlace
   return tuple(extracted)
 
 
+def content_extraction_from_payload(data: dict[str, Any] | None) -> ContentExtraction:
+  """Parse a place-extraction JSON object. Empty when the payload is missing."""
+  return _parse_content_extraction(data)
+
+
 def _parse_content_extraction(data: dict[str, Any] | None) -> ContentExtraction:
   if not data:
     return ContentExtraction()
@@ -512,50 +513,17 @@ format_reel_bundle = format_content_bundle
 
 
 def _create_completion(client: Any, content: str) -> Any | None:
-  """Call OpenAI with deterministic settings, retrying transient failures.
+  """Call OpenAI for place extraction. None once retries are exhausted."""
+  from travelplanner.clients.openai import create_json_completion
 
-  Returns None once retries are exhausted so a blip drops one post's extraction
-  instead of raising through ingest.
-  """
-  from travelplanner import settings
-
-  request: dict[str, Any] = {
-    "model": settings.openai_model(),
-    "messages": [
-      {"role": "system", "content": REEL_EXTRACT_PROMPT},
-      {"role": "user", "content": content},
-    ],
-    "response_format": {
-      "type": "json_schema",
-      "json_schema": {
-        "name": "extracted_places",
-        "strict": True,
-        "schema": PLACE_EXTRACT_SCHEMA,
-      },
-    },
-    "temperature": settings.openai_temperature(),
-  }
-
-  attempt = 0
-  while True:
-    try:
-      return client.chat.completions.create(**request)
-    except Exception as exc:
-      if "temperature" in request and "temperature" in str(exc).lower():
-        # Reasoning models accept only the default temperature.
-        request.pop("temperature")
-        continue
-      attempt += 1
-      if attempt > _OPENAI_MAX_RETRIES:
-        logger.exception("extract openai call failed after %d attempts", attempt)
-        return None
-      logger.warning(
-        "extract openai call failed (attempt %d/%d), retrying: %s",
-        attempt,
-        _OPENAI_MAX_RETRIES,
-        exc,
-      )
-      time.sleep(_OPENAI_RETRY_BACKOFF_SECONDS * attempt)
+  return create_json_completion(
+    client,
+    system_prompt=REEL_EXTRACT_PROMPT,
+    user_content=content,
+    schema_name="extracted_places",
+    schema=PLACE_EXTRACT_SCHEMA,
+    log_label="extract",
+  )
 
 
 def fetch_places_from_snippets(

@@ -114,7 +114,7 @@ Entry (API / CLI / mobile)
 ## Resource types
 
 Pipelines are keyed by **platform + resource type**, not by “post” as a
-catch-all. After classify, **close** is keyed by `content_category`.
+catch-all. After the post read, **close** is keyed by `content_category`.
 
 | Platform | Resource types |
 |----------|----------------|
@@ -124,10 +124,10 @@ catch-all. After classify, **close** is keyed by `content_category`.
 Resource type is often known only **after** fetch. Dispatch is:
 
 1. **Head (by platform):** seed post (platform + shortcode + resource type) → fetch media.
-2. **Tail (by platform + resource type):** transcript and/or image text.
-3. **Classify (flagged):** `classify_content` stamps `SavedPost.content_category`. No-op when `content_categories` is off.
+2. **Tail (by platform + resource type):** transcript for reel/video, image text for image/carousel.
+3. **Classify:** Jev choice stamps `content_category` from the caption, comments, location tag, transcript, and image text. A weak choice is stored as `other` and skips close. A Jev failure is logged and stops the pipeline. No-op when `content_categories` is off. Unset, including that flag-off path, still follows the place pipeline.
 4. **Close (by content category):**
-   - `travel` or unset (classify skipped / failed) → **place pipeline:** extract places → locate → dedupe → upsert. Named restaurants/cafes/bars/markets are travel places; copy dish/order recs onto details and tips. Place-facts enrichment is **persona post-work**: after the post is saved, enqueue one SQS message per `place_id`; a worker loads the Place and runs `enrich_place_facts`. Ingest job pass/fail does not wait on facts.
+   - `travel` or unset → **place pipeline:** Jev checks whether the text already names a visitable place. Video analysis and frame text run only on a no, and only for a reel or video. Then OpenAI extracts places, then locate → dedupe → upsert. Named restaurants/cafes/bars/markets are travel places; copy dish/order recs onto details and tips. Place-facts enrichment is **persona post-work**: after the post is saved, enqueue one SQS message per `place_id`; a worker loads the Place and runs `enrich_place_facts`. Ingest job pass/fail does not wait on facts.
    - `movies` → **movie pipeline:** extract films and TV series onto `SavedPost.extracted_movies` (`kind` is `movie` or `tv`), then `resolve_movies` (TMDB movie or TV identity + details, OMDb IMDb/RT scores, optional review summary). Snapshot stored on `SavedPost.resolved_movies`. No geocode. Shared Movie upsert is not wired yet.
    - `food` → **recipe pipeline:** `fetch_recipe_source` → `extract_recipe_frames` (adaptive OCR if caption thin) → `extract_recipe` → `enrich_recipe` (timers & numeric scaling) → `calculate_recipe_nutrition` (flagged USDA estimate from explicitly weighed ingredients). A clearly necessary basic cooking default may be included only when marked `estimated_inferred`; other missing fields remain absent. Nutrition is omitted when servings or ingredient mass is unknown, and visibly partial when a food lookup is unavailable. No place processing.
    - `fashion` / `hairstyle` / `other` → skip close (save the post only).
@@ -195,8 +195,9 @@ stats into a string and store them in `post_id` or any other identity field.
 
 ```text
 travelplanner/steps/
-  classify_content.py        # generic — post topic; flag content_categories
-  extract_places.py          # generic — LLM from ContentBundle
+  classify_content.py        # generic — Jev choice for content_category
+  detect_named_places.py     # generic — Jev noul: does the text name a place?
+  extract_places.py          # generic — LLM from ContentBundle; skips if already read
   extract_movies.py          # generic — film and TV titles from ContentBundle
   fetch_recipe_source.py     # generic — parse schema.org/Recipe JSON-LD if blog URL linked
   extract_recipe_frames.py   # generic — adaptive video frame OCR when caption is thin

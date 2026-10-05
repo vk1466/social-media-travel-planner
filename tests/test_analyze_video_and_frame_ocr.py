@@ -8,6 +8,22 @@ from travelplanner.steps.instagram.extract_reel_frame_text import (
 )
 
 
+def test_analyze_video_skips_when_text_already_names_a_place() -> None:
+  ctx = IngestContext(
+    post_url="https://www.instagram.com/reel/abc/",
+    user_id="u1",
+    resource_type="reel",
+    shortcode="abc",
+    text_names_places=True,
+  )
+  with patch(
+    "travelplanner.steps.instagram.analyze_video.fetch_video_analysis"
+  ) as mock_fetch:
+    result = analyze_video(ctx)
+  mock_fetch.assert_not_called()
+  assert result.video_analysis is None
+
+
 def test_analyze_video_skips_when_flag_off() -> None:
   ctx = IngestContext(
     post_url="https://www.instagram.com/reel/abc/",

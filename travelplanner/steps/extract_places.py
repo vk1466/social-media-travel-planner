@@ -16,6 +16,9 @@ logger = logging.getLogger(__name__)
 
 def extract_places(ctx: IngestContext) -> IngestContext:
   """Run generic place extraction over content snippets on the context."""
+  if ctx.place_extraction_done:
+    logger.info("extract_places skipped: post already read")
+    return ctx
   bundle = ctx.content_bundle
   if bundle is None:
     if ctx.post is None:
@@ -37,6 +40,7 @@ def extract_places(ctx: IngestContext) -> IngestContext:
       reel_summary=extracted.reel_summary,
       trip_tips=extracted.trip_tips,
     )
+  ctx.place_extraction_done = True
   logger.info(
     "extract_places done places=%d has_summary=%s sources=%s",
     len(extracted.places),

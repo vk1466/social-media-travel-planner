@@ -102,3 +102,27 @@ def test_extract_places_prefers_existing_content_bundle() -> None:
     extracted_places=extracted.places,
     reel_summary=None,
   )
+
+
+def test_extract_places_skips_when_the_post_was_already_read() -> None:
+  post = SavedPost(
+    post_id=make_post_id(Platform.INSTAGRAM, "abc"),
+    post_url="https://www.instagram.com/reel/abc/",
+    platform=Platform.INSTAGRAM,
+    media_kind="reel",
+    caption="Visit Smith Rock",
+    extracted_places=(ExtractedPlace(place_name="Smith Rock", category="park"),),
+  )
+  ctx = IngestContext(
+    post_url=post.post_url,
+    user_id="u1",
+    post=post,
+    place_extraction_done=True,
+  )
+  with patch(
+    "travelplanner.steps.extract_places.fetch_places_from_snippets",
+  ) as mock_fetch:
+    result = extract_places(ctx)
+  mock_fetch.assert_not_called()
+  assert result.post is not None
+  assert result.post.extracted_places[0].place_name == "Smith Rock"

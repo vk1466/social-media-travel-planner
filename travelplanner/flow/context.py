@@ -25,6 +25,8 @@ class IngestContext:
   image_text: str | None = None
   video_analysis: str | None = None
   content_bundle: ContentBundle | None = None
+  text_names_places: bool = False
+  place_extraction_done: bool = False
   post: SavedPost | None = None
   place_ids: list[str] = field(default_factory=list)
   place_outcomes: list[LocateOutcome] = field(default_factory=list)

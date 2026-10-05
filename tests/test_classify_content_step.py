@@ -1,5 +1,8 @@
 from unittest.mock import patch
 
+import pytest
+
+from travelplanner.content_category_jev import CategoryCheckError
 from travelplanner.feature_flag import FeatureFlag
 from travelplanner.flow.context import IngestContext
 from travelplanner.models import Platform, SavedPost, make_post_id
@@ -22,7 +25,7 @@ def test_classify_content_noops_when_flag_off() -> None:
   try:
     FeatureFlag.set("content_categories", False)
     with patch(
-      "travelplanner.steps.classify_content.classify_from_snippets",
+      "travelplanner.steps.classify_content.category_from_text",
       return_value="hairstyle",
     ) as mock_classify:
       result = classify_content(ctx)
@@ -36,10 +39,33 @@ def test_classify_content_noops_when_flag_off() -> None:
 def test_classify_content_stamps_category_when_flag_on() -> None:
   ctx = _ctx()
   with patch(
-    "travelplanner.steps.classify_content.classify_from_snippets",
+    "travelplanner.steps.classify_content.category_from_text",
     return_value="hairstyle",
   ) as mock_classify:
     result = classify_content(ctx)
   mock_classify.assert_called_once()
   assert result.post is not None
   assert result.post.content_category == "hairstyle"
+
+
+def test_classify_content_stops_when_jev_fails() -> None:
+  ctx = _ctx()
+  with patch(
+    "travelplanner.steps.classify_content.category_from_text",
+    side_effect=CategoryCheckError("JEV_API_KEY is not set"),
+  ):
+    with pytest.raises(CategoryCheckError):
+      classify_content(ctx)
+  assert ctx.post is not None
+  assert ctx.post.content_category is None
+
+
+def test_classify_content_stores_other_when_jev_is_unsure() -> None:
+  ctx = _ctx()
+  with patch(
+    "travelplanner.steps.classify_content.category_from_text",
+    return_value=None,
+  ):
+    result = classify_content(ctx)
+  assert result.post is not None
+  assert result.post.content_category == "other"

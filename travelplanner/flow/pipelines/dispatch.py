@@ -42,7 +42,11 @@ def close_steps_for_category(category: str | None) -> tuple[str, tuple]:
 
 
 def run_instagram_pipeline(ctx: IngestContext) -> PipelineResult[IngestContext]:
-  """Instagram ingest: head, resource-type tail, classify, then category close."""
+  """Instagram ingest: head, transcript or image text, Jev category, then one close.
+
+  Video analysis lives in the place close. Movies, recipes, and the skipped
+  categories do not call it.
+  """
   try:
     result = run_pipeline(ctx, INSTAGRAM_HEAD_STEPS, pipeline_name="instagram_head")
     ctx = result.context

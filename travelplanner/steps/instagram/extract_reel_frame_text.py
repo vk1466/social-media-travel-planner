@@ -15,6 +15,9 @@ def extract_reel_frame_text(ctx: IngestContext) -> IngestContext:
   """OCR sampled reel/video frames → ctx.image_text (feature-flagged)."""
   if ctx.resource_type not in {"video", "reel"}:
     return ctx
+  if ctx.text_names_places:
+    logger.info("extract_reel_frame_text skipped: text already names a place")
+    return ctx
   if not FeatureFlag.get("extract_reel_frame_text"):
     logger.info("extract_reel_frame_text skipped: feature disabled")
     return ctx

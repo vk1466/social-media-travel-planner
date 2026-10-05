@@ -6,7 +6,7 @@ from travelplanner.content_categories import (
   inferred_content_category,
   normalize_content_category,
 )
-from travelplanner.content_classify import CLASSIFY_PROMPT
+from travelplanner.content_category_jev import CATEGORY_INSTRUCTIONS
 from travelplanner.models import Platform, SavedPost, make_post_id
 
 
@@ -47,9 +47,9 @@ def test_close_pipeline_for_category() -> None:
 
 
 def test_classify_prompt_includes_tv_series() -> None:
-  assert "TV series" in CLASSIFY_PROMPT
+  assert "TV series" in CATEGORY_INSTRUCTIONS
 
 
 def test_classify_prompt_sends_venues_to_travel() -> None:
-  assert "visitable venue" in CLASSIFY_PROMPT
-  assert "use travel, not food" in CLASSIFY_PROMPT
+  assert "visitable venue" in CATEGORY_INSTRUCTIONS
+  assert "use travel, not food" in CATEGORY_INSTRUCTIONS

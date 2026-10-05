@@ -15,6 +15,9 @@ def analyze_video(ctx: IngestContext) -> IngestContext:
   """Multimodal video analysis → ctx.video_analysis (feature-flagged)."""
   if ctx.resource_type not in {"video", "reel"}:
     return ctx
+  if ctx.text_names_places:
+    logger.info("analyze_video skipped: text already names a place")
+    return ctx
   if not FeatureFlag.get("extract_video_analysis"):
     logger.info("analyze_video skipped: feature disabled")
     return ctx
