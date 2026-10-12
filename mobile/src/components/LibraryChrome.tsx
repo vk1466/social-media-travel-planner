@@ -170,7 +170,7 @@ export function MultiFilterChips({
 export function PageHeading({
   kicker,
   title,
-  lede: _lede,
+  lede,
   count,
 }: {
   kicker: string;
@@ -180,16 +180,19 @@ export function PageHeading({
 }) {
   return (
     <View style={styles.heading}>
-      <View style={styles.headingCopy}>
-        <Text style={styles.kicker}>{kicker}</Text>
-        <Text style={styles.title}>{title}</Text>
-      </View>
-      {count ? (
-        <View style={styles.count}>
-          <Text style={styles.countValue}>{count.value}</Text>
-          <Text style={styles.countLabel}>{count.label}</Text>
+      <View style={styles.headingTop}>
+        <View style={styles.headingCopy}>
+          <Text style={styles.kicker}>{kicker}</Text>
+          <Text style={styles.title}>{title}</Text>
         </View>
-      ) : null}
+        {count ? (
+          <View style={styles.count}>
+            <Text style={styles.countValue}>{count.value}</Text>
+            <Text style={styles.countLabel}>{count.label}</Text>
+          </View>
+        ) : null}
+      </View>
+      {lede ? <Text style={styles.lede}>{lede}</Text> : null}
     </View>
   );
 }
@@ -202,10 +205,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    paddingHorizontal: 10,
+    paddingHorizontal: spacing.md,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: 9,
+    borderRadius: radius.md,
     backgroundColor: colors.surface,
   },
   searchInput: {
@@ -213,7 +216,7 @@ const styles = StyleSheet.create({
     minWidth: 0,
     paddingVertical: 0,
     color: colors.ink,
-    fontSize: 13,
+    fontSize: 16,
   },
   bar: {
     gap: 8,
@@ -235,7 +238,7 @@ const styles = StyleSheet.create({
     height: 44,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: 9,
+    borderRadius: radius.md,
     backgroundColor: colors.surface,
     alignItems: "center",
     justifyContent: "center",
@@ -254,14 +257,14 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     backgroundColor: colors.brand,
     color: colors.onFill,
-    fontSize: 8,
+    fontSize: 10,
     fontWeight: "700",
     lineHeight: 14,
     textAlign: "center",
   },
   secondary: {
     gap: 8,
-    padding: 9,
+    padding: spacing.sm,
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: 12,
@@ -269,10 +272,10 @@ const styles = StyleSheet.create({
   },
   seg: {
     alignSelf: "stretch",
-    padding: 3,
+    padding: spacing.xs,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: 11,
+    borderRadius: radius.md,
     backgroundColor: colors.surface,
   },
   segInner: {
@@ -281,8 +284,8 @@ const styles = StyleSheet.create({
   },
   segBtn: {
     minHeight: 44,
-    paddingHorizontal: 11,
-    borderRadius: 8,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.sm,
     justifyContent: "center",
   },
   segBtnOn: {
@@ -290,7 +293,7 @@ const styles = StyleSheet.create({
   },
   segText: {
     color: colors.muted,
-    fontSize: 11,
+    fontSize: 13,
     fontWeight: "600",
   },
   segTextOn: {
@@ -314,22 +317,30 @@ const styles = StyleSheet.create({
   },
   pillText: {
     color: colors.ink,
-    fontSize: 11,
+    fontSize: 13,
     fontWeight: "600",
   },
   pillTextOn: {
     fontWeight: "700",
   },
   heading: {
+    gap: 8,
+    marginBottom: spacing.sm,
+  },
+  headingTop: {
     flexDirection: "row",
     alignItems: "flex-start",
     justifyContent: "space-between",
     gap: spacing.md,
-    marginBottom: spacing.sm,
+  },
+  lede: {
+    color: colors.muted,
+    fontSize: 14,
+    lineHeight: 20,
   },
   headingCopy: { flex: 1, minWidth: 0 },
   kicker: {
-    fontSize: 10,
+    fontSize: 12,
     fontWeight: "700",
     color: colors.faint,
     textTransform: "uppercase",
@@ -354,7 +365,7 @@ const styles = StyleSheet.create({
     lineHeight: 30,
   },
   countLabel: {
-    fontSize: 9,
+    fontSize: 12,
     fontWeight: "700",
     color: colors.muted,
     textTransform: "uppercase",

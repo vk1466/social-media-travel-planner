@@ -38,13 +38,13 @@ export function PlatformMenu({ variant = "utility" }: { variant?: "utility" | "h
   }, [open]);
 
   const summary = allActive
-    ? "All apps"
+    ? "All sources"
     : shown.map(libraryPlatformLabel).join(", ");
   const appSummary = allActive
-    ? "All apps"
+    ? "All sources"
     : shown.length === 1
       ? libraryPlatformLabel(shown[0])
-      : `${shown.length} apps`;
+      : `${shown.length} sources`;
 
   return (
     <div
@@ -54,7 +54,7 @@ export function PlatformMenu({ variant = "utility" }: { variant?: "utility" | "h
       <button
         type="button"
         className={`lab-platform-trigger${allActive ? "" : " is-on"}`}
-        aria-label={`Filter by platform: ${summary}`}
+        aria-label={`Filter by source: ${summary}`}
         aria-expanded={open}
         aria-haspopup="listbox"
         title={summary}
@@ -88,10 +88,10 @@ export function PlatformMenu({ variant = "utility" }: { variant?: "utility" | "h
         ) : null}
       </button>
       {open ? (
-        <div className="lab-platform-panel" role="group" aria-label="Show saved posts from">
+        <div className="lab-platform-panel" role="group" aria-label="Show saves from">
           {variant === "header" ? (
             <div className="lab-platform-panel-head">
-              <span>Show posts from</span>
+              <span>Sources</span>
               <small>Select one or more</small>
             </div>
           ) : null}
@@ -103,8 +103,8 @@ export function PlatformMenu({ variant = "utility" }: { variant?: "utility" | "h
             />
             {variant === "header" ? <span className="lab-platform-checkbox" aria-hidden="true">✓</span> : null}
             <span className="lab-platform-option-copy">
-              <b>Everything</b>
-              {variant === "header" ? <small>All connected apps</small> : null}
+              <b>All sources</b>
+              {variant === "header" ? <small>Every saved source</small> : null}
             </span>
           </label>
           {LIBRARY_PLATFORMS.map((platform) => {

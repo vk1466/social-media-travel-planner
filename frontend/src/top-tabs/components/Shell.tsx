@@ -103,15 +103,14 @@ export function Shell({
               to="/invisible-feed"
               className="classic-link invisible-feed-nav-btn"
             >
-              <span aria-hidden="true">✨</span>
-              <span className="invisible-feed-nav-label">Invisible Feed</span>
+              <span className="invisible-feed-nav-label">Gallery</span>
             </NavLink>
             <button type="button" aria-label="Search" onClick={() => navigate("/search")}>
               {icon("search")}
             </button>
-            <NavLink to="/add" className="queue-button" aria-label="Open save queue">
-              {icon("queue")}
-              <span className="queue-button-label">Queue</span>
+            <NavLink to="/add" className="queue-button" aria-label="Save a link">
+              {icon("plus")}
+              <span className="queue-button-label">Save</span>
             </NavLink>
             {clerkEnabled ? <UserButton appearance={clerkAppearance} /> : null}
           </div>
@@ -123,14 +122,16 @@ export function Shell({
           <QuietSaveBanner />
           {children}
         </main>
-        <button
-          type="button"
-          className="processing-fab"
-          aria-label="Add a link"
-          onClick={() => navigate("/add")}
-        >
-          {icon("plus")}
-        </button>
+        {location.pathname.endsWith("/add") ? null : (
+          <button
+            type="button"
+            className="processing-fab"
+            aria-label="Save a link"
+            onClick={() => navigate("/add")}
+          >
+            {icon("plus")}
+          </button>
+        )}
       </div>
     </div>
   );

@@ -1,17 +1,15 @@
 import { useCallback, useEffect, useState } from "react";
-import { Navigate, Route, Routes, useLocation, useNavigate, useParams } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@clerk/react";
 
 import {
   fetchAdminMe,
   fetchPlaces,
   fetchPosts,
-  fetchVisits,
   getViewAsUserId,
   setViewAsUserId,
   type Place,
   type SavedPost,
-  type VisitDetail,
 } from "./api";
 import { FlipCollapsedVariations } from "./components/FlipCollapsedVariations";
 import { FlipDetailCardDemos } from "./components/FlipDetailCardDemos";
@@ -20,47 +18,29 @@ import { TravelFilterDesignDemos } from "./components/TravelFilterDesignDemos";
 import { MobileLibraryDesignDemos } from "./components/MobileLibraryDesignDemos";
 import { MobileSaveDesignDemos } from "./components/MobileSaveDesignDemos";
 import { clerkEnabled } from "./authMode";
-import { TopTabsApp } from "./top-tabs/TopTabsApp";
-
-function RedirectMapPlaceToTravel() {
-  const { placeId } = useParams<{ placeId: string }>();
-  return <Navigate to={placeId ? `/travel/${placeId}` : "/travel"} replace />;
-}
-
-function RedirectSplatToRoot() {
-  const { "*": rest } = useParams();
-  return <Navigate to={rest ? `/${rest}` : "/"} replace />;
-}
+import { WanderfileApp } from "./wanderfile/WanderfileApp";
 
 function AppRoutes({ authReady }: { authReady: boolean }) {
   const navigate = useNavigate();
   const location = useLocation();
   const [posts, setPosts] = useState<SavedPost[]>([]);
   const [places, setPlaces] = useState<Place[]>([]);
-  const [visits, setVisits] = useState<VisitDetail[]>([]);
   const [loadingPosts, setLoadingPosts] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [libraryUnavailable, setLibraryUnavailable] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
   const refresh = useCallback(async () => {
     setLoadingPosts(true);
     try {
-      const [postsResult, placesResult, visitsResult] = await Promise.allSettled([
+      const [postsResult, placesResult] = await Promise.allSettled([
         fetchPosts(),
         fetchPlaces(),
-        fetchVisits(),
       ]);
       if (postsResult.status === "fulfilled") setPosts(postsResult.value);
       if (placesResult.status === "fulfilled") setPlaces(placesResult.value);
-      if (visitsResult.status === "fulfilled") setVisits(visitsResult.value);
 
       const failures: { name: string; reason: unknown }[] = [];
       if (postsResult.status === "rejected") failures.push({ name: "posts", reason: postsResult.reason });
       if (placesResult.status === "rejected") failures.push({ name: "places", reason: placesResult.reason });
-      if (visitsResult.status === "rejected") failures.push({ name: "visits", reason: visitsResult.reason });
-      setLibraryUnavailable(failures.length === 3);
       if (failures.length > 0) {
         const reason = failures[0].reason;
         const detail = reason instanceof Error ? reason.message : "Unknown error";
@@ -78,13 +58,6 @@ function AppRoutes({ authReady }: { authReady: boolean }) {
     void refresh();
   }, [refresh]);
 
-  const handleViewAsChange = useCallback(
-    (_userId: string | null) => {
-      void refresh();
-    },
-    [refresh],
-  );
-
   useEffect(() => {
     if (!authReady) {
       return;
@@ -96,8 +69,6 @@ function AppRoutes({ authReady }: { authReady: boolean }) {
         if (cancelled) {
           return;
         }
-        setIsAdmin(me.is_admin);
-        setIsSuperAdmin(me.is_super_admin);
         if (!me.is_super_admin && getViewAsUserId()) {
           setViewAsUserId(null);
         }
@@ -105,8 +76,6 @@ function AppRoutes({ authReady }: { authReady: boolean }) {
         if (cancelled) {
           return;
         }
-        setIsAdmin(false);
-        setIsSuperAdmin(false);
         setViewAsUserId(null);
       }
       if (!cancelled) {
@@ -133,7 +102,7 @@ function AppRoutes({ authReady }: { authReady: boolean }) {
         return;
       }
       event.preventDefault();
-      navigate("/search");
+      navigate("/library");
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
@@ -141,59 +110,23 @@ function AppRoutes({ authReady }: { authReady: boolean }) {
 
   return (
     <Routes>
-      <Route path="/map" element={<Navigate to="/travel" replace />} />
-      <Route path="/map/:placeId" element={<RedirectMapPlaceToTravel />} />
-      <Route path="/places" element={<Navigate to="/travel" replace />} />
-      <Route path="/places/:placeId" element={<RedirectMapPlaceToTravel />} />
-      <Route path="/saved" element={<Navigate to="/" replace />} />
-      <Route path="/themes/*" element={<Navigate to="/" replace />} />
-      <Route path="/top-tabs" element={<Navigate to="/" replace />} />
-      <Route path="/top-tabs/*" element={<RedirectSplatToRoot />} />
-      <Route path="/floating-dock" element={<Navigate to="/" replace />} />
-      <Route path="/floating-dock/*" element={<RedirectSplatToRoot />} />
-      <Route path="/shelf-first" element={<Navigate to="/" replace />} />
-      <Route path="/shelf-first/*" element={<RedirectSplatToRoot />} />
-      <Route path="/category-bento" element={<Navigate to="/" replace />} />
-      <Route path="/category-bento/*" element={<RedirectSplatToRoot />} />
-      <Route path="/places/demos" element={<Navigate to="/travel" replace />} />
-      <Route path="/places/demos/:demoId" element={<Navigate to="/travel" replace />} />
-      <Route path="/places/demos-v2" element={<Navigate to="/travel" replace />} />
-      <Route path="/places/demos-v2/:demoId" element={<Navigate to="/travel" replace />} />
-      <Route path="/places/demos-v3" element={<Navigate to="/travel" replace />} />
-      <Route path="/places/demos-v3/:demoId" element={<Navigate to="/travel" replace />} />
-      <Route path="/posts/demos" element={<Navigate to="/posts" replace />} />
-      <Route path="/posts/demos/:demoId" element={<Navigate to="/posts" replace />} />
-      <Route path="/posts/demos-v2" element={<Navigate to="/posts" replace />} />
-      <Route path="/posts/demos-v2/:demoId" element={<Navigate to="/posts" replace />} />
-      <Route path="/map/demos" element={<Navigate to="/travel" replace />} />
-      <Route path="/map/demos/:themeId" element={<Navigate to="/travel" replace />} />
-      <Route path="/map/demos/:themeId/:placeId" element={<RedirectMapPlaceToTravel />} />
-      <Route path="/site/demos" element={<Navigate to="/" replace />} />
-      <Route path="/site/demos/:demoId" element={<Navigate to="/" replace />} />
+      <Route path="/travel" element={<Navigate to="/map" replace />} />
+      <Route path="/travel/:placeId" element={<Navigate to="/map" replace />} />
       <Route path="/dev/flip-cards/collapsed" element={<FlipCollapsedVariations />} />
       <Route path="/dev/flip-cards" element={<FlipDetailCardDemos />} />
       <Route path="/dev/travel-view-toggle" element={<TravelViewToggleDemos />} />
       <Route path="/dev/travel-filter-designs" element={<TravelFilterDesignDemos />} />
       <Route path="/dev/mobile-library-designs" element={<MobileLibraryDesignDemos />} />
       <Route path="/dev/mobile-save-designs" element={<MobileSaveDesignDemos />} />
-      <Route path="/dev/invisible-feed" element={<Navigate to="/invisible-feed" replace />} />
-      <Route path="/dev/feed" element={<Navigate to="/invisible-feed" replace />} />
       <Route
         path="/*"
         element={
-          <TopTabsApp
-            authReady={authReady}
-            loading={loadingPosts}
+          <WanderfileApp
             posts={posts}
             places={places}
-            visits={visits}
-            onRefresh={handleLibraryChanged}
-            isAdmin={isAdmin}
-            isSuperAdmin={isSuperAdmin}
-            onViewAsChange={handleViewAsChange}
+            loading={loadingPosts}
             loadError={loadError}
-            libraryUnavailable={libraryUnavailable}
-            onRetry={handleLibraryChanged}
+            onRefresh={handleLibraryChanged}
           />
         }
       />

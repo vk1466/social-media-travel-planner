@@ -82,7 +82,12 @@ export function QuietSaveStatusCard({
       const finishedWithPost = attentionJob.links.find((l) => l.post_id && (l.status === "saved" || l.status === "linked"));
       if (finishedWithPost && finishedWithPost.post_id) {
         onPress = () => {
-          const parts = postRouteParts("instagram", finishedWithPost.post_id!);
+          const fallbackPlatform = finishedWithPost.post_url.includes("tiktok.com")
+            ? "tiktok"
+            : finishedWithPost.post_url.includes("youtube.com")
+              ? "youtube"
+              : "instagram";
+          const parts = postRouteParts(fallbackPlatform, finishedWithPost.post_id!);
           router.push(`/posts/${parts.platform}/${parts.nativeId}`);
         };
       } else {
@@ -153,8 +158,8 @@ const styles = StyleSheet.create({
     minHeight: 72,
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 14,
-    paddingVertical: 10,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
     marginBottom: spacing.sm,
     borderRadius: radius.md,
     backgroundColor: colors.surface,
@@ -196,7 +201,7 @@ const styles = StyleSheet.create({
   },
   eyebrow: {
     color: colors.brand,
-    fontSize: 10,
+    fontSize: 12,
     fontWeight: "800",
     letterSpacing: 0.7,
     textTransform: "uppercase",
@@ -209,7 +214,7 @@ const styles = StyleSheet.create({
   },
   title: {
     color: colors.ink,
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: "800",
     marginTop: 1,
   },
@@ -223,11 +228,11 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   dismissBtn: {
-    minWidth: 32,
-    minHeight: 32,
+    minWidth: 40,
+    minHeight: 40,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 16,
+    borderRadius: 20,
     backgroundColor: colors.surfaceAlt,
   },
 });

@@ -27,7 +27,7 @@ export function HomePage({
   onDeleted: () => void;
 }) {
   const { basePath } = useLabTheme();
-  const { platforms } = useLibraryPlatform();
+  const { platforms, setPlatforms } = useLibraryPlatform();
   const scopedPosts = useMemo(
     () => postsForPlatforms(posts, platforms),
     [posts, platforms],
@@ -63,24 +63,18 @@ export function HomePage({
         lede="A home for all the places, recipes, films, and ideas you want to come back to."
         count={{ value: scopedPosts.length, label: "saves" }}
       />
-      {continuePlace ? (
-        <section className="home-hero">
-          {continuePlaceImage ? <img className="home-hero-image" src={continuePlaceImage} alt="" /> : null}
+      {posts.length > 0 && scopedPosts.length === 0 ? (
+        <section className="home-start" aria-labelledby="home-filter-title">
           <div>
-            <p className="eyebrow">YOUR NEXT PLACE TO GO</p>
-            <h2>{continuePlace.display_name}</h2>
-            <p>
-              {locationLine(continuePlace)}
-              {continuePlace.source_post_ids.length
-                ? ` · ${continuePlace.source_post_ids.length} saves`
-                : ""}
-            </p>
-            <Link className="home-next-action" to={`${basePath}/travel/${continuePlace.place_id}`}>
-              Explore this place <span aria-hidden="true">↗</span>
-            </Link>
+            <p className="eyebrow">NOTHING IN THIS SOURCE</p>
+            <h2 id="home-filter-title">These sources are hiding your saves.</h2>
+            <p>Your library still has saves from other sources.</p>
           </div>
+          <button type="button" className="home-next-action" onClick={() => setPlatforms([])}>
+            Show all sources
+          </button>
         </section>
-      ) : (
+      ) : posts.length === 0 ? (
         <section className="home-start" aria-labelledby="home-start-title">
           <div>
             <p className="eyebrow">EVERY LIBRARY STARTS SOMEWHERE</p>
@@ -89,7 +83,7 @@ export function HomePage({
           </div>
           <Link className="home-next-action" to={`${basePath}/add`}>Save your first link <span aria-hidden="true">↗</span></Link>
         </section>
-      )}
+      ) : null}
       {recentPosts.length > 0 ? (
         <section className="library-panel slim-panel home-recent">
           <div className="panel-heading">
@@ -103,6 +97,24 @@ export function HomePage({
             {recentPosts.map((post) => (
               <PostMediaCard key={post.post_id} post={post} onOpen={setSelected} />
             ))}
+          </div>
+        </section>
+      ) : null}
+      {continuePlace ? (
+        <section className="home-hero">
+          {continuePlaceImage ? <img className="home-hero-image" src={continuePlaceImage} alt="" /> : null}
+          <div>
+            <p className="eyebrow">FROM YOUR SAVED PLACES</p>
+            <h2>{continuePlace.display_name}</h2>
+            <p>
+              {locationLine(continuePlace)}
+              {continuePlace.source_post_ids.length
+                ? ` · ${continuePlace.source_post_ids.length} saves`
+                : ""}
+            </p>
+            <Link className="home-next-action" to={`${basePath}/travel/${continuePlace.place_id}`}>
+              Explore this place <span aria-hidden="true">↗</span>
+            </Link>
           </div>
         </section>
       ) : null}

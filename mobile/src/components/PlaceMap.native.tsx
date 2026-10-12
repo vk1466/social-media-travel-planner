@@ -3,7 +3,7 @@ import { StyleSheet, Text, View, type DimensionValue } from "react-native";
 
 import type { Place } from "../api";
 import { mappablePlaces } from "../placeMapUtils";
-import { colors, spacing } from "../theme";
+import { colors, radius, spacing } from "../theme";
 import { OsmPlaceMap } from "./OsmPlaceMap";
 
 interface PlaceMapProps {
@@ -41,7 +41,7 @@ export function PlaceMap({
 
 const styles = StyleSheet.create({
   wrap: {
-    borderRadius: 14,
+    borderRadius: radius.lg,
     overflow: "hidden",
     borderWidth: 1,
     borderColor: colors.border,
@@ -54,7 +54,7 @@ const styles = StyleSheet.create({
     marginBottom: 0,
   },
   empty: {
-    borderRadius: 14,
+    borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.brandSoft,

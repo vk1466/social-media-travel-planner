@@ -4,7 +4,7 @@
   gap: 14px;
   margin: 12px 0 20px;
   padding: 12px 16px;
-  border-radius: 14px;
+  border-radius: var(--wf-radius-md);
   border: 1px solid var(--accent);
   background: var(--soft);
   box-shadow: var(--shadow);
@@ -87,7 +87,7 @@
 }
 
 .qsb-eyebrow {
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 800;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -125,13 +125,14 @@
 .qsb-action-btn {
   display: inline-flex;
   align-items: center;
-  padding: 6px 12px;
-  font-size: 12px;
+  min-height: 36px;
+  padding: 0 12px;
+  font-size: 13px;
   font-weight: 700;
   color: var(--ink);
   background: var(--panel);
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--wf-radius-pill);
   text-decoration: none;
   transition: background 0.15s, border-color 0.15s;
   white-space: nowrap;

@@ -1,8 +1,19 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { fetchActiveJob, fetchJob, removePendingJobLink, startIngest, type Job } from "../../api";
+import { fetchActiveJob, fetchJob, removePendingJobLink, startIngest, type Job, type JobLink } from "../../api";
+import { readLinkDraft, writeLinkDraft } from "../linkDraft";
 import { DetailSheet } from "./DetailSheet";
+
+const LINK_STATUS_LABELS: Record<JobLink["status"], string> = {
+  pending: "Waiting",
+  fetching: "Saving",
+  saved: "Saved",
+  linked: "Already in your library",
+  skipped: "Already in your library",
+  unsupported: "Needs attention",
+  error: "Couldn’t save",
+};
 
 function isUrl(value: string): boolean {
   try {
@@ -22,7 +33,7 @@ export function AddLinkSheet({
 }) {
   const navigate = useNavigate();
   const inputRef = useRef<HTMLTextAreaElement>(null);
-  const [text, setText] = useState("");
+  const [text, setText] = useState(readLinkDraft);
   const [refresh, setRefresh] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [starting, setStarting] = useState(false);
@@ -74,9 +85,9 @@ export function AddLinkSheet({
         setJob(next);
         if (next.status === "done") onComplete();
         else timeoutId = window.setTimeout(() => void poll(), 1500);
-      } catch (err) {
+      } catch {
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : "Failed to update processing");
+          setError("Your links were accepted. Progress couldn’t be loaded.");
         }
       }
     };
@@ -92,12 +103,18 @@ export function AddLinkSheet({
       <p className="eyebrow">Quick add</p>
       <h2 className="sheet-title">Paste a link</h2>
       <p className="sheet-copy">Instagram, TikTok, YouTube, or the web. One URL per line.</p>
+      <label className="save-workspace-label" htmlFor="quick-add-links">Links to save</label>
       <textarea
+        id="quick-add-links"
         ref={inputRef}
         className="links-input"
         rows={4}
         value={text}
-        onChange={(event) => setText(event.target.value)}
+        onChange={(event) => {
+          const next = event.target.value;
+          setText(next);
+          writeLinkDraft(next);
+        }}
         placeholder="https://www.instagram.com/reel/..."
         disabled={starting}
       />
@@ -126,18 +143,24 @@ export function AddLinkSheet({
             setStarting(true);
             try {
               const jobId = await startIngest(parsed.valid, refresh);
-              setText("");
-              setJob(await fetchJob(jobId));
+              const remaining = parsed.invalid.join("\n");
+              setText(remaining);
+              writeLinkDraft(remaining);
+              try {
+                setJob(await fetchJob(jobId));
+              } catch {
+                setError("Your links were accepted. Progress couldn’t be loaded.");
+              }
             } catch (err) {
-              setError(err instanceof Error ? err.message : "Failed to queue links");
+              setError(err instanceof Error ? err.message : "Couldn’t save those links");
             } finally {
               setStarting(false);
             }
           }}
         >
           {starting
-            ? "Adding…"
-            : `Save ${parsed.valid.length} link${parsed.valid.length === 1 ? "" : "s"} to queue`}
+            ? "Saving…"
+            : `Save ${parsed.valid.length} link${parsed.valid.length === 1 ? "" : "s"}`}
         </button>
         <button
           type="button"
@@ -146,16 +169,16 @@ export function AddLinkSheet({
             navigate("/add");
           }}
         >
-          Open queue
+          Open save
         </button>
       </div>
       {error ? <p className="inline-errors">{error}</p> : null}
       {job ? (
         <section className="job-list">
-          <h3 className="sheet-section">{job.status === "running" ? "Queue" : "Done"}</h3>
+          <h3 className="sheet-section">{job.status === "running" ? "Saving" : "Done"}</h3>
           {job.links.map((link) => (
             <article key={link.post_url}>
-              <b>{link.status}</b>
+              <b>{LINK_STATUS_LABELS[link.status]}</b>
               <span>{link.post_url}</span>
               {link.status === "pending" ? (
                 <button

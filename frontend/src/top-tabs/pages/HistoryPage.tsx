@@ -9,6 +9,13 @@ import { PageHeading } from "../../components/PageHeading";
 import { useLabTheme } from "../theme";
 import "../../history-page.css";
 
+function visitSourceLabel(source: string | null | undefined): string {
+  if (source === "instagram") return "Instagram";
+  if (source === "timeline") return "Google Timeline";
+  if (source === "manual") return "Logged by you";
+  return "Visit";
+}
+
 export function HistoryPage({
   visits,
   places,
@@ -23,6 +30,7 @@ export function HistoryPage({
   const [username, setUsername] = useState("");
   const [placeQuery, setPlaceQuery] = useState("");
   const [busy, setBusy] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
   const countries = useMemo(() => {
     return new Set(visits.map((item) => item.place?.location.country).filter(Boolean)).size;
   }, [visits]);
@@ -60,9 +68,12 @@ export function HistoryPage({
             event.preventDefault();
             if (!username.trim()) return;
             setBusy(true);
+            setFormError(null);
             try {
               await startInstagramImport(username.trim());
               onChanged();
+            } catch (err) {
+              setFormError(err instanceof Error ? err.message : "Couldn’t import that Instagram account.");
             } finally {
               setBusy(false);
             }
@@ -82,10 +93,13 @@ export function HistoryPage({
             event.preventDefault();
             if (!placeQuery.trim()) return;
             setBusy(true);
+            setFormError(null);
             try {
               await createVisit({ place_query: placeQuery.trim() });
               setPlaceQuery("");
               onChanged();
+            } catch (err) {
+              setFormError(err instanceof Error ? err.message : "Couldn’t log that visit.");
             } finally {
               setBusy(false);
             }
@@ -107,6 +121,7 @@ export function HistoryPage({
           </button>
         </form>
       </div>
+      {formError ? <p className="inline-errors" role="alert">{formError}</p> : null}
       {visits.length === 0 ? (
         <EmptyState>No visits logged yet.</EmptyState>
       ) : (
@@ -119,7 +134,7 @@ export function HistoryPage({
                 <h2>{item.visit.place_name}</h2>
                 <p>
                   {[item.place ? locationLine(item.place) : null, item.visit.notes].filter(Boolean).join(" · ") ||
-                    item.visit.source}
+                    visitSourceLabel(item.visit.source)}
                 </p>
               </div>
               <button type="button" onClick={() => navigate(`${basePath}/travel/${item.visit.place_id}`)}>

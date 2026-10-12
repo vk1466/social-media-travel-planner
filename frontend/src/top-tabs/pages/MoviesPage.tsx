@@ -4,7 +4,7 @@ import { nativePostId, postRouteParts, type SavedPost } from "../../api";
 import { MovieLibrary } from "../../components/movies/MovieLibrary";
 import { postsForPlatforms, useLibraryPlatform } from "../../libraryPlatform";
 import { PageHeading } from "../../components/PageHeading";
-import { aggregateMovies } from "../movies";
+import { aggregateMoviesFromPosts } from "../../components/movies/MovieLibrary";
 
 export function MoviesPage({ posts }: { posts: SavedPost[] }) {
   const navigate = useNavigate();
@@ -18,7 +18,7 @@ export function MoviesPage({ posts }: { posts: SavedPost[] }) {
         kicker="Titles from your saves"
         title="What to watch next"
         lede="Keep films, series, and documentaries together, with streaming details and filming places when available."
-        count={{ value: aggregateMovies(scopedPosts).length, label: "titles" }}
+        count={{ value: aggregateMoviesFromPosts(scopedPosts).length, label: "titles" }}
       />
       <MovieLibrary
         posts={scopedPosts}

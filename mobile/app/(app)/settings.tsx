@@ -134,6 +134,8 @@ export default function SettingsScreen() {
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
+      <Text style={styles.pageTitle}>Settings</Text>
+      <Text style={styles.pageLede}>Your account and library tools.</Text>
       {clerkEnabled ? <ClerkAccountCard /> : <LocalAccountCard />}
 
       {isAdmin ? (
@@ -183,6 +185,8 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   content: { padding: spacing.md },
+  pageTitle: { color: colors.ink, fontSize: 30, fontWeight: "500", letterSpacing: -0.6 },
+  pageLede: { color: colors.muted, fontSize: 14, lineHeight: 20, marginTop: 6, marginBottom: spacing.md },
   card: {
     backgroundColor: colors.surface,
     borderRadius: radius.lg,

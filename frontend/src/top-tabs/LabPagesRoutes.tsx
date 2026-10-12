@@ -119,7 +119,7 @@ export function LabPagesRoutes({
             <div style={{ textAlign: "center", padding: "4rem 1rem" }}>
               <p className="empty-copy">That page doesn’t exist.</p>
               <Link to="/" className="classic-link" style={{ display: "inline-block", marginTop: "1rem" }}>
-                ← Back to Home view
+                ← Back to Home
               </Link>
             </div>
           }

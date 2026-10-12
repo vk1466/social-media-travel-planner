@@ -113,13 +113,7 @@ export function CoverCard({
       <span className="cover-card-media" style={!imageUrl ? { background: coverArt(title) } : undefined}>
         {imageUrl ? <img src={imageUrl} alt="" loading="lazy" /> : null}
         {category ? <span className="cover-card-category">{category}</span> : null}
-        <span className="cover-card-mark" aria-hidden={badge ? undefined : true}>
-          {badge ?? (
-            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.8">
-              <path d="M6 3h12v18l-6-4-6 4V3Z" />
-            </svg>
-          )}
-        </span>
+        {badge ? <span className="cover-card-mark">{badge}</span> : null}
       </span>
       <span className="cover-card-copy">
         {location || kicker ? (

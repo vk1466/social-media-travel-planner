@@ -211,6 +211,70 @@ def test_llm_pick_reject_all_returns_unresolved(monkeypatch) -> None:
   assert _pick_best(mention, [only], anchor_lat=None, anchor_lon=None, notes=notes) is None
 
 
+def test_jev_pick_chooses_a_candidate(monkeypatch) -> None:
+  from travelplanner.places.llm_pick import pick_candidate_index
+
+  def fake_system_one(*, state: str, questions: dict) -> dict:
+    assert "Misery Ridge" in state
+    assert questions["pin"]["criteria"]["none"]
+    assert "0" in questions["pin"]["criteria"]
+    return {"answers": {"pin": {"type": "choice", "choice": "0"}}}
+
+  monkeypatch.setattr("travelplanner.places.llm_pick.system_one", fake_system_one)
+  trail = GeocodeResult(
+    display_name="Misery Ridge Trail",
+    latitude=44.37,
+    longitude=-121.14,
+    category="attraction",
+    city="Terrebonne",
+    state_province="Oregon",
+    country="United States",
+  )
+  index, note = pick_candidate_index(
+    PlaceMention(place_name="Misery Ridge", city="Terrebonne", country="USA"),
+    [trail],
+  )
+  assert index == 0
+  assert note.startswith("llm_pick chose #0")
+
+
+def test_jev_pick_rejects_every_candidate(monkeypatch) -> None:
+  from travelplanner.places.llm_pick import pick_candidate_index
+
+  monkeypatch.setattr(
+    "travelplanner.places.llm_pick.system_one",
+    lambda **_: {"answers": {"pin": {"type": "choice", "choice": "none"}}},
+  )
+  index, note = pick_candidate_index(
+    PlaceMention(place_name="Mystery Spot"),
+    [
+      GeocodeResult(
+        display_name="Random Drive",
+        latitude=44.0,
+        longitude=-121.0,
+        category="highway",
+      )
+    ],
+  )
+  assert index is None
+  assert note.startswith("llm_pick rejected")
+
+
+def test_jev_pick_error_keeps_ranked_fallback(monkeypatch) -> None:
+  from travelplanner.places.llm_pick import pick_candidate_index
+
+  def fake_system_one(*, state: str, questions: dict) -> dict:
+    raise RuntimeError("JEV_API_KEY is not set")
+
+  monkeypatch.setattr("travelplanner.places.llm_pick.system_one", fake_system_one)
+  index, note = pick_candidate_index(
+    PlaceMention(place_name="Casa Loma"),
+    [GeocodeResult(display_name="Casa Loma", latitude=43.6, longitude=-79.4, category="attraction")],
+  )
+  assert index is None
+  assert note.startswith("llm_pick error")
+
+
 def test_name_similarity_aliases() -> None:
   assert name_similarity("Misery Ridge", "Misery Ridge Trail") >= 0.5
   assert name_similarity("Angel Landing", "Angel's Landing") >= 0.5

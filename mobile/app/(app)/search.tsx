@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { nativePostId } from "@/src/api";
@@ -21,6 +21,7 @@ export default function SearchScreen() {
   const { posts, places } = useLibrary();
   const { platforms } = useLibraryPlatform();
   const [query, setQuery] = useState("");
+  const [perType, setPerType] = useState(8);
   const [selectedRecipe, setSelectedRecipe] = useState<SavedRecipe | null>(null);
   const [selectedMovie, setSelectedMovie] = useState<AggregatedMovie | null>(null);
   const [groceryRecipeKeys, setGroceryRecipeKeys] = useState<Set<string>>(new Set());
@@ -76,8 +77,21 @@ export default function SearchScreen() {
         });
       }
     }
-    return hits.slice(0, 30);
+    return hits;
   }, [q, scopedPosts, places, recipes, movies, posts, platforms]);
+
+  useEffect(() => {
+    setPerType(8);
+  }, [q, platforms]);
+
+  const groups = [
+    { label: "Posts", hits: results.filter((hit) => hit.meta === "Post") },
+    { label: "Places", hits: results.filter((hit) => hit.meta === "Place") },
+    { label: "Recipes", hits: results.filter((hit) => hit.meta === "Recipe") },
+    { label: "Movies", hits: results.filter((hit) => hit.meta === "Movie") },
+  ].filter((group) => group.hits.length > 0);
+  const shownCount = groups.reduce((count, group) => count + Math.min(group.hits.length, perType), 0);
+  const hasMore = groups.some((group) => group.hits.length > perType);
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
@@ -85,7 +99,10 @@ export default function SearchScreen() {
         kicker="Search Wanderfile"
         title="Find anything you saved"
         lede="Search posts, places, recipes, and movies from one place."
-        count={{ value: results.length, label: "results" }}
+        count={{
+          value: q && shownCount < results.length ? shownCount : results.length,
+          label: q && shownCount < results.length ? `of ${results.length}` : "results",
+        }}
       />
       <FilterBar
         placeholder="Search saves"
@@ -100,16 +117,29 @@ export default function SearchScreen() {
         <Jump label="Watch" onPress={() => router.replace(appHref("/(app)/(tabs)/movies"))} />
         <Jump label="Visits" onPress={() => router.replace(appHref("/(app)/(tabs)/history"))} />
       </View> : null}
-      {results.map((hit) => (
-        <Pressable key={hit.key} style={styles.row} onPress={() => {
-          if (hit.recipe) setSelectedRecipe(hit.recipe);
-          else if (hit.movie) setSelectedMovie(hit.movie);
-          else router.push(appHref(hit.to));
-        }} accessibilityRole="button" accessibilityLabel={`Open ${hit.meta}: ${hit.label}`}>
-          <Text style={styles.label}>{hit.label}</Text>
-          <Text style={styles.meta}>{hit.meta}</Text>
-        </Pressable>
+      {q && shownCount < results.length ? (
+        <Text style={styles.empty}>Showing {shownCount} of {results.length}</Text>
+      ) : null}
+      {groups.map((group) => (
+        <View key={group.label}>
+          <Text style={styles.group}>{group.label}</Text>
+          {group.hits.slice(0, perType).map((hit) => (
+            <Pressable key={hit.key} style={styles.row} onPress={() => {
+              if (hit.recipe) setSelectedRecipe(hit.recipe);
+              else if (hit.movie) setSelectedMovie(hit.movie);
+              else router.push(appHref(hit.to));
+            }} accessibilityRole="button" accessibilityLabel={`Open ${hit.meta}: ${hit.label}`}>
+              <Text style={styles.label}>{hit.label}</Text>
+              <Text style={styles.meta}>{hit.meta}</Text>
+            </Pressable>
+          ))}
+        </View>
       ))}
+      {hasMore ? (
+        <Pressable accessibilityRole="button" onPress={() => setPerType((count) => count + 8)} style={styles.more}>
+          <Text style={styles.moreText}>Show more</Text>
+        </Pressable>
+      ) : null}
       {q && results.length === 0 ? (
         <Text style={styles.empty} accessibilityRole="text">No saved items match “{query.trim()}”.</Text>
       ) : null}
@@ -170,4 +200,14 @@ const styles = StyleSheet.create({
   label: { color: colors.ink, fontWeight: "700" },
   meta: { color: colors.muted, marginTop: 4, fontSize: 12 },
   empty: { color: colors.muted, fontSize: 14, marginTop: spacing.md },
+  group: {
+    marginTop: spacing.md,
+    color: colors.faint,
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 0.6,
+    textTransform: "uppercase",
+  },
+  more: { minHeight: 44, justifyContent: "center" },
+  moreText: { color: colors.brand, fontSize: 14, fontWeight: "700" },
 });

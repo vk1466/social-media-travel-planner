@@ -3719,17 +3719,8 @@
   color: var(--pl2-accent);
 }
 
-.saved-map-view--paper .pl2-map-canvas {
-  filter: sepia(0.22) saturate(0.62) brightness(1.08);
-}
-
 .saved-map-view--night .pl2-map-canvas {
   background: #0d1512;
-  filter: saturate(0.78) contrast(1.08);
-}
-
-.saved-map-view--photos .pl2-map-canvas {
-  filter: saturate(0.72) brightness(1.05);
 }
 
 .saved-map-marker-host {
@@ -3740,9 +3731,7 @@
 .saved-map-marker {
   display: flex;
   align-items: center;
-  filter: drop-shadow(0 3px 5px rgb(0 0 0 / 0.3));
   transform-origin: left center;
-  transition: transform 150ms ease;
 }
 
 .saved-map-marker > i {
@@ -3757,6 +3746,7 @@
   color: white;
   font-size: 0.72rem;
   font-style: normal;
+  box-shadow: 0 2px 4px rgb(0 0 0 / 0.28);
 }
 
 .saved-map-marker svg,

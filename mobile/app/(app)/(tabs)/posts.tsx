@@ -80,10 +80,12 @@ export default function PostsScreen() {
     let focused = true;
     let timer: ReturnType<typeof setTimeout>;
     const refreshJobs = async () => {
+      let isRunning = false;
       try {
         const [active, history] = await Promise.all([fetchActiveJob("link_ingest"), fetchJobs()]);
         if (!focused) return;
-        setActiveJob(active?.status === "running" ? active : null);
+        isRunning = active?.status === "running";
+        setActiveJob(isRunning ? active : null);
         const recentCutoff = Date.now() - 24 * 60 * 60 * 1000;
         const newlyCompletedJobs = history.filter((job) => {
           if (job.kind !== "link_ingest" || job.status !== "done" || !job.created_at) return false;
@@ -102,11 +104,12 @@ export default function PostsScreen() {
       } catch {
         // Keep the last known job status visible during transient network failures.
       }
-      if (focused) timer = setTimeout(refreshJobs, 4000);
+      const isIngesting = isRunning || pendingUrls.length > 0;
+      if (focused) timer = setTimeout(refreshJobs, isIngesting ? 4000 : 15000);
     };
     void refreshJobs();
     return () => { focused = false; clearTimeout(timer); };
-  }, [bumpRefresh]));
+  }, [bumpRefresh, pendingUrls.length]));
 
   const topicTabs = useMemo(() => contentCategoryTabs(posts), [posts]);
   const placesById = useMemo(
@@ -287,12 +290,23 @@ export default function PostsScreen() {
         keyExtractor={(item) => item.key}
         contentContainerStyle={styles.list}
         stickySectionHeadersEnabled
+        initialNumToRender={8}
+        maxToRenderPerBatch={6}
+        windowSize={5}
+        removeClippedSubviews
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void onRefresh()} />}
         ListEmptyComponent={
-          <EmptyState
-            title="No posts yet"
-            body="Tap Save to paste Instagram, TikTok, YouTube, or web links — or share a reel to Wanderfile."
-          />
+          posts.length === 0 ? (
+            <EmptyState
+              title="No posts yet"
+              body="Tap Save to paste Instagram, TikTok, YouTube, or web links — or share a reel to Wanderfile."
+            />
+          ) : (
+            <EmptyState
+              title="No matches"
+              body="Nothing matches these filters. Clear search, category, or source to see your posts."
+            />
+          )
         }
         renderSectionHeader={({ section }) => <Text style={styles.section}>{section.title}</Text>}
         renderItem={({ item }) => (

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import { nativePostId, postRouteParts, type Place, type SavedPost } from "../../api";
@@ -6,7 +6,7 @@ import { postTitle } from "../display";
 import { recipesFromPosts, type SavedRecipe } from "../recipes";
 import { aggregateMovies, type AggregatedMovie } from "../movies";
 import { FilterBar } from "../../components/library";
-import { placeMatchesPlatform, postsForPlatforms, useLibraryPlatform } from "../../libraryPlatform";
+import { libraryPlatformLabel, placeMatchesPlatform, postsForPlatforms, useLibraryPlatform } from "../../libraryPlatform";
 import { PageHeading } from "../../components/PageHeading";
 import { RecipeDetailModal } from "../../components/food/RecipeDetailModal";
 import { GroceryListModal } from "../../components/food/GroceryListModal";
@@ -17,8 +17,9 @@ import "../../search-page.css";
 export function SearchPage({ posts, places }: { posts: SavedPost[]; places: Place[] }) {
   const navigate = useNavigate();
   const { basePath } = useLabTheme();
-  const { platforms } = useLibraryPlatform();
+  const { platforms, setPlatforms } = useLibraryPlatform();
   const [query, setQuery] = useState("");
+  const [perType, setPerType] = useState(8);
   const [selectedRecipe, setSelectedRecipe] = useState<SavedRecipe | null>(null);
   const [selectedMovie, setSelectedMovie] = useState<AggregatedMovie | null>(null);
   const [groceryRecipeKeys, setGroceryRecipeKeys] = useState<Set<string>>(new Set());
@@ -28,33 +29,54 @@ export function SearchPage({ posts, places }: { posts: SavedPost[]; places: Plac
   const recipes = recipesFromPosts(scopedPosts);
   const movies = aggregateMovies(scopedPosts);
 
-  const results = useMemo(() => {
+  useEffect(() => {
+    setPerType(8);
+  }, [q, platforms]);
+
+  const groups = useMemo(() => {
     if (!q) return [];
-    const hits: { key: string; to?: string; label: string; meta: string; recipe?: SavedRecipe; movie?: AggregatedMovie }[] = [];
+    type Hit = { key: string; to?: string; label: string; meta: string; recipe?: SavedRecipe; movie?: AggregatedMovie };
+    const postHits: Hit[] = [];
+    const placeHits: Hit[] = [];
+    const recipeHits: Hit[] = [];
+    const movieHits: Hit[] = [];
     for (const post of scopedPosts) {
-      if (`${postTitle(post)} ${post.caption}`.toLowerCase().includes(q)) {
-        const route = postRouteParts(post.platform, nativePostId(post));
-        hits.push({ key: `post-${post.post_id}`, to: `${basePath}/posts/${route.platform}/${route.nativeId}`, label: postTitle(post), meta: "Post" });
-      }
+      const haystack = [postTitle(post), post.caption, post.reel_summary, post.author_handle]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      if (!haystack.includes(q)) continue;
+      const route = postRouteParts(post.platform, nativePostId(post));
+      postHits.push({ key: `post-${post.post_id}`, to: `${basePath}/posts/${route.platform}/${route.nativeId}`, label: postTitle(post), meta: "Post" });
     }
     for (const place of places) {
       if (!placeMatchesPlatform(place.source_post_ids, posts, platforms)) continue;
       if (place.display_name.toLowerCase().includes(q)) {
-        hits.push({ key: `place-${place.place_id}`, to: `${basePath}/travel/${place.place_id}`, label: place.display_name, meta: "Place" });
+        placeHits.push({ key: `place-${place.place_id}`, to: `${basePath}/travel/${place.place_id}`, label: place.display_name, meta: "Place" });
       }
     }
     for (const recipe of recipes) {
       if ((recipe.recipe.title ?? "").toLowerCase().includes(q)) {
-        hits.push({ key: `recipe-${recipe.key}`, label: recipe.recipe.title ?? "Recipe", meta: "Recipe", recipe });
+        recipeHits.push({ key: `recipe-${recipe.key}`, label: recipe.recipe.title ?? "Recipe", meta: "Recipe", recipe });
       }
     }
     for (const movie of movies) {
       if (movie.title.toLowerCase().includes(q)) {
-        hits.push({ key: `movie-${movie.key}`, label: movie.title, meta: "Movie", movie });
+        movieHits.push({ key: `movie-${movie.key}`, label: movie.title, meta: "Movie", movie });
       }
     }
-    return hits.slice(0, 30);
+    return [
+      { label: "Posts", hits: postHits },
+      { label: "Places", hits: placeHits },
+      { label: "Recipes", hits: recipeHits },
+      { label: "Movies", hits: movieHits },
+    ].filter((group) => group.hits.length > 0);
   }, [q, scopedPosts, places, recipes, movies, basePath, posts, platforms]);
+
+  const totalResults = groups.reduce((count, group) => count + group.hits.length, 0);
+  const shownResults = groups.reduce((count, group) => count + Math.min(group.hits.length, perType), 0);
+  const hasMore = groups.some((group) => group.hits.length > perType);
+  const sourceLabel = platforms.map(libraryPlatformLabel).join(", ");
 
   return (
     <div className="top-search-page">
@@ -63,17 +85,20 @@ export function SearchPage({ posts, places }: { posts: SavedPost[]; places: Plac
         kicker="Search Wanderfile"
         title="Find anything you saved"
         lede="Search posts, places, recipes, and movies from one place."
-        count={{ value: results.length, label: "results" }}
+        count={{ value: totalResults, label: "results" }}
       />
       <FilterBar
         placeholder="Search saves"
         query={query}
         onQuery={setQuery}
         autoFocus
-        onSearchKeyDown={(event) => {
-          if (event.key === "Enter" && results[0]) openResult(results[0]);
-        }}
       />
+      {platforms.length > 0 ? (
+        <p className="search-scope">
+          Searching {sourceLabel}.{" "}
+          <button type="button" onClick={() => setPlatforms([])}>Search all sources</button>
+        </p>
+      ) : null}
       {!q ? <nav className="jump-links" aria-label="Browse your library">
         <Link to={`${basePath || "/"}`}>Home</Link>
         <Link to={`${basePath}/posts`}>Posts</Link>
@@ -82,15 +107,28 @@ export function SearchPage({ posts, places }: { posts: SavedPost[]; places: Plac
         <Link to={`${basePath}/movies`}>Watch</Link>
         <Link to={`${basePath}/history`}>Visits</Link>
       </nav> : null}
-      <ul className="sheet-list">
-        {results.map((hit) => (
-          <li key={hit.key}>
-            {hit.to ? <Link to={hit.to}>{hit.label} <small>{hit.meta}</small></Link> :
-              <button type="button" onClick={() => openResult(hit)}>{hit.label} <small>{hit.meta}</small></button>}
-          </li>
-        ))}
-      </ul>
-      {q && results.length === 0 ? <p className="empty-copy" role="status">No saved items match “{query.trim()}”.</p> : null}
+      {q && shownResults < totalResults ? (
+        <p className="search-count" role="status">Showing {shownResults} of {totalResults}</p>
+      ) : null}
+      {groups.map((group) => (
+        <section key={group.label} className="search-section" aria-label={group.label}>
+          <h2 className="search-heading">{group.label}</h2>
+          <ul className="sheet-list">
+            {group.hits.slice(0, perType).map((hit) => (
+              <li key={hit.key}>
+                {hit.to ? <Link to={hit.to}>{hit.label} <small>{hit.meta}</small></Link> :
+                  <button type="button" onClick={() => openResult(hit)}>{hit.label} <small>{hit.meta}</small></button>}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))}
+      {hasMore ? (
+        <button type="button" className="search-more" onClick={() => setPerType((count) => count + 8)}>
+          Show more
+        </button>
+      ) : null}
+      {q && totalResults === 0 ? <p className="empty-copy" role="status">No saved items match “{query.trim()}”.</p> : null}
       {selectedRecipe ? <RecipeDetailModal item={selectedRecipe} onClose={() => setSelectedRecipe(null)}
         onAddToGrocery={() => setGroceryRecipeKeys((keys) => new Set(keys).add(selectedRecipe.key))}
         isInGroceryList={groceryRecipeKeys.has(selectedRecipe.key)} onViewGrocery={() => setGroceryOpen(true)} /> : null}

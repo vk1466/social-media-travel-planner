@@ -11,5 +11,5 @@ export {
 } from "../../components/library";
 
 export function EmptyState({ children }: { children: ReactNode }) {
-  return <p className="empty-copy">{children}</p>;
+  return <div className="empty-copy">{children}</div>;
 }

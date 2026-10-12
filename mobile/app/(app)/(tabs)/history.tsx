@@ -38,6 +38,13 @@ import { useLibrary } from "@/src/context/LibraryContext";
 import { formatDate, locationLine } from "@/src/display";
 import { colors, radius, shadow, spacing } from "@/src/theme";
 
+function visitSourceLabel(source: string | null | undefined): string {
+  if (source === "instagram") return "Instagram";
+  if (source === "timeline") return "Google Timeline";
+  if (source === "manual") return "Logged by you";
+  return "Visit";
+}
+
 function toDateInput(date: Date): string {
   return date.toISOString().slice(0, 10);
 }
@@ -341,7 +348,7 @@ export default function HistoryScreen() {
           formatDate(visit.visited_from ?? visit.created_at) ?? "—";
         const metaLine =
           [place ? locationLine(place) : null, visit.notes].filter(Boolean).join(" · ") ||
-          visit.source;
+          visitSourceLabel(visit.source);
         const canOpen = Boolean(visit.place_id);
 
         return (
@@ -555,9 +562,9 @@ const styles = StyleSheet.create({
     color: colors.ink,
     lineHeight: 30,
   },
-  statLabel: { color: colors.muted, fontSize: 10, marginTop: 4 },
-  toolbar: { gap: 9 },
-  toolbarForm: { flexDirection: "row", alignItems: "center", gap: 9 },
+  statLabel: { color: colors.muted, fontSize: 12, marginTop: 4 },
+  toolbar: { gap: spacing.sm },
+  toolbarForm: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
   toolbarBtn: {
     borderWidth: 1,
     borderColor: colors.border,
@@ -580,7 +587,7 @@ const styles = StyleSheet.create({
   timelineDate: {
     width: 62,
     color: colors.muted,
-    fontSize: 9,
+    fontSize: 12,
     paddingTop: 6,
   },
   timelineRail: {
@@ -612,7 +619,7 @@ const styles = StyleSheet.create({
     color: colors.ink,
     lineHeight: 24,
   },
-  timelineMeta: { color: colors.muted, fontSize: 9, marginTop: 5, lineHeight: 14 },
+  timelineMeta: { color: colors.muted, fontSize: 13, marginTop: 5, lineHeight: 18 },
   footer: { marginTop: spacing.lg },
   moreToggle: {
     flexDirection: "row",
@@ -643,7 +650,7 @@ const styles = StyleSheet.create({
   input: {
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: 10,
+    borderRadius: radius.md,
     paddingHorizontal: spacing.md,
     paddingVertical: 12,
     backgroundColor: colors.bg,

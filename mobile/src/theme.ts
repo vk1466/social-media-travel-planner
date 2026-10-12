@@ -1,26 +1,41 @@
 /**
- * Native palette — keep in sync with frontend/src/wf-tokens.css (--theme-*).
+ * Wanderfile Native Design Tokens — matching SPEC.md and design boards.
  */
 import { Platform, type TextStyle, type ViewStyle } from "react-native";
 
 export const colors = {
-  bg: "#112a35",
-  surface: "#173a47",
-  surfaceAlt: "#2a5260",
-  ink: "#f3fafc",
-  muted: "#b2cbd0",
-  faint: "#b2cbd0",
-  border: "#2a5260",
-  brand: "#4fe8f6",
-  brandSoft: "#2a5260",
-  accent: "#4fe8f6",
-  accentSoft: "#2a5260",
-  onFill: "#112a35",
-  danger: "#c45c5c",
-  dangerSoft: "#3a2a2e",
-  success: "#2e7d52",
-  successSoft: "#1c3d34",
+  bg: "#F6F5F1",
+  surface: "#FFFFFF",
+  surfaceAlt: "#FBFAF7",
+  ink: "#1B1D1F",
+  muted: "#6B6F73",
+  faint: "#8A8E92",
+  bodyTinted: "#4A4E52",
+  border: "#E6E3DC",
+  borderSubtle: "#EFEDE7",
+  borderDashed: "#C9C5BA",
+  brand: "#1B1D1F",
+  brandSoft: "#ECECEA",
+  accent: "#1B1D1F",
+  accentSoft: "#E6E3DC",
+  onFill: "#FFFFFF",
+  danger: "#8A2B57",
+  dangerSoft: "#FBE6EE",
+  success: "#25623A",
+  successSoft: "#E4F2E7",
   running: "#d97706",
+
+  // Category tints
+  travelTint: "#E3F0F4",
+  travelInk: "#1B5E78",
+  foodTint: "#FBEBDD",
+  foodInk: "#9A4513",
+  movieTint: "#ECE8F7",
+  movieInk: "#4B3C8C",
+  routineTint: "#E4F2E7",
+  routineInk: "#25623A",
+  otherTint: "#ECECEA",
+  otherInk: "#4A4E52",
 };
 
 export const spacing = {
@@ -33,22 +48,22 @@ export const spacing = {
 
 export const radius = {
   sm: 8,
-  md: 12,
-  lg: 16,
-  xl: 22,
+  md: 14,
+  lg: 20,
+  xl: 24,
   pill: 999,
 };
 
-/** Cross-platform elevation helper: soft iOS shadow + Android elevation. */
+/** Cross-platform elevation helper */
 export function shadow(level: 1 | 2 | 3 = 1): ViewStyle {
   const config = {
-    1: { height: 1, radius: 3, opacity: 0.06, elevation: 1 },
+    1: { height: 1, radius: 3, opacity: 0.05, elevation: 1 },
     2: { height: 4, radius: 10, opacity: 0.08, elevation: 3 },
-    3: { height: 10, radius: 24, opacity: 0.12, elevation: 8 },
+    3: { height: 10, radius: 20, opacity: 0.12, elevation: 6 },
   }[level];
   return Platform.select({
     ios: {
-      shadowColor: "#08171e",
+      shadowColor: "#000000",
       shadowOffset: { width: 0, height: config.height },
       shadowOpacity: config.opacity,
       shadowRadius: config.radius,
@@ -59,16 +74,16 @@ export function shadow(level: 1 | 2 | 3 = 1): ViewStyle {
 }
 
 export const typography = {
-  screenTitle: { fontSize: 26, fontWeight: "800", color: colors.ink, letterSpacing: -0.5 } as TextStyle,
-  sectionTitle: { fontSize: 18, fontWeight: "700", color: colors.ink } as TextStyle,
+  screenTitle: { fontSize: 30, fontWeight: "800", color: colors.ink, letterSpacing: -0.5 } as TextStyle,
+  sectionTitle: { fontSize: 19, fontWeight: "800", color: colors.ink, letterSpacing: -0.3 } as TextStyle,
   cardTitle: { fontSize: 16, fontWeight: "700", color: colors.ink } as TextStyle,
-  body: { fontSize: 14, color: colors.ink } as TextStyle,
-  meta: { fontSize: 12, color: colors.muted } as TextStyle,
+  body: { fontSize: 14, color: colors.bodyTinted, lineHeight: 20 } as TextStyle,
+  meta: { fontSize: 13, color: colors.muted } as TextStyle,
   overline: {
     fontSize: 12,
     fontWeight: "700",
-    color: colors.faint,
+    color: colors.muted,
     textTransform: "uppercase",
-    letterSpacing: 0.6,
+    letterSpacing: 0.8,
   } as TextStyle,
 };

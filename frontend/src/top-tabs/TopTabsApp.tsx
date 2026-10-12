@@ -62,7 +62,10 @@ export function TopTabsApp({
         >
           {loadError ? (
             <div className="library-load-error" role="alert">
-              <div><strong>Your library couldn’t load.</strong><span>{loadError}</span></div>
+              <div>
+                <strong>{libraryUnavailable ? "Your library couldn’t load." : "Some of your library couldn’t load."}</strong>
+                <span>{loadError}</span>
+              </div>
               <button type="button" onClick={onRetry}>Try again</button>
             </div>
           ) : null}

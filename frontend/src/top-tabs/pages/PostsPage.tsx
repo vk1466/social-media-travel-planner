@@ -62,7 +62,7 @@ export function PostsPage({
   const { basePath } = useLabTheme();
   const { platform: routePlatform, postId: routePostId } = useParams();
   const [query, setQuery] = useState("");
-  const { platforms } = useLibraryPlatform();
+  const { platforms, setPlatforms } = useLibraryPlatform();
   const [contentCategory, setContentCategory] = useState("all");
   const [dateMode, setDateMode] = useState<DateMode>("saved");
   const [spineGrain, setSpineGrain] = useState<SpineGrain>("month");
@@ -71,7 +71,6 @@ export function PostsPage({
   const [facetKeys, setFacetKeys] = useState<string[]>([]);
   const [selected, setSelected] = useState<SavedPost | null>(null);
   const [visitedIds, setVisitedIds] = useState<Set<string>>(new Set());
-  const [forceTouchMode, setForceTouchMode] = useState(false);
   const [monthKey, setMonthKey] = useState<string | null>(null);
   const monthIndexRef = useRef<HTMLElement>(null);
   const monthKeyRef = useRef<string | null>(null);
@@ -324,27 +323,12 @@ export function PostsPage({
                   options: [
                     { value: "all", label: "Everything" },
                     { value: "visited", label: "Visited" },
-                    { value: "inspiration", label: "Inspiration" },
+                    { value: "inspiration", label: "Want to go" },
                   ],
                 },
               ]
             : []),
         ]}
-        trailing={
-          <button
-            type="button"
-            className={`wf-touch-toggle-btn ${forceTouchMode ? "is-active" : ""}`}
-            onClick={() => setForceTouchMode((value) => !value)}
-            title={
-              forceTouchMode
-                ? "Touch Mode is ON: Hover is disabled; tap card to reveal metadata, second tap to open"
-                : "Simulate mobile touch mode without a touch device"
-            }
-            aria-pressed={forceTouchMode}
-          >
-            📱 {forceTouchMode ? "Touch Mode: ON" : "Simulate Touch"}
-          </button>
-        }
       />
       {secondLevel.pills.length > 0 ? (
         <FilterPills
@@ -367,7 +351,29 @@ export function PostsPage({
       ) : null}
       </FilterChrome>
       {filtered.length === 0 || !activePeriod ? (
-        <EmptyState>No posts match that filter.</EmptyState>
+        <EmptyState>
+          {posts.length === 0 ? "No posts yet." : "No posts match these filters."}
+          {posts.length === 0 ? (
+            <button type="button" className="empty-clear" onClick={() => navigate(`${basePath}/add`)}>
+              Save a link
+            </button>
+          ) : null}
+          {posts.length > 0 ? (
+            <button
+              type="button"
+              className="empty-clear"
+              onClick={() => {
+                setQuery("");
+                setContentCategory("all");
+                setFacetKeys([]);
+                setPlaceStatus("all");
+                setPlatforms([]);
+              }}
+            >
+              Clear filters
+            </button>
+          ) : null}
+        </EmptyState>
       ) : (
         <div className="book-spine">
           <div className="book-spine-rail">
@@ -436,7 +442,6 @@ export function PostsPage({
                   post={post}
                   dateMode={dateMode}
                   onOpen={openPost}
-                  forceTouchMode={forceTouchMode}
                   contentCategory={contentCategory}
                 />
               )}

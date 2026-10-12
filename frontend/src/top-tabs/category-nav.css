@@ -55,7 +55,7 @@
 }
 
 .category-nav-card em {
-  font: 500 11px ui-monospace, SFMono-Regular, Menlo, monospace;
+  font: 600 12px var(--wf-font-body);
   font-style: normal;
   padding: 2px 7px;
   border-radius: 999px;
@@ -109,7 +109,7 @@
   }
 
   .category-nav-card em {
-    font-size: 10.5px;
+    font-size: 12px;
     padding: 2px 6px;
   }
 }

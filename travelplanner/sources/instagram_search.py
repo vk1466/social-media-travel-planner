@@ -50,7 +50,7 @@ def _hits_for_query(query: str, *, limit: int) -> list[dict[str, str | None]]:
       {
         "post_url": url,
         "author": _text(row, "authorUsername", "username"),
-        "caption": caption[:180] if caption else None,
+        "caption": caption[:800] if caption else None,
         "thumbnail_url": _text(row, "image", "thumbnail", "displayUrl", "thumbnailUrl"),
         "search_query": query,
       }

@@ -1,9 +1,11 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   createContext,
   useCallback,
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -17,6 +19,10 @@ import {
   type SavedPost,
   type VisitDetail,
 } from "../api";
+
+const CACHE_POSTS_KEY = "wanderfile.library.posts.v1";
+const CACHE_PLACES_KEY = "wanderfile.library.places.v1";
+const CACHE_VISITS_KEY = "wanderfile.library.visits.v1";
 
 interface LibraryContextValue {
   posts: SavedPost[];
@@ -40,9 +46,61 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const [refreshToken, setRefreshToken] = useState(0);
   const [isAdmin, setIsAdmin] = useState(false);
+  const isHydrated = useRef(false);
+
+  // Fast offline hydration from local storage
+  useEffect(() => {
+    let active = true;
+    void (async () => {
+      try {
+        const pairs = await AsyncStorage.multiGet([
+          CACHE_POSTS_KEY,
+          CACHE_PLACES_KEY,
+          CACHE_VISITS_KEY,
+        ]);
+        if (!active) return;
+        const [postsEntry, placesEntry, visitsEntry] = pairs;
+        let hasCachedData = false;
+        if (postsEntry && postsEntry[1]) {
+          const parsed = JSON.parse(postsEntry[1]) as SavedPost[];
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setPosts(parsed);
+            hasCachedData = true;
+          }
+        }
+        if (placesEntry && placesEntry[1]) {
+          const parsed = JSON.parse(placesEntry[1]) as Place[];
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setPlaces(parsed);
+            hasCachedData = true;
+          }
+        }
+        if (visitsEntry && visitsEntry[1]) {
+          const parsed = JSON.parse(visitsEntry[1]) as VisitDetail[];
+          if (Array.isArray(parsed)) {
+            setVisits(parsed);
+          }
+        }
+        if (hasCachedData) {
+          setLoading(false);
+        }
+      } catch {
+        // Cache read failed silently, network will populate
+      } finally {
+        isHydrated.current = true;
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const refresh = useCallback(async () => {
-    setLoading(true);
+    // Only show full loading spinner if we have no cached data at all
+    setPosts((current) => {
+      if (current.length === 0) setLoading(true);
+      return current;
+    });
     setError(null);
     try {
       const [nextPosts, nextPlaces, nextVisits, admin] = await Promise.all([
@@ -55,6 +113,15 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
       setPlaces(nextPlaces);
       setVisits(nextVisits);
       setIsAdmin(admin.is_admin);
+
+      // Async write to disk in background without blocking UI
+      void AsyncStorage.multiSet([
+        [CACHE_POSTS_KEY, JSON.stringify(nextPosts)],
+        [CACHE_PLACES_KEY, JSON.stringify(nextPlaces)],
+        [CACHE_VISITS_KEY, JSON.stringify(nextVisits)],
+      ]).catch(() => {
+        // Ignore cache write errors
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load library");
     } finally {

@@ -360,7 +360,7 @@ export function PlaceLibrary({
                     ? "Everything"
                     : filter === "visited"
                       ? "Visited"
-                      : "Inspiration"}
+                      : "Want to go"}
                 </button>
               ))}
             </div>
@@ -426,7 +426,7 @@ export function PlaceLibrary({
                     <i className="pl2-dot visited" /> Visited
                   </span>
                   <span>
-                    <i className="pl2-dot dream" /> Inspiration
+                    <i className="pl2-dot dream" /> Want to go
                   </span>
                   <span className="pl2-legend-note">
                     {searching
@@ -442,7 +442,7 @@ export function PlaceLibrary({
             {loading ? (
               <p className="pl2-empty">Loading your atlas…</p>
             ) : places.length === 0 ? (
-              <p className="pl2-empty">No places yet — ingest a post with locations, then come back.</p>
+              <p className="pl2-empty">No places yet. Save a post with locations, then come back.</p>
             ) : filteredPlaces.length === 0 ? (
               <p className="pl2-empty">Nothing matches these filters — clear a type or status.</p>
             ) : searching ? (

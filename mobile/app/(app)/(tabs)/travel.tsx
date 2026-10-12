@@ -210,7 +210,7 @@ export default function TravelScreen() {
   const listEmpty = atlasPlaces.length === 0 ? (
     <EmptyState
       title="No places yet"
-      body="Ingest a reel with locations to build your place library."
+      body="Save a post with places to build your library."
     />
   ) : filteredPlaces.length === 0 ? (
     <EmptyState
@@ -319,6 +319,9 @@ export default function TravelScreen() {
               </Pressable>
             </View>
           ) : null}
+          {listEmpty ? (
+            <View style={styles.pad}>{listEmpty}</View>
+          ) : (
           <View style={styles.mapCanvas}>
             <PlaceMap
               places={mapPlaces}
@@ -327,6 +330,7 @@ export default function TravelScreen() {
               height="100%"
             />
           </View>
+          )}
           {mapPostEntries.length > 0 ? (
             <ScrollView
               horizontal
@@ -385,6 +389,10 @@ export default function TravelScreen() {
           numColumns={searching ? 1 : 2}
           columnWrapperStyle={searching ? undefined : styles.gridRow}
           contentContainerStyle={styles.list}
+          initialNumToRender={8}
+          maxToRenderPerBatch={6}
+          windowSize={5}
+          removeClippedSubviews
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
@@ -539,7 +547,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 10,
     padding: 6,
-    borderRadius: 10,
+    borderRadius: radius.md,
     borderWidth: 2,
     borderColor: "transparent",
     backgroundColor: colors.surface,

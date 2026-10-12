@@ -33,7 +33,7 @@ export function SignedOutGate() {
             <div className="signed-out-preview">
               <div className="signed-out-preview-top"><span><span className="signed-out-preview-mark">✳</span> wanderfile</span><span>YOUR LIBRARY ↗</span></div>
               <div className="signed-out-preview-heading">Everything you love,<br /><em>beautifully kept.</em></div>
-              <div className="signed-out-preview-tabs"><span className="is-selected">All saves</span><span>Travel</span><span>Food</span><span>Movies</span></div>
+              <div className="signed-out-preview-tabs"><span className="is-selected">All saves</span><span>Places</span><span>Food</span><span>Watch</span></div>
               <div className="signed-out-preview-grid">{previewItems.map((item) => <div className="signed-out-preview-card" key={item.title}><img src={item.image} alt="" loading="lazy" /><div><span>{item.category}</span><strong>{item.title}</strong><small>Saved from {item.source}</small></div></div>)}</div>
             </div>
             <div className="signed-out-floating-label signed-out-label-bottom"><span className="signed-out-label-icon">✓</span> Saved & sorted for you</div>

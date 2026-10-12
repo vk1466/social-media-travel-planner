@@ -1,5 +1,5 @@
-import { useCallback, useMemo, useRef, useState } from "react";
-import { Platform, StyleSheet, View } from "react-native";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { StyleSheet, View } from "react-native";
 import { WebView } from "react-native-webview";
 
 import type { Place } from "../api";
@@ -18,8 +18,19 @@ export function OsmPlaceMap({
   visitedPlaceIds,
   onSelectPlace,
 }: OsmPlaceMapProps) {
-  const html = useMemo(() => buildMapHtml(places, visitedPlaceIds), [places, visitedPlaceIds]);
+  const payload = useMemo(
+    () => markerPayload(places, visitedPlaceIds),
+    [places, visitedPlaceIds],
+  );
+  const html = useMemo(() => buildMapHtml(), []);
+  const source = useMemo(
+    () => ({ html, baseUrl: "https://basemaps.cartocdn.com" }),
+    [html],
+  );
   const webViewRef = useRef<WebView>(null);
+  const readyRef = useRef(false);
+  const payloadRef = useRef(payload);
+  payloadRef.current = payload;
   const [frame, setFrame] = useState({ width: 0, height: 0 });
 
   const applyFrame = useCallback((width: number, height: number) => {
@@ -30,6 +41,18 @@ export function OsmPlaceMap({
       `window.__setMapFrame && window.__setMapFrame(${Math.round(width)}, ${Math.round(height)}); true;`,
     );
   }, []);
+
+  const pushPlaces = useCallback(() => {
+    webViewRef.current?.injectJavaScript(
+      `window.__setPlaces && window.__setPlaces(${payloadRef.current}); true;`,
+    );
+  }, []);
+
+  useEffect(() => {
+    if (readyRef.current) {
+      pushPlaces();
+    }
+  }, [payload, pushPlaces]);
 
   return (
     <View
@@ -47,7 +70,7 @@ export function OsmPlaceMap({
           ref={webViewRef}
           style={{ width: frame.width, height: frame.height, backgroundColor: "#112a35" }}
           originWhitelist={["*"]}
-          source={{ html, baseUrl: "https://basemaps.cartocdn.com" }}
+          source={source}
           javaScriptEnabled
           nestedScrollEnabled
           scrollEnabled={false}
@@ -59,14 +82,19 @@ export function OsmPlaceMap({
           scalesPageToFit={false}
           showsHorizontalScrollIndicator={false}
           showsVerticalScrollIndicator={false}
-          onLoadEnd={() => applyFrame(frame.width, frame.height)}
+          onLoadEnd={() => {
+            readyRef.current = true;
+            applyFrame(frame.width, frame.height);
+            pushPlaces();
+          }}
+          androidLayerType="hardware"
+          cacheEnabled
           onMessage={(event) => {
             const place = places.find((item) => item.place_id === event.nativeEvent.data);
             if (place) {
               onSelectPlace?.(place);
             }
           }}
-          {...(Platform.OS === "android" ? { androidLayerType: "software" as const } : {})}
         />
       ) : null}
     </View>
@@ -88,7 +116,7 @@ function locationLine(place: Place): string {
   return [city, stateProvince, country].filter(Boolean).join(", ");
 }
 
-function buildMapHtml(places: Place[], visitedPlaceIds: ReadonlySet<string>): string {
+function markerPayload(places: Place[], visitedPlaceIds: ReadonlySet<string>): string {
   const markers = places.map((place) => {
     const visual = visualForCategory(place.category);
     const visited = visitedPlaceIds.has(place.place_id);
@@ -106,7 +134,10 @@ function buildMapHtml(places: Place[], visitedPlaceIds: ReadonlySet<string>): st
       icon: visual.icon,
     };
   });
-  const payload = JSON.stringify(markers).replace(/</g, "\\u003c");
+  return JSON.stringify(markers).replace(/</g, "\\u003c");
+}
+
+function buildMapHtml(): string {
   const tileKey = process.env.EXPO_PUBLIC_CARTO_BASEMAPS_API_KEY?.trim() ?? "";
   const tileUrl = tileKey
     ? `https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png?key=${encodeURIComponent(tileKey)}`
@@ -136,7 +167,6 @@ function buildMapHtml(places: Place[], visitedPlaceIds: ReadonlySet<string>): st
       height: 100%;
     }
     .leaflet-container { width: 100%; height: 100%; background: #112a35; }
-    .leaflet-tile-pane { filter: saturate(0.72) brightness(1.05); }
     .saved-map-marker-host { border: 0; background: transparent; }
     .saved-map-marker {
       display: flex;
@@ -144,7 +174,6 @@ function buildMapHtml(places: Place[], visitedPlaceIds: ReadonlySet<string>): st
       justify-content: center;
       width: 28px;
       height: 28px;
-      filter: drop-shadow(0 3px 5px rgb(0 0 0 / 0.3));
     }
     .saved-map-marker > i {
       flex: 0 0 auto;
@@ -165,6 +194,7 @@ function buildMapHtml(places: Place[], visitedPlaceIds: ReadonlySet<string>): st
       background: var(--marker-color);
       color: white;
       font-style: normal;
+      box-shadow: 0 2px 4px rgb(0 0 0 / 0.28);
     }
     .saved-map-marker svg {
       display: block;
@@ -228,27 +258,38 @@ function buildMapHtml(places: Place[], visitedPlaceIds: ReadonlySet<string>): st
   <div id="map"></div>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
-    const places = ${payload};
     function esc(value) {
       return String(value == null ? "" : value).replace(/[&<>"']/g, function (ch) {
         return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch];
       });
     }
-    const map = L.map("map", { zoomControl: true, worldCopyJump: true, minZoom: 2, maxZoom: 19 });
+    const map = L.map("map", {
+      zoomControl: true,
+      worldCopyJump: true,
+      minZoom: 2,
+      maxZoom: 19,
+      fadeAnimation: false,
+      markerZoomAnimation: false,
+      zoomAnimation: true
+    });
     L.tileLayer(${JSON.stringify(tileUrl)}, {
       attribution: "&copy; OSM &copy; CARTO",
       subdomains: "abcd",
-      opacity: 0.9,
-      maxZoom: 19
+      maxZoom: 19,
+      updateWhenIdle: true,
+      updateWhenZooming: false,
+      keepBuffer: 3
     }).addTo(map);
+    const markers = L.layerGroup().addTo(map);
+    let placeKey = "";
 
-    function fitPlaces() {
+    function fitPlaces(places) {
       if (!places.length) {
-        map.setView([20, 0], 2);
+        map.setView([20, 0], 2, { animate: false });
         return;
       }
       if (places.length === 1) {
-        map.setView([places[0].lat, places[0].lng], 12);
+        map.setView([places[0].lat, places[0].lng], 12, { animate: false });
         return;
       }
       map.fitBounds(places.map(function (place) { return [place.lat, place.lng]; }), {
@@ -257,11 +298,8 @@ function buildMapHtml(places: Place[], visitedPlaceIds: ReadonlySet<string>): st
         animate: false
       });
     }
-    window.__relayoutMap = function () {
-      map.invalidateSize({ animate: false });
-      fitPlaces();
-    };
     window.__setMapFrame = function (width, height) {
+      if (!width || !height) return;
       var root = document.documentElement;
       root.style.width = width + "px";
       root.style.height = height + "px";
@@ -270,41 +308,47 @@ function buildMapHtml(places: Place[], visitedPlaceIds: ReadonlySet<string>): st
       var el = document.getElementById("map");
       el.style.width = width + "px";
       el.style.height = height + "px";
-      window.__relayoutMap();
+      map.invalidateSize({ animate: false, pan: false });
     };
-    map.whenReady(fitPlaces);
-    window.addEventListener("resize", window.__relayoutMap);
-    for (const place of places) {
-      const icon = L.divIcon({
-        className: "saved-map-marker-host",
-        html: '<span class="saved-map-marker" style="--marker-color:' + place.color + '"><i>' + place.icon + '</i></span>',
-        iconSize: [28, 28],
-        iconAnchor: [14, 14],
-        popupAnchor: [0, -18]
-      });
-      const marker = L.marker([place.lat, place.lng], { icon: icon }).addTo(map);
-      const visitedLine = place.visited ? " · Visited" : "";
-      const blurb = place.blurb ? "<p>" + esc(place.blurb) + "</p>" : "";
-      const loc = place.location ? "<span>" + esc(place.location) + "</span>" : "";
-      marker.bindPopup(
-        '<div class="saved-place-popup-card">' +
-          '<small><i style="background:' + esc(place.color) + '">' + place.icon + '</i>' +
-          esc(place.categoryLabel) + visitedLine + '</small>' +
-          '<strong>' + esc(place.name) + '</strong>' +
-          loc + blurb +
-          '<button type="button" data-place-id="' + esc(place.id) + '">Open full place →</button>' +
-        '</div>'
-      );
-      marker.on("popupopen", function () {
-        const button = document.querySelector('button[data-place-id="' + place.id + '"]');
-        if (button) {
-          button.addEventListener("click", function () {
-            window.ReactNativeWebView.postMessage(place.id);
-          });
-        }
-      });
-    }
-    fitPlaces();
+    window.__setPlaces = function (places) {
+      markers.clearLayers();
+      for (const place of places) {
+        const icon = L.divIcon({
+          className: "saved-map-marker-host",
+          html: '<span class="saved-map-marker" style="--marker-color:' + place.color + '"><i>' + place.icon + '</i></span>',
+          iconSize: [28, 28],
+          iconAnchor: [14, 14],
+          popupAnchor: [0, -18]
+        });
+        const marker = L.marker([place.lat, place.lng], { icon: icon, keyboard: false });
+        const visitedLine = place.visited ? " · Visited" : "";
+        const blurb = place.blurb ? "<p>" + esc(place.blurb) + "</p>" : "";
+        const loc = place.location ? "<span>" + esc(place.location) + "</span>" : "";
+        marker.bindPopup(
+          '<div class="saved-place-popup-card">' +
+            '<small><i style="background:' + esc(place.color) + '">' + place.icon + '</i>' +
+            esc(place.categoryLabel) + visitedLine + '</small>' +
+            '<strong>' + esc(place.name) + '</strong>' +
+            loc + blurb +
+            '<button type="button" data-place-id="' + esc(place.id) + '">Open full place →</button>' +
+          '</div>'
+        );
+        marker.on("popupopen", function () {
+          const button = document.querySelector('button[data-place-id="' + place.id + '"]');
+          if (button) {
+            button.addEventListener("click", function () {
+              window.ReactNativeWebView.postMessage(place.id);
+            });
+          }
+        });
+        markers.addLayer(marker);
+      }
+      var nextKey = places.map(function (place) { return place.id; }).join("|");
+      if (nextKey !== placeKey) {
+        placeKey = nextKey;
+        fitPlaces(places);
+      }
+    };
   </script>
 </body>
 </html>`;

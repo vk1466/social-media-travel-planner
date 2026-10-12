@@ -74,7 +74,7 @@ export function QuietSaveBanner() {
   let detail = "You can keep browsing while Wanderfile organizes places and details.";
   let isError = false;
   let isDone = false;
-  let actionLabel = "View queue →";
+  let actionLabel = "Review save →";
   let actionTo = `${basePath}/add`;
 
   if (isRunning && activeJob) {
@@ -84,7 +84,7 @@ export function QuietSaveBanner() {
     detail = activeJob.links.length > 1
       ? `${processed} of ${activeJob.links.length} links processed · You can keep browsing`
       : "Extracting details & places · You can keep browsing";
-    actionLabel = "View queue →";
+    actionLabel = "Review save →";
     actionTo = `${basePath}/add`;
   } else if (attentionJob) {
     const errorCount = (attentionJob.counts.error ?? 0) + (attentionJob.counts.unsupported ?? 0);
@@ -94,7 +94,7 @@ export function QuietSaveBanner() {
       isError = true;
       eyebrow = "NEEDS ATTENTION";
       title = "Save needs attention";
-      detail = `${errorCount} ${errorCount === 1 ? "link couldn't be saved" : "links couldn't be saved"}. Check the queue to retry.`;
+      detail = `${errorCount} ${errorCount === 1 ? "link couldn't be saved" : "links couldn't be saved"}. Open Save to retry.`;
       actionLabel = "Review issue →";
       actionTo = `${basePath}/add`;
     } else {

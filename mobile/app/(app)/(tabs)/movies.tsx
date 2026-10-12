@@ -361,11 +361,19 @@ export default function MoviesScreen() {
           </View>
         }
         ListEmptyComponent={
-          <EmptyState
-            title="Nothing to watch yet"
-            body="Save movie and TV posts to build a watchlist."
-            icon="film-outline"
-          />
+          movies.length === 0 ? (
+            <EmptyState
+              title="Nothing to watch yet"
+              body="Save movie and TV posts to build a watchlist."
+              icon="film-outline"
+            />
+          ) : (
+            <EmptyState
+              title="No matches"
+              body="Nothing matches these filters. Clear search or kind to see your watchlist."
+              icon="film-outline"
+            />
+          )
         }
         renderItem={({ item }) => {
           const fields = movieCoverFields(item);

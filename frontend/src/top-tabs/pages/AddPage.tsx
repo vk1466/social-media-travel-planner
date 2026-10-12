@@ -2,6 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import { fetchActiveJob, fetchJob, fetchJobs, fetchPosts, parsePostId, removePendingJobLink, startIngest, type Job, type JobLink, type SavedPost } from "../../api";
+import { CONTENT_CATEGORY_LABELS, isContentCategory } from "../../contentCategory";
+import { platformLabel } from "../display";
+import { readLinkDraft, writeLinkDraft } from "../linkDraft";
 import { useLabTheme } from "../theme";
 import "../../add-page.css";
 import "../../quiet-save-workspace.css";
@@ -15,6 +18,13 @@ function isUrl(value: string): boolean {
   }
 }
 
+function saveKindLabel(post: SavedPost): string {
+  if (post.content_category && isContentCategory(post.content_category)) {
+    return CONTENT_CATEGORY_LABELS[post.content_category];
+  }
+  return platformLabel(post.platform);
+}
+
 function safeHost(value?: string | null): string {
   if (!value) return "Saved link";
   try {
@@ -25,8 +35,8 @@ function safeHost(value?: string | null): string {
 }
 
 const LINK_STATUS_LABELS: Record<JobLink["status"], string> = {
-  pending: "Waiting", fetching: "Organizing", saved: "Ready", linked: "Ready",
-  skipped: "Already saved", unsupported: "Needs attention", error: "Needs attention",
+  pending: "Waiting", fetching: "Saving", saved: "Saved", linked: "Already in your library",
+  skipped: "Already in your library", unsupported: "Needs attention", error: "Couldn’t save",
 };
 
 export function AddPage({
@@ -38,7 +48,7 @@ export function AddPage({
 }) {
   const navigate = useNavigate();
   const { basePath } = useLabTheme();
-  const [text, setText] = useState("");
+  const [text, setText] = useState(readLinkDraft);
   const [refresh, setRefresh] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -146,9 +156,9 @@ export function AddPage({
         } else {
           timeoutId = window.setTimeout(() => void poll(), 1500);
         }
-      } catch (err) {
+      } catch {
         if (!cancelled) {
-          setJobsError(err instanceof Error ? err.message : "Failed to update processing jobs");
+          setJobsError("Your links were accepted. Progress couldn’t be loaded.");
           timeoutId = window.setTimeout(() => void poll(), 1500);
         }
       }
@@ -173,10 +183,12 @@ export function AddPage({
       const jobId = await startIngest(parsed.valid, refresh);
       const nextJob = await fetchJob(jobId);
       upsertJob(nextJob);
-      setText(parsed.invalid.join("\n"));
+      const remaining = parsed.invalid.join("\n");
+      setText(remaining);
+      writeLinkDraft(remaining);
       setNotice(`${parsed.valid.length} ${parsed.valid.length === 1 ? "link was" : "links were"} received. Keep browsing while we organize ${parsed.valid.length === 1 ? "it" : "them"}.`);
     } catch (err) {
-      setStartError(err instanceof Error ? err.message : "Failed to queue links");
+      setStartError(err instanceof Error ? err.message : "Couldn’t save those links");
     } finally {
       setStarting(false);
     }
@@ -187,7 +199,7 @@ export function AddPage({
     try {
       const jobId = await startIngest([postUrl], true);
       upsertJob(await fetchJob(jobId));
-      setNotice("Retry added to the queue.");
+      setNotice("Retry started.");
     } catch (err) {
       setStartError(err instanceof Error ? err.message : "Failed to retry link");
     }
@@ -205,11 +217,6 @@ export function AddPage({
 
   return (
     <div className="top-add-page">
-      <header className="save-workspace-topbar">
-        <Link className="save-workspace-wordmark" to={basePath || "/"}>Wanderfile<span aria-hidden="true">✳</span></Link>
-        <span className="save-workspace-nav-label">Your library</span>
-        <span className="save-workspace-header-note">Saved ideas, all in one place</span>
-      </header>
       <div className="processing-layout">
         <section className="queue-panel draft-panel">
           <span className="save-workspace-eyebrow">Save something new</span>
@@ -221,7 +228,11 @@ export function AddPage({
             className="links-input"
             rows={5}
             value={text}
-            onChange={(event) => setText(event.target.value)}
+            onChange={(event) => {
+              const next = event.target.value;
+              setText(next);
+              writeLinkDraft(next);
+            }}
             onKeyDown={(event) => {
               if ((event.metaKey || event.ctrlKey) && event.key === "Enter" && parsed.valid.length > 0 && !starting) void addToQueue();
             }}
@@ -245,8 +256,10 @@ export function AddPage({
               onClick={() => void addToQueue()}
             >
               {starting
-                ? "Adding…"
-                : `Save ${parsed.valid.length || ""} link${parsed.valid.length === 1 ? "" : "s"}`}
+                ? "Saving…"
+                : parsed.valid.length
+                  ? `Save ${parsed.valid.length} link${parsed.valid.length === 1 ? "" : "s"}`
+                  : "Save links"}
             </button>
           </div>
           <small className="save-workspace-hint">⌘ / Ctrl + Enter to save · One link per line</small>
@@ -257,13 +270,13 @@ export function AddPage({
             <div className="save-workspace-heading"><div><span className="save-workspace-eyebrow">Your library</span><h2>Ideas worth keeping.</h2></div><Link to={`${basePath}/posts`}>Browse while saving →</Link></div>
             <div className={`save-workspace-status${needsAttention ? " has-issue" : ""}`} role="status" aria-live="polite">
               <span className="save-workspace-status-icon" aria-hidden="true">{needsAttention ? "!" : activeCount ? "↻" : "✓"}</span>
-              <div><strong>{needsAttention ? `${needsAttention} ${needsAttention === 1 ? "link needs" : "links need"} attention` : activeCount ? "Organizing your saves" : queueLinks.length ? "All links processed" : "Ready when you are"}</strong><span>{activeCount ? `${queuedPending} waiting · You can keep browsing` : queueLinks.length ? "Your queue is up to date" : "Paste a link to start saving"}</span></div>
+              <div><strong>{needsAttention ? `${needsAttention} ${needsAttention === 1 ? "link needs" : "links need"} attention` : activeCount ? "Organizing your saves" : queueLinks.length ? "All links processed" : "Ready when you are"}</strong><span>{activeCount ? `${queuedPending} waiting · You can keep browsing` : queueLinks.length ? "Everything here is saved" : "Paste a link to start saving"}</span></div>
             </div>
             {notice ? <p className="save-workspace-notice" role="status">{notice}</p> : null}
             {startError ? <p className="inline-errors" role="alert">{startError}</p> : null}
             {jobsError ? <p className="inline-errors" role="alert">{jobsError}</p> : null}
-            <h3 className="save-workspace-section-title">Save queue <span>{queueLinks.length} {queueLinks.length === 1 ? "link" : "links"}</span></h3>
-            {loadingJobs ? <p className="empty-copy">Loading jobs…</p> : null}
+            <h3 className="save-workspace-section-title">This save <span>{queueLinks.length} {queueLinks.length === 1 ? "link" : "links"}</span></h3>
+            {loadingJobs ? <p className="empty-copy">Loading your saves…</p> : null}
             {!loadingJobs && queueLinks.length === 0 ? (
               <p className="empty-copy">Your saved links will appear here.</p>
             ) : null}
@@ -289,7 +302,7 @@ export function AddPage({
                 return <Link key={post.post_id} to={`${basePath}/posts/${platform}/${nativeId}`} className="save-workspace-recent-card">
                   {post.thumbnail_url ? <img src={post.thumbnail_url} alt="" loading="lazy" /> : <span className="save-workspace-recent-placeholder" aria-hidden="true" />}
                   <strong>{post.caption?.trim().slice(0, 80) || safeHost(post.post_url)}</strong>
-                  <small>{post.content_category || post.platform}</small>
+                  <small>{saveKindLabel(post)}</small>
                 </Link>;
               })}</div> : <p className="empty-copy">Your saved ideas will appear here.</p>}
             </div>
@@ -338,9 +351,9 @@ function JobCard({
 }) {
   const summary = [
     `${job.counts.saved} saved`,
-    `${job.counts.linked} linked`,
-    `${job.counts.error} errors`,
-  ].join(" · ");
+    job.counts.linked ? `${job.counts.linked} already in your library` : "",
+    job.counts.error ? `${job.counts.error} failed` : "",
+  ].filter(Boolean).join(" · ");
   const processed = job.links.filter((link) => link.status !== "pending" && link.status !== "fetching").length;
   const total = job.links.length;
 

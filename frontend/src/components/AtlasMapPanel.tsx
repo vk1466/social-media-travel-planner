@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { memo, useCallback, useEffect, useMemo, useState, type CSSProperties } from "react";
 import { MapContainer, Marker, Popup, TileLayer, Tooltip, useMap } from "react-leaflet";
 import L from "leaflet";
 
@@ -23,16 +23,62 @@ function escapeHtml(value: string): string {
   })[character]!);
 }
 
+const categoryIconCache = new Map<string, L.DivIcon>();
+
 function categoryIcon(place: AtlasPlace, active: boolean, showLabel: boolean): L.DivIcon {
   const visual = visualFor(place);
-  return L.divIcon({
+  const cacheKey = `${place.placeId}|${active ? 1 : 0}|${showLabel ? 1 : 0}|${visual.color}`;
+  const cached = categoryIconCache.get(cacheKey);
+  if (cached) return cached;
+  const icon = L.divIcon({
     className: "saved-map-marker-host",
     html: `<span class="saved-map-marker${active ? " is-active" : ""}" style="--marker-color:${visual.color}"><i>${visual.icon}</i>${showLabel ? `<b>${escapeHtml(place.categoryLabel)}</b>` : ""}</span>`,
     iconSize: showLabel ? [112, 34] : active ? [34, 34] : [28, 28],
     iconAnchor: showLabel ? [17, 17] : active ? [17, 17] : [14, 14],
     popupAnchor: [0, -18],
   });
+  categoryIconCache.set(cacheKey, icon);
+  return icon;
 }
+
+const AtlasMarkers = memo(function AtlasMarkers({
+  places,
+  selectedPlaceId,
+  showLabels,
+  onSelectPlace,
+  onOpenPlace,
+}: {
+  places: AtlasPlace[];
+  selectedPlaceId: string | null;
+  showLabels: boolean;
+  onSelectPlace: (placeId: string) => void;
+  onOpenPlace: (placeId: string) => void;
+}) {
+  return (
+    <>
+      {places.map((place) => (
+        <Marker
+          key={place.placeId}
+          position={[place.lat as number, place.lng as number]}
+          icon={categoryIcon(place, selectedPlaceId === place.placeId, showLabels)}
+          eventHandlers={{ click: () => onSelectPlace(place.placeId) }}
+        >
+          <Tooltip direction="top" offset={[0, -14]}>{place.name} · {place.categoryLabel}</Tooltip>
+          <Popup>
+            <div className="saved-place-popup-card">
+              {place.imageUrl && <div className="saved-place-popup-photo" style={{ backgroundImage: `url(${place.imageUrl})` }} />}
+              <small><i style={{ background: visualFor(place).color }} dangerouslySetInnerHTML={{ __html: visualFor(place).icon }} />{place.categoryLabel} · {place.saves} saved post{place.saves === 1 ? "" : "s"}</small>
+              <strong>{place.name}</strong>
+              <span>{[place.city, place.state, place.country].filter(Boolean).join(", ")}</span>
+              <p>{place.tips[0] ?? place.details[0] ?? "Saved from your processed travel posts."}</p>
+              <button type="button" onClick={() => onOpenPlace(place.placeId)}>Open full place →</button>
+            </div>
+          </Popup>
+        </Marker>
+      ))}
+    </>
+  );
+});
 
 function FitPlaces({ places }: { places: AtlasPlace[] }) {
   const map = useMap();
@@ -84,9 +130,13 @@ export function AtlasMapPanel({ scope, posts, onOpenNode, onOpenPlace }: AtlasMa
     () => leafPlaces(scope).filter((place) => place.lat !== null && place.lng !== null),
     [scope],
   );
-  const mapPlaces = selectedPostId
-    ? places.filter((place) => place.sourcePostIds.includes(selectedPostId))
-    : places;
+  const mapPlaces = useMemo(
+    () =>
+      selectedPostId
+        ? places.filter((place) => place.sourcePostIds.includes(selectedPostId))
+        : places,
+    [places, selectedPostId],
+  );
   const rankedPlaces = useMemo(
     () => [...places].sort((a, b) => b.saves - a.saves || a.name.localeCompare(b.name)),
     [places],
@@ -114,6 +164,11 @@ export function AtlasMapPanel({ scope, posts, onOpenNode, onOpenPlace }: AtlasMa
     ?? rankedPlaces[0]
     ?? null;
 
+  const selectPlace = useCallback((placeId: string) => setSelectedPlaceId(placeId), []);
+  const reportBounds = useCallback((next: L.LatLngBounds) => {
+    setMapBounds((current) => (current && current.equals(next) ? current : next));
+  }, []);
+
   useEffect(() => {
     setSelectedPlaceId(null);
     setSelectedPostId(null);
@@ -139,32 +194,32 @@ export function AtlasMapPanel({ scope, posts, onOpenNode, onOpenPlace }: AtlasMa
           </div>
         )}
 
-        <MapContainer className="pl2-map-canvas" center={[20, 0]} zoom={2} scrollWheelZoom worldCopyJump>
+        <MapContainer
+          className="pl2-map-canvas"
+          center={[20, 0]}
+          zoom={2}
+          scrollWheelZoom
+          worldCopyJump
+          fadeAnimation={false}
+          markerZoomAnimation={false}
+        >
           <TileLayer
             url={cartoVoyagerTileUrl()}
             attribution={CARTO_BASEMAP_ATTR}
             subdomains="abcd"
-            opacity={0.9}
+            updateWhenZooming={false}
+            keepBuffer={3}
           />
           <InvalidateSize />
-          <ViewportReporter onChange={setMapBounds} />
+          <ViewportReporter onChange={reportBounds} />
           <FitPlaces places={mapPlaces} />
-
-          {mapPlaces.map((place) => (
-            <Marker key={place.placeId} position={[place.lat as number, place.lng as number]} icon={categoryIcon(place, selectedPlace?.placeId === place.placeId, showLabels)} eventHandlers={{ click: () => setSelectedPlaceId(place.placeId) }}>
-              <Tooltip direction="top" offset={[0, -14]}>{place.name} · {place.categoryLabel}</Tooltip>
-              <Popup>
-                <div className="saved-place-popup-card">
-                  {place.imageUrl && <div className="saved-place-popup-photo" style={{ backgroundImage: `url(${place.imageUrl})` }} />}
-                  <small><i style={{ background: visualFor(place).color }} dangerouslySetInnerHTML={{ __html: visualFor(place).icon }} />{place.categoryLabel} · {place.saves} saved post{place.saves === 1 ? "" : "s"}</small>
-                  <strong>{place.name}</strong>
-                  <span>{[place.city, place.state, place.country].filter(Boolean).join(", ")}</span>
-                  <p>{place.tips[0] ?? place.details[0] ?? "Saved from your processed travel posts."}</p>
-                  <button type="button" onClick={() => onOpenPlace(place.placeId)}>Open full place →</button>
-                </div>
-              </Popup>
-            </Marker>
-          ))}
+          <AtlasMarkers
+            places={mapPlaces}
+            selectedPlaceId={selectedPlace?.placeId ?? null}
+            showLabels={showLabels}
+            onSelectPlace={selectPlace}
+            onOpenPlace={onOpenPlace}
+          />
         </MapContainer>
 
         {selectedPostId && (

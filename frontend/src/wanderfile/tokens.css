@@ -1,0 +1,93 @@
+@import url('https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --wf-bg: #F6F5F1;
+  --wf-surface: #FFFFFF;
+  --wf-ink: #1B1D1F;
+  --wf-muted: #6B6F73;
+  --wf-body-tinted: #4A4E52;
+  --wf-border: #E6E3DC;
+  --wf-border-subtle: #EFEDE7;
+  --wf-border-control: #D9D5CB;
+  --wf-border-dashed: #C9C5BA;
+  --wf-bg-dashed: #FBFAF7;
+
+  /* Category colors */
+  --wf-place-tint: #E3F0F4;
+  --wf-place-ink: #1B5E78;
+  --wf-place-accent: #1F6F8B;
+
+  --wf-recipe-tint: #FBEBDD;
+  --wf-recipe-ink: #9A4513;
+
+  --wf-movie-tint: #ECE8F7;
+  --wf-movie-ink: #4B3C8C;
+
+  --wf-routine-tint: #E4F2E7;
+  --wf-routine-ink: #25623A;
+
+  --wf-other-tint: #ECECEA;
+  --wf-other-ink: #4A4E52;
+
+  --wf-alert-tint: #FBE6EE;
+  --wf-alert-ink: #8A2B57;
+
+  --wf-font-sans: 'Figtree', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --wf-radius-card-desktop: 24px;
+  --wf-radius-card-mobile: 20px;
+  --wf-radius-pill: 999px;
+}
+
+body.wf-app-body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--wf-bg);
+  color: var(--wf-ink);
+  font-family: var(--wf-font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+.wf-shell-container {
+  min-height: 100vh;
+  background-color: var(--wf-bg);
+  color: var(--wf-ink);
+  font-family: var(--wf-font-sans);
+  display: flex;
+  flex-direction: column;
+}
+
+.wf-desktop-only {
+  display: block;
+}
+
+.wf-mobile-only {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .wf-desktop-only {
+    display: none !important;
+  }
+  .wf-mobile-only {
+    display: block !important;
+  }
+}
+
+/* Skeleton animation */
+@keyframes wf-skeleton-pulse {
+  0% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.5;
+  }
+}
+
+.wf-skeleton {
+  background: #E6E3DC;
+  border-radius: 12px;
+  animation: wf-skeleton-pulse 1.5s ease-in-out infinite;
+}

@@ -1,5 +1,5 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import type { ReactNode } from "react";
+import { memo, type ReactNode } from "react";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { coverFallbackColor } from "../coverArt";
@@ -23,7 +23,7 @@ export interface CoverCardProps {
   accessibilityLabel?: string;
 }
 
-export function CoverCard({
+export const CoverCard = memo(function CoverCard({
   title,
   category,
   platform,
@@ -53,7 +53,13 @@ export function CoverCard({
     >
       <View style={[styles.media, isRow && styles.mediaRow]}>
         {imageUrl ? (
-          <Image source={{ uri: imageUrl }} style={styles.image} resizeMode="cover" />
+          <Image
+            source={{ uri: imageUrl }}
+            style={styles.image}
+            resizeMode="cover"
+            resizeMethod="resize"
+            fadeDuration={0}
+          />
         ) : (
           <View style={[styles.image, { backgroundColor: fallbackColor }]} />
         )}
@@ -112,7 +118,7 @@ export function CoverCard({
       </View>
     </Pressable>
   );
-}
+});
 
 const styles = StyleSheet.create({
   card: {
@@ -123,7 +129,9 @@ const styles = StyleSheet.create({
   },
   cardPortrait: {
     aspectRatio: 2 / 3.05,
-    borderRadius: 0,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   cardRow: {
     flexDirection: "row",
@@ -172,9 +180,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 5,
-    paddingHorizontal: 8,
-    paddingVertical: 5,
-    borderRadius: 2,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
     backgroundColor: colors.surface,
   },
   categoryChipRow: {

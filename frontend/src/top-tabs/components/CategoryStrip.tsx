@@ -122,7 +122,7 @@ export function CategoryStrip({
             <span>
               <b>{item.label}</b>
             </span>
-            <em>{count}</em>
+            {item.key === "home" ? null : <em>{count}</em>}
           </NavLink>
         );
       })}

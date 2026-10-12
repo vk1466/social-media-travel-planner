@@ -64,6 +64,32 @@
   color: var(--wf-copy-muted);
 }
 
+.search-scope {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.6rem;
+  align-items: center;
+  margin: 0.75rem 0 0;
+  color: var(--wf-copy-muted);
+  font-size: 0.85rem;
+}
+
+.search-scope button,
+.search-more {
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--wf-copy-accent, var(--accent));
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.search-more {
+  margin-top: 0.5rem;
+}
+
 .search-section {
   margin-bottom: 1.8rem;
 }

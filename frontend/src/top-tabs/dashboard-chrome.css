@@ -15,11 +15,11 @@
 .lab-pages .lab-utility > div {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: 8px;
 }
 
 .lab-pages .lab-utility button {
-  min-height: 38px;
+  min-height: 40px;
   display: inline-flex;
   align-items: center;
   justify-content: center;

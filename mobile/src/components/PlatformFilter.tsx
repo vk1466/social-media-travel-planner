@@ -97,13 +97,13 @@ export function PlatformFilter() {
 
 const styles = StyleSheet.create({
   trigger: {
-    minWidth: 34,
-    minHeight: 34,
-    height: 34,
-    paddingHorizontal: 6,
+    minWidth: 44,
+    minHeight: 44,
+    height: 44,
+    paddingHorizontal: 8,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: 9,
+    borderRadius: radius.md,
     backgroundColor: colors.surface,
     alignItems: "center",
     justifyContent: "center",
@@ -137,16 +137,16 @@ const styles = StyleSheet.create({
   },
   panel: {
     minWidth: 220,
-    padding: 8,
+    padding: spacing.sm,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: 14,
+    borderRadius: radius.lg,
     backgroundColor: colors.surface,
     ...shadow(3),
   },
   panelKicker: {
     color: colors.muted,
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: "700",
     letterSpacing: 0.4,
     textTransform: "uppercase",
@@ -175,11 +175,11 @@ const styles = StyleSheet.create({
   optionCopy: { flex: 1 },
   optionTitle: {
     color: colors.ink,
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: "700",
   },
   optionHint: {
     color: colors.muted,
-    fontSize: 11,
+    fontSize: 12,
   },
 });

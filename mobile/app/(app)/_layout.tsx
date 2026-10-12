@@ -40,7 +40,7 @@ export default function AppLayout() {
               presentation: detailSheetPresentation,
             }}
           />
-          <Stack.Screen name="ingest" options={{ title: "Processing", presentation: "modal" }} />
+          <Stack.Screen name="ingest" options={{ title: "Save to Wanderfile", presentation: "modal" }} />
           <Stack.Screen name="search" options={{ title: "Search", presentation: "modal" }} />
           <Stack.Screen name="settings" options={{ title: "Settings" }} />
           <Stack.Screen name="admin" options={{ title: "Admin" }} />

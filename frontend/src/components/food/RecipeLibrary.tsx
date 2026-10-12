@@ -189,11 +189,11 @@ export function RecipeLibrary({ posts, onSelectPost, onPostUpdated }: RecipeLibr
       ) : (
         <div className="recipe-empty-state">
           <span className="recipe-empty-icon" aria-hidden="true">🍲</span>
-          <h3>No recipe matches found</h3>
+          <h3>{query.trim() || meal !== "all" || time !== "any" || cuisine !== "all" ? "No recipe matches found" : "No recipes yet"}</h3>
           <p>
             {query.trim() || meal !== "all" || time !== "any" || cuisine !== "all"
-              ? "Try adjusting your search terms or filters to find more recipes."
-              : "Save a food reel or recipe post from Instagram to start your personal digital cookbook."}
+              ? "Try a different search or clear a filter."
+              : "Save a food post from Instagram, TikTok, YouTube, or the web to start your cookbook."}
           </p>
         </div>
       )}

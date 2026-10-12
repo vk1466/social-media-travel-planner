@@ -3,8 +3,6 @@ import { useMemo, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
-  Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -92,37 +90,6 @@ export default function FoodScreen() {
               lede="Find a dish, check the ingredients, and cook from the post that inspired you."
               count={{ value: filtered.length, label: "recipes" }}
             />
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.mealRail}
-            >
-              {MEAL_TYPES.map((value) => {
-                const on = meal === value;
-                const icon =
-                  value === "all"
-                    ? "◎"
-                    : value === "breakfast"
-                      ? "☼"
-                      : value === "lunch"
-                        ? "◒"
-                        : value === "dinner"
-                          ? "◐"
-                          : "✦";
-                return (
-                  <Pressable
-                    key={value}
-                    onPress={() => setMeal(value)}
-                    style={[styles.mealRailBtn, on && styles.mealRailBtnOn]}
-                  >
-                    <Text style={styles.mealRailIcon}>{icon}</Text>
-                    <Text style={[styles.mealRailLabel, on && styles.mealRailLabelOn]}>
-                      {value === "all" ? "All" : value.charAt(0).toUpperCase() + value.slice(1)}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </ScrollView>
             <FilterBar
               placeholder="Search dishes or ingredients"
               query={query}
@@ -152,7 +119,11 @@ export default function FoodScreen() {
           </View>
         }
         ListEmptyComponent={
-          <EmptyState title="No recipes yet" body="Save food posts to cook from your library." icon="restaurant-outline" />
+          recipes.length === 0 ? (
+            <EmptyState title="No recipes yet" body="Save food posts to cook from your library." icon="restaurant-outline" />
+          ) : (
+            <EmptyState title="No matches" body="Nothing matches these filters. Clear search or meal to see your recipes." icon="restaurant-outline" />
+          )
         }
         renderItem={({ item }) => (
           <View style={styles.listItem}>
@@ -204,7 +175,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 3,
     paddingVertical: 6,
-    borderRadius: 9,
+    borderRadius: 8,
   },
   mealRailBtnOn: {
     backgroundColor: colors.surfaceAlt,

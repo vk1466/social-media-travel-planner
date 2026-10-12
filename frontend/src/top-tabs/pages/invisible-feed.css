@@ -296,7 +296,7 @@
   min-height: 65vh;
   padding: 32px;
   border: 1px solid var(--line);
-  border-radius: 21px;
+  border-radius: var(--wf-radius-lg);
   background: color-mix(in srgb, var(--soft) 55%, var(--panel));
   color: var(--ink);
 }
@@ -310,18 +310,18 @@
 .lab-pages .invisible-feed-home-link:hover,
 .lab-pages .invisible-feed-touch-btn:hover,
 .lab-pages .invisible-feed-chip:hover { border-color: var(--accent); background: var(--panel); color: var(--accent); }
-.lab-pages .invisible-feed-search-input { border-color: var(--line); border-radius: 9px; background: var(--panel); color: var(--ink); backdrop-filter: none; }
+.lab-pages .invisible-feed-search-input { border-color: var(--line); border-radius: var(--wf-radius-md); background: var(--panel); color: var(--ink); backdrop-filter: none; }
 .lab-pages .invisible-feed-search-input::placeholder { color: var(--muted); }
 .lab-pages .invisible-feed-search-input:focus { border-color: var(--accent); background: var(--panel); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 15%, transparent); }
 .lab-pages .invisible-feed-search-icon,
 .lab-pages .invisible-feed-search-clear { color: var(--muted); }
-.lab-pages .invisible-feed-chip { border-radius: 9px; }
+.lab-pages .invisible-feed-chip { border-radius: var(--wf-radius-pill); }
 .lab-pages .invisible-feed-chip.is-active { border-color: var(--accent); background: var(--accent); color: var(--on-accent); box-shadow: none; }
 .lab-pages .invisible-feed-chip-count { background: var(--soft); color: var(--muted); }
 .lab-pages .invisible-feed-chip.is-active .invisible-feed-chip-count { background: rgb(255 255 255 / .18); color: var(--on-accent); }
 .lab-pages .invisible-feed-empty h3 { color: var(--ink); font: 400 30px/1 var(--wf-font-headline); }
 .lab-pages .invisible-feed-reset-btn { border-color: var(--accent); background: var(--accent); color: var(--on-accent); }
 @media (max-width: 760px) {
-  .lab-pages .invisible-feed-page { padding: 21px 16px; border-radius: 17px; }
+  .lab-pages .invisible-feed-page { padding: 24px 16px; border-radius: var(--wf-radius-lg); }
   .lab-pages .invisible-feed-title { font-size: 32px; }
 }

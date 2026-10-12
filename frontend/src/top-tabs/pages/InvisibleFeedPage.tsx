@@ -85,7 +85,6 @@ export function InvisibleFeedPage({
 
   const [activeCategory, setActiveCategory] = useState<InvisibleCategoryKey>("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [forceTouchMode, setForceTouchMode] = useState(false);
   const [selectedPost, setSelectedPost] = useState<SavedPost | null>(null);
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
 
@@ -291,13 +290,11 @@ export function InvisibleFeedPage({
       <div className="invisible-feed-toolbar">
         <div className="invisible-feed-header-row">
           <div className="invisible-feed-title-wrap">
-            <Link to="/" className="invisible-feed-home-link" title="Back to Home view">
+            <Link to="/" className="invisible-feed-home-link" title="Back to Home">
               ← Home
             </Link>
-            <h1 className="invisible-feed-title">
-              <span>✨</span> Invisible Feed
-            </h1>
-            <span className="invisible-feed-subtitle">Zero-Chrome Discovery</span>
+            <h1 className="invisible-feed-title">Gallery</h1>
+            <span className="invisible-feed-subtitle">Browse your saves</span>
           </div>
 
           <div className="invisible-feed-actions">
@@ -336,21 +333,6 @@ export function InvisibleFeedPage({
               )}
             </div>
 
-            {/* Simulate Touch Toggle */}
-            <button
-              type="button"
-              className={`invisible-feed-touch-btn ${forceTouchMode ? "is-active" : ""}`}
-              onClick={() => setForceTouchMode((prev) => !prev)}
-              title={
-                forceTouchMode
-                  ? "Touch Mode is ON: Hover is disabled; tap card to reveal metadata, second tap to open"
-                  : "Simulate mobile touch mode without a touch device"
-              }
-              aria-pressed={forceTouchMode}
-            >
-              <span>📱</span>
-              <span>{forceTouchMode ? "Touch Mode: ON" : "Simulate Touch"}</span>
-            </button>
           </div>
         </div>
 
@@ -382,11 +364,6 @@ export function InvisibleFeedPage({
           Showing {filteredItems.length} {filteredItems.length === 1 ? "save" : "saves"}
           {searchQuery ? ` matching "${searchQuery}"` : ""}
         </span>
-        {forceTouchMode && (
-          <span style={{ color: "var(--accent, #38bdf8)" }}>
-            Tap card once to reveal info · Tap again to open
-          </span>
-        )}
       </div>
 
       {/* Grid or Skeleton or Empty */}
@@ -425,7 +402,6 @@ export function InvisibleFeedPage({
                   meta={item.meta}
                   imageUrl={item.imageUrl}
                   aspectRatio={item.aspectRatio}
-                  forceTouchMode={forceTouchMode}
                   onOpen={() => setSelectedPost(item.post)}
                   ariaLabel={`Open post ${item.title}`}
                 />
@@ -439,7 +415,6 @@ export function InvisibleFeedPage({
                 meta={item.meta}
                 imageUrl={item.imageUrl}
                 aspectRatio="16 / 9"
-                forceTouchMode={forceTouchMode}
                 onOpen={() => setSelectedPlace(item.place)}
                 ariaLabel={`Open place ${item.title}`}
               />

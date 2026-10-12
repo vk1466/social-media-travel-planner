@@ -136,4 +136,4 @@ def test_library_drops_places_beyond_a_day_trip(dynamodb) -> None:
   assert names == ["Sintra"]
   porto = client.get("/api/for-travel/library", params={"city": "Porto"})
   assert [place["display_name"] for place in porto.json()["places"]] == ["Porto"]
-  assert set(user_places_repo.list_user_place_ids(user_id)) == {"sintra", "porto"}
+  assert set(user_places_repo.list_user_place_ids(user_id)) == {"sintra", "porto", "cafe"}

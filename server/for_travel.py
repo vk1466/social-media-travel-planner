@@ -14,7 +14,7 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Query
 
 from travelplanner import settings
 from travelplanner.clients.geocoder import geocode_normalized
-from travelplanner.db import user_places_repo, user_settings_repo
+from travelplanner.db import user_settings_repo
 from travelplanner.library import list_user_places, list_user_posts
 from travelplanner.models import Place, SavedPost
 from travelplanner.places.mention_details import compact_mention_details
@@ -92,19 +92,11 @@ def _places_near_search(
   *,
   center: tuple[float, float] | None,
 ) -> list[Place]:
-  """Hide places outside a day trip. Only non-destinations are removed for good."""
+  """Filter to nearby tourist destinations for display (no DB side effects)."""
   radius_km = settings.city_nearby_km()
   kept: list[Place] = []
   for place in places:
     if not place_is_tourist_destination(place):
-      logger.info(
-        "for-travel drop non-destination user_id=%s place_id=%s name=%s category=%s",
-        user_id,
-        place.place_id,
-        place.display_name,
-        place.category,
-      )
-      user_places_repo.unlink_user_place(user_id, place.place_id)
       continue
     if center is not None:
       latitude, longitude = center

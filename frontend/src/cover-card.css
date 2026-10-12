@@ -100,7 +100,7 @@
   transform: scale(1.035);
 }
 
-/* Subtle ambient dark gradient scrim at the bottom: 0 at rest, 1 on hover */
+/* Bottom scrim stays on so the title can be read without hovering. */
 .cover-card-media::after {
   content: "";
   position: absolute;
@@ -109,29 +109,26 @@
   background: linear-gradient(
     to bottom,
     rgba(0, 0, 0, 0) 0%,
-    rgba(0, 0, 0, 0) 36%,
-    rgba(0, 0, 0, 0.50) 65%,
-    rgba(0, 0, 0, 0.92) 100%
+    rgba(0, 0, 0, 0) 42%,
+    rgba(0, 0, 0, 0.55) 72%,
+    rgba(0, 0, 0, 0.88) 100%
   );
-  opacity: 0;
-  transition: opacity 240ms ease;
+  opacity: 1;
   pointer-events: none;
 }
 
 /* ==========================================================================
-   3. Hover & Touch Disclosures
-   Resting state: 100% CLEAR IMAGE. Zero text, zero badges, zero scrim.
-   On hover or touch reveal: text overlay, badges, and gradient scrim smoothly appear.
+   3. Card recognition
+   Title, one context line, and the category stay visible.
+   Secondary metadata appears on hover, focus, or touch.
    ========================================================================== */
 
 .cover-card-category,
 .cover-card-mark {
   position: absolute;
   z-index: 2;
-  opacity: 0;
-  transform: translateY(-8px);
-  transition: opacity 240ms ease, transform 240ms cubic-bezier(0.16, 1, 0.3, 1);
-  pointer-events: none;
+  opacity: 1;
+  transform: none;
 }
 
 /* ---- Law of Similarity: differentiate inert label vs interactive button ----
@@ -211,7 +208,6 @@
   cursor: pointer;
 }
 
-/* Bottom text container overlay: COMPLETELY HIDDEN AT REST (Clear Image) */
 .cover-card-copy {
   position: absolute;
   bottom: 0;
@@ -224,9 +220,8 @@
   padding: 1.25rem 1.1rem 1rem;
   background: transparent;
   color: #ffffff;
-  opacity: 0;
-  transform: translateY(8px);
-  transition: opacity 240ms ease, transform 240ms cubic-bezier(0.16, 1, 0.3, 1);
+  opacity: 1;
+  transform: none;
   pointer-events: none;
 }
 
@@ -260,10 +255,13 @@
   justify-content: space-between;
   align-items: center;
   gap: 0.75rem;
-  margin-top: 0.55rem;
-  padding-top: 0.35rem;
+  max-height: 0;
+  margin-top: 0;
+  padding-top: 0;
+  overflow: hidden;
   color: rgba(255, 255, 255, 0.75);
   font-size: 0.68rem;
+  opacity: 0;
 }
 
 .cover-card-foot > span:first-child {
@@ -282,15 +280,13 @@
 }
 
 /* REVEAL ON DESKTOP HOVER: Text and gradient appear */
-.cover-card:not(.is-touch-simulated):hover .cover-card-copy,
-.cover-card:not(.is-touch-simulated):hover .cover-card-category,
-.cover-card:not(.is-touch-simulated):hover .cover-card-mark,
-.cover-card:not(.is-touch-simulated):focus-within .cover-card-copy,
-.cover-card:not(.is-touch-simulated):focus-within .cover-card-category,
-.cover-card:not(.is-touch-simulated):focus-within .cover-card-mark {
+.cover-card:not(.is-touch-simulated):hover .cover-card-foot,
+.cover-card:not(.is-touch-simulated):focus-within .cover-card-foot,
+.cover-card.is-touch-revealed .cover-card-foot {
+  max-height: 3rem;
+  margin-top: 0.55rem;
+  padding-top: 0.35rem;
   opacity: 1;
-  transform: translateY(0);
-  pointer-events: auto;
 }
 
 .cover-card:not(.is-touch-simulated):hover .cover-card-media::after,
@@ -321,10 +317,17 @@
 @media (hover: none), (pointer: coarse) {
   .cover-card-copy,
   .cover-card-category,
-  .cover-card-mark {
+  .cover-card-mark,
+  .cover-card-foot {
     opacity: 1;
     transform: none;
     pointer-events: auto;
+  }
+
+  .cover-card-foot {
+    max-height: none;
+    margin-top: 0.55rem;
+    padding-top: 0.35rem;
   }
 
   .cover-card-media::after {
