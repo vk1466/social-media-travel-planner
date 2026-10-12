@@ -52,7 +52,36 @@ export default function TabsLayout() {
         }}
       />
 
-      {/* 3. Map Tab */}
+      {/* 3. Center Raised Save Action */}
+      <Tabs.Screen
+        name="save"
+        listeners={{
+          tabPress: (e) => {
+            e.preventDefault();
+            router.push(appHref("/(app)/ingest"));
+          },
+        }}
+        options={{
+          title: "",
+          tabBarLabel: () => null,
+          tabBarButton: () => (
+            <Pressable
+              onPress={() => router.push(appHref("/(app)/ingest"))}
+              accessibilityRole="button"
+              accessibilityLabel="Save a link"
+              style={({ pressed }) => [
+                styles.saveFab,
+                { opacity: pressed ? 0.85 : 1 },
+                shadow(3),
+              ]}
+            >
+              <Ionicons name="add" size={28} color="#FFFFFF" />
+            </Pressable>
+          ),
+        }}
+      />
+
+      {/* 4. Map Tab */}
       <Tabs.Screen
         name="travel"
         options={{
@@ -63,7 +92,7 @@ export default function TabsLayout() {
         }}
       />
 
-      {/* 4. Collections Tab */}
+      {/* 5. Collections Tab */}
       <Tabs.Screen
         name="collections"
         options={{
@@ -96,3 +125,16 @@ export default function TabsLayout() {
     </Tabs>
   );
 }
+
+const styles = StyleSheet.create({
+  saveFab: {
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    backgroundColor: colors.ink,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: -16,
+    marginHorizontal: 8,
+  },
+});
