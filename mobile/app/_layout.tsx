@@ -9,6 +9,14 @@ import { setAuthTokenGetter } from "@/src/api";
 import { clerkEnabled, clerkPublishableKey } from "@/src/config";
 import { PendingShareProvider, usePendingShare } from "@/src/context/PendingShareContext";
 import { ShareIntentRoot, useShareIntentHandler } from "@/src/share/ShareIntentRoot";
+import {
+  useFonts,
+  Figtree_400Regular,
+  Figtree_500Medium,
+  Figtree_600SemiBold,
+  Figtree_700Bold,
+  Figtree_800ExtraBold,
+} from "@expo-google-fonts/figtree";
 import { colors } from "@/src/theme";
 
 export { ErrorBoundary } from "expo-router";
@@ -109,6 +117,18 @@ function RootTree() {
 }
 
 export default function RootLayout() {
+  const [fontsLoaded] = useFonts({
+    Figtree_400Regular,
+    Figtree_500Medium,
+    Figtree_600SemiBold,
+    Figtree_700Bold,
+    Figtree_800ExtraBold,
+  });
+
+  if (!fontsLoaded) {
+    return null;
+  }
+
   const tree = clerkEnabled ? (
     <ClerkProvider publishableKey={clerkPublishableKey} tokenCache={tokenCache}>
       <RootTree />

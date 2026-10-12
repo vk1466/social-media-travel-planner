@@ -87,3 +87,12 @@ export const typography = {
     letterSpacing: 0.8,
   } as TextStyle,
 };
+
+export const fonts = {
+  regular: "Figtree_400Regular",
+  body: "Figtree_400Regular",
+  medium: "Figtree_500Medium",
+  semiBold: "Figtree_600SemiBold",
+  bold: "Figtree_700Bold",
+  heavy: "Figtree_800ExtraBold",
+};

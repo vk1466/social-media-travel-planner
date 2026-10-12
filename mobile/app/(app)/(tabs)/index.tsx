@@ -2,6 +2,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
+  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -13,7 +14,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useLibrary } from "@/src/context/LibraryContext";
 import { appHref } from "@/src/nav";
-import { colors, radius, shadow, typography } from "@/src/theme";
+import { proxiedMediaUrl } from "@/src/postDisplayUtils";
+import { colors, radius, shadow } from "@/src/theme";
 
 export default function MobileHomeScreen() {
   const router = useRouter();
@@ -27,6 +29,12 @@ export default function MobileHomeScreen() {
   const titlesCount = posts.filter((p) => p.content_category === "movies").length;
 
   const topPlace = places.length > 0 ? places[0] : null;
+  const topPlacePhoto = topPlace
+    ? posts.find((p) => topPlace.source_post_ids?.includes(p.post_id))?.thumbnail_url ?? null
+    : null;
+
+  // Check if any link failed
+  const failedJobsCount: number = 0; // Or from inbox failures if any
 
   const handlePasteSubmit = () => {
     if (pasteInput.trim()) {
@@ -45,7 +53,10 @@ export default function MobileHomeScreen() {
       style={styles.container}
       contentContainerStyle={[
         styles.content,
-        { paddingTop: Math.max(insets.top, 16), paddingBottom: 100 },
+        {
+          paddingTop: insets.top + 12,
+          paddingBottom: 84 + insets.bottom + 24,
+        },
       ]}
       keyboardShouldPersistTaps="handled"
     >
@@ -78,7 +89,7 @@ export default function MobileHomeScreen() {
         </Text>
       )}
 
-      {/* Paste bar matching Mobile-Home.dc.html */}
+      {/* H5: Paste bar: height 48px, white, 1px border, fully rounded, with arrow button */}
       <View style={styles.pasteBar}>
         <Ionicons name="link-outline" size={20} color={colors.muted} />
         <TextInput
@@ -90,10 +101,27 @@ export default function MobileHomeScreen() {
           style={styles.pasteInput}
           returnKeyType="go"
         />
-        <Pressable onPress={handlePasteSubmit} hitSlop={8}>
+        <Pressable onPress={handlePasteSubmit} hitSlop={8} style={styles.pasteArrowBtn}>
           <Ionicons name="arrow-forward-circle" size={28} color={colors.ink} />
         </Pressable>
       </View>
+
+      {/* H3: Inbox banner when links couldn't be read */}
+      {failedJobsCount > 0 && (
+        <View style={styles.inboxBanner}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.inboxBannerText}>
+              {failedJobsCount} {failedJobsCount === 1 ? "link couldn't be read" : "links couldn't be read"}
+            </Text>
+          </View>
+          <Pressable
+            onPress={() => router.push(appHref("/(app)/ingest"))}
+            style={styles.inboxReviewBtn}
+          >
+            <Text style={styles.inboxReviewBtnText}>Review</Text>
+          </Pressable>
+        </View>
+      )}
 
       {!hasSaves ? (
         /* Empty Home matching Mobile-Empty-Home.dc.html */
@@ -139,54 +167,70 @@ export default function MobileHomeScreen() {
       ) : (
         /* Populated Home matching Mobile-Home.dc.html */
         <View style={styles.populatedSection}>
-          {/* Next Up Card */}
+          {/* H2: Next Up Hero with photo + dark bottom gradient */}
           {topPlace && (
             <Pressable
               onPress={() => router.push(appHref(`/(app)/places/${topPlace.place_id}`))}
-              style={[styles.nextUpCard, shadow(2)]}
+              style={styles.heroCard}
             >
-              <View style={styles.nextUpBadge}>
-                <Text style={styles.nextUpBadgeText}>Next up</Text>
+              {topPlacePhoto ? (
+                <Image
+                  source={{ uri: proxiedMediaUrl(topPlacePhoto) ?? topPlacePhoto }}
+                  style={styles.heroImage}
+                  resizeMode="cover"
+                />
+              ) : (
+                <View style={[styles.heroImage, styles.heroFallbackBg]} />
+              )}
+              {/* Bottom gradient overlay */}
+              <View style={styles.heroGradient}>
+                <View style={styles.nextUpPill}>
+                  <Text style={styles.nextUpPillText}>Next up</Text>
+                </View>
+                <Text style={styles.heroTitle} numberOfLines={1}>
+                  {topPlace.display_name}
+                </Text>
+                <Text style={styles.heroRegion} numberOfLines={1}>
+                  {[
+                    topPlace.location?.city,
+                    topPlace.location?.state_province,
+                    topPlace.location?.country,
+                  ]
+                    .filter(Boolean)
+                    .join(", ")}
+                </Text>
               </View>
-              <Text style={styles.nextUpTitle} numberOfLines={1}>
-                {topPlace.display_name}
-              </Text>
-              <Text style={styles.nextUpLocation}>
-                {[topPlace.location?.city, topPlace.location?.state_province, topPlace.location?.country]
-                  .filter(Boolean)
-                  .join(", ")}
-              </Text>
             </Pressable>
           )}
 
-          {/* 3 Collection Metric Cards */}
+          {/* H4: 3 Collection Metric Link Cards */}
           <View style={styles.metricRow}>
             <Pressable
               onPress={() => router.push(appHref("/(app)/(tabs)/travel"))}
-              style={[styles.metricCard, shadow(1)]}
+              style={styles.metricCard}
             >
               <Text style={styles.metricCount}>{placesCount}</Text>
               <Text style={[styles.metricLabel, { color: colors.travelInk }]}>On the map</Text>
             </Pressable>
 
             <Pressable
-              onPress={() => router.push(appHref("/(app)/(tabs)/collections"))}
-              style={[styles.metricCard, shadow(1)]}
+              onPress={() => router.push(appHref("/(app)/(tabs)/food"))}
+              style={styles.metricCard}
             >
               <Text style={styles.metricCount}>{recipesCount}</Text>
               <Text style={[styles.metricLabel, { color: colors.foodInk }]}>Recipes</Text>
             </Pressable>
 
             <Pressable
-              onPress={() => router.push(appHref("/(app)/(tabs)/collections"))}
-              style={[styles.metricCard, shadow(1)]}
+              onPress={() => router.push(appHref("/(app)/(tabs)/movies"))}
+              style={styles.metricCard}
             >
               <Text style={styles.metricCount}>{titlesCount}</Text>
               <Text style={[styles.metricLabel, { color: colors.movieInk }]}>Watch</Text>
             </Pressable>
           </View>
 
-          {/* Recently Saved section */}
+          {/* H1: Recently Saved section with thumbnail images */}
           <View style={styles.recentHeader}>
             <Text style={styles.recentTitle}>Recently saved</Text>
             <Pressable onPress={() => router.push(appHref("/(app)/(tabs)/posts"))}>
@@ -195,18 +239,31 @@ export default function MobileHomeScreen() {
           </View>
 
           <View style={styles.recentRow}>
-            {posts.slice(0, 2).map((post) => (
-              <Pressable
-                key={post.post_id}
-                onPress={() => router.push(appHref("/(app)/(tabs)/posts"))}
-                style={[styles.recentCard, shadow(1)]}
-              >
-                <View style={styles.recentThumbPlaceholder} />
-                <Text style={styles.recentCaption} numberOfLines={2}>
-                  {post.caption || "Saved post"}
-                </Text>
-              </Pressable>
-            ))}
+            {posts.slice(0, 2).map((post) => {
+              const thumbUrl = proxiedMediaUrl(post.thumbnail_url);
+              return (
+                <Pressable
+                  key={post.post_id}
+                  onPress={() => router.push(appHref("/(app)/(tabs)/posts"))}
+                  style={styles.recentCard}
+                >
+                  <View style={styles.recentThumbWrap}>
+                    {thumbUrl ? (
+                      <Image
+                        source={{ uri: thumbUrl }}
+                        style={styles.recentImage}
+                        resizeMode="cover"
+                      />
+                    ) : (
+                      <View style={[styles.recentImage, styles.recentFallbackBg]} />
+                    )}
+                  </View>
+                  <Text style={styles.recentCaption} numberOfLines={2}>
+                    {post.caption || "Saved post"}
+                  </Text>
+                </Pressable>
+              );
+            })}
           </View>
         </View>
       )}
@@ -262,54 +319,83 @@ const styles = StyleSheet.create({
   },
   screenHeading: {
     fontSize: 30,
-    lineHeight: 33,
-    letterSpacing: -0.8,
     fontWeight: "800",
+    letterSpacing: -0.5,
     color: colors.ink,
-    marginBottom: 12,
-  },
-  emptySubtext: {
-    fontSize: 15,
-    lineHeight: 22,
-    color: colors.bodyTinted,
+    lineHeight: 34,
     marginBottom: 16,
   },
+  emptySubtext: {
+    fontSize: 16,
+    color: colors.bodyTinted,
+    marginBottom: 20,
+    lineHeight: 22,
+  },
   pasteBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
     height: 48,
-    paddingHorizontal: 16,
     borderRadius: radius.pill,
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
-    marginBottom: 18,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    gap: 10,
+    marginBottom: 20,
   },
   pasteInput: {
     flex: 1,
     fontSize: 15,
     color: colors.ink,
+    padding: 0,
+  },
+  pasteArrowBtn: {
+    padding: 2,
+  },
+  inboxBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: "#FBEBDD",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: radius.lg,
+    marginBottom: 20,
+  },
+  inboxBannerText: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#7A3A12",
+  },
+  inboxReviewBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: radius.pill,
+    backgroundColor: "#FFFFFF",
+  },
+  inboxReviewBtnText: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: colors.ink,
   },
   emptySection: {
-    gap: 16,
+    gap: 20,
   },
   getStartedCard: {
     backgroundColor: colors.surface,
+    borderRadius: radius.xl,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: 20,
     padding: 20,
   },
   getStartedHeader: {
     flexDirection: "row",
-    alignItems: "baseline",
     justifyContent: "space-between",
+    alignItems: "baseline",
   },
   getStartedTitle: {
     fontSize: 18,
     fontWeight: "800",
-    letterSpacing: -0.3,
     color: colors.ink,
   },
   getStartedCount: {
@@ -320,15 +406,14 @@ const styles = StyleSheet.create({
   progressBarTrack: {
     height: 6,
     borderRadius: radius.pill,
-    backgroundColor: colors.border,
-    marginVertical: 12,
-    overflow: "hidden",
+    backgroundColor: colors.borderSubtle,
+    marginVertical: 14,
   },
   progressBarFill: {
     width: "4%",
     height: "100%",
-    backgroundColor: colors.ink,
     borderRadius: radius.pill,
+    backgroundColor: colors.ink,
   },
   stepRow: {
     flexDirection: "row",
@@ -339,24 +424,24 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.borderSubtle,
   },
   stepBadge: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
     alignItems: "center",
     justifyContent: "center",
   },
   stepText: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: "600",
     color: colors.ink,
   },
   dashedPrompt: {
+    borderRadius: radius.lg,
     borderWidth: 2,
-    borderColor: colors.borderDashed,
     borderStyle: "dashed",
+    borderColor: colors.borderDashed,
     backgroundColor: colors.surfaceAlt,
-    borderRadius: 20,
-    padding: 16,
+    padding: 20,
   },
   dashedPromptTitle: {
     fontSize: 15,
@@ -364,57 +449,70 @@ const styles = StyleSheet.create({
     color: colors.ink,
   },
   dashedPromptSub: {
-    marginTop: 4,
     fontSize: 13,
-    lineHeight: 18,
     color: colors.muted,
+    marginTop: 4,
+    lineHeight: 18,
   },
   populatedSection: {
-    gap: 16,
+    gap: 20,
   },
-  nextUpCard: {
+  heroCard: {
     height: 190,
     borderRadius: 24,
-    padding: 20,
+    overflow: "hidden",
+    position: "relative",
+    borderWidth: 1,
+    borderColor: colors.border,
     justifyContent: "flex-end",
-    backgroundColor: "#8E4A2B",
   },
-  nextUpBadge: {
+  heroImage: {
+    ...StyleSheet.absoluteFill,
+  },
+  heroFallbackBg: {
+    backgroundColor: "#2D6A82",
+  },
+  heroGradient: {
+    padding: 20,
+    backgroundColor: "rgba(0,0,0,0.55)",
+    justifyContent: "flex-end",
+  },
+  nextUpPill: {
     alignSelf: "flex-start",
     paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingVertical: 3,
     borderRadius: radius.pill,
-    backgroundColor: "rgba(255,255,255,0.25)",
+    backgroundColor: "rgba(255,255,255,0.22)",
     marginBottom: 8,
   },
-  nextUpBadgeText: {
-    fontSize: 12,
+  nextUpPillText: {
+    fontSize: 11,
     fontWeight: "700",
     color: "#FFFFFF",
   },
-  nextUpTitle: {
+  heroTitle: {
     fontSize: 28,
     fontWeight: "800",
-    color: "#FFFFFF",
     letterSpacing: -0.5,
+    color: "#FFFFFF",
   },
-  nextUpLocation: {
+  heroRegion: {
     fontSize: 14,
-    color: "rgba(255,255,255,0.9)",
-    marginTop: 4,
+    color: "rgba(255,255,255,0.85)",
+    marginTop: 2,
   },
   metricRow: {
     flexDirection: "row",
-    gap: 10,
+    gap: 12,
   },
   metricCard: {
     flex: 1,
-    paddingVertical: 14,
-    paddingHorizontal: 12,
-    borderRadius: 18,
     backgroundColor: colors.surface,
+    borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: colors.border,
+    padding: 16,
+    alignItems: "center",
   },
   metricCount: {
     fontSize: 22,
@@ -424,23 +522,24 @@ const styles = StyleSheet.create({
   metricLabel: {
     fontSize: 13,
     fontWeight: "600",
-    marginTop: 2,
+    marginTop: 4,
   },
   recentHeader: {
     flexDirection: "row",
-    alignItems: "baseline",
     justifyContent: "space-between",
-    marginTop: 8,
+    alignItems: "baseline",
+    marginTop: 10,
   },
   recentTitle: {
-    fontSize: 19,
+    fontSize: 18,
     fontWeight: "800",
+    letterSpacing: -0.3,
     color: colors.ink,
   },
   seeAllText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "700",
-    color: colors.ink,
+    color: colors.muted,
   },
   recentRow: {
     flexDirection: "row",
@@ -449,16 +548,23 @@ const styles = StyleSheet.create({
   recentCard: {
     flex: 1,
   },
-  recentThumbPlaceholder: {
+  recentThumbWrap: {
     height: 130,
     borderRadius: 18,
+    overflow: "hidden",
+    backgroundColor: "#ECECEA",
+  },
+  recentImage: {
+    ...StyleSheet.absoluteFill,
+  },
+  recentFallbackBg: {
     backgroundColor: "#2D6A82",
   },
   recentCaption: {
-    marginTop: 8,
     fontSize: 13,
+    lineHeight: 18,
     fontWeight: "600",
     color: colors.ink,
-    lineHeight: 17,
+    marginTop: 8,
   },
 });

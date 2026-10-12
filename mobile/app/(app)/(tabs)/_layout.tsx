@@ -10,8 +10,8 @@ export default function TabsLayout() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
-  const tabBarContentHeight = 56;
-  const tabBarBottomInset = Math.max(insets.bottom, 12);
+  const tabBarHeight = 84 + insets.bottom;
+  const tabBarBottomPadding = Math.max(insets.bottom, 20);
 
   return (
     <Tabs
@@ -24,9 +24,9 @@ export default function TabsLayout() {
           backgroundColor: colors.surface,
           borderTopColor: colors.border,
           borderTopWidth: 1,
-          height: tabBarContentHeight + tabBarBottomInset,
+          height: tabBarHeight,
           paddingTop: 8,
-          paddingBottom: tabBarBottomInset,
+          paddingBottom: tabBarBottomPadding,
         },
       }}
     >
@@ -128,13 +128,13 @@ export default function TabsLayout() {
 
 const styles = StyleSheet.create({
   saveFab: {
-    width: 54,
-    height: 54,
-    borderRadius: 27,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     backgroundColor: colors.ink,
     alignItems: "center",
     justifyContent: "center",
-    marginTop: -16,
+    marginTop: -18,
     marginHorizontal: 8,
   },
 });

@@ -9,13 +9,15 @@ import { OsmPlaceMap } from "./OsmPlaceMap";
 interface PlaceMapProps {
   places: Place[];
   visitedPlaceIds?: ReadonlySet<string>;
-  onSelectPlace?: (place: Place) => void;
+  selectedPlaceId?: string | null;
+  onSelectPlace?: (place: Place | null) => void;
   height?: DimensionValue;
 }
 
 export function PlaceMap({
   places,
   visitedPlaceIds,
+  selectedPlaceId,
   onSelectPlace,
   height = 280,
 }: PlaceMapProps) {
@@ -34,18 +36,20 @@ export function PlaceMap({
 
   return (
     <View style={[styles.wrap, fill ? styles.fill : { height }]}>
-      <OsmPlaceMap places={mapped} visitedPlaceIds={visited} onSelectPlace={onSelectPlace} />
+      <OsmPlaceMap
+        places={mapped}
+        visitedPlaceIds={visited}
+        selectedPlaceId={selectedPlaceId}
+        onSelectPlace={onSelectPlace}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   wrap: {
-    borderRadius: radius.lg,
+    borderRadius: 0,
     overflow: "hidden",
-    borderWidth: 1,
-    borderColor: colors.border,
-    marginBottom: spacing.md,
   },
   fill: {
     flex: 1,
@@ -54,13 +58,9 @@ const styles = StyleSheet.create({
     marginBottom: 0,
   },
   empty: {
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.brandSoft,
+    backgroundColor: "#E6EFF2",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: spacing.md,
   },
   emptyText: {
     color: colors.muted,

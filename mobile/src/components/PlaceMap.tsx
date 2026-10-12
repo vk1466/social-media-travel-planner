@@ -7,7 +7,8 @@ import { colors, radius, spacing } from "../theme";
 interface PlaceMapProps {
   places: Place[];
   visitedPlaceIds?: ReadonlySet<string>;
-  onSelectPlace?: (place: Place) => void;
+  selectedPlaceId?: string | null;
+  onSelectPlace?: (place: Place | null) => void;
   height?: DimensionValue;
 }
 
@@ -15,6 +16,7 @@ interface PlaceMapProps {
 export function PlaceMap({
   places,
   visitedPlaceIds,
+  selectedPlaceId,
   onSelectPlace,
   height = 280,
 }: PlaceMapProps) {

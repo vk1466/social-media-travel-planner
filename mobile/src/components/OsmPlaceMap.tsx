@@ -9,13 +9,15 @@ import { visualForCategory } from "../placeCategoryVisuals";
 interface OsmPlaceMapProps {
   places: Place[];
   visitedPlaceIds: ReadonlySet<string>;
-  onSelectPlace?: (place: Place) => void;
+  selectedPlaceId?: string | null;
+  onSelectPlace?: (place: Place | null) => void;
 }
 
-/** Same Leaflet + CARTO Voyager canvas as the web Travel atlas map. */
+/** Leaflet + CARTO Voyager canvas styled for Wanderfile mobile design. */
 export function OsmPlaceMap({
   places,
   visitedPlaceIds,
+  selectedPlaceId,
   onSelectPlace,
 }: OsmPlaceMapProps) {
   const payload = useMemo(
@@ -31,6 +33,8 @@ export function OsmPlaceMap({
   const readyRef = useRef(false);
   const payloadRef = useRef(payload);
   payloadRef.current = payload;
+  const selectedRef = useRef(selectedPlaceId);
+  selectedRef.current = selectedPlaceId;
   const [frame, setFrame] = useState({ width: 0, height: 0 });
 
   const applyFrame = useCallback((width: number, height: number) => {
@@ -44,7 +48,13 @@ export function OsmPlaceMap({
 
   const pushPlaces = useCallback(() => {
     webViewRef.current?.injectJavaScript(
-      `window.__setPlaces && window.__setPlaces(${payloadRef.current}); true;`,
+      `window.__setPlaces && window.__setPlaces(${payloadRef.current}, ${JSON.stringify(selectedRef.current ?? null)}); true;`,
+    );
+  }, []);
+
+  const pushSelected = useCallback((id: string | null | undefined) => {
+    webViewRef.current?.injectJavaScript(
+      `window.__setSelectedPlace && window.__setSelectedPlace(${JSON.stringify(id ?? null)}); true;`,
     );
   }, []);
 
@@ -53,6 +63,12 @@ export function OsmPlaceMap({
       pushPlaces();
     }
   }, [payload, pushPlaces]);
+
+  useEffect(() => {
+    if (readyRef.current) {
+      pushSelected(selectedPlaceId);
+    }
+  }, [selectedPlaceId, pushSelected]);
 
   return (
     <View
@@ -68,7 +84,7 @@ export function OsmPlaceMap({
       {frame.width > 0 && frame.height > 0 ? (
         <WebView
           ref={webViewRef}
-          style={{ width: frame.width, height: frame.height, backgroundColor: "#112a35" }}
+          style={{ width: frame.width, height: frame.height, backgroundColor: "#E6EFF2" }}
           originWhitelist={["*"]}
           source={source}
           javaScriptEnabled
@@ -90,7 +106,12 @@ export function OsmPlaceMap({
           androidLayerType="hardware"
           cacheEnabled
           onMessage={(event) => {
-            const place = places.find((item) => item.place_id === event.nativeEvent.data);
+            const data = event.nativeEvent.data;
+            if (data === "__DESELECT__") {
+              onSelectPlace?.(null);
+              return;
+            }
+            const place = places.find((item) => item.place_id === data);
             if (place) {
               onSelectPlace?.(place);
             }
@@ -107,7 +128,7 @@ const styles = StyleSheet.create({
     alignSelf: "stretch",
     minHeight: 0,
     overflow: "hidden",
-    backgroundColor: "#112a35",
+    backgroundColor: "#E6EFF2",
   },
 });
 
@@ -149,6 +170,7 @@ function buildMapHtml(): string {
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@600;700;800&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; }
     html, body {
@@ -158,7 +180,8 @@ function buildMapHtml(): string {
       height: 100%;
       margin: 0;
       overflow: hidden;
-      background: #112a35;
+      background: #E6EFF2;
+      font-family: 'Figtree', system-ui, sans-serif;
     }
     #map {
       position: absolute;
@@ -166,92 +189,61 @@ function buildMapHtml(): string {
       width: 100%;
       height: 100%;
     }
-    .leaflet-container { width: 100%; height: 100%; background: #112a35; }
+    .leaflet-container { width: 100%; height: 100%; background: #E6EFF2; }
+    .leaflet-control-attribution {
+      font-size: 9px !important;
+      color: #6B6F73 !important;
+      background: rgba(255, 255, 255, 0.75) !important;
+      padding: 2px 6px !important;
+      border-radius: 4px;
+      margin: 4px !important;
+    }
     .saved-map-marker-host { border: 0; background: transparent; }
     .saved-map-marker {
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 28px;
-      height: 28px;
+      width: 24px;
+      height: 24px;
+      cursor: pointer;
     }
     .saved-map-marker > i {
-      flex: 0 0 auto;
       box-sizing: border-box;
-      width: 28px;
-      height: 28px;
-      min-width: 28px;
-      min-height: 28px;
-      max-width: 28px;
-      max-height: 28px;
-      aspect-ratio: 1 / 1;
-      overflow: hidden;
-      display: grid;
-      place-items: center;
-      line-height: 0;
+      width: 20px;
+      height: 20px;
       border: 3px solid white;
       border-radius: 999px;
-      background: var(--marker-color);
-      color: white;
-      font-style: normal;
-      box-shadow: 0 2px 4px rgb(0 0 0 / 0.28);
+      background: #1F6F8B;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.25);
     }
-    .saved-map-marker svg {
-      display: block;
-      width: 14px;
-      height: 14px;
-      flex-shrink: 0;
-    }
-    .saved-map-marker.is-active { transform: scale(1.22); }
-    .saved-map-marker.is-active > i { box-shadow: 0 0 0 3px var(--marker-color); }
-    .saved-place-popup-card {
-      min-width: 180px;
-      max-width: 240px;
-      color: #1b2621;
-    }
-    .saved-place-popup-card small {
+    .selected-marker-wrap {
       display: flex;
+      flex-direction: column;
       align-items: center;
-      gap: 0.35rem;
-      color: #66736c;
-      font-size: 0.62rem;
-      font-weight: 800;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
+      transform: translate(-50%, -100%);
+      pointer-events: auto;
+      cursor: pointer;
     }
-    .saved-place-popup-card small i {
-      box-sizing: border-box;
-      width: 18px;
-      height: 18px;
-      min-width: 18px;
-      min-height: 18px;
-      overflow: hidden;
-      display: grid;
-      place-items: center;
-      line-height: 0;
-      border-radius: 999px;
-      color: white;
-      font-style: normal;
+    .selected-marker-pill {
+      background: #FFFFFF;
+      border-radius: 15px;
+      padding: 5px 14px;
+      box-shadow: 0 3px 12px rgba(0,0,0,0.2);
+      margin-bottom: 6px;
+      white-space: nowrap;
+      font-family: 'Figtree', system-ui, sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      color: #1B1D1F;
     }
-    .saved-place-popup-card small svg { display: block; width: 10px; height: 10px; }
-    .saved-place-popup-card strong { display: block; margin: 0.35rem 0 0.15rem; font-size: 0.95rem; }
-    .saved-place-popup-card span, .saved-place-popup-card p {
-      display: block;
-      margin: 0;
-      color: #68736d;
-      font-size: 0.72rem;
-      line-height: 1.4;
+    .selected-marker-dot {
+      width: 28px;
+      height: 28px;
+      border-radius: 14px;
+      background: #1F6F8B;
+      border: 4px solid #FFFFFF;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.3);
     }
-    .saved-place-popup-card button {
-      margin-top: 0.55rem;
-      padding: 0;
-      border: 0;
-      background: transparent;
-      color: #173a47;
-      font-size: 0.72rem;
-      font-weight: 800;
-    }
-    .leaflet-popup-content-wrapper { border-radius: 12px; }
   </style>
 </head>
 <body>
@@ -264,7 +256,8 @@ function buildMapHtml(): string {
       });
     }
     const map = L.map("map", {
-      zoomControl: true,
+      zoomControl: false,
+      attributionControl: false,
       worldCopyJump: true,
       minZoom: 2,
       maxZoom: 19,
@@ -272,6 +265,7 @@ function buildMapHtml(): string {
       markerZoomAnimation: false,
       zoomAnimation: true
     });
+    L.control.attribution({ position: "bottomleft", prefix: false }).addTo(map);
     L.tileLayer(${JSON.stringify(tileUrl)}, {
       attribution: "&copy; OSM &copy; CARTO",
       subdomains: "abcd",
@@ -280,8 +274,17 @@ function buildMapHtml(): string {
       updateWhenZooming: false,
       keepBuffer: 3
     }).addTo(map);
-    const markers = L.layerGroup().addTo(map);
+
+    const markersGroup = L.layerGroup().addTo(map);
+    let currentPlaces = [];
+    let selectedPlaceId = null;
     let placeKey = "";
+
+    map.on("click", function () {
+      if (window.ReactNativeWebView) {
+        window.ReactNativeWebView.postMessage("__DESELECT__");
+      }
+    });
 
     function fitPlaces(places) {
       if (!places.length) {
@@ -293,11 +296,50 @@ function buildMapHtml(): string {
         return;
       }
       map.fitBounds(places.map(function (place) { return [place.lat, place.lng]; }), {
-        padding: [48, 72],
+        padding: [60, 60],
         maxZoom: 12,
         animate: false
       });
     }
+
+    function renderMarkers() {
+      markersGroup.clearLayers();
+      for (const place of currentPlaces) {
+        const isSelected = place.id === selectedPlaceId;
+        if (isSelected) {
+          const icon = L.divIcon({
+            className: "saved-map-marker-host",
+            html: '<div class="selected-marker-wrap"><div class="selected-marker-pill">' + esc(place.name) + '</div><div class="selected-marker-dot"></div></div>',
+            iconSize: [0, 0],
+            iconAnchor: [0, 0]
+          });
+          const marker = L.marker([place.lat, place.lng], { icon: icon, keyboard: false, zIndexOffset: 1000 });
+          marker.on("click", function (e) {
+            L.DomEvent.stopPropagation(e);
+            if (window.ReactNativeWebView) {
+              window.ReactNativeWebView.postMessage(place.id);
+            }
+          });
+          markersGroup.addLayer(marker);
+        } else {
+          const icon = L.divIcon({
+            className: "saved-map-marker-host",
+            html: '<span class="saved-map-marker"><i></i></span>',
+            iconSize: [24, 24],
+            iconAnchor: [12, 12]
+          });
+          const marker = L.marker([place.lat, place.lng], { icon: icon, keyboard: false });
+          marker.on("click", function (e) {
+            L.DomEvent.stopPropagation(e);
+            if (window.ReactNativeWebView) {
+              window.ReactNativeWebView.postMessage(place.id);
+            }
+          });
+          markersGroup.addLayer(marker);
+        }
+      }
+    }
+
     window.__setMapFrame = function (width, height) {
       if (!width || !height) return;
       var root = document.documentElement;
@@ -310,43 +352,26 @@ function buildMapHtml(): string {
       el.style.height = height + "px";
       map.invalidateSize({ animate: false, pan: false });
     };
-    window.__setPlaces = function (places) {
-      markers.clearLayers();
-      for (const place of places) {
-        const icon = L.divIcon({
-          className: "saved-map-marker-host",
-          html: '<span class="saved-map-marker" style="--marker-color:' + place.color + '"><i>' + place.icon + '</i></span>',
-          iconSize: [28, 28],
-          iconAnchor: [14, 14],
-          popupAnchor: [0, -18]
-        });
-        const marker = L.marker([place.lat, place.lng], { icon: icon, keyboard: false });
-        const visitedLine = place.visited ? " · Visited" : "";
-        const blurb = place.blurb ? "<p>" + esc(place.blurb) + "</p>" : "";
-        const loc = place.location ? "<span>" + esc(place.location) + "</span>" : "";
-        marker.bindPopup(
-          '<div class="saved-place-popup-card">' +
-            '<small><i style="background:' + esc(place.color) + '">' + place.icon + '</i>' +
-            esc(place.categoryLabel) + visitedLine + '</small>' +
-            '<strong>' + esc(place.name) + '</strong>' +
-            loc + blurb +
-            '<button type="button" data-place-id="' + esc(place.id) + '">Open full place →</button>' +
-          '</div>'
-        );
-        marker.on("popupopen", function () {
-          const button = document.querySelector('button[data-place-id="' + place.id + '"]');
-          if (button) {
-            button.addEventListener("click", function () {
-              window.ReactNativeWebView.postMessage(place.id);
-            });
-          }
-        });
-        markers.addLayer(marker);
-      }
+
+    window.__setPlaces = function (places, selectedId) {
+      currentPlaces = places;
+      selectedPlaceId = selectedId || null;
+      renderMarkers();
       var nextKey = places.map(function (place) { return place.id; }).join("|");
       if (nextKey !== placeKey) {
         placeKey = nextKey;
         fitPlaces(places);
+      }
+    };
+
+    window.__setSelectedPlace = function (id) {
+      selectedPlaceId = id || null;
+      renderMarkers();
+      if (selectedPlaceId) {
+        var found = currentPlaces.find(function (p) { return p.id === selectedPlaceId; });
+        if (found) {
+          map.panTo([found.lat, found.lng], { animate: true });
+        }
       }
     };
   </script>
