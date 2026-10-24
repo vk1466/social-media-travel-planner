@@ -8,6 +8,7 @@ import {
   Pressable,
   RefreshControl,
   ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
   TextInput,
@@ -18,8 +19,10 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   fetchVisitedPlaceIds,
   markPlaceVisited,
+  nativePostId,
   unmarkPlaceVisited,
   type Place,
+  type SavedPost,
 } from "@/src/api";
 import { CoverCard } from "@/src/components/CoverCard";
 import { PlaceMap } from "@/src/components/PlaceMap";
@@ -38,7 +41,7 @@ import {
   type AtlasGrouping,
   type AtlasNode,
 } from "@/src/placeAtlasModel";
-import { proxiedMediaUrl } from "@/src/postDisplayUtils";
+import { getPlatformLabel, getPostTitle, proxiedMediaUrl } from "@/src/postDisplayUtils";
 import { colors, fonts, radius, shadow } from "@/src/theme";
 
 type Pane = "map" | "browse";
@@ -64,7 +67,12 @@ export default function TravelScreen() {
   const [visitedPlaceIds, setVisitedPlaceIds] = useState<Set<string>>(new Set());
   const [refreshing, setRefreshing] = useState(false);
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
+  const [selectedReelId, setSelectedReelId] = useState<string | null>(null);
+  const [visiblePlaceIds, setVisiblePlaceIds] = useState<string[] | null>(null);
+  const [fitPlaceIds, setFitPlaceIds] = useState<string[] | null>(null);
+  const [fitKey, setFitKey] = useState<number>(0);
   const [updatingVisit, setUpdatingVisit] = useState(false);
+  const [measuredHeaderHeight, setMeasuredHeaderHeight] = useState(0);
 
   useEffect(() => {
     void fetchVisitedPlaceIds()
@@ -136,6 +144,45 @@ export default function TravelScreen() {
       .filter((p): p is Place => Boolean(p && p.location.latitude && p.location.longitude));
   }, [searchedPlaces, placesById]);
 
+  const currentViewPlaceIds = useMemo(() => {
+    if (!visiblePlaceIds) {
+      return new Set(activePlaces.map((p) => p.place_id));
+    }
+    return new Set(visiblePlaceIds);
+  }, [activePlaces, visiblePlaceIds]);
+
+  const visibleReels = useMemo(() => {
+    if (activePlaces.length === 0) return [];
+    return posts.filter(
+      (post) =>
+        post.place_ids && post.place_ids.some((pid) => currentViewPlaceIds.has(pid)),
+    );
+  }, [posts, currentViewPlaceIds, activePlaces]);
+
+  const selectedReel = useMemo(() => {
+    if (!selectedReelId) return null;
+    return posts.find((p) => p.post_id === selectedReelId) ?? null;
+  }, [posts, selectedReelId]);
+
+  const highlightedPlaceIds = useMemo(() => {
+    if (!selectedReel) return [];
+    return selectedReel.place_ids || [];
+  }, [selectedReel]);
+
+  const handleSelectReel = useCallback(
+    (reel: SavedPost) => {
+      if (selectedReelId === reel.post_id) {
+        setSelectedReelId(null);
+        return;
+      }
+      setSelectedReelId(reel.post_id);
+      setSelectedPlaceId(null);
+      setFitPlaceIds(reel.place_ids);
+      setFitKey((k) => k + 1);
+    },
+    [selectedReelId],
+  );
+
   const selectedPlace = useMemo(() => {
     if (!selectedPlaceId) return null;
     return placesById.get(selectedPlaceId) ?? null;
@@ -188,6 +235,19 @@ export default function TravelScreen() {
   const isVisitedSelected = selectedPlace ? visitedPlaceIds.has(selectedPlace.place_id) : false;
   const selectedPostCount = selectedAtlasPlace ? selectedAtlasPlace.sourcePostIds.length : (selectedPlace?.tips.length ?? 1);
 
+  const statusBarHeight = StatusBar.currentHeight ?? 0;
+  const topInset = Math.max(insets.top, statusBarHeight, 20);
+  const headerTopPadding = topInset + 8;
+  const headerHeight = measuredHeaderHeight || (headerTopPadding + 48 + 10 + 36 + 12);
+
+  const listToggleBottom = useMemo(() => {
+    if (pane === "browse") return 16;
+    if (selectedPlace != null) return 176;
+    if (selectedReel != null) return 168;
+    if (visibleReels.length > 0) return 112;
+    return 16;
+  }, [pane, selectedPlace, selectedReel, visibleReels.length]);
+
   return (
     <View style={styles.screen}>
       {/* Full-bleed map */}
@@ -196,123 +256,36 @@ export default function TravelScreen() {
           places={activePlaces}
           visitedPlaceIds={visitedPlaceIds}
           selectedPlaceId={selectedPlaceId}
-          onSelectPlace={(place) => setSelectedPlaceId(place ? place.place_id : null)}
+          onSelectPlace={(place) => {
+            setSelectedPlaceId(place ? place.place_id : null);
+            if (place) setSelectedReelId(null);
+          }}
+          onVisiblePlaceIdsChange={setVisiblePlaceIds}
+          highlightedPlaceIds={highlightedPlaceIds}
+          fitPlaceIds={fitPlaceIds}
+          fitKey={fitKey}
           height="100%"
         />
       </View>
 
-      {/* M1 & M2: Floating search row and round buttons below top inset */}
-      <View
-        style={[
-          styles.floatingHeader,
-          { top: Math.max(insets.top, 16) + 8 },
-        ]}
-      >
-        <View style={styles.searchRow}>
-          <View style={styles.searchPill}>
-            <Ionicons name="search" size={18} color="#6B6F73" />
-            <TextInput
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              placeholder={`Search ${places.length > 0 ? places.length + " " : ""}places`}
-              placeholderTextColor="#6B6F73"
-              style={styles.searchInput}
-              returnKeyType="search"
-            />
-            {searchQuery ? (
-              <Pressable onPress={() => setSearchQuery("")} hitSlop={8}>
-                <Ionicons name="close-circle" size={16} color="#6B6F73" />
-              </Pressable>
-            ) : null}
-          </View>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Filter by source"
-            onPress={() => router.push(appHref("/(app)/coming-soon"))}
-            style={styles.roundIconButton}
-          >
-            <Ionicons name="layers-outline" size={20} color="#1B1D1F" />
-          </Pressable>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Filters"
-            onPress={() => router.push(appHref("/(app)/coming-soon"))}
-            style={styles.roundIconButton}
-          >
-            <Ionicons name="options-outline" size={20} color="#1B1D1F" />
-          </Pressable>
-        </View>
-
-        {/* M3: Status chips: All, Want to go, Been */}
-        <View style={styles.statusChipsRow}>
-          <Pressable
-            onPress={() => setStatusFilter("all")}
-            style={[
-              styles.statusChip,
-              statusFilter === "all" ? styles.statusChipActive : styles.statusChipInactive,
-            ]}
-          >
-            <Text
-              style={[
-                styles.statusChipText,
-                statusFilter === "all" ? styles.statusChipTextActive : styles.statusChipTextInactive,
-              ]}
-            >
-              All
-            </Text>
-          </Pressable>
-          <Pressable
-            onPress={() => setStatusFilter("inspiration")}
-            style={[
-              styles.statusChip,
-              statusFilter === "inspiration" ? styles.statusChipActive : styles.statusChipInactive,
-            ]}
-          >
-            <Text
-              style={[
-                styles.statusChipText,
-                statusFilter === "inspiration" ? styles.statusChipTextActive : styles.statusChipTextInactive,
-              ]}
-            >
-              Want to go
-            </Text>
-          </Pressable>
-          <Pressable
-            onPress={() => setStatusFilter("visited")}
-            style={[
-              styles.statusChip,
-              statusFilter === "visited" ? styles.statusChipActive : styles.statusChipInactive,
-            ]}
-          >
-            <Text
-              style={[
-                styles.statusChipText,
-                statusFilter === "visited" ? styles.statusChipTextActive : styles.statusChipTextInactive,
-              ]}
-            >
-              Been
-            </Text>
-          </Pressable>
-        </View>
-      </View>
-
       {/* Browse (List) view if toggled on */}
       {pane === "browse" ? (
-        <View
-          style={[
-            styles.browseOverlay,
-            {
-              paddingTop: Math.max(insets.top, 16) + 110,
-              paddingBottom: 84 + insets.bottom + 20,
-            },
-          ]}
-        >
+        <View style={styles.browseOverlay}>
           <FlatList
             data={activePlaces}
             keyExtractor={(item) => item.place_id}
-            contentContainerStyle={styles.browseList}
+            style={styles.browseListContainer}
+            contentContainerStyle={[
+              styles.browseList,
+              {
+                paddingTop: headerHeight + 12,
+                paddingBottom: 80,
+              },
+            ]}
+            scrollIndicatorInsets={{ top: headerHeight, bottom: 0 }}
             refreshControl={
               <RefreshControl
+                progressViewOffset={headerHeight}
                 refreshing={refreshing}
                 onRefresh={() => {
                   setRefreshing(true);
@@ -333,49 +306,150 @@ export default function TravelScreen() {
                   }}
                   style={styles.browseRow}
                 >
-                <View style={styles.browseThumb}>
-                  {thumb ? (
-                    <Image
-                      source={{ uri: thumb }}
-                      style={styles.browseImage}
-                    />
-                  ) : (
-                    <View style={styles.browseImageFallback} />
-                  )}
-                </View>
-                <View style={styles.browseInfo}>
-                  <Text style={styles.browseName} numberOfLines={1}>
-                    {place.display_name}
-                  </Text>
-                  <Text style={styles.browseMeta} numberOfLines={1}>
-                    {placeLocationLine(place)}
-                  </Text>
-                </View>
-                {visitedPlaceIds.has(place.place_id) ? (
-                  <View style={styles.visitedPill}>
-                    <Text style={styles.visitedPillText}>Been</Text>
+                  <View style={styles.browseThumb}>
+                    {thumb ? (
+                      <Image
+                        source={{ uri: thumb }}
+                        style={styles.browseImage}
+                      />
+                    ) : (
+                      <View style={styles.browseImageFallback} />
+                    )}
                   </View>
-                ) : null}
-              </Pressable>
-            );
-          }}
+                  <View style={styles.browseInfo}>
+                    <Text style={styles.browseName} numberOfLines={1}>
+                      {place.display_name}
+                    </Text>
+                    <Text style={styles.browseMeta} numberOfLines={1}>
+                      {placeLocationLine(place)}
+                    </Text>
+                  </View>
+                  {visitedPlaceIds.has(place.place_id) ? (
+                    <View style={styles.visitedPill}>
+                      <Text style={styles.visitedPillText}>Been</Text>
+                    </View>
+                  ) : null}
+                </Pressable>
+              );
+            }}
           />
         </View>
       ) : null}
 
-      {/* M6: "Show as list" toggle above the carousel / sheet */}
+      {/* M1 & M2: Floating search row and round buttons below top inset */}
+      <View
+        pointerEvents={pane === "map" ? "box-none" : "auto"}
+        onLayout={(e) => {
+          const h = e.nativeEvent.layout.height;
+          if (h > 0) setMeasuredHeaderHeight(h);
+        }}
+        style={[
+          styles.headerContainer,
+          {
+            paddingTop: headerTopPadding,
+            backgroundColor: pane === "browse" ? "#F6F5F1" : "transparent",
+            paddingBottom: pane === "browse" ? 12 : 0,
+          },
+        ]}
+      >
+        <View style={styles.headerInner}>
+          <View style={styles.searchRow}>
+            <View style={styles.searchPill}>
+              <Ionicons name="search" size={18} color="#6B6F73" />
+              <TextInput
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                placeholder={`Search ${places.length > 0 ? places.length + " " : ""}places`}
+                placeholderTextColor="#6B6F73"
+                style={styles.searchInput}
+                returnKeyType="search"
+              />
+              {searchQuery ? (
+                <Pressable onPress={() => setSearchQuery("")} hitSlop={8}>
+                  <Ionicons name="close-circle" size={16} color="#6B6F73" />
+                </Pressable>
+              ) : null}
+            </View>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Filter by source"
+              onPress={() => router.push(appHref("/(app)/coming-soon"))}
+              style={styles.roundIconButton}
+            >
+              <Ionicons name="layers-outline" size={20} color="#1B1D1F" />
+            </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Filters"
+              onPress={() => router.push(appHref("/(app)/coming-soon"))}
+              style={styles.roundIconButton}
+            >
+              <Ionicons name="options-outline" size={20} color="#1B1D1F" />
+            </Pressable>
+          </View>
+
+          {/* M3: Status chips: All, Want to go, Been */}
+          <View style={styles.statusChipsRow}>
+            <Pressable
+              onPress={() => setStatusFilter("all")}
+              style={[
+                styles.statusChip,
+                statusFilter === "all" ? styles.statusChipActive : styles.statusChipInactive,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.statusChipText,
+                  statusFilter === "all" ? styles.statusChipTextActive : styles.statusChipTextInactive,
+                ]}
+              >
+                All
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={() => setStatusFilter("inspiration")}
+              style={[
+                styles.statusChip,
+                statusFilter === "inspiration" ? styles.statusChipActive : styles.statusChipInactive,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.statusChipText,
+                  statusFilter === "inspiration" ? styles.statusChipTextActive : styles.statusChipTextInactive,
+                ]}
+              >
+                Want to go
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={() => setStatusFilter("visited")}
+              style={[
+                styles.statusChip,
+                statusFilter === "visited" ? styles.statusChipActive : styles.statusChipInactive,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.statusChipText,
+                  statusFilter === "visited" ? styles.statusChipTextActive : styles.statusChipTextInactive,
+                ]}
+              >
+                Been
+              </Text>
+            </Pressable>
+          </View>
+        </View>
+      </View>
+
+      {/* M6: "Show as list" / "Show map" toggle */}
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={pane === "map" ? "Show as list" : "Show map"}
         onPress={() => setPane((p) => (p === "map" ? "browse" : "map"))}
         style={[
           styles.listTogglePill,
-          {
-            bottom:
-              selectedPlace != null
-                ? 84 + insets.bottom + 180
-                : 84 + insets.bottom + 88,
-          },
+          { bottom: listToggleBottom },
         ]}
       >
         <Ionicons
@@ -389,11 +463,11 @@ export default function TravelScreen() {
       </Pressable>
 
       {/* M4: Selected Place Bottom Sheet or Place Carousel */}
-      {selectedPlace != null ? (
+      {selectedPlace != null && pane === "map" ? (
         <View
           style={[
             styles.selectedSheet,
-            { bottom: 84 + insets.bottom },
+            { bottom: 0 },
           ]}
         >
           {/* Drag Handle */}
@@ -468,46 +542,93 @@ export default function TravelScreen() {
             </Pressable>
           </View>
         </View>
-      ) : activePlaces.length > 0 && pane === "map" ? (
-        /* M4: Place Carousel at bottom */
+      ) : activePlaces.length > 0 && pane === "map" && visibleReels.length > 0 ? (
+        /* Reels related to places in current map view */
         <View
           style={[
             styles.carouselContainer,
-            { bottom: 84 + insets.bottom + 8 },
+            { bottom: 12 },
           ]}
         >
+          {selectedReel != null ? (
+            <View style={styles.reelHeaderPill}>
+              <View style={styles.reelHeaderInfo}>
+                <Ionicons name="film" size={14} color="#E06D53" />
+                <Text style={styles.reelHeaderText} numberOfLines={1}>
+                  {selectedReel.author_handle
+                    ? `@${selectedReel.author_handle}`
+                    : getPlatformLabel(selectedReel)}{" "}
+                  · {highlightedPlaceIds.length}{" "}
+                  {highlightedPlaceIds.length === 1 ? "stop" : "stops"} on map
+                </Text>
+              </View>
+              <Pressable
+                accessibilityRole="button"
+                onPress={() =>
+                  router.push(
+                    `/posts/${selectedReel.platform}/${nativePostId(selectedReel)}`,
+                  )
+                }
+                style={styles.reelViewBtn}
+              >
+                <Text style={styles.reelViewBtnText}>Open</Text>
+                <Ionicons name="arrow-forward" size={11} color="#FFFFFF" />
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Close reel view"
+                onPress={() => setSelectedReelId(null)}
+                style={styles.reelCloseBtn}
+                hitSlop={8}
+              >
+                <Ionicons name="close" size={15} color="#FFFFFF" />
+              </Pressable>
+            </View>
+          ) : null}
+
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.carouselContent}
           >
-            {activePlaces.map((place) => {
-              const photo = placeImageMap.get(place.place_id);
-              const isSelected = selectedPlaceId === place.place_id;
-              const postCount = place.tips?.length || 1;
+            {visibleReels.map((reel) => {
+              const thumb = proxiedMediaUrl(reel.thumbnail_url);
+              const isSelected = selectedReelId === reel.post_id;
+              const stopsCount = (reel.place_ids || []).length;
               return (
                 <Pressable
-                  key={place.place_id}
-                  onPress={() => setSelectedPlaceId(place.place_id)}
+                  key={reel.post_id}
+                  onPress={() => handleSelectReel(reel)}
                   style={[
-                    styles.placeCarouselCard,
-                    isSelected && styles.placeCarouselCardActive,
+                    styles.reelCard,
+                    isSelected && styles.reelCardActive,
                   ]}
                 >
-                  <View style={styles.carouselPhotoWrap}>
-                    {photo ? (
-                      <Image source={{ uri: photo }} style={styles.carouselPhoto} />
+                  <View style={styles.reelThumbWrap}>
+                    {thumb ? (
+                      <Image source={{ uri: thumb }} style={styles.reelThumb} />
                     ) : (
-                      <View style={styles.carouselPhotoFallback} />
+                      <View style={styles.reelThumbFallback}>
+                        <Ionicons name="film-outline" size={20} color="#FFFFFF" />
+                      </View>
                     )}
+                    <View style={styles.reelPlayBadge}>
+                      <Ionicons name="play" size={9} color="#FFFFFF" />
+                    </View>
                   </View>
-                  <View style={styles.carouselInfo}>
-                    <Text style={styles.carouselName} numberOfLines={1}>
-                      {place.display_name}
+                  <View style={styles.reelInfo}>
+                    <Text style={styles.reelAuthor} numberOfLines={1}>
+                      {reel.author_handle ? `@${reel.author_handle}` : getPlatformLabel(reel)}
                     </Text>
-                    <Text style={styles.carouselRegion} numberOfLines={1}>
-                      {placeLocationLine(place)} · {postCount} {postCount === 1 ? "post" : "posts"}
+                    <Text style={styles.reelTitle} numberOfLines={1}>
+                      {getPostTitle(reel)}
                     </Text>
+                    <View style={styles.reelStopsRow}>
+                      <Ionicons name="location" size={11} color="#E06D53" />
+                      <Text style={styles.reelStopsText}>
+                        {stopsCount} {stopsCount === 1 ? "stop" : "stops"} · Tap to map
+                      </Text>
+                    </View>
                   </View>
                 </Pressable>
               );
@@ -530,11 +651,15 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: "#F6F5F1",
   },
-  floatingHeader: {
+  headerContainer: {
     position: "absolute",
-    left: 16,
-    right: 16,
+    top: 0,
+    left: 0,
+    right: 0,
     zIndex: 20,
+  },
+  headerInner: {
+    paddingHorizontal: 16,
     gap: 10,
   },
   searchRow: {
@@ -630,54 +755,132 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     gap: 10,
   },
-  placeCarouselCard: {
-    width: 260,
-    height: 74,
-    borderRadius: 18,
-    backgroundColor: "#FFFFFF",
-    padding: 9,
+  reelHeaderPill: {
+    marginHorizontal: 16,
+    marginBottom: 8,
+    height: 38,
+    borderRadius: 999,
+    backgroundColor: "#1B1D1F",
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    paddingLeft: 14,
+    paddingRight: 8,
+    gap: 8,
     ...shadow(2),
   },
-  placeCarouselCardActive: {
-    borderWidth: 2,
-    borderColor: "#1B1D1F",
+  reelHeaderInfo: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    minWidth: 0,
   },
-  carouselPhotoWrap: {
-    width: 56,
-    height: 56,
+  reelHeaderText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "700",
+    fontFamily: fonts.bold,
+    flex: 1,
+  },
+  reelViewBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "#E06D53",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 999,
+  },
+  reelViewBtnText: {
+    color: "#FFFFFF",
+    fontSize: 11,
+    fontWeight: "800",
+    fontFamily: fonts.bold,
+  },
+  reelCloseBtn: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: "#2C2F33",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  reelCard: {
+    width: 250,
+    height: 76,
+    borderRadius: 18,
+    backgroundColor: "#FFFFFF",
+    padding: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    ...shadow(2),
+  },
+  reelCardActive: {
+    borderWidth: 2,
+    borderColor: "#E06D53",
+  },
+  reelThumbWrap: {
+    width: 58,
+    height: 58,
     borderRadius: 14,
     overflow: "hidden",
-    backgroundColor: "#8CC3D6",
+    backgroundColor: "#1B1D1F",
+    position: "relative",
   },
-  carouselPhoto: {
+  reelThumb: {
     width: "100%",
     height: "100%",
     resizeMode: "cover",
   },
-  carouselPhotoFallback: {
+  reelThumbFallback: {
     width: "100%",
     height: "100%",
     backgroundColor: "#2D6A82",
+    alignItems: "center",
+    justifyContent: "center",
   },
-  carouselInfo: {
+  reelPlayBadge: {
+    position: "absolute",
+    bottom: 4,
+    right: 4,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: "rgba(0, 0, 0, 0.65)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  reelInfo: {
     flex: 1,
     minWidth: 0,
+    justifyContent: "center",
   },
-  carouselName: {
-    fontSize: 15,
+  reelAuthor: {
+    fontSize: 11,
+    color: "#E06D53",
+    fontWeight: "700",
+    fontFamily: fonts.bold,
+  },
+  reelTitle: {
+    fontSize: 13,
     fontWeight: "800",
     color: "#1B1D1F",
-    letterSpacing: -0.3,
+    letterSpacing: -0.2,
     fontFamily: fonts.heavy,
+    marginTop: 1,
   },
-  carouselRegion: {
-    fontSize: 12,
+  reelStopsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    marginTop: 3,
+  },
+  reelStopsText: {
+    fontSize: 11,
     color: "#6B6F73",
-    marginTop: 2,
     fontFamily: fonts.body,
+    fontWeight: "600",
   },
   selectedSheet: {
     position: "absolute",
@@ -812,6 +1015,9 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFill,
     backgroundColor: "#F6F5F1",
     zIndex: 10,
+  },
+  browseListContainer: {
+    flex: 1,
   },
   browseList: {
     paddingHorizontal: 20,

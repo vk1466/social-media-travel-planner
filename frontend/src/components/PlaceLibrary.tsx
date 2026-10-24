@@ -472,6 +472,7 @@ export function PlaceLibrary({
                 posts={posts}
                 onOpenNode={openNode}
                 onOpenPlace={(placeId) => navigate(placeHref(placeId))}
+                onNavigateToPost={onNavigateToPost}
               />
             ) : (
               <div className="cover-grid place-covers-grid">

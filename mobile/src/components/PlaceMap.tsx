@@ -9,6 +9,10 @@ interface PlaceMapProps {
   visitedPlaceIds?: ReadonlySet<string>;
   selectedPlaceId?: string | null;
   onSelectPlace?: (place: Place | null) => void;
+  onVisiblePlaceIdsChange?: (placeIds: string[]) => void;
+  highlightedPlaceIds?: string[];
+  fitPlaceIds?: string[] | null;
+  fitKey?: number;
   height?: DimensionValue;
 }
 

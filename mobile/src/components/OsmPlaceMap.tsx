@@ -11,6 +11,10 @@ interface OsmPlaceMapProps {
   visitedPlaceIds: ReadonlySet<string>;
   selectedPlaceId?: string | null;
   onSelectPlace?: (place: Place | null) => void;
+  onVisiblePlaceIdsChange?: (placeIds: string[]) => void;
+  highlightedPlaceIds?: string[];
+  fitPlaceIds?: string[] | null;
+  fitKey?: number;
 }
 
 /** Leaflet + CARTO Voyager canvas styled for Wanderfile mobile design. */
@@ -19,6 +23,10 @@ export function OsmPlaceMap({
   visitedPlaceIds,
   selectedPlaceId,
   onSelectPlace,
+  onVisiblePlaceIdsChange,
+  highlightedPlaceIds,
+  fitPlaceIds,
+  fitKey,
 }: OsmPlaceMapProps) {
   const payload = useMemo(
     () => markerPayload(places, visitedPlaceIds),
@@ -58,6 +66,19 @@ export function OsmPlaceMap({
     );
   }, []);
 
+  const pushHighlights = useCallback((ids: string[] | undefined) => {
+    webViewRef.current?.injectJavaScript(
+      `window.__setHighlightedPlaces && window.__setHighlightedPlaces(${JSON.stringify(ids ?? [])}); true;`,
+    );
+  }, []);
+
+  const pushFitPlaces = useCallback((ids: string[] | null | undefined) => {
+    if (!ids || ids.length === 0) return;
+    webViewRef.current?.injectJavaScript(
+      `window.__fitPlacesBounds && window.__fitPlacesBounds(${JSON.stringify(ids)}); true;`,
+    );
+  }, []);
+
   useEffect(() => {
     if (readyRef.current) {
       pushPlaces();
@@ -69,6 +90,18 @@ export function OsmPlaceMap({
       pushSelected(selectedPlaceId);
     }
   }, [selectedPlaceId, pushSelected]);
+
+  useEffect(() => {
+    if (readyRef.current) {
+      pushHighlights(highlightedPlaceIds);
+    }
+  }, [highlightedPlaceIds, pushHighlights]);
+
+  useEffect(() => {
+    if (readyRef.current && fitPlaceIds && fitPlaceIds.length > 0) {
+      pushFitPlaces(fitPlaceIds);
+    }
+  }, [fitPlaceIds, fitKey, pushFitPlaces]);
 
   return (
     <View
@@ -102,6 +135,10 @@ export function OsmPlaceMap({
             readyRef.current = true;
             applyFrame(frame.width, frame.height);
             pushPlaces();
+            pushHighlights(highlightedPlaceIds);
+            if (fitPlaceIds && fitPlaceIds.length > 0) {
+              pushFitPlaces(fitPlaceIds);
+            }
           }}
           androidLayerType="hardware"
           cacheEnabled
@@ -110,6 +147,15 @@ export function OsmPlaceMap({
             if (data === "__DESELECT__") {
               onSelectPlace?.(null);
               return;
+            }
+            if (typeof data === "string" && data.startsWith("{")) {
+              try {
+                const parsed = JSON.parse(data);
+                if (parsed.type === "VISIBLE_PLACES" && Array.isArray(parsed.placeIds)) {
+                  onVisiblePlaceIdsChange?.(parsed.placeIds);
+                  return;
+                }
+              } catch {}
             }
             const place = places.find((item) => item.place_id === data);
             if (place) {
@@ -206,6 +252,7 @@ function buildMapHtml(): string {
       width: 24px;
       height: 24px;
       cursor: pointer;
+      transition: transform 0.2s ease, opacity 0.2s ease;
     }
     .saved-map-marker > i {
       box-sizing: border-box;
@@ -215,6 +262,28 @@ function buildMapHtml(): string {
       border-radius: 999px;
       background: #1F6F8B;
       box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+    }
+    .saved-map-marker.is-dimmed {
+      opacity: 0.4;
+    }
+    .saved-map-marker.is-highlighted {
+      width: 32px;
+      height: 32px;
+    }
+    .saved-map-marker.is-highlighted > i {
+      width: 30px;
+      height: 30px;
+      border: 3px solid white;
+      border-radius: 999px;
+      background: #E06D53;
+      box-shadow: 0 4px 12px rgba(224, 109, 83, 0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 13px;
+      font-weight: 800;
+      font-style: normal;
     }
     .selected-marker-wrap {
       display: flex;
@@ -279,12 +348,31 @@ function buildMapHtml(): string {
     let currentPlaces = [];
     let selectedPlaceId = null;
     let placeKey = "";
+    let highlightedPlaceIds = [];
 
     map.on("click", function () {
       if (window.ReactNativeWebView) {
         window.ReactNativeWebView.postMessage("__DESELECT__");
       }
     });
+
+    function reportVisiblePlaces() {
+      if (!window.ReactNativeWebView) return;
+      var bounds = map.getBounds();
+      var visibleIds = [];
+      for (var i = 0; i < currentPlaces.length; i++) {
+        var p = currentPlaces[i];
+        if (bounds.contains([p.lat, p.lng])) {
+          visibleIds.push(p.id);
+        }
+      }
+      window.ReactNativeWebView.postMessage(JSON.stringify({
+        type: "VISIBLE_PLACES",
+        placeIds: visibleIds
+      }));
+    }
+
+    map.on("moveend", reportVisiblePlaces);
 
     function fitPlaces(places) {
       if (!places.length) {
@@ -304,37 +392,65 @@ function buildMapHtml(): string {
 
     function renderMarkers() {
       markersGroup.clearLayers();
-      for (const place of currentPlaces) {
-        const isSelected = place.id === selectedPlaceId;
+      var hasHighlights = highlightedPlaceIds && highlightedPlaceIds.length > 0;
+      for (var i = 0; i < currentPlaces.length; i++) {
+        var place = currentPlaces[i];
+        var isSelected = place.id === selectedPlaceId;
+        var highlightIdx = highlightedPlaceIds ? highlightedPlaceIds.indexOf(place.id) : -1;
+        var isHighlighted = highlightIdx !== -1;
+        var isDimmed = hasHighlights && !isHighlighted;
+        var stopNumber = isHighlighted ? (highlightIdx + 1) : null;
+
         if (isSelected) {
-          const icon = L.divIcon({
+          var icon = L.divIcon({
             className: "saved-map-marker-host",
             html: '<div class="selected-marker-wrap"><div class="selected-marker-pill">' + esc(place.name) + '</div><div class="selected-marker-dot"></div></div>',
             iconSize: [0, 0],
             iconAnchor: [0, 0]
           });
-          const marker = L.marker([place.lat, place.lng], { icon: icon, keyboard: false, zIndexOffset: 1000 });
-          marker.on("click", function (e) {
-            L.DomEvent.stopPropagation(e);
-            if (window.ReactNativeWebView) {
-              window.ReactNativeWebView.postMessage(place.id);
-            }
+          var marker = L.marker([place.lat, place.lng], { icon: icon, keyboard: false, zIndexOffset: 1000 });
+          (function (pid) {
+            marker.on("click", function (e) {
+              L.DomEvent.stopPropagation(e);
+              if (window.ReactNativeWebView) {
+                window.ReactNativeWebView.postMessage(pid);
+              }
+            });
+          })(place.id);
+          markersGroup.addLayer(marker);
+        } else if (isHighlighted) {
+          var icon = L.divIcon({
+            className: "saved-map-marker-host",
+            html: '<span class="saved-map-marker is-highlighted"><i>' + (stopNumber || '') + '</i></span>',
+            iconSize: [32, 32],
+            iconAnchor: [16, 16]
           });
+          var marker = L.marker([place.lat, place.lng], { icon: icon, keyboard: false, zIndexOffset: 800 });
+          (function (pid) {
+            marker.on("click", function (e) {
+              L.DomEvent.stopPropagation(e);
+              if (window.ReactNativeWebView) {
+                window.ReactNativeWebView.postMessage(pid);
+              }
+            });
+          })(place.id);
           markersGroup.addLayer(marker);
         } else {
-          const icon = L.divIcon({
+          var icon = L.divIcon({
             className: "saved-map-marker-host",
-            html: '<span class="saved-map-marker"><i></i></span>',
+            html: '<span class="saved-map-marker' + (isDimmed ? ' is-dimmed' : '') + '"><i></i></span>',
             iconSize: [24, 24],
             iconAnchor: [12, 12]
           });
-          const marker = L.marker([place.lat, place.lng], { icon: icon, keyboard: false });
-          marker.on("click", function (e) {
-            L.DomEvent.stopPropagation(e);
-            if (window.ReactNativeWebView) {
-              window.ReactNativeWebView.postMessage(place.id);
-            }
-          });
+          var marker = L.marker([place.lat, place.lng], { icon: icon, keyboard: false });
+          (function (pid) {
+            marker.on("click", function (e) {
+              L.DomEvent.stopPropagation(e);
+              if (window.ReactNativeWebView) {
+                window.ReactNativeWebView.postMessage(pid);
+              }
+            });
+          })(place.id);
           markersGroup.addLayer(marker);
         }
       }
@@ -362,6 +478,7 @@ function buildMapHtml(): string {
         placeKey = nextKey;
         fitPlaces(places);
       }
+      setTimeout(reportVisiblePlaces, 150);
     };
 
     window.__setSelectedPlace = function (id) {
@@ -372,6 +489,29 @@ function buildMapHtml(): string {
         if (found) {
           map.panTo([found.lat, found.lng], { animate: true });
         }
+      }
+    };
+
+    window.__setHighlightedPlaces = function (ids) {
+      highlightedPlaceIds = ids || [];
+      renderMarkers();
+    };
+
+    window.__fitPlacesBounds = function (placeIds) {
+      if (!placeIds || !placeIds.length) return;
+      var matched = currentPlaces.filter(function (p) {
+        return placeIds.indexOf(p.id) !== -1;
+      });
+      if (!matched.length) return;
+      var coords = matched.map(function (p) { return [p.lat, p.lng]; });
+      if (coords.length === 1) {
+        map.flyTo(coords[0], 14, { duration: 0.8 });
+      } else {
+        map.flyToBounds(coords, {
+          padding: [70, 70],
+          maxZoom: 14,
+          duration: 0.8
+        });
       }
     };
   </script>

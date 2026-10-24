@@ -2,7 +2,7 @@ import { ClerkProvider, useAuth } from "@clerk/clerk-expo";
 import { tokenCache } from "@clerk/clerk-expo/token-cache";
 import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { ActivityIndicator, View } from "react-native";
 
 import { setAuthTokenGetter } from "@/src/api";
@@ -28,6 +28,7 @@ function ClerkAuthBridge({ children }: { children: ReactNode }) {
   const segments = useSegments();
   const router = useRouter();
   const { pendingUrls, autoSubmit } = usePendingShare();
+  const lastAutoPushedRef = useRef<string>("");
 
   useShareIntentHandler(Boolean(isLoaded && isSignedIn));
 
@@ -53,10 +54,13 @@ function ClerkAuthBridge({ children }: { children: ReactNode }) {
         router.replace("/(app)/(tabs)/posts");
       }
     } else if (isSignedIn && autoSubmit && pendingUrls.length > 0 && !(segments as string[]).includes("ingest")) {
-      // Share arrived while already signed in — open Add links for auto-ingest.
-      router.push({ pathname: "/(app)/ingest", params: { shared: "1" } });
+      const shareKey = pendingUrls.join("|");
+      if (lastAutoPushedRef.current !== shareKey) {
+        lastAutoPushedRef.current = shareKey;
+        router.push({ pathname: "/(app)/ingest", params: { shared: "1" } });
+      }
     }
-  }, [isLoaded, isSignedIn, segments, router, pendingUrls.length, autoSubmit]);
+  }, [isLoaded, isSignedIn, segments, router, pendingUrls, autoSubmit]);
 
   if (!isLoaded) {
     return (
@@ -73,6 +77,7 @@ function LocalAuthBridge({ children }: { children: ReactNode }) {
   const router = useRouter();
   const segments = useSegments();
   const { pendingUrls, autoSubmit } = usePendingShare();
+  const lastAutoPushedRef = useRef<string>("");
 
   useShareIntentHandler(true);
 
@@ -83,9 +88,13 @@ function LocalAuthBridge({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (autoSubmit && pendingUrls.length > 0 && !(segments as string[]).includes("ingest")) {
-      router.push({ pathname: "/(app)/ingest", params: { shared: "1" } });
+      const shareKey = pendingUrls.join("|");
+      if (lastAutoPushedRef.current !== shareKey) {
+        lastAutoPushedRef.current = shareKey;
+        router.push({ pathname: "/(app)/ingest", params: { shared: "1" } });
+      }
     }
-  }, [autoSubmit, pendingUrls.length, segments, router]);
+  }, [autoSubmit, pendingUrls, segments, router]);
 
   return <>{children}</>;
 }

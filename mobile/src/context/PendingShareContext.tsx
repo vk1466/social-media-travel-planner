@@ -13,6 +13,7 @@ interface PendingShareContextValue extends PendingShareState {
   hydrated: boolean;
   setPendingShare: (urls: string[], autoSubmit?: boolean) => Promise<void>;
   clearPendingUrls: (submittedUrls: string[]) => void;
+  clearAllPendingShares: () => void;
 }
 
 const PendingShareContext = createContext<PendingShareContextValue | null>(null);
@@ -99,17 +100,41 @@ export function PendingShareProvider({ children }: { children: ReactNode }) {
     }));
   }, [updatePendingShare]);
 
-  const clearPendingUrls = useCallback((submittedUrls: string[]) => {
-    const submitted = new Set(submittedUrls);
-    void updatePendingShare((current) => {
-      const remaining = current.urls.filter((url) => !submitted.has(url));
-      return { urls: remaining, autoSubmit: current.autoSubmit && remaining.length > 0 };
-    }).catch(() => undefined);
-  }, [updatePendingShare]);
+  const clearPendingUrls = useCallback(
+    (submittedUrls: string[]) => {
+      const submitted = new Set(submittedUrls);
+      const remaining = currentState.current.urls.filter((url) => !submitted.has(url));
+      const next: PendingShareState = {
+        urls: remaining,
+        autoSubmit: remaining.length > 0 ? currentState.current.autoSubmit : false,
+      };
+      currentState.current = next;
+      setPendingShareState(next);
+      void persistPendingShare(next).catch(() => undefined);
+    },
+    [persistPendingShare],
+  );
+
+  const clearAllPendingShares = useCallback(() => {
+    const next: PendingShareState = {
+      urls: [],
+      autoSubmit: false,
+    };
+    currentState.current = next;
+    setPendingShareState(next);
+    void persistPendingShare(next).catch(() => undefined);
+  }, [persistPendingShare]);
 
   const value = useMemo(
-    () => ({ ...pendingShare, pendingUrls: pendingShare.urls, hydrated, setPendingShare, clearPendingUrls }),
-    [pendingShare, hydrated, setPendingShare, clearPendingUrls],
+    () => ({
+      ...pendingShare,
+      pendingUrls: pendingShare.urls,
+      hydrated,
+      setPendingShare,
+      clearPendingUrls,
+      clearAllPendingShares,
+    }),
+    [pendingShare, hydrated, setPendingShare, clearPendingUrls, clearAllPendingShares],
   );
 
   return <PendingShareContext.Provider value={value}>{children}</PendingShareContext.Provider>;

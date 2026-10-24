@@ -30,6 +30,7 @@ interface SavePipelineContextType {
   activeSave: InFlightSave | null;
   openSaveSheet: (initialUrl?: string) => void;
   closeSaveSheet: () => void;
+  resetActiveSave: () => void;
   saveUrl: (url: string) => Promise<void>;
   retryFailedLink: (url: string) => Promise<void>;
   removeFailedLink: (url: string) => void;
@@ -111,16 +112,44 @@ export function SavePipelineProvider({
             );
 
             // Poll the job
+            let pollAttempts = 0;
             const pollInterval = window.setInterval(async () => {
               try {
+                pollAttempts++;
                 const job: Job = await fetchJob(jobId!);
-                if (job.status === "done") {
+                if (job.status === "running") {
+                  const progress = Math.min(25 + pollAttempts * 12, 85);
+                  setInFlightSaves((prev) =>
+                    prev.map((s) =>
+                      s.id === id
+                        ? {
+                            ...s,
+                            progressPercent: progress,
+                            stepMessage:
+                              progress >= 60
+                                ? "Finding places and details..."
+                                : "Reading your post...",
+                          }
+                        : s
+                    )
+                  );
+                } else if (job.status === "done") {
                   window.clearInterval(pollInterval);
                   const failedLink = job.links.find(
                     (l) => l.post_url === url && (l.status === "error" || l.status === "unsupported")
                   );
                   if (failedLink) {
-                    setInFlightSaves((prev) => prev.filter((s) => s.id !== id));
+                    setInFlightSaves((prev) =>
+                      prev.map((s) =>
+                        s.id === id
+                          ? {
+                              ...s,
+                              status: "error",
+                              errorMessage: failedLink.error_message || "Link could not be read",
+                            }
+                          : s
+                      )
+                    );
                     setInboxFailures((prev) => [
                       ...prev.filter((f) => f.url !== url),
                       {
@@ -148,7 +177,20 @@ export function SavePipelineProvider({
                   }
                 }
               } catch {
-                window.clearInterval(pollInterval);
+                if (pollAttempts > 30) {
+                  window.clearInterval(pollInterval);
+                  setInFlightSaves((prev) =>
+                    prev.map((s) =>
+                      s.id === id
+                        ? {
+                            ...s,
+                            status: "error",
+                            errorMessage: "Connection timed out",
+                          }
+                        : s
+                    )
+                  );
+                }
               }
             }, 2000);
           } else {
@@ -238,11 +280,17 @@ export function SavePipelineProvider({
     );
   }, []);
 
+  const resetActiveSave = useCallback(() => {
+    setActiveSaveId(null);
+  }, []);
+
   const openSaveSheet = useCallback(
     (initialUrl?: string) => {
       setIsSaveSheetOpen(true);
       if (initialUrl) {
         void saveUrl(initialUrl);
+      } else {
+        setActiveSaveId(null);
       }
     },
     [saveUrl]
@@ -252,7 +300,7 @@ export function SavePipelineProvider({
     setIsSaveSheetOpen(false);
   }, []);
 
-  const activeSave = inFlightSaves.find((s) => s.id === activeSaveId) || inFlightSaves[inFlightSaves.length - 1] || null;
+  const activeSave = activeSaveId ? inFlightSaves.find((s) => s.id === activeSaveId) || null : null;
   const savingCount = inFlightSaves.filter((s) => s.status !== "done").length;
 
   return (
@@ -265,6 +313,7 @@ export function SavePipelineProvider({
         activeSave,
         openSaveSheet,
         closeSaveSheet,
+        resetActiveSave,
         saveUrl,
         retryFailedLink,
         removeFailedLink,

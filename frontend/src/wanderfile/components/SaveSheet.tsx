@@ -3,15 +3,16 @@ import { useNavigate } from "react-router-dom";
 import { useSavePipeline } from "../state/SavePipelineContext";
 
 export function SaveSheet() {
-  const { isSaveSheetOpen, closeSaveSheet, saveUrl, activeSave, changeSavedCategory } = useSavePipeline();
+  const { isSaveSheetOpen, closeSaveSheet, resetActiveSave, saveUrl, activeSave, changeSavedCategory } = useSavePipeline();
   const [inputText, setInputText] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
     if (!isSaveSheetOpen) {
       setInputText("");
+      resetActiveSave();
     }
-  }, [isSaveSheetOpen]);
+  }, [isSaveSheetOpen, resetActiveSave]);
 
   if (!isSaveSheetOpen) return null;
 
@@ -22,6 +23,8 @@ export function SaveSheet() {
     ? 0
     : activeSave.status === "done"
     ? 2
+    : activeSave.status === "error"
+    ? 3
     : 1;
 
   const handleSave = async () => {
@@ -30,6 +33,7 @@ export function SaveSheet() {
   };
 
   const handleSaveAnother = () => {
+    resetActiveSave();
     setInputText("");
   };
 
@@ -407,6 +411,77 @@ export function SaveSheet() {
                 }}
               >
                 View in Library
+              </button>
+            </div>
+          </div>
+        )}
+
+        {stage === 3 && (
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+              <span
+                aria-hidden="true"
+                style={{
+                  width: "40px",
+                  height: "40px",
+                  borderRadius: "50%",
+                  background: "#FCE8E6",
+                  color: "#D93829",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M18 6L6 18M6 6l12 12" />
+                </svg>
+              </span>
+              <div>
+                <h2 style={{ margin: 0, fontSize: "24px", letterSpacing: "-0.03em", fontWeight: 800 }}>
+                  Save needs attention
+                </h2>
+                <p style={{ margin: "4px 0 0", fontSize: "14px", color: "#6B6F73" }}>
+                  {activeSave?.errorMessage || "We could not read this link. It might be private or unavailable."}
+                </p>
+              </div>
+            </div>
+
+            <div style={{ display: "flex", gap: "12px", marginTop: "28px" }}>
+              <button
+                type="button"
+                onClick={handleSaveAnother}
+                style={{
+                  flex: 1,
+                  height: "50px",
+                  borderRadius: "999px",
+                  border: 0,
+                  background: "#1B1D1F",
+                  fontFamily: "inherit",
+                  fontSize: "15px",
+                  fontWeight: 700,
+                  color: "#FFFFFF",
+                  cursor: "pointer",
+                }}
+              >
+                Try another link
+              </button>
+              <button
+                type="button"
+                onClick={closeSaveSheet}
+                style={{
+                  height: "50px",
+                  padding: "0 24px",
+                  borderRadius: "999px",
+                  border: "1px solid #D9D5CB",
+                  background: "#FFFFFF",
+                  fontFamily: "inherit",
+                  fontSize: "15px",
+                  fontWeight: 700,
+                  color: "#1B1D1F",
+                  cursor: "pointer",
+                }}
+              >
+                Close
               </button>
             </div>
           </div>

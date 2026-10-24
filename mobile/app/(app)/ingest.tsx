@@ -14,7 +14,16 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { fetchActiveJob, fetchJobs, postRouteParts, startIngest, type Job, type SavedPost } from "@/src/api";
+import {
+  fetchActiveJob,
+  fetchJobs,
+  fetchPost,
+  parsePostId,
+  postRouteParts,
+  startIngest,
+  type Job,
+  type SavedPost,
+} from "@/src/api";
 import { LinkSubmitForm } from "@/src/components/IngestForm";
 import { ErrorBanner } from "@/src/components/ui";
 import { useLibrary } from "@/src/context/LibraryContext";
@@ -33,24 +42,29 @@ export default function IngestScreen() {
     link?: string;
   }>();
   const { bumpRefresh, posts } = useLibrary();
-  const { pendingUrls, autoSubmit, hydrated, clearPendingUrls } = usePendingShare();
+  const { pendingUrls, autoSubmit, hydrated, clearPendingUrls, clearAllPendingShares } = usePendingShare();
   const [jobId, setJobId] = useState<string | null>(() => (typeof routeJobId === "string" ? routeJobId : null));
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const { job, error: jobError } = useJob(jobId);
   const [jobs, setJobs] = useState<Job[]>([]);
+  const [fetchedPost, setFetchedPost] = useState<SavedPost | null>(null);
+  const [loadingPost, setLoadingPost] = useState(false);
 
   const autoStarted = useRef(false);
   const failedAutoUrls = useRef(new Set<string>());
   const lastAppState = useRef(AppState.currentState);
+  const [autoAttempt, setAutoAttempt] = useState(0);
+  const shouldAutoStart = Boolean((autoSubmit || shared === "1") && pendingUrls.length > 0);
 
   const handleClose = useCallback(() => {
+    clearAllPendingShares();
     if (router.canGoBack()) {
       router.back();
     } else {
       router.replace(appHref("/(app)/(tabs)/posts"));
     }
-  }, [router]);
+  }, [router, clearAllPendingShares]);
 
   useEffect(() => {
     const onBackPress = () => {
@@ -79,6 +93,33 @@ export default function IngestScreen() {
     },
     [clearPendingUrls],
   );
+
+  useEffect(() => {
+    const urlsToSubmit = pendingUrls.filter((url) => !failedAutoUrls.current.has(url));
+    if (!hydrated || autoStarted.current || urlsToSubmit.length === 0 || !shouldAutoStart || submitting) {
+      return;
+    }
+    autoStarted.current = true;
+    void handleSubmit(urlsToSubmit, false, true).then((ok) => {
+      if (!ok) {
+        urlsToSubmit.forEach((url) => failedAutoUrls.current.add(url));
+      }
+      autoStarted.current = false;
+      setAutoAttempt((attempt) => attempt + 1);
+    });
+  }, [pendingUrls, shouldAutoStart, handleSubmit, submitting, autoAttempt, hydrated]);
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", (nextState) => {
+      const wasAway = lastAppState.current === "background" || lastAppState.current === "inactive";
+      lastAppState.current = nextState;
+      if (wasAway && nextState === "active" && failedAutoUrls.current.size > 0) {
+        failedAutoUrls.current.clear();
+        setAutoAttempt((attempt) => attempt + 1);
+      }
+    });
+    return () => subscription.remove();
+  }, []);
 
   useEffect(() => {
     if (paramLink && !jobId) {
@@ -115,8 +156,46 @@ export default function IngestScreen() {
   }, [job, jobId, bumpRefresh]);
 
   const finishedPostId = job?.links.find((l) => l.post_id && (l.status === "saved" || l.status === "linked"))?.post_id;
-  const finishedPost = finishedPostId ? posts.find((p) => p.post_id === finishedPostId) : null;
-  const isDone = Boolean(job?.status === "done" && finishedPost);
+  const activePost = fetchedPost ?? (finishedPostId ? posts.find((p) => p.post_id === finishedPostId) : null) ?? null;
+
+  useEffect(() => {
+    if (!finishedPostId) {
+      setFetchedPost(null);
+      return;
+    }
+    const inLibrary = posts.find((p) => p.post_id === finishedPostId);
+    if (inLibrary) {
+      setFetchedPost(inLibrary);
+      return;
+    }
+    let cancelled = false;
+    setLoadingPost(true);
+    try {
+      const { platform, nativeId } = parsePostId(finishedPostId);
+      void fetchPost(platform, nativeId)
+        .then((p) => {
+          if (!cancelled) {
+            setFetchedPost(p);
+            setLoadingPost(false);
+          }
+        })
+        .catch(() => {
+          if (!cancelled) setLoadingPost(false);
+        });
+    } catch {
+      setLoadingPost(false);
+    }
+    return () => {
+      cancelled = true;
+    };
+  }, [finishedPostId, posts]);
+
+  const savedOrLinkedCount = (job?.counts.saved ?? 0) + (job?.counts.linked ?? 0);
+  const isRunning = submitting || job?.status === "running" || (shouldAutoStart && !submitError);
+  const isSkipped = Boolean(job?.status === "done" && savedOrLinkedCount === 0 && (job?.counts.skipped ?? 0) > 0);
+  const failedLink = job?.links.find((l) => l.status === "error" || l.status === "unsupported");
+  const isFailed = Boolean(submitError || (job?.status === "done" && failedLink && savedOrLinkedCount === 0));
+  const isDone = Boolean(job?.status === "done" && (activePost || finishedPostId || isSkipped) && !isFailed);
 
   return (
     <View style={styles.backdrop}>
@@ -127,10 +206,138 @@ export default function IngestScreen() {
 
       {/* S1: Bottom sheet over current screen */}
       <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, 24) }]}>
-        {/* Drag handle */}
-        <View style={styles.dragHandle} />
+        {/* Top bar with drag handle & close button */}
+        <View style={styles.sheetTopBar}>
+          <View style={styles.dragHandle} />
+          <Pressable
+            hitSlop={12}
+            onPress={handleClose}
+            accessibilityRole="button"
+            accessibilityLabel="Close sheet"
+            style={styles.sheetCloseBtn}
+          >
+            <Ionicons name="close" size={20} color={colors.ink} />
+          </Pressable>
+        </View>
 
-        {isDone && finishedPost ? (
+        {isRunning ? (
+          /* In-Progress Reading View */
+          <ScrollView showsVerticalScrollIndicator={false}>
+            <View style={styles.runningCard}>
+              <View style={styles.runningIconWrap}>
+                <ActivityIndicator size="small" color={colors.ink} />
+              </View>
+              <View style={styles.runningCopy}>
+                <Text style={styles.runningTitle}>Reading your link</Text>
+                <Text style={styles.runningSub}>
+                  Wanderfile is extracting places and details in the background.
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.stepsContainer}>
+              <View style={styles.stepRow}>
+                <View style={styles.stepDotDone}>
+                  <Ionicons name="checkmark" size={12} color="#1F7A4D" />
+                </View>
+                <Text style={styles.stepTextDone}>Fetched post content</Text>
+              </View>
+              <View style={styles.stepRow}>
+                <View style={styles.stepDotActive}>
+                  <ActivityIndicator size={10} color={colors.ink} />
+                </View>
+                <Text style={styles.stepTextActive}>Reading location hints and caption</Text>
+              </View>
+              <View style={styles.stepRow}>
+                <View style={styles.stepDotPending} />
+                <Text style={styles.stepTextPending}>Pinning places to your travel atlas</Text>
+              </View>
+            </View>
+
+            <View style={styles.savedActionRow}>
+              <Pressable onPress={handleClose} style={styles.dismissBtn}>
+                <Text style={styles.dismissBtnText}>Browse while saving</Text>
+              </Pressable>
+            </View>
+          </ScrollView>
+        ) : isFailed ? (
+          /* Failed View */
+          <ScrollView showsVerticalScrollIndicator={false}>
+            <View style={styles.savedHeaderRow}>
+              <View style={styles.savedHeaderLeft}>
+                <View style={[styles.checkIcon, { backgroundColor: "#FCE8E6" }]}>
+                  <Ionicons name="alert" size={14} color="#D93829" />
+                </View>
+                <Text style={styles.savedTitle}>Save needs attention</Text>
+              </View>
+              <Pressable hitSlop={8} onPress={handleClose}>
+                <Text style={styles.undoText}>Close</Text>
+              </Pressable>
+            </View>
+
+            <Text style={styles.errorBodyText}>
+              {submitError ||
+                failedLink?.error_message ||
+                "We couldn't read this link. It might be private or temporarily unavailable."}
+            </Text>
+
+            <View style={styles.savedActionRow}>
+              <Pressable
+                onPress={() => {
+                  setJobId(null);
+                  setSubmitError(null);
+                  setFetchedPost(null);
+                  clearAllPendingShares();
+                }}
+                style={styles.saveAnotherBtn}
+              >
+                <Text style={styles.saveAnotherBtnText}>Try another link</Text>
+              </Pressable>
+            </View>
+          </ScrollView>
+        ) : isSkipped ? (
+          /* Duplicate / Skipped View */
+          <ScrollView showsVerticalScrollIndicator={false}>
+            <View style={styles.savedHeaderRow}>
+              <View style={styles.savedHeaderLeft}>
+                <View style={[styles.checkIcon, { backgroundColor: "#E6F0F5" }]}>
+                  <Ionicons name="bookmark" size={14} color="#1B5E78" />
+                </View>
+                <Text style={styles.savedTitle}>Already in your library</Text>
+              </View>
+              <Pressable hitSlop={8} onPress={handleClose}>
+                <Text style={styles.undoText}>Close</Text>
+              </Pressable>
+            </View>
+
+            <Text style={styles.skippedBodyText}>
+              This link has already been organized in your library.
+            </Text>
+
+            <View style={styles.savedActionRow}>
+              <Pressable
+                onPress={() => {
+                  setJobId(null);
+                  setSubmitError(null);
+                  setFetchedPost(null);
+                  clearAllPendingShares();
+                }}
+                style={styles.saveAnotherBtn}
+              >
+                <Text style={styles.saveAnotherBtnText}>Save another</Text>
+              </Pressable>
+
+              <Pressable
+                onPress={() => {
+                  handleClose();
+                }}
+                style={styles.viewLibraryBtn}
+              >
+                <Text style={styles.viewLibraryBtnText}>View in Library</Text>
+              </Pressable>
+            </View>
+          </ScrollView>
+        ) : isDone && (activePost || loadingPost) ? (
           /* S6: Mobile-Saved View */
           <ScrollView showsVerticalScrollIndicator={false}>
             <View style={styles.savedHeaderRow}>
@@ -146,58 +353,70 @@ export default function IngestScreen() {
             </View>
 
             {/* Saved Card Preview */}
-            <View style={styles.previewCard}>
-              {finishedPost.thumbnail_url ? (
-                <Image
-                  source={{ uri: proxiedMediaUrl(finishedPost.thumbnail_url) ?? finishedPost.thumbnail_url }}
-                  style={styles.previewImage}
-                  resizeMode="cover"
-                />
-              ) : (
-                <View style={[styles.previewImage, { backgroundColor: colors.brandSoft }]} />
-              )}
-              <View style={styles.previewInfo}>
-                <Text style={styles.previewCaption} numberOfLines={2}>
-                  {finishedPost.caption || "Saved idea"}
-                </Text>
-                <Text style={styles.previewAuthor}>
-                  {finishedPost.author_handle ? `@${finishedPost.author_handle}` : "Instagram"}
-                </Text>
+            {activePost ? (
+              <View style={styles.previewCard}>
+                {activePost.thumbnail_url ? (
+                  <Image
+                    source={{ uri: proxiedMediaUrl(activePost.thumbnail_url) ?? activePost.thumbnail_url }}
+                    style={styles.previewImage}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <View style={[styles.previewImage, { backgroundColor: colors.brandSoft }]} />
+                )}
+                <View style={styles.previewInfo}>
+                  <Text style={styles.previewCaption} numberOfLines={2}>
+                    {activePost.caption || "Saved idea"}
+                  </Text>
+                  <Text style={styles.previewAuthor}>
+                    {activePost.author_handle ? `@${activePost.author_handle}` : "Instagram"}
+                  </Text>
+                </View>
               </View>
-            </View>
+            ) : (
+              <View style={[styles.previewCard, { alignItems: "center", justifyContent: "center", minHeight: 80 }]}>
+                <ActivityIndicator size="small" color={colors.ink} />
+                <Text style={[styles.previewCaption, { marginTop: 8 }]}>Loading saved details…</Text>
+              </View>
+            )}
 
             {/* Filed as chips */}
-            <View style={styles.filedAsSection}>
-              <Text style={styles.filedAsLabel}>Filed as</Text>
-              <View style={styles.categoryChipsRow}>
-                {["Travel", "Food", "Movies", "Other"].map((cat) => (
-                  <View
-                    key={cat}
-                    style={[
-                      styles.categoryChip,
-                      finishedPost.content_category?.toLowerCase() === cat.toLowerCase() &&
-                        styles.categoryChipSelected,
-                    ]}
-                  >
-                    <Text
+            {activePost ? (
+              <View style={styles.filedAsSection}>
+                <Text style={styles.filedAsLabel}>Filed as</Text>
+                <View style={styles.categoryChipsRow}>
+                  {["Travel", "Food", "Movies", "Other"].map((cat) => (
+                    <View
+                      key={cat}
                       style={[
-                        styles.categoryChipText,
-                        finishedPost.content_category?.toLowerCase() === cat.toLowerCase() &&
-                          styles.categoryChipTextSelected,
+                        styles.categoryChip,
+                        activePost.content_category?.toLowerCase() === cat.toLowerCase() &&
+                          styles.categoryChipSelected,
                       ]}
                     >
-                      {cat}
-                    </Text>
-                  </View>
-                ))}
+                      <Text
+                        style={[
+                          styles.categoryChipText,
+                          activePost.content_category?.toLowerCase() === cat.toLowerCase() &&
+                            styles.categoryChipTextSelected,
+                        ]}
+                      >
+                        {cat}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
               </View>
-            </View>
+            ) : null}
 
             {/* Actions: Save another & View in Library */}
             <View style={styles.savedActionRow}>
               <Pressable
                 onPress={() => {
                   setJobId(null);
+                  setSubmitError(null);
+                  setFetchedPost(null);
+                  clearAllPendingShares();
                 }}
                 style={styles.saveAnotherBtn}
               >
@@ -268,6 +487,7 @@ export default function IngestScreen() {
   );
 }
 
+
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
@@ -291,7 +511,28 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     backgroundColor: "#D9D5CB",
     alignSelf: "center",
-    marginBottom: 18,
+  },
+  sheetTopBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    position: "relative",
+    paddingVertical: 4,
+    marginBottom: 14,
+    minHeight: 28,
+  },
+  sheetCloseBtn: {
+    position: "absolute",
+    right: 0,
+    top: -2,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.surfaceAlt,
+    borderWidth: 1,
+    borderColor: colors.borderSubtle,
+    alignItems: "center",
+    justifyContent: "center",
   },
   title: {
     fontSize: 26,
@@ -482,5 +723,122 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "700",
     color: "#FFFFFF",
+  },
+  runningCard: {
+    flexDirection: "row",
+    gap: 14,
+    padding: 16,
+    borderRadius: 20,
+    backgroundColor: colors.surfaceAlt,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  runningIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#FFFFFF",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  runningCopy: {
+    flex: 1,
+  },
+  runningTitle: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: colors.ink,
+    letterSpacing: -0.2,
+  },
+  runningSub: {
+    fontSize: 13,
+    color: colors.muted,
+    lineHeight: 18,
+    marginTop: 2,
+  },
+  stepsContainer: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: colors.borderSubtle,
+    padding: 16,
+    gap: 14,
+    marginBottom: 20,
+  },
+  stepRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  stepDotDone: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: "#E3F4EA",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  stepDotActive: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: colors.surfaceAlt,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  stepDotPending: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: colors.surfaceAlt,
+    borderWidth: 1,
+    borderColor: colors.borderSubtle,
+  },
+  stepTextDone: {
+    fontSize: 14,
+    color: colors.ink,
+    fontWeight: "600",
+  },
+  stepTextActive: {
+    fontSize: 14,
+    color: colors.ink,
+    fontWeight: "700",
+  },
+  stepTextPending: {
+    fontSize: 14,
+    color: colors.muted,
+  },
+  dismissBtn: {
+    flex: 1,
+    height: 48,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#FFFFFF",
+  },
+  dismissBtnText: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: colors.ink,
+  },
+  skippedBodyText: {
+    fontSize: 14,
+    lineHeight: 20,
+    color: colors.muted,
+    marginBottom: 20,
+  },
+  errorBodyText: {
+    fontSize: 14,
+    lineHeight: 20,
+    color: "#C2392A",
+    marginBottom: 20,
   },
 });

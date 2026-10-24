@@ -24,3 +24,5 @@ infra/.venv/
 infra/cdk.out/
 infra/cdk.context.json
 *.tsbuildinfo
+screenshots/
+*.apk

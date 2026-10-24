@@ -11,6 +11,10 @@ interface PlaceMapProps {
   visitedPlaceIds?: ReadonlySet<string>;
   selectedPlaceId?: string | null;
   onSelectPlace?: (place: Place | null) => void;
+  onVisiblePlaceIdsChange?: (placeIds: string[]) => void;
+  highlightedPlaceIds?: string[];
+  fitPlaceIds?: string[] | null;
+  fitKey?: number;
   height?: DimensionValue;
 }
 
@@ -19,6 +23,10 @@ export function PlaceMap({
   visitedPlaceIds,
   selectedPlaceId,
   onSelectPlace,
+  onVisiblePlaceIdsChange,
+  highlightedPlaceIds,
+  fitPlaceIds,
+  fitKey,
   height = 280,
 }: PlaceMapProps) {
   const mapped = useMemo(() => mappablePlaces(places), [places]);
@@ -41,6 +49,10 @@ export function PlaceMap({
         visitedPlaceIds={visited}
         selectedPlaceId={selectedPlaceId}
         onSelectPlace={onSelectPlace}
+        onVisiblePlaceIdsChange={onVisiblePlaceIdsChange}
+        highlightedPlaceIds={highlightedPlaceIds}
+        fitPlaceIds={fitPlaceIds}
+        fitKey={fitKey}
       />
     </View>
   );

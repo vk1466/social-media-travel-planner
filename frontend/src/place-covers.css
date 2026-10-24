@@ -3776,6 +3776,28 @@
   box-shadow: 0 0 0 3px var(--marker-color);
 }
 
+.saved-map-marker.is-reel-highlighted {
+  z-index: 3;
+  transform: scale(1.25);
+  filter: drop-shadow(0 4px 10px rgba(224, 109, 83, 0.45));
+}
+
+.saved-map-marker.is-reel-highlighted > i {
+  border-color: #ffffff;
+  box-shadow: 0 0 0 3.5px var(--wf-coral, #E06D53), 0 3px 12px rgba(0, 0, 0, 0.35);
+  animation: reel-pulse 2s infinite ease-in-out;
+}
+
+@keyframes reel-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+
+.saved-map-marker.is-reel-dimmed {
+  opacity: 0.45;
+  filter: grayscale(0.35);
+}
+
 .saved-map-editorial-title {
   position: absolute;
   top: 1.2rem;
@@ -3990,7 +4012,7 @@
 }
 
 .saved-map-post-filter button {
-  padding: 0.28rem 0.45rem;
+  padding: 0.28rem 0.6rem;
   border: 0;
   border-radius: 999px;
   background: var(--wf-forest);
@@ -3998,6 +4020,15 @@
   cursor: pointer;
   font-size: 0.58rem;
   font-weight: 800;
+  transition: opacity 0.15s ease;
+}
+
+.saved-map-post-filter button.saved-map-open-post-btn {
+  background: var(--wf-coral, #E06D53);
+}
+
+.saved-map-post-filter button:hover {
+  opacity: 0.9;
 }
 
 .saved-place-popup-card {
