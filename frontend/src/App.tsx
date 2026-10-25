@@ -27,6 +27,8 @@ function AppRoutes({ authReady }: { authReady: boolean }) {
   const [places, setPlaces] = useState<Place[]>([]);
   const [loadingPosts, setLoadingPosts] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
   const refresh = useCallback(async () => {
     setLoadingPosts(true);
@@ -58,6 +60,13 @@ function AppRoutes({ authReady }: { authReady: boolean }) {
     void refresh();
   }, [refresh]);
 
+  const handleViewAsChange = useCallback(
+    (_userId: string | null) => {
+      void refresh();
+    },
+    [refresh],
+  );
+
   useEffect(() => {
     if (!authReady) {
       return;
@@ -69,6 +78,8 @@ function AppRoutes({ authReady }: { authReady: boolean }) {
         if (cancelled) {
           return;
         }
+        setIsAdmin(Boolean(me.is_admin));
+        setIsSuperAdmin(Boolean(me.is_super_admin));
         if (!me.is_super_admin && getViewAsUserId()) {
           setViewAsUserId(null);
         }
@@ -76,6 +87,8 @@ function AppRoutes({ authReady }: { authReady: boolean }) {
         if (cancelled) {
           return;
         }
+        setIsAdmin(false);
+        setIsSuperAdmin(false);
         setViewAsUserId(null);
       }
       if (!cancelled) {
@@ -127,6 +140,9 @@ function AppRoutes({ authReady }: { authReady: boolean }) {
             loading={loadingPosts}
             loadError={loadError}
             onRefresh={handleLibraryChanged}
+            isAdmin={isAdmin}
+            isSuperAdmin={isSuperAdmin}
+            onViewAsChange={handleViewAsChange}
           />
         }
       />

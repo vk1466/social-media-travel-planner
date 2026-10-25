@@ -52,6 +52,14 @@ export function ViewAsSwitcher({ enabled, onChange }: ViewAsSwitcherProps) {
     };
   }, [enabled]);
 
+  useEffect(() => {
+    const handleSync = () => {
+      setSelectedUserId(getViewAsUserId() ?? "");
+    };
+    window.addEventListener("wf-view-as-changed", handleSync);
+    return () => window.removeEventListener("wf-view-as-changed", handleSync);
+  }, []);
+
   if (!enabled) {
     return null;
   }
@@ -61,13 +69,14 @@ export function ViewAsSwitcher({ enabled, onChange }: ViewAsSwitcherProps) {
       <span className="wf-view-as-label">View as</span>
       <select
         id={selectId}
-        className="wf-view-as-select"
+        className={`wf-view-as-select ${selectedUserId ? "wf-viewing-other" : ""}`}
         value={selectedUserId}
         onChange={(event) => {
           const next = event.target.value;
           setSelectedUserId(next);
           const acting = next || null;
           setViewAsUserId(acting);
+          window.dispatchEvent(new Event("wf-view-as-changed"));
           onChange?.(acting);
         }}
       >

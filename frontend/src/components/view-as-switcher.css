@@ -2,44 +2,58 @@
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
-  max-width: min(18rem, 46vw);
+  max-width: min(20rem, 46vw);
 }
 
 .wf-view-as-label {
   flex-shrink: 0;
   font-size: 0.72rem;
-  font-weight: 650;
+  font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--wf-on-dark);
+  color: var(--wf-muted, #6B6F73);
 }
 
 .wf-header[data-tone="light"] .wf-view-as-label {
-  color: var(--wf-copy-muted);
+  color: var(--wf-copy-muted, #6B6F73);
 }
 
 .wf-view-as-select {
   min-width: 0;
   max-width: 14rem;
-  padding: 0.35rem 0.55rem;
-  border: 1px solid rgb(255 255 255 / 0.18);
-  border-radius: var(--wf-radius-pill);
-  background: rgb(255 255 255 / 0.08);
-  color: var(--wf-on-dark-strong);
+  padding: 0.35rem 0.65rem;
+  border: 1px solid var(--wf-border-control, #D9D5CB);
+  border-radius: var(--wf-radius-pill, 999px);
+  background: var(--wf-bg, #F6F5F1);
+  color: var(--wf-ink, #1B1D1F);
   font: inherit;
   font-size: 0.78rem;
   font-weight: 600;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.15s ease;
 }
 
 .wf-header[data-tone="light"] .wf-view-as-select {
-  border-color: var(--wf-border);
-  background: var(--wf-surface);
-  color: var(--wf-copy);
+  border-color: var(--wf-border, #E6E3DC);
+  background: var(--wf-surface, #FFFFFF);
+  color: var(--wf-copy, #1B1D1F);
+}
+
+.wf-view-as-select:focus {
+  border-color: var(--wf-ink, #1B1D1F);
+}
+
+.wf-view-as-select.wf-viewing-other {
+  background: #FEF3C7;
+  border-color: #F59E0B;
+  color: #92400E;
+  font-weight: 700;
 }
 
 .wf-view-as-error {
   font-size: 0.68rem;
-  color: #f0a8a8;
+  color: #DC2626;
 }
 
 @media (max-width: 720px) {

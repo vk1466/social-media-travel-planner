@@ -5,12 +5,24 @@ import { SaveSheet } from "./SaveSheet";
 
 interface AppShellProps {
   children: ReactNode;
+  isAdmin?: boolean;
+  isSuperAdmin?: boolean;
+  onViewAsChange?: (userId: string | null) => void;
 }
 
-export function AppShell({ children }: AppShellProps) {
+export function AppShell({
+  children,
+  isAdmin = false,
+  isSuperAdmin = false,
+  onViewAsChange,
+}: AppShellProps) {
   return (
     <div className="wf-shell-container">
-      <Header />
+      <Header
+        isAdmin={isAdmin}
+        isSuperAdmin={isSuperAdmin}
+        onViewAsChange={onViewAsChange}
+      />
       <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
         {children}
       </div>

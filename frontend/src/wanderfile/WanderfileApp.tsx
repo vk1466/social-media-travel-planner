@@ -12,6 +12,7 @@ import { PlaceDetailPage } from "./pages/PlaceDetailPage";
 import { OnboardingPage } from "./pages/OnboardingPage";
 import { ComingSoonPage } from "./comingSoon/ComingSoonPage";
 import { KitsPage } from "./pages/KitsPage";
+import { AdminPage } from "../components/AdminPage";
 import type { SavedPost, Place } from "../api";
 import "./tokens.css";
 
@@ -21,6 +22,9 @@ interface WanderfileAppProps {
   loading: boolean;
   loadError?: string | null;
   onRefresh?: () => void;
+  isAdmin?: boolean;
+  isSuperAdmin?: boolean;
+  onViewAsChange?: (userId: string | null) => void;
 }
 
 export function WanderfileApp({
@@ -29,6 +33,9 @@ export function WanderfileApp({
   loading,
   loadError,
   onRefresh,
+  isAdmin = false,
+  isSuperAdmin = false,
+  onViewAsChange,
 }: WanderfileAppProps) {
   const location = useLocation();
   const navigate = useNavigate();
@@ -52,7 +59,11 @@ export function WanderfileApp({
         <Route
           path="/*"
           element={
-            <AppShell>
+            <AppShell
+              isAdmin={isAdmin}
+              isSuperAdmin={isSuperAdmin}
+              onViewAsChange={onViewAsChange}
+            >
               <Routes>
                 <Route path="/" element={<HomePage posts={posts} places={places} loading={loading} loadError={loadError} onRefresh={onRefresh} />} />
                 <Route path="/library" element={<LibraryPage posts={posts} loading={loading} />} />
@@ -64,6 +75,7 @@ export function WanderfileApp({
                 <Route path="/collections/:id" element={<CollectionDetailPage posts={posts} />} />
                 <Route path="/post/:id" element={<PostDetailPage posts={posts} />} />
                 <Route path="/place/:id" element={<PlaceDetailPage places={places} posts={posts} />} />
+                <Route path="/admin" element={isAdmin ? <AdminPage /> : <Navigate to="/" replace />} />
                 <Route path="/coming-soon/:feature" element={<ComingSoonPage />} />
                 <Route path="/kits" element={<KitsPage />} />
                 <Route path="*" element={<Navigate to="/" replace />} />

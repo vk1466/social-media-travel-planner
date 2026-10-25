@@ -91,3 +91,39 @@ body.wf-app-body {
   border-radius: 12px;
   animation: wf-skeleton-pulse 1.5s ease-in-out infinite;
 }
+
+/* Account dropdown styling */
+.wf-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  padding: 9px 12px;
+  border-radius: 12px;
+  border: 0;
+  background: transparent;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1B1D1F;
+  cursor: pointer;
+  box-sizing: border-box;
+  text-decoration: none;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.wf-menu-item:hover,
+.wf-menu-item:focus-visible {
+  background: #F6F5F1;
+}
+
+.wf-menu-item-danger {
+  color: #C93B2B;
+}
+
+.wf-menu-item-danger:hover,
+.wf-menu-item-danger:focus-visible {
+  background: #FBE6EE;
+  color: #A32222;
+}
