@@ -112,7 +112,7 @@ export function HomePage({ posts, places, loading, loadError, onRefresh }: HomeP
                 <path d="M12 8v5M12 16.5v.01" />
               </svg>
             </span>
-            <div style={{ flex: 1, minWidth: "240px" }}>
+            <div style={{ flex: 1, minWidth: "140px" }}>
               <div style={{ fontWeight: 700, fontSize: "16px", color: "#1B1D1F" }}>
                 {inboxFailures.length} {inboxFailures.length === 1 ? "link couldn't be read" : "links couldn't be read"}
               </div>
@@ -187,7 +187,7 @@ export function HomePage({ posts, places, loading, loadError, onRefresh }: HomeP
                   flexWrap: "wrap",
                 }}
               >
-                <div style={{ flex: 1, minWidth: "220px", display: "flex", flexDirection: "column", gap: "3px" }}>
+                <div style={{ flex: 1, minWidth: "140px", display: "flex", flexDirection: "column", gap: "3px" }}>
                   <div
                     style={{
                       fontSize: "14px",

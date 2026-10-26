@@ -155,7 +155,9 @@ export default function IngestScreen() {
     if (job?.status === "done" && job.job_id === jobId) bumpRefresh();
   }, [job, jobId, bumpRefresh]);
 
-  const finishedPostId = job?.links.find((l) => l.post_id && (l.status === "saved" || l.status === "linked"))?.post_id;
+  const finishedPostId = job?.links.find(
+    (l) => l.post_id && (l.status === "saved" || l.status === "linked" || l.status === "skipped"),
+  )?.post_id;
   const activePost = fetchedPost ?? (finishedPostId ? posts.find((p) => p.post_id === finishedPostId) : null) ?? null;
 
   useEffect(() => {
@@ -314,6 +316,28 @@ export default function IngestScreen() {
               This link has already been organized in your library.
             </Text>
 
+            {activePost ? (
+              <View style={styles.previewCard}>
+                {activePost.thumbnail_url ? (
+                  <Image
+                    source={{ uri: proxiedMediaUrl(activePost.thumbnail_url) ?? activePost.thumbnail_url }}
+                    style={styles.previewImage}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <View style={[styles.previewImage, { backgroundColor: colors.brandSoft }]} />
+                )}
+                <View style={styles.previewInfo}>
+                  <Text style={styles.previewCaption} numberOfLines={2}>
+                    {activePost.caption || "Saved idea"}
+                  </Text>
+                  <Text style={styles.previewAuthor}>
+                    {activePost.author_handle ? `@${activePost.author_handle}` : "Instagram"}
+                  </Text>
+                </View>
+              </View>
+            ) : null}
+
             <View style={styles.savedActionRow}>
               <Pressable
                 onPress={() => {
@@ -329,11 +353,20 @@ export default function IngestScreen() {
 
               <Pressable
                 onPress={() => {
+                  if (activePost) {
+                    try {
+                      const { platform, nativeId } = parsePostId(activePost.post_id);
+                      router.push(appHref(`/(app)/posts/${platform}/${nativeId}`));
+                      return;
+                    } catch {}
+                  }
                   handleClose();
                 }}
                 style={styles.viewLibraryBtn}
               >
-                <Text style={styles.viewLibraryBtnText}>View in Library</Text>
+                <Text style={styles.viewLibraryBtnText}>
+                  {activePost ? "View existing item" : "View in Library"}
+                </Text>
               </Pressable>
             </View>
           </ScrollView>
@@ -385,19 +418,23 @@ export default function IngestScreen() {
               <View style={styles.filedAsSection}>
                 <Text style={styles.filedAsLabel}>Filed as</Text>
                 <View style={styles.categoryChipsRow}>
-                  {["Travel", "Food", "Movies", "Other"].map((cat) => (
+                  {["Travel", "Food", "Watch", "Other"].map((cat) => (
                     <View
                       key={cat}
                       style={[
                         styles.categoryChip,
-                        activePost.content_category?.toLowerCase() === cat.toLowerCase() &&
+                        (cat === "Watch"
+                          ? activePost.content_category?.toLowerCase() === "movies"
+                          : activePost.content_category?.toLowerCase() === cat.toLowerCase()) &&
                           styles.categoryChipSelected,
                       ]}
                     >
                       <Text
                         style={[
                           styles.categoryChipText,
-                          activePost.content_category?.toLowerCase() === cat.toLowerCase() &&
+                          (cat === "Watch"
+                            ? activePost.content_category?.toLowerCase() === "movies"
+                            : activePost.content_category?.toLowerCase() === cat.toLowerCase()) &&
                             styles.categoryChipTextSelected,
                         ]}
                       >

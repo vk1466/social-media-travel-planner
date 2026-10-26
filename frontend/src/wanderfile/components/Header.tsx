@@ -516,6 +516,7 @@ export function Header({
           fontSize: "20px",
           letterSpacing: "-0.03em",
           color: "#1B1D1F",
+          flexShrink: 0,
         }}
       >
         <span
@@ -529,6 +530,7 @@ export function Header({
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
+            flexShrink: 0,
           }}
         >
           <svg
@@ -546,7 +548,7 @@ export function Header({
             <circle cx="12" cy="10" r="2.5" />
           </svg>
         </span>
-        Wanderfile
+        <span className="wf-logo-text">Wanderfile</span>
       </Link>
 
       <nav aria-label="Main" className="wf-desktop-only" style={{ display: "flex", gap: "4px" }}>
@@ -576,9 +578,11 @@ export function Header({
       {/* Omnibox / Search & Paste bar */}
       <form
         onSubmit={handleSearchSubmit}
+        className="wf-header-search-form"
         style={{
           marginLeft: "auto",
-          flex: 1,
+          flex: "1 1 0%",
+          minWidth: 0,
           maxWidth: "540px",
           display: "flex",
           alignItems: "center",
@@ -587,11 +591,12 @@ export function Header({
         <label
           style={{
             width: "100%",
+            minWidth: 0,
             display: "flex",
             alignItems: "center",
-            gap: "10px",
-            height: "44px",
-            padding: "0 8px 0 16px",
+            gap: "8px",
+            height: "40px",
+            padding: "0 8px 0 12px",
             borderRadius: "999px",
             background: "#F6F5F1",
             border: "1px solid #E6E3DC",
@@ -600,8 +605,8 @@ export function Header({
           }}
         >
           <svg
-            width="18"
-            height="18"
+            width="16"
+            height="16"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -609,28 +614,32 @@ export function Header({
             strokeLinecap="round"
             strokeLinejoin="round"
             aria-hidden="true"
+            style={{ flexShrink: 0 }}
           >
             <path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1" />
             <path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1" />
           </svg>
           <input
-            aria-label="Paste a link to save, or search your library"
-            placeholder="Paste a link to save, or search your library"
+            aria-label="Search or paste link"
+            placeholder="Search or paste link"
             value={inputValue}
+            size={1}
             onChange={(e) => setInputValue(e.target.value)}
             style={{
-              flex: 1,
+              flex: "1 1 0%",
+              width: "100%",
               minWidth: 0,
               border: 0,
               background: "transparent",
               fontFamily: "inherit",
-              fontSize: "15px",
+              fontSize: "14px",
               color: "#1B1D1F",
               outline: "none",
             }}
           />
           <button
             type="button"
+            className="wf-desktop-only"
             onClick={async () => {
               try {
                 const clip = await navigator.clipboard.readText();
@@ -656,6 +665,7 @@ export function Header({
               border: "1px solid #E6E3DC",
               color: "#1B1D1F",
               cursor: "pointer",
+              flexShrink: 0,
             }}
           >
             ⌘V
@@ -754,11 +764,13 @@ export function Header({
       )}
 
       {/* Account menu */}
-      <AccountMenu
-        isAdmin={isAdmin}
-        isSuperAdmin={isSuperAdmin}
-        onViewAsChange={onViewAsChange}
-      />
+      <div style={{ flexShrink: 0 }}>
+        <AccountMenu
+          isAdmin={isAdmin}
+          isSuperAdmin={isSuperAdmin}
+          onViewAsChange={onViewAsChange}
+        />
+      </div>
     </header>
   );
 }
