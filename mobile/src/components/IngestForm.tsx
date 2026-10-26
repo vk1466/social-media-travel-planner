@@ -1,8 +1,9 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Pressable, StyleSheet, Switch, Text, TextInput, View } from "react-native";
+import { Image, Pressable, StyleSheet, Switch, Text, TextInput, View } from "react-native";
 
+import { fetchLinkPreview, type LinkPreview } from "../api";
 import { parseLinkLines } from "../lib/shareUrl";
 import { colors, radius } from "../theme";
 
@@ -24,7 +25,44 @@ export function LinkSubmitForm({
   const [draftHydrated, setDraftHydrated] = useState(false);
   const [refresh, setRefresh] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewData, setPreviewData] = useState<LinkPreview | null>(null);
   const parsed = useMemo(() => parseLinkLines(text), [text]);
+
+  useEffect(() => {
+    if (parsed.valid.length !== 1) {
+      setPreviewLoading(false);
+      setPreviewData(null);
+      return;
+    }
+    const singleUrl = parsed.valid[0];
+    let cancelled = false;
+    setPreviewLoading(true);
+    const timer = setTimeout(async () => {
+      try {
+        const data = await fetchLinkPreview(singleUrl);
+        if (!cancelled) {
+          setPreviewData(data);
+          setPreviewLoading(false);
+        }
+      } catch {
+        if (!cancelled) {
+          setPreviewData({
+            url: singleUrl,
+            platform: "instagram",
+            is_available: true,
+            title: "Instagram Reel",
+          });
+          setPreviewLoading(false);
+        }
+      }
+    }, 300);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [parsed.valid]);
 
   useEffect(() => {
     let mounted = true;
@@ -145,24 +183,79 @@ export function LinkSubmitForm({
         </View>
       ) : null}
 
+      {/* Link Preview Card */}
+      {previewLoading && (
+        <View style={styles.previewCard}>
+          <View style={[styles.previewThumb, styles.previewSkeleton]} />
+          <View style={{ flex: 1, gap: 6 }}>
+            <View style={[styles.previewSkeletonLine, { width: "40%" }]} />
+            <View style={[styles.previewSkeletonLine, { width: "80%" }]} />
+          </View>
+        </View>
+      )}
+
+      {!previewLoading && previewData && !previewData.is_available && (
+        <View style={styles.previewErrorCard}>
+          <Ionicons name="alert-circle" size={20} color="#DC2626" />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.previewErrorTitle}>
+              {previewData.error_message || "Private or deleted post"}
+            </Text>
+            <Text style={styles.previewErrorSub}>
+              This post cannot be viewed or saved because it is private or has been removed.
+            </Text>
+          </View>
+        </View>
+      )}
+
+      {!previewLoading && previewData && previewData.is_available && (
+        <View style={styles.previewCard}>
+          {previewData.thumbnail_url ? (
+            <Image source={{ uri: previewData.thumbnail_url }} style={styles.previewThumb} />
+          ) : (
+            <View style={[styles.previewThumb, styles.previewThumbFallback]}>
+              <Ionicons name="logo-instagram" size={24} color="#FFFFFF" />
+            </View>
+          )}
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 2 }}>
+              <Text style={styles.previewBadge}>Instagram Reel</Text>
+              {previewData.author ? (
+                <Text style={styles.previewAuthor}>@{previewData.author.replace(/^@/, "")}</Text>
+              ) : null}
+            </View>
+            <Text numberOfLines={1} style={styles.previewTitle}>
+              {previewData.title || previewData.caption || "Ready to save"}
+            </Text>
+          </View>
+        </View>
+      )}
+
       {/* S4: Full-width pill, 52px high, enabled ink, disabled #E6E3DC */}
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={buttonLabel}
-        disabled={validCount === 0 || disabled}
+        disabled={
+          validCount === 0 ||
+          disabled ||
+          previewLoading ||
+          Boolean(previewData && !previewData.is_available)
+        }
         onPress={submit}
         style={[
           styles.saveButton,
-          validCount === 0 && styles.saveButtonDisabled,
+          (validCount === 0 || previewLoading || Boolean(previewData && !previewData.is_available)) &&
+            styles.saveButtonDisabled,
         ]}
       >
         <Text
           style={[
             styles.saveButtonText,
-            validCount === 0 && styles.saveButtonTextDisabled,
+            (validCount === 0 || previewLoading || Boolean(previewData && !previewData.is_available)) &&
+              styles.saveButtonTextDisabled,
           ]}
         >
-          {buttonLabel}
+          {previewData && !previewData.is_available ? "Cannot save private reel" : buttonLabel}
         </Text>
       </Pressable>
     </View>
@@ -277,5 +370,78 @@ const styles = StyleSheet.create({
     color: "#DC2626",
     fontWeight: "600",
     flex: 1,
+  },
+  previewCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    padding: 12,
+    borderRadius: radius.md,
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: colors.border,
+    marginTop: 10,
+    marginBottom: 4,
+  },
+  previewThumb: {
+    width: 52,
+    height: 52,
+    borderRadius: 10,
+    backgroundColor: colors.surfaceAlt,
+  },
+  previewThumbFallback: {
+    backgroundColor: "#C13584",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  previewSkeleton: {
+    backgroundColor: colors.borderSubtle,
+  },
+  previewSkeletonLine: {
+    height: 12,
+    borderRadius: 4,
+    backgroundColor: colors.borderSubtle,
+  },
+  previewBadge: {
+    fontSize: 10,
+    fontWeight: "800",
+    color: "#C13584",
+    backgroundColor: "#FDF0F5",
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+    textTransform: "uppercase",
+  },
+  previewAuthor: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: colors.ink,
+  },
+  previewTitle: {
+    fontSize: 13,
+    fontWeight: "500",
+    color: colors.ink,
+  },
+  previewErrorCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    padding: 12,
+    borderRadius: radius.md,
+    backgroundColor: "#FFF5F5",
+    borderWidth: 1,
+    borderColor: "#F8D7DA",
+    marginTop: 10,
+    marginBottom: 4,
+  },
+  previewErrorTitle: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#DC2626",
+  },
+  previewErrorSub: {
+    fontSize: 11,
+    color: colors.muted,
+    marginTop: 2,
   },
 });

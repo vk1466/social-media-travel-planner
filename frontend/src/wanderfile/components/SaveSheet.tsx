@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSavePipeline } from "../state/SavePipelineContext";
+import { fetchLinkPreview, type LinkPreview } from "../../api";
+import { proxiedMediaUrl } from "../../postDisplayUtils";
 
 export function validateSaveInput(input: string): {
   isValid: boolean;
@@ -54,11 +56,15 @@ export function validateSaveInput(input: string): {
 export function SaveSheet() {
   const { isSaveSheetOpen, closeSaveSheet, resetActiveSave, saveUrl, activeSave, changeSavedCategory } = useSavePipeline();
   const [inputText, setInputText] = useState("");
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewData, setPreviewData] = useState<LinkPreview | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     if (!isSaveSheetOpen) {
       setInputText("");
+      setPreviewData(null);
+      setPreviewLoading(false);
       resetActiveSave();
     }
   }, [isSaveSheetOpen, resetActiveSave]);
@@ -74,9 +80,48 @@ export function SaveSheet() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isSaveSheetOpen, closeSaveSheet]);
 
-  if (!isSaveSheetOpen) return null;
-
   const validation = validateSaveInput(inputText);
+
+  useEffect(() => {
+    if (!validation.isValid) {
+      setPreviewLoading(false);
+      setPreviewData(null);
+      return;
+    }
+
+    const firstUrl = inputText.trim().split(/[\n\s]+/)[0];
+    if (!firstUrl) return;
+
+    let cancelled = false;
+    setPreviewLoading(true);
+
+    const timer = setTimeout(async () => {
+      try {
+        const data = await fetchLinkPreview(firstUrl);
+        if (!cancelled) {
+          setPreviewData(data);
+          setPreviewLoading(false);
+        }
+      } catch {
+        if (!cancelled) {
+          setPreviewData({
+            url: firstUrl,
+            platform: "instagram",
+            is_available: true,
+            title: "Instagram Reel",
+          });
+          setPreviewLoading(false);
+        }
+      }
+    }, 250);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [inputText, validation.isValid]);
+
+  if (!isSaveSheetOpen) return null;
 
   const stage = !activeSave
     ? 0
@@ -170,7 +215,7 @@ export function SaveSheet() {
               Save a link
             </h2>
             <p style={{ margin: "0 0 20px", fontSize: "15px", color: "#6B6F73", lineHeight: 1.5 }}>
-              Paste any Instagram reel, recipe, movie recommendation, or place. We'll read and categorize it automatically.
+              Paste an Instagram reel. We'll read and categorize it automatically.
             </p>
 
             <textarea
@@ -205,25 +250,166 @@ export function SaveSheet() {
                   {validation.message}
                 </div>
               ) : validation.isValid ? (
-                <div style={{ display: "flex", alignItems: "center", gap: "10px", color: "#1F7A4D", fontWeight: 600 }}>
-                  <span
-                    aria-hidden="true"
-                    style={{
-                      width: "22px",
-                      height: "22px",
-                      borderRadius: "50%",
-                      background: "#E3F4EA",
-                      color: "#1F7A4D",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                      <path d="m5 12.5 4.5 4.5L19 7.5" />
-                    </svg>
-                  </span>
-                  Ready to save Instagram reel
+                <div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px", color: "#1F7A4D", fontWeight: 600 }}>
+                    <span
+                      aria-hidden="true"
+                      style={{
+                        width: "22px",
+                        height: "22px",
+                        borderRadius: "50%",
+                        background: "#E3F4EA",
+                        color: "#1F7A4D",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                        <path d="m5 12.5 4.5 4.5L19 7.5" />
+                      </svg>
+                    </span>
+                    Ready to save Instagram reel
+                  </div>
+
+                  {/* Preview State: Skeleton loading */}
+                  {previewLoading && (
+                    <div
+                      style={{
+                        marginTop: "12px",
+                        padding: "12px 14px",
+                        borderRadius: "16px",
+                        border: "1px solid #E6E3DC",
+                        background: "#FAFAF9",
+                        display: "flex",
+                        gap: "12px",
+                        alignItems: "center",
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: "56px",
+                          height: "56px",
+                          borderRadius: "12px",
+                          background: "#E6E3DC",
+                          flexShrink: 0,
+                        }}
+                      />
+                      <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "8px" }}>
+                        <div style={{ height: "14px", width: "40%", background: "#E6E3DC", borderRadius: "4px" }} />
+                        <div style={{ height: "12px", width: "75%", background: "#EBE8E1", borderRadius: "4px" }} />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Preview State: Deleted or Private Post Warning */}
+                  {!previewLoading && previewData && !previewData.is_available && (
+                    <div
+                      style={{
+                        marginTop: "12px",
+                        padding: "12px 16px",
+                        borderRadius: "16px",
+                        border: "1.5px solid #F8D7DA",
+                        background: "#FFF5F5",
+                        display: "flex",
+                        gap: "12px",
+                        alignItems: "center",
+                        color: "#C53B27",
+                      }}
+                    >
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ flexShrink: 0 }}>
+                        <circle cx="12" cy="12" r="10" />
+                        <line x1="12" y1="8" x2="12" y2="12" />
+                        <line x1="12" y1="16" x2="12.01" y2="16" />
+                      </svg>
+                      <div>
+                        <div style={{ fontWeight: 700, fontSize: "14px" }}>
+                          {previewData.error_message || "Private or deleted post"}
+                        </div>
+                        <div style={{ fontSize: "12px", color: "#6B6F73", marginTop: "2px" }}>
+                          This post cannot be viewed or saved because it is private or has been removed.
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Preview State: Available Preview Card */}
+                  {!previewLoading && previewData && previewData.is_available && (
+                    <div
+                      style={{
+                        marginTop: "12px",
+                        padding: "12px 14px",
+                        borderRadius: "16px",
+                        border: "1px solid #E6E3DC",
+                        background: "#FFFFFF",
+                        boxShadow: "0 2px 8px rgba(0, 0, 0, 0.04)",
+                        display: "flex",
+                        gap: "12px",
+                        alignItems: "center",
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: "56px",
+                          height: "56px",
+                          borderRadius: "12px",
+                          overflow: "hidden",
+                          background: previewData.thumbnail_url
+                            ? `url(${proxiedMediaUrl(previewData.thumbnail_url)}) center/cover no-repeat`
+                            : "linear-gradient(135deg, #F58529, #DD2A7B, #8134AF)",
+                          flexShrink: 0,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          color: "#FFFFFF",
+                        }}
+                      >
+                        {!previewData.thumbnail_url && (
+                          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+                            <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+                            <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+                          </svg>
+                        )}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "4px" }}>
+                          <span
+                            style={{
+                              fontSize: "11px",
+                              fontWeight: 800,
+                              letterSpacing: "0.06em",
+                              textTransform: "uppercase",
+                              color: "#C13584",
+                              background: "#FDF0F5",
+                              padding: "2px 8px",
+                              borderRadius: "999px",
+                            }}
+                          >
+                            Instagram Reel
+                          </span>
+                          {previewData.author && (
+                            <span style={{ fontSize: "13px", fontWeight: 700, color: "#1B1D1F" }}>
+                              @{previewData.author.replace(/^@/, "")}
+                            </span>
+                          )}
+                        </div>
+                        <div
+                          style={{
+                            fontSize: "14px",
+                            color: "#1B1D1F",
+                            fontWeight: 500,
+                            lineHeight: 1.35,
+                            whiteSpace: "nowrap",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                          }}
+                        >
+                          {previewData.title || previewData.caption || "Ready to save"}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div style={{ color: "#6B6F73" }}>
@@ -235,22 +421,31 @@ export function SaveSheet() {
             <button
               type="button"
               onClick={handleSave}
-              disabled={!validation.isValid}
+              disabled={!validation.isValid || previewLoading || Boolean(previewData && !previewData.is_available)}
               style={{
                 width: "100%",
                 height: "52px",
                 marginTop: "24px",
                 borderRadius: "999px",
                 border: 0,
-                background: validation.isValid ? "#1B1D1F" : "#ECECEA",
+                background:
+                  validation.isValid && !previewLoading && (!previewData || previewData.is_available)
+                    ? "#1B1D1F"
+                    : "#ECECEA",
                 fontFamily: "inherit",
                 fontSize: "16px",
                 fontWeight: 700,
-                color: validation.isValid ? "#FFFFFF" : "#8A8E92",
-                cursor: validation.isValid ? "pointer" : "not-allowed",
+                color:
+                  validation.isValid && !previewLoading && (!previewData || previewData.is_available)
+                    ? "#FFFFFF"
+                    : "#8A8E92",
+                cursor:
+                  validation.isValid && !previewLoading && (!previewData || previewData.is_available)
+                    ? "pointer"
+                    : "not-allowed",
               }}
             >
-              Save
+              {previewData && !previewData.is_available ? "Cannot save private reel" : "Save"}
             </button>
           </div>
         )}

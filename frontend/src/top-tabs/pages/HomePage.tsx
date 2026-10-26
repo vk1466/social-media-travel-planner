@@ -7,6 +7,7 @@ import { locationLine } from "../display";
 import { PageHeading } from "../../components/PageHeading";
 import { useLabTheme } from "../theme";
 import { PostDetail, PostMediaCard } from "./PostsPage";
+import { proxiedMediaUrl } from "../../postDisplayUtils";
 import "../../home-page.css";
 
 function recency(post: SavedPost): number {
@@ -41,9 +42,9 @@ export function HomePage({
   );
   const continuePlace = scopedPlaces[0];
   const continuePlaceImage = continuePlace
-    ? scopedPosts.find((post) =>
+    ? proxiedMediaUrl(scopedPosts.find((post) =>
         post.place_ids?.includes(continuePlace.place_id) && post.thumbnail_url,
-      )?.thumbnail_url
+      )?.thumbnail_url)
     : null;
   const [selected, setSelected] = useState<SavedPost | null>(null);
   const recentPosts = useMemo(

@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import type { SavedPost } from "../../api";
+import { proxiedMediaUrl } from "../../postDisplayUtils";
 
 interface PostCardProps {
   post: SavedPost;
@@ -71,7 +72,7 @@ export function PostCard({ post, onEdit, onDelete, style }: PostCardProps) {
             height: "210px",
             position: "relative",
             background: post.thumbnail_url
-              ? `url(${post.thumbnail_url}) center/cover no-repeat`
+              ? `url(${proxiedMediaUrl(post.thumbnail_url)}) center/cover no-repeat`
               : "linear-gradient(160deg, #8CC3D6, #2D6A82)",
           }}
         >

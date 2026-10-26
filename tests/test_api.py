@@ -858,4 +858,59 @@ def test_update_post_title_and_category(dynamodb) -> None:
   assert res_other_user.status_code == 404
 
 
+def test_preview_existing_post(dynamodb) -> None:
+  post = SavedPost(
+    post_id="instagram:prev123",
+    post_url="https://www.instagram.com/reel/prev123/",
+    platform=Platform.INSTAGRAM,
+    media_kind="reel",
+    author_handle="chef_marco",
+    caption="Amazing fresh pasta recipe made from scratch",
+    thumbnail_url="https://example.com/thumb.jpg",
+    fetched_at="2026-07-06T21:15:04Z",
+  )
+  save_post(post)
+
+  client = TestClient(app)
+  res = client.get(
+    "/api/preview?url=https://www.instagram.com/reel/prev123/",
+    headers={"X-User-Id": "user-a"},
+  )
+  assert res.status_code == 200
+  data = res.json()
+  assert data["is_available"] is True
+  assert data["author"] == "chef_marco"
+  assert data["thumbnail_url"] == "https://example.com/thumb.jpg"
+  assert "pasta" in data["title"].lower()
+
+
+def test_preview_deleted_post(monkeypatch, dynamodb) -> None:
+  def fake_fetch_post(*args, **kwargs):
+    raise RuntimeError("Instagram post C2xQ5T2ST8l could not be fetched (private or deleted post)")
+
+  monkeypatch.setattr("travelplanner.clients.mindcase.fetch_post", fake_fetch_post)
+
+  client = TestClient(app)
+  res = client.get(
+    "/api/preview?url=https://www.instagram.com/reel/C2xQ5T2ST8l/",
+    headers={"X-User-Id": "user-a"},
+  )
+  assert res.status_code == 200
+  data = res.json()
+  assert data["is_available"] is False
+  assert data["error_message"] == "Private or deleted post"
+
+
+def test_preview_unsupported_url(dynamodb) -> None:
+  client = TestClient(app)
+  res = client.get(
+    "/api/preview?url=https://www.tiktok.com/@user/video/123",
+    headers={"X-User-Id": "user-a"},
+  )
+  assert res.status_code == 200
+  data = res.json()
+  assert data["is_available"] is False
+  assert "Only Instagram reels are currently supported" in data["error_message"]
+
+
 

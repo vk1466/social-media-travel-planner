@@ -75,7 +75,10 @@ export function toFriendlyErrorMessage(raw?: string | null, url?: string | null)
     lowered.includes("empty or nonexistent") ||
     lowered.includes("private") ||
     lowered.includes("deleted") ||
-    lowered.includes("shortcode")
+    lowered.includes("could not be fetched") ||
+    lowered.includes("shortcode") ||
+    ((lowered.includes("timeout") || lowered.includes("timed out")) &&
+      (lowered.includes("instagram") || lowered.includes("reel") || lowered.includes("post") || lowered.includes("mindcase")))
   ) {
     return "Private or deleted post";
   }

@@ -615,3 +615,15 @@ class ForTravelLibrarySchema(BaseModel):
   places: list[PlaceSchema]
   posts: list[SavedPostSchema]
 
+
+class LinkPreviewResponse(BaseModel):
+  url: str
+  platform: str
+  shortcode: str | None = None
+  title: str | None = None
+  caption: str | None = None
+  author: str | None = None
+  thumbnail_url: str | None = None
+  is_available: bool = True
+  error_message: str | None = None
+

@@ -4,18 +4,21 @@ from travelplanner.personas.link_ingest import friendly_error_message
 
 
 def test_mindcase_fail_fast_deadline() -> None:
-  """Backend fail-fast deadline is 9.5s."""
+  """Backend fail-fast deadline is <= 8.0s (default 6.0s)."""
   from travelplanner.clients import mindcase
   import inspect
   sig = inspect.signature(mindcase.fetch_post)
-  assert sig.parameters["timeout_seconds"].default == 9.5
+  assert sig.parameters["timeout_seconds"].default <= 8.0
+  assert sig.parameters["timeout_seconds"].default == 6.0
 
 
 def test_deleted_instagram_reel_error_mapping() -> None:
-  """Deleted reel returns empty data or no post, which maps to 'Private or deleted post' in under 10s."""
+  """Deleted reel returns empty data or times out, mapping to 'Private or deleted post' in under 8s."""
   assert friendly_error_message("Instagram post C2xQ5T2ST8l returned empty data (private or deleted post)") == "Private or deleted post"
   assert friendly_error_message("Mindcase returned no post for https://www.instagram.com/reel/C2xQ5T2ST8l/ (private or deleted post)") == "Private or deleted post"
   assert friendly_error_message("Instagram post C2xQ5T2ST8l could not be fetched (private, deleted, or does not exist)") == "Private or deleted post"
+  assert friendly_error_message("Instagram post C2xQ5T2ST8l could not be fetched (private or deleted post): Mindcase job 123 timed out after 6.0s") == "Private or deleted post"
+  assert friendly_error_message("Mindcase job 456 timed out after 6.0s for instagram reel") == "Private or deleted post"
 
 
 def test_client_polling_deadline_exceeds_backend_fail_fast() -> None:

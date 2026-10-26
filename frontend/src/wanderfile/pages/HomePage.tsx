@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { ErrorBanner } from "../components/ErrorBanner";
 import { SkeletonGrid } from "../components/SkeletonCard";
 import { ComingSoonButton } from "../comingSoon/ComingSoonControl";
+import { FeatureFlags } from "../comingSoon/featureRegistry";
 import { PostCard } from "../components/PostCard";
 import { EditPostModal } from "../components/EditPostModal";
 import { useSavePipeline, toFriendlyErrorMessage } from "../state/SavePipelineContext";
@@ -827,123 +828,127 @@ export function HomePage({ posts, places, loading, loadError, onRefresh }: HomeP
               </Link>
 
               {/* Dashed suggestion */}
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "14px",
-                  marginTop: "6px",
-                  padding: "14px",
-                  borderRadius: "18px",
-                  border: "2px dashed #C9C5BA",
-                }}
-              >
-                <span
-                  aria-hidden="true"
+              {FeatureFlags.isEnabled("new-kits") && (
+                <div
                   style={{
-                    width: "42px",
-                    height: "42px",
-                    borderRadius: "13px",
-                    background: "#E4F2E7",
-                    color: "#25623A",
                     display: "flex",
                     alignItems: "center",
-                    justifyContent: "center",
+                    gap: "14px",
+                    marginTop: "6px",
+                    padding: "14px",
+                    borderRadius: "18px",
+                    border: "2px dashed #C9C5BA",
                   }}
                 >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M12 5v14M5 12h14" />
-                  </svg>
-                </span>
-                <span style={{ flex: 1 }}>
-                  <span style={{ display: "block", fontSize: "16px", fontWeight: 700 }}>Workouts?</span>
-                  <span style={{ display: "block", fontSize: "13px", color: "#6B6F73" }}>A few saves look alike. Routine kit.</span>
-                </span>
-                <ComingSoonButton
-                  featureId="new-kits"
-                  style={{
-                    height: "36px",
-                    padding: "0 14px",
-                    borderRadius: "999px",
-                    border: 0,
-                    background: "#1B1D1F",
-                    fontFamily: "inherit",
-                    fontSize: "13px",
-                    fontWeight: 700,
-                    color: "#FFFFFF",
-                    cursor: "pointer",
-                  }}
-                >
-                  Create
-                </ComingSoonButton>
-              </div>
+                  <span
+                    aria-hidden="true"
+                    style={{
+                      width: "42px",
+                      height: "42px",
+                      borderRadius: "13px",
+                      background: "#E4F2E7",
+                      color: "#25623A",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M12 5v14M5 12h14" />
+                    </svg>
+                  </span>
+                  <span style={{ flex: 1 }}>
+                    <span style={{ display: "block", fontSize: "16px", fontWeight: 700 }}>Workouts?</span>
+                    <span style={{ display: "block", fontSize: "13px", color: "#6B6F73" }}>A few saves look alike. Routine kit.</span>
+                  </span>
+                  <ComingSoonButton
+                    featureId="new-kits"
+                    style={{
+                      height: "36px",
+                      padding: "0 14px",
+                      borderRadius: "999px",
+                      border: 0,
+                      background: "#1B1D1F",
+                      fontFamily: "inherit",
+                      fontSize: "13px",
+                      fontWeight: 700,
+                      color: "#FFFFFF",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Create
+                  </ComingSoonButton>
+                </div>
+              )}
             </div>
           </section>
 
           {/* Trip idea section */}
-          <section
-            style={{
-              display: "flex",
-              gap: "32px",
-              flexWrap: "wrap",
-              alignItems: "center",
-              padding: "28px 32px",
-              background: "#FFFFFF",
-              border: "1px solid #E6E3DC",
-              borderRadius: "28px",
-            }}
-          >
-            <div style={{ flex: "1 1 320px" }}>
-              <div style={{ fontSize: "13px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#1B5E78" }}>
-                Trip idea
-              </div>
-              <h2 style={{ margin: "8px 0 6px", fontSize: "28px", lineHeight: 1.15, letterSpacing: "-0.02em", fontWeight: 800 }}>
-                A weekend itinerary
-              </h2>
-              <p style={{ margin: 0, fontSize: "15px", lineHeight: 1.5, color: "#6B6F73" }}>
-                Several places you saved sit in the same area. Turn them into a day-by-day plan in one click.
-              </p>
-            </div>
-            <div style={{ flex: "2 1 480px", display: "flex", flexWrap: "wrap", gap: "10px" }}>
-              {places.slice(0, 5).map((place) => (
-                <span
-                  key={place.place_id}
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    height: "40px",
-                    padding: "0 16px",
-                    borderRadius: "999px",
-                    background: "#F6F5F1",
-                    border: "1px solid #E6E3DC",
-                    fontSize: "15px",
-                    fontWeight: 600,
-                  }}
-                >
-                  <span aria-hidden="true" style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#1F6F8B" }} />
-                  {place.display_name}
-                </span>
-              ))}
-            </div>
-            <ComingSoonButton
-              featureId="trips"
+          {FeatureFlags.isEnabled("trips") && (
+            <section
               style={{
-                height: "48px",
-                padding: "0 24px",
-                borderRadius: "999px",
-                border: 0,
-                background: "#1B1D1F",
-                fontFamily: "inherit",
-                fontSize: "15px",
-                fontWeight: 700,
-                color: "#FFFFFF",
-                cursor: "pointer",
+                display: "flex",
+                gap: "32px",
+                flexWrap: "wrap",
+                alignItems: "center",
+                padding: "28px 32px",
+                background: "#FFFFFF",
+                border: "1px solid #E6E3DC",
+                borderRadius: "28px",
               }}
             >
-              Build itinerary
-            </ComingSoonButton>
-          </section>
+              <div style={{ flex: "1 1 320px" }}>
+                <div style={{ fontSize: "13px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#1B5E78" }}>
+                  Trip idea
+                </div>
+                <h2 style={{ margin: "8px 0 6px", fontSize: "28px", lineHeight: 1.15, letterSpacing: "-0.02em", fontWeight: 800 }}>
+                  A weekend itinerary
+                </h2>
+                <p style={{ margin: 0, fontSize: "15px", lineHeight: 1.5, color: "#6B6F73" }}>
+                  Several places you saved sit in the same area. Turn them into a day-by-day plan in one click.
+                </p>
+              </div>
+              <div style={{ flex: "2 1 480px", display: "flex", flexWrap: "wrap", gap: "10px" }}>
+                {places.slice(0, 5).map((place) => (
+                  <span
+                    key={place.place_id}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      height: "40px",
+                      padding: "0 16px",
+                      borderRadius: "999px",
+                      background: "#F6F5F1",
+                      border: "1px solid #E6E3DC",
+                      fontSize: "15px",
+                      fontWeight: 600,
+                    }}
+                  >
+                    <span aria-hidden="true" style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#1F6F8B" }} />
+                    {place.display_name}
+                  </span>
+                ))}
+              </div>
+              <ComingSoonButton
+                featureId="trips"
+                style={{
+                  height: "48px",
+                  padding: "0 24px",
+                  borderRadius: "999px",
+                  border: 0,
+                  background: "#1B1D1F",
+                  fontFamily: "inherit",
+                  fontSize: "15px",
+                  fontWeight: 700,
+                  color: "#FFFFFF",
+                  cursor: "pointer",
+                }}
+              >
+                Build itinerary
+              </ComingSoonButton>
+            </section>
+          )}
 
           {/* Recently saved section */}
           <section>

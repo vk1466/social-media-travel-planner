@@ -79,6 +79,7 @@ def friendly_error_message(error: str | None, post_url: str | None = None) -> st
     or "could not be fetched" in lowered
     or "could not extract instagram shortcode" in lowered
     or "empty data" in lowered
+    or (("timeout" in lowered or "timed out" in lowered) and any(k in lowered for k in ("instagram", "reel", "mindcase", "post")))
   ):
     return "Private or deleted post"
   if "unsupported" in lowered or "unrecognized url" in lowered or "no fetcher" in lowered:

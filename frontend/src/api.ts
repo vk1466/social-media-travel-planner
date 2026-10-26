@@ -414,6 +414,22 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return response.json() as Promise<T>;
 }
 
+export interface LinkPreview {
+  url: string;
+  platform: string;
+  shortcode?: string;
+  title?: string;
+  caption?: string;
+  author?: string;
+  thumbnail_url?: string;
+  is_available: boolean;
+  error_message?: string;
+}
+
+export async function fetchLinkPreview(url: string): Promise<LinkPreview> {
+  return request<LinkPreview>(`/api/preview?url=${encodeURIComponent(url.trim())}`);
+}
+
 export async function startIngest(links: string[], refresh: boolean): Promise<string> {
   const body = await request<{ job_id: string }>("/api/ingest", {
     method: "POST",

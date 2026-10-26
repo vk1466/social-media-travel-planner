@@ -44,7 +44,7 @@ def fetch_post(
   *,
   post_url: str | None = None,
   shortcode: str | None = None,
-  timeout_seconds: float = 9.5,
+  timeout_seconds: float = 6.0,
 ) -> dict[str, Any]:
   """One Instagram post/reel by URL (preferred) or shortcode."""
   api_key()
@@ -66,7 +66,15 @@ def fetch_post(
   else:
     raise ValueError("post_url or shortcode is required")
 
-  rows = fetch_posts(post_urls=urls_to_try, max_wait_seconds=timeout_seconds)
+  try:
+    rows = fetch_posts(post_urls=urls_to_try, max_wait_seconds=timeout_seconds)
+  except RuntimeError as exc:
+    msg = str(exc).lower()
+    if "timed out" in msg or "timeout" in msg:
+      raise RuntimeError(
+        f"Instagram post {code or url} could not be fetched (private or deleted post): {exc}"
+      ) from exc
+    raise
 
   if not rows:
     raise RuntimeError(f"Mindcase returned no post for {url or code} (private or deleted post)")
@@ -179,7 +187,7 @@ def _run_job(
 
   wait_limit = max_wait_seconds if max_wait_seconds is not None else MAX_WAIT_SECONDS
   deadline = time.monotonic() + wait_limit
-  poll_interval = 1.0 if wait_limit <= 15 else POLL_INTERVAL_SECONDS
+  poll_interval = 0.5 if wait_limit <= 8 else (1.0 if wait_limit <= 15 else POLL_INTERVAL_SECONDS)
   while time.monotonic() < deadline:
     time.sleep(poll_interval)
     results = _request("GET", f"/jobs/{urllib.parse.quote(job_id, safe='')}/results")

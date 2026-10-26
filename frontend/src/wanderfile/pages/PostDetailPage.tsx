@@ -4,6 +4,7 @@ import { EmptyState } from "../components/EmptyState";
 import { ComingSoonButton } from "../comingSoon/ComingSoonControl";
 import { EditPostModal } from "../components/EditPostModal";
 import { deletePost, parsePostId, type SavedPost } from "../../api";
+import { proxiedMediaUrl } from "../../postDisplayUtils";
 
 interface PostDetailPageProps {
   posts: SavedPost[];
@@ -115,7 +116,7 @@ export function PostDetailPage({ posts, onRefresh }: PostDetailPageProps) {
             height: "300px",
             borderRadius: "20px",
             background: post.thumbnail_url
-              ? `url(${post.thumbnail_url}) center/cover no-repeat`
+              ? `url(${proxiedMediaUrl(post.thumbnail_url)}) center/cover no-repeat`
               : "linear-gradient(160deg, #8CC3D6, #2D6A82)",
             flexShrink: 0,
           }}

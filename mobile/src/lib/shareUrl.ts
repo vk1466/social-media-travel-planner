@@ -78,7 +78,10 @@ export function toFriendlyErrorMessage(err: unknown, url?: string): string {
     lowered.includes("not found") ||
     lowered.includes("does not exist") ||
     lowered.includes("empty data") ||
-    lowered.includes("returned no post")
+    lowered.includes("could not be fetched") ||
+    lowered.includes("returned no post") ||
+    ((lowered.includes("timeout") || lowered.includes("timed out")) &&
+      (lowered.includes("instagram") || lowered.includes("reel") || lowered.includes("post") || lowered.includes("mindcase")))
   ) {
     return "Private or deleted post";
   }

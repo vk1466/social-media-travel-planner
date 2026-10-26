@@ -26,8 +26,9 @@ from travelplanner.places.facts.queue import enqueue_place_facts
 from travelplanner.clients.clerk import list_clerk_users
 from travelplanner.db import jobs_repo, place_candidates_repo, user_posts_repo, user_settings_repo
 from travelplanner.places.debug import debug_locate
+from travelplanner.links import detect_platform, extract_instagram_shortcode
 from travelplanner.personas.profile_import import list_recent_post_urls, normalize_instagram_username
-from travelplanner.store import load_post, post_to_dict
+from travelplanner.store import load_post, load_post_by_id, post_to_dict
 from travelplanner.visits import (
   accept_timeline_review,
   cleanup_visits,
@@ -65,6 +66,7 @@ from server.schemas import (
   RemoveJobLinkRequest,
   InstagramImportRequest,
   JobSchema,
+  LinkPreviewResponse,
   LocateDebugRequest,
   LocateDebugResponse,
   MaintenanceResultSchema,
@@ -446,6 +448,118 @@ def proxy_media(user_id: CurrentUserId, url: str = Query(..., min_length=8)) -> 
   """Proxy Instagram CDN images so the browser is not blocked by CORP."""
   del user_id
   return fetch_proxied_media(url)
+
+
+@app.get(
+  "/api/preview",
+  response_model=LinkPreviewResponse,
+  responses={400: {"model": ErrorResponse}},
+)
+def get_link_preview(
+  user_id: CurrentUserId,
+  url: str = Query(..., min_length=1),
+) -> LinkPreviewResponse:
+  """Preview link metadata before saving, detecting deleted/private posts fast."""
+  del user_id
+  clean_url = url.strip()
+  platform = detect_platform(clean_url)
+  if platform is None or platform != Platform.INSTAGRAM:
+    return LinkPreviewResponse(
+      url=clean_url,
+      platform="unsupported",
+      is_available=False,
+      error_message="Only Instagram reels are currently supported",
+    )
+
+  try:
+    shortcode = extract_instagram_shortcode(clean_url)
+  except Exception:
+    return LinkPreviewResponse(
+      url=clean_url,
+      platform="instagram",
+      is_available=False,
+      error_message="Please enter a valid Instagram reel link",
+    )
+
+  global_post_id = make_post_id(Platform.INSTAGRAM, shortcode)
+
+  # 1. Fast path: check if post already exists in Posts table
+  existing = load_post(Platform.INSTAGRAM, shortcode) or load_post_by_id(global_post_id)
+  if existing and (existing.caption or existing.thumbnail_url or existing.author_handle):
+    caption = existing.caption or ""
+    snippet = (
+      caption[:100].strip()
+      if caption
+      else (f"Reel by @{existing.author_handle}" if existing.author_handle else "Instagram Reel")
+    )
+    return LinkPreviewResponse(
+      url=clean_url,
+      platform="instagram",
+      shortcode=shortcode,
+      title=snippet,
+      caption=caption,
+      author=existing.author_handle,
+      thumbnail_url=existing.thumbnail_url,
+      is_available=True,
+    )
+
+  # 2. Fast check: try Mindcase lightweight fetch with short timeout (4.0s)
+  try:
+    from travelplanner.clients.mindcase import fetch_post
+    from travelplanner.steps.instagram.media import trim_post_info
+
+    raw = fetch_post(post_url=clean_url, shortcode=shortcode, timeout_seconds=4.0)
+    trimmed = trim_post_info(raw)
+    caption = trimmed.get("caption") or ""
+    author = trimmed.get("author_handle") or ""
+    thumbnail_url = (
+      trimmed.get("thumbnail_url")
+      or raw.get("videoUrl")
+      or raw.get("image")
+      or raw.get("display_url")
+    )
+    snippet = (
+      caption[:100].strip()
+      if caption
+      else (f"Reel by @{author}" if author else "Instagram Reel")
+    )
+    return LinkPreviewResponse(
+      url=clean_url,
+      platform="instagram",
+      shortcode=shortcode,
+      title=snippet,
+      caption=caption,
+      author=author,
+      thumbnail_url=thumbnail_url,
+      is_available=True,
+    )
+  except Exception as exc:
+    msg = str(exc).lower()
+    if (
+      "private" in msg
+      or "deleted" in msg
+      or "not found" in msg
+      or "could not be fetched" in msg
+      or "empty data" in msg
+    ):
+      return LinkPreviewResponse(
+        url=clean_url,
+        platform="instagram",
+        shortcode=shortcode,
+        is_available=False,
+        error_message="Private or deleted post",
+      )
+    # If Mindcase is unavailable or transient error, return graceful fallback preview with shortcode
+    return LinkPreviewResponse(
+      url=clean_url,
+      platform="instagram",
+      shortcode=shortcode,
+      title="Instagram Reel",
+      caption="",
+      author=None,
+      thumbnail_url=None,
+      is_available=True,
+    )
 
 
 @app.delete("/api/posts/{platform}/{post_id}", status_code=204, response_class=Response)

@@ -2,6 +2,7 @@ import { useParams, Link } from "react-router-dom";
 import { EmptyState } from "../components/EmptyState";
 import { useSavePipeline } from "../state/SavePipelineContext";
 import type { SavedPost } from "../../api";
+import { proxiedMediaUrl } from "../../postDisplayUtils";
 
 interface CollectionDetailPageProps {
   posts: SavedPost[];
@@ -103,7 +104,7 @@ export function CollectionDetailPage({ posts }: CollectionDetailPageProps) {
                 style={{
                   height: "200px",
                   background: post.thumbnail_url
-                    ? `url(${post.thumbnail_url}) center/cover no-repeat`
+                    ? `url(${proxiedMediaUrl(post.thumbnail_url)}) center/cover no-repeat`
                     : "linear-gradient(160deg, #FBEBDD, #C98A5B)",
                 }}
               />
