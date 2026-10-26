@@ -75,7 +75,7 @@ export default function PostsScreen() {
   const [attentionJob, setAttentionJob] = useState<Job | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [query, setQuery] = useState("");
-  const [collectionFilter, setCollectionFilter] = useState<"all" | "recipes" | "watch" | "location">("all");
+  const [collectionFilter, setCollectionFilter] = useState<"all" | "recipes" | "location">("all");
   const [dateMode, setDateMode] = useState<DateMode>("saved");
   const [facetKeys, setFacetKeys] = useState<string[]>([]);
   const refreshedCompletedJobs = useRef(new Set<string>());
@@ -124,8 +124,6 @@ export default function PostsScreen() {
     let list = posts;
     if (collectionFilter === "recipes") {
       list = list.filter((p) => p.content_category === "food");
-    } else if (collectionFilter === "watch") {
-      list = list.filter((p) => p.content_category === "movies");
     } else if (collectionFilter === "location") {
       list = list.filter((p) => (p.place_ids && p.place_ids.length > 0) || (p.extracted_places && p.extracted_places.length > 0));
     }
@@ -285,31 +283,6 @@ export default function PostsScreen() {
               Recipes
             </Text>
           </Pressable>
-
-          <Pressable
-            onPress={() => setCollectionFilter((c) => (c === "watch" ? "all" : "watch"))}
-            style={[styles.chip, collectionFilter === "watch" && styles.chipActive]}
-          >
-            <Text
-              style={[styles.chipText, collectionFilter === "watch" && styles.chipTextActive]}
-            >
-              Watch
-            </Text>
-          </Pressable>
-
-          {FeatureFlags.isEnabled("new-kits") ? (
-            <Pressable
-              onPress={() => {
-                router.push(appHref("/(app)/settings"));
-              }}
-              style={styles.chipDashed}
-            >
-              <Text style={styles.chipDashedText}>+ Workouts?</Text>
-              <View style={styles.soonBadge}>
-                <Text style={styles.soonBadgeText}>Soon</Text>
-              </View>
-            </Pressable>
-          ) : null}
 
           <Pressable
             onPress={() => setCollectionFilter((c) => (c === "location" ? "all" : "location"))}

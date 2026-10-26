@@ -2,7 +2,7 @@ import { createContext, useContext, useState, type ReactNode } from "react";
 
 import type { SavedPost } from "./api";
 
-export const LIBRARY_PLATFORMS = ["instagram", "youtube", "tiktok", "web"] as const;
+export const LIBRARY_PLATFORMS = ["instagram", "web"] as const;
 export type LibraryPlatform = (typeof LIBRARY_PLATFORMS)[number];
 
 const LibraryPlatformContext = createContext<{
@@ -50,25 +50,19 @@ export function useLibraryPlatform() {
 
 export function libraryPlatformLabel(key: string): string {
   if (key === "instagram") return "Instagram";
-  if (key === "tiktok") return "TikTok";
-  if (key === "youtube") return "YouTube";
   if (key === "web") return "Web";
   return key;
 }
 
 export function libraryPlatformIcon(
   platform: string,
-): "logo-instagram" | "logo-youtube" | "logo-tiktok" | "globe-outline" {
+): "logo-instagram" | "globe-outline" {
   if (platform === "instagram") return "logo-instagram";
-  if (platform === "youtube") return "logo-youtube";
-  if (platform === "tiktok") return "logo-tiktok";
   return "globe-outline";
 }
 
 export const LIBRARY_PLATFORM_COLOR: Record<string, string> = {
   instagram: "#E4405F",
-  youtube: "#FF0000",
-  tiktok: "#25F4EE",
   web: "#4fe8f6",
 };
 

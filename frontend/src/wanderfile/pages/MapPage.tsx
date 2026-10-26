@@ -498,7 +498,11 @@ export function MapPage({ places, loading }: MapPageProps) {
 
         <MapContainer
           center={defaultCenter}
-          zoom={zoom}
+          zoom={Math.max(zoom, 3)}
+          minZoom={3}
+          worldCopyJump={true}
+          bounds={mappablePlaces.length > 1 ? L.latLngBounds(mappablePlaces.map((p) => [p.location.latitude!, p.location.longitude!])) : undefined}
+          boundsOptions={{ padding: [40, 40], maxZoom: 13 }}
           style={{ position: "absolute", top: 0, bottom: 0, left: 0, right: 0, width: "100%", height: "100%", zIndex: 1 }}
           scrollWheelZoom
         >

@@ -187,8 +187,28 @@ export default function PlaceDetailScreen() {
   const heroPost = sourcePosts.find((p) => p.thumbnail_url);
   const heroImageUrl = heroPost?.thumbnail_url ? proxiedMediaUrl(heroPost.thumbnail_url) : null;
   const postTips = sourcePosts.flatMap((p) => (p.extracted_places || []).flatMap((ep) => ep.tips || []));
-  const allTips = Array.from(new Set([...(place.tips || []), ...postTips].filter(Boolean)));
+  const rawTips = Array.from(new Set([...(place.tips || []), ...postTips].filter(Boolean)));
+  const summaryLower = (place.summary || "").trim().toLowerCase();
+  const distinctTips = rawTips.filter((tip) => {
+    if (!summaryLower) return true;
+    const lowerTip = tip.trim().toLowerCase();
+    return (
+      lowerTip !== summaryLower &&
+      !summaryLower.includes(lowerTip) &&
+      !lowerTip.includes(summaryLower)
+    );
+  });
   const effectiveAddress = getEffectiveAddress(place);
+
+  const placeTitle = capitalizePlaceName(place.display_name);
+  const cleanTitle = placeTitle.trim().toLowerCase();
+  const rawTitle = (place.display_name || "").trim().toLowerCase();
+  const distinctAliases = (place.aliases || [])
+    .map((a) => capitalizePlaceName(a))
+    .filter((a) => {
+      const lower = a.trim().toLowerCase();
+      return lower !== cleanTitle && lower !== rawTitle;
+    });
 
   return (
     <DetailSheetChrome>
@@ -209,9 +229,9 @@ export default function PlaceDetailScreen() {
               ))}
             </View>
             <Text style={styles.breadcrumb}>{breadcrumb}</Text>
-            <Text style={styles.title}>{capitalizePlaceName(place.display_name)}</Text>
-            {place.aliases.length > 0 ? (
-              <Text style={styles.aliases}>Also known as {place.aliases.join(", ")}</Text>
+            <Text style={styles.title}>{placeTitle}</Text>
+            {distinctAliases.length > 0 ? (
+              <Text style={styles.aliases}>Also known as {distinctAliases.join(", ")}</Text>
             ) : null}
             {place.summary ? (
               <Text style={styles.summaryText}>{place.summary}</Text>
@@ -372,11 +392,11 @@ export default function PlaceDetailScreen() {
           </SectionBlock>
         ) : null}
 
-        {allTips.length > 0 ? (
-          <SectionBlock icon="bulb-outline" title={`Creator tips (${allTips.length})`}>
+        {distinctTips.length > 0 ? (
+          <SectionBlock icon="bulb-outline" title={`Creator tips (${distinctTips.length})`}>
             <View style={styles.surface}>
               <Text style={styles.attributedLabel}>From creators</Text>
-              {allTips.map((tip, idx) => (
+              {distinctTips.map((tip, idx) => (
                 <View key={idx} style={styles.tipCard}>
                   <Text style={styles.tipIcon}>💡</Text>
                   <Text style={styles.tipText}>{tip}</Text>

@@ -75,10 +75,10 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
   const place = places.find((p) => p.place_id === id);
   const [visited, setVisited] = useState(false);
 
-  // Dynamic back navigation based on history/location state
+  // Consistent back navigation based on history/location state, defaulting to Map
   const from = (location.state as { from?: string } | null)?.from;
-  let backLabel = "Back to Home";
-  let fallbackTo = "/";
+  let backLabel = "Back to Map";
+  let fallbackTo = "/map";
   if (from) {
     if (from.startsWith("/map")) {
       backLabel = "Back to Map";
@@ -113,8 +113,8 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
           screenLabel="Place detail"
           headline="Place not found"
           description="This place is not in your saved library."
-          primaryActionLabel="Back to Home"
-          onPrimaryAction={() => navigate("/")}
+          primaryActionLabel="Back to Map"
+          onPrimaryAction={() => navigate("/map")}
           iconPath="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"
           tint="#E3F0F4"
           ink="#1B5E78"
@@ -131,16 +131,52 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
     ? proxiedMediaUrl(heroPost.thumbnail_url)
     : "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80";
 
+  const displayName = capitalizePlaceName(place.display_name);
+  const cleanTitle = (displayName || place.display_name || "").trim().toLowerCase();
+  const rawTitle = (place.display_name || "").trim().toLowerCase();
+  const distinctAliases = (place.aliases || [])
+    .map((a) => capitalizePlaceName(a))
+    .filter((a) => {
+      const lower = a.trim().toLowerCase();
+      return lower !== cleanTitle && lower !== rawTitle;
+    });
+
+  const summaryLower = (place.summary || "").trim().toLowerCase();
+
+  // Filter details that are not identical or contained in the hero summary
+  const distinctDetails = (place.details || []).filter((item) => {
+    if (!summaryLower) return true;
+    const itemLower = item.trim().toLowerCase();
+    return (
+      itemLower !== summaryLower &&
+      !summaryLower.includes(itemLower) &&
+      !itemLower.includes(summaryLower)
+    );
+  });
+
   const postTips = relatedPosts.flatMap((p) => p.trip_tips || []);
   const allTips = Array.from(new Set([...(place.tips || []), ...postTips].filter(Boolean)));
-  const hasDetails = Boolean(place.details && place.details.length > 0);
-  const hasTips = allTips.length > 0;
+
+  // Filter tips that don't duplicate the summary or details
+  const distinctTips = allTips.filter((tip) => {
+    if (!summaryLower) return true;
+    const tipLower = tip.trim().toLowerCase();
+    if (tipLower === summaryLower || summaryLower.includes(tipLower) || tipLower.includes(summaryLower)) {
+      return false;
+    }
+    return !distinctDetails.some((d) => {
+      const dLower = d.trim().toLowerCase();
+      return tipLower === dLower || dLower.includes(tipLower) || tipLower.includes(dLower);
+    });
+  });
+
+  const hasDetails = distinctDetails.length > 0;
+  const hasTips = distinctTips.length > 0;
 
   const lat = place.location?.latitude;
   const lng = place.location?.longitude;
   const hasCoords = typeof lat === "number" && typeof lng === "number";
 
-  const displayName = capitalizePlaceName(place.display_name);
   const effectiveAddress = getEffectiveAddress(place);
 
   const googleMapsUrl =
@@ -236,7 +272,7 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
               {displayName || place.display_name}
             </h1>
 
-            {place.aliases && place.aliases.length > 0 && (
+            {distinctAliases.length > 0 && (
               <div
                 style={{
                   fontSize: "14px",
@@ -247,7 +283,7 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
                   wordBreak: "break-word",
                 }}
               >
-                Also known as {place.aliases.join(", ")}
+                Also known as {distinctAliases.join(", ")}
               </div>
             )}
 
@@ -393,12 +429,12 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
               <h2 style={{ margin: "0 0 12px", fontSize: "18px", fontWeight: 800 }}>About & Tips</h2>
               {hasDetails && (
                 <p style={{ margin: "0 0 14px", fontSize: "15px", lineHeight: 1.5, color: "#4A4E52", overflowWrap: "anywhere", wordBreak: "break-word" }}>
-                  {place.details.join(" ")}
+                  {distinctDetails.join(" ")}
                 </p>
               )}
               {hasTips && (
                 <ul style={{ margin: 0, paddingLeft: "20px", color: "#4A4E52", fontSize: "14px", lineHeight: 1.6, overflowWrap: "anywhere", wordBreak: "break-word" }}>
-                  {allTips.map((t, idx) => (
+                  {distinctTips.map((t, idx) => (
                     <li key={idx} style={{ marginBottom: "6px" }}>{t}</li>
                   ))}
                 </ul>

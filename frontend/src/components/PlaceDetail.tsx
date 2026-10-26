@@ -234,9 +234,9 @@ export function PlaceDetail({
               {locationBreadcrumb(place)}
             </p>
             <h2 id="place-detail-title">{place.display_name}</h2>
-            {place.aliases.length > 0 && (
+            {place.aliases && place.aliases.filter((a) => a.trim().toLowerCase() !== place.display_name.trim().toLowerCase()).length > 0 && (
               <p className="place-flip-muted">
-                Also known as {place.aliases.join(", ")}
+                Also known as {place.aliases.filter((a) => a.trim().toLowerCase() !== place.display_name.trim().toLowerCase()).join(", ")}
               </p>
             )}
             <div className="place-cover-tags">

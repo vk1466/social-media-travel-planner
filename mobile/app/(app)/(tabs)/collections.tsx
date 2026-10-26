@@ -33,7 +33,6 @@ export default function MobileCollectionsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { posts, places } = useLibrary();
-  const [showSuggested, setShowSuggested] = useState(true);
 
   const placesCount = places.length;
   const foodPosts = posts.filter((p) => p.content_category === "food");
@@ -45,28 +44,6 @@ export default function MobileCollectionsScreen() {
   const travelThumbs = travelPosts.map((p) => proxiedMediaUrl(p.thumbnail_url)).filter(Boolean).slice(0, 3);
 
   const collections: CollectionItem[] = [
-    {
-      id: "recipes",
-      name: "Recipes",
-      meta: `${foodPosts.length} saves`,
-      kit: "Recipe kit",
-      kitBg: "#FBEBDD",
-      kitInk: "#9A4513",
-      route: "/(app)/(tabs)/food",
-      fallbackColors: ["#E4B25B", "#C78A55", "#8DB06A"],
-      images: foodThumbs,
-    },
-    {
-      id: "watch",
-      name: "Watch",
-      meta: `${moviePosts.length} saves`,
-      kit: "Watch kit",
-      kitBg: "#ECE8F7",
-      kitInk: "#4B3C8C",
-      route: "/(app)/(tabs)/movies",
-      fallbackColors: ["#6B4A78", "#C4642B", "#4F7F86"],
-      images: movieThumbs,
-    },
     {
       id: "pnw",
       name: "Pacific Northwest",
@@ -88,6 +65,17 @@ export default function MobileCollectionsScreen() {
       route: "/(app)/(tabs)/travel",
       fallbackColors: ["#D9B26A", "#C96A3C", "#7FB06A"],
       images: travelThumbs.slice().reverse(),
+    },
+    {
+      id: "recipes",
+      name: "Recipes",
+      meta: `${foodPosts.length} saves`,
+      kit: "Recipe kit",
+      kitBg: "#FBEBDD",
+      kitInk: "#9A4513",
+      route: "/(app)/(tabs)/food",
+      fallbackColors: ["#E4B25B", "#C78A55", "#8DB06A"],
+      images: foodThumbs,
     },
   ];
 
@@ -115,43 +103,6 @@ export default function MobileCollectionsScreen() {
         </Pressable>
       </View>
       <Text style={styles.subtitle}>Groups that build themselves as you save.</Text>
-
-      {/* C2: Suggested Workouts card */}
-      {showSuggested && FeatureFlags.isEnabled("suggested-collections") ? (
-        <View style={styles.suggestedCard}>
-          <View style={styles.suggestedTopRow}>
-            <View style={styles.suggestedIconWrap} />
-            <View>
-              <Text style={styles.suggestedBadge}>SUGGESTED</Text>
-              <Text style={styles.suggestedTitle}>Workouts</Text>
-            </View>
-          </View>
-          <Text style={styles.suggestedDesc}>
-            A few saves look like routines, like &quot;Kettlebell full body workout&quot;.
-          </Text>
-          <View style={styles.suggestedButtonsRow}>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Create Workouts collection"
-              onPress={() => router.push(appHref("/(app)/coming-soon"))}
-              style={styles.createButton}
-            >
-              <Text style={styles.createButtonText}>Create</Text>
-              <View style={styles.soonPill}>
-                <Text style={styles.soonPillText}>Soon</Text>
-              </View>
-            </Pressable>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Dismiss suggestion"
-              onPress={() => setShowSuggested(false)}
-              style={styles.notNowButton}
-            >
-              <Text style={styles.notNowButtonText}>Not now</Text>
-            </Pressable>
-          </View>
-        </View>
-      ) : null}
 
       {/* C3: "Your collections" two-column grid */}
       <Text style={styles.sectionHeading}>Your collections</Text>

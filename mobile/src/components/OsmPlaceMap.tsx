@@ -338,7 +338,7 @@ function buildMapHtml(): string {
       zoomControl: false,
       attributionControl: false,
       worldCopyJump: true,
-      minZoom: 2,
+      minZoom: 3,
       maxZoom: 19,
       fadeAnimation: false,
       markerZoomAnimation: false,
@@ -392,7 +392,7 @@ function buildMapHtml(): string {
 
     function fitPlaces(places) {
       if (!places.length) {
-        map.setView([20, 0], 2, { animate: false });
+        map.setView([20, 0], 3, { animate: false });
         return;
       }
       if (places.length === 1) {
