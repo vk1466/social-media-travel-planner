@@ -8,6 +8,7 @@ import markerShadow from "leaflet/dist/images/marker-shadow.png";
 import type { Place } from "../api";
 import { categoryLabel } from "../categoryLabels";
 import { mappablePlaces } from "../placeMapUtils";
+import { CARTO_BASEMAP_ATTR, cartoVoyagerTileUrl } from "../maps";
 
 import "leaflet/dist/leaflet.css";
 
@@ -119,8 +120,10 @@ export function PlaceMap({
     <div className={className ?? "place-map-shell"} style={{ height }}>
       <MapContainer center={center} zoom={4} className="place-map" scrollWheelZoom>
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution={CARTO_BASEMAP_ATTR}
+          url={cartoVoyagerTileUrl()}
+          subdomains="abcd"
+          maxZoom={19}
         />
         <InvalidateSize />
         <FitBounds places={mapped} />

@@ -34,7 +34,7 @@ export function OsmPlaceMap({
   );
   const html = useMemo(() => buildMapHtml(), []);
   const source = useMemo(
-    () => ({ html, baseUrl: "https://tile.openstreetmap.org" }),
+    () => ({ html, baseUrl: "https://cartocdn.com" }),
     [html],
   );
   const webViewRef = useRef<WebView>(null);
@@ -206,7 +206,7 @@ function markerPayload(places: Place[], visitedPlaceIds: ReadonlySet<string>): s
 }
 
 function buildMapHtml(): string {
-  const tileUrl = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
+  const tileUrl = "https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png";
 
   return `<!DOCTYPE html>
 <html>
@@ -346,7 +346,7 @@ function buildMapHtml(): string {
     });
     L.control.attribution({ position: "bottomleft", prefix: false }).addTo(map);
     L.tileLayer(${JSON.stringify(tileUrl)}, {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
       maxZoom: 19,
       updateWhenIdle: true,
       updateWhenZooming: false,
@@ -400,7 +400,8 @@ function buildMapHtml(): string {
         return;
       }
       map.fitBounds(places.map(function (place) { return [place.lat, place.lng]; }), {
-        padding: [70, 70],
+        paddingTopLeft: [40, 40],
+        paddingBottomRight: [40, 160],
         maxZoom: 13,
         animate: false
       });

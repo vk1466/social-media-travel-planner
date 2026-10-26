@@ -124,8 +124,8 @@ function AccountMenuDropdown({
           width: "40px",
           height: "40px",
           borderRadius: "50%",
-          border: isViewingAs ? "2px solid #F59E0B" : "1px solid #E6E3DC",
-          background: "#F6F5F1",
+          border: isViewingAs ? "2px solid #F59E0B" : "1px solid var(--wf-border)",
+          background: "var(--wf-surface-2)",
           padding: 0,
           cursor: "pointer",
           display: "flex",
@@ -159,7 +159,7 @@ function AccountMenuDropdown({
                 fontFamily: "inherit",
                 fontWeight: 800,
                 fontSize: "14px",
-                color: "#1B1D1F",
+                color: "var(--wf-text)",
               }}
             >
               {initials}
@@ -177,7 +177,7 @@ function AccountMenuDropdown({
               height: "12px",
               borderRadius: "50%",
               background: "#F59E0B",
-              border: "2px solid #FFFFFF",
+              border: "2px solid var(--wf-surface)",
             }}
           />
         ) : null}
@@ -189,11 +189,11 @@ function AccountMenuDropdown({
             position: "absolute",
             right: 0,
             top: "48px",
-            background: "#FFFFFF",
-            border: "1px solid #E6E3DC",
+            background: "var(--wf-surface)",
+            border: "1px solid var(--wf-border)",
             borderRadius: "18px",
             padding: "8px",
-            boxShadow: "0 12px 30px rgba(0,0,0,0.12)",
+            boxShadow: "var(--wf-shadow-elevated)",
             minWidth: "240px",
             maxWidth: "320px",
             zIndex: 100,
@@ -223,7 +223,7 @@ function AccountMenuDropdown({
                 style={{
                   fontWeight: 700,
                   fontSize: "14px",
-                  color: "#1B1D1F",
+                  color: "var(--wf-text)",
                   overflow: "hidden",
                   textOverflow: "ellipsis",
                   whiteSpace: "nowrap",
@@ -265,7 +265,7 @@ function AccountMenuDropdown({
               <span
                 style={{
                   fontSize: "12px",
-                  color: "#6B6F73",
+                  color: "var(--wf-text-muted)",
                   overflow: "hidden",
                   textOverflow: "ellipsis",
                   whiteSpace: "nowrap",
@@ -276,7 +276,7 @@ function AccountMenuDropdown({
             ) : null}
           </div>
 
-          <div style={{ height: "1px", background: "#EFEDE7", margin: "2px 0 6px" }} />
+          <div style={{ height: "1px", background: "var(--wf-border)", margin: "2px 0 6px" }} />
 
           {/* Switch account section for Super Admin */}
           {isSuperAdmin ? (
@@ -303,7 +303,7 @@ function AccountMenuDropdown({
             </div>
           ) : null}
           {isSuperAdmin ? (
-            <div style={{ height: "1px", background: "#EFEDE7", margin: "4px 0" }} />
+            <div style={{ height: "1px", background: "var(--wf-border)", margin: "4px 0" }} />
           ) : null}
 
           {/* Actions */}
@@ -357,7 +357,7 @@ function AccountMenuDropdown({
             <span>Kits overview</span>
           </button>
 
-          <div style={{ height: "1px", background: "#EFEDE7", margin: "4px 0" }} />
+          <div style={{ height: "1px", background: "var(--wf-border)", margin: "4px 0" }} />
 
           <button
             type="button"
@@ -575,8 +575,8 @@ export function Header({
                   fontSize: "15px",
                   fontWeight: 600,
                   textDecoration: "none",
-                  background: active ? "#1B1D1F" : "transparent",
-                  color: active ? "#FFFFFF" : "#4A4E52",
+                  background: active ? "var(--wf-text)" : "transparent",
+                  color: active ? "var(--wf-bg)" : "var(--wf-text-muted)",
                   transition: "all 0.15s ease",
                 }}
               >
@@ -609,9 +609,9 @@ export function Header({
               height: "40px",
               padding: "0 8px 0 12px",
               borderRadius: "999px",
-              background: "#F6F5F1",
-              border: "1px solid #E6E3DC",
-              color: "#6B6F73",
+              background: "var(--wf-surface-2)",
+              border: "1px solid var(--wf-border)",
+              color: "var(--wf-text-muted)",
               boxSizing: "border-box",
             }}
           >
@@ -670,7 +670,7 @@ export function Header({
                 background: "transparent",
                 fontFamily: "inherit",
                 fontSize: "14px",
-                color: "#1B1D1F",
+                color: "var(--wf-text)",
                 outline: "none",
               }}
             />
@@ -704,9 +704,9 @@ export function Header({
                 fontWeight: 700,
                 padding: "5px 9px",
                 borderRadius: "999px",
-                background: "#FFFFFF",
-                border: "1px solid #E6E3DC",
-                color: "#1B1D1F",
+                background: "var(--wf-surface)",
+                border: "1px solid var(--wf-border)",
+                color: "var(--wf-text)",
                 cursor: "pointer",
                 flexShrink: 0,
               }}
@@ -736,9 +736,9 @@ export function Header({
             minWidth: "44px",
             minHeight: "44px",
             borderRadius: "50%",
-            border: "1px solid #E6E3DC",
-            background: mobileSearchOpen ? "#1B1D1F" : "#F6F5F1",
-            color: mobileSearchOpen ? "#FFFFFF" : "#1B1D1F",
+            border: "1px solid var(--wf-border)",
+            background: mobileSearchOpen ? "var(--wf-text)" : "var(--wf-surface-2)",
+            color: mobileSearchOpen ? "var(--wf-bg)" : "var(--wf-text)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -775,7 +775,7 @@ export function Header({
               fontSize: "14px",
               fontWeight: 600,
               textDecoration: "none",
-              color: "#4A4E52",
+              color: "var(--wf-text-muted)",
               border: 0,
               background: "transparent",
               cursor: "pointer",
@@ -807,12 +807,12 @@ export function Header({
                 height: "38px",
                 padding: "0 14px",
                 borderRadius: "999px",
-                border: "1px solid #D9D5CB",
-                background: "#FFFFFF",
+                border: "1px solid var(--wf-border)",
+                background: "var(--wf-surface)",
                 fontFamily: "inherit",
                 fontSize: "14px",
                 fontWeight: 700,
-                color: "#1B1D1F",
+                color: "var(--wf-text)",
                 cursor: "pointer",
               }}
             >
@@ -833,9 +833,9 @@ export function Header({
                 width: "36px",
                 height: "36px",
                 borderRadius: "50%",
-                border: "1px solid #1B1D1F",
-                background: "#1B1D1F",
-                color: "#FFFFFF",
+                border: "1px solid var(--wf-text)",
+                background: "var(--wf-text)",
+                color: "var(--wf-bg)",
                 cursor: "pointer",
                 flexShrink: 0,
               }}
@@ -925,9 +925,9 @@ export function Header({
                 height: "38px",
                 padding: "0 10px",
                 borderRadius: "999px",
-                background: "#F6F5F1",
-                border: "1px solid #E6E3DC",
-                color: "#6B6F73",
+                background: "var(--wf-surface-2)",
+                border: "1px solid var(--wf-border)",
+                color: "var(--wf-text-muted)",
                 boxSizing: "border-box",
               }}
             >
@@ -960,7 +960,7 @@ export function Header({
                   background: "transparent",
                   fontFamily: "inherit",
                   fontSize: "14px",
-                  color: "#1B1D1F",
+                  color: "var(--wf-text)",
                   outline: "none",
                 }}
               />
@@ -971,7 +971,7 @@ export function Header({
                   style={{
                     border: 0,
                     background: "transparent",
-                    color: "#8C9094",
+                    color: "var(--wf-text-muted)",
                     fontSize: "14px",
                     cursor: "pointer",
                     padding: "2px",
@@ -994,7 +994,7 @@ export function Header({
             style={{
               border: 0,
               background: "transparent",
-              color: "#4A4E52",
+              color: "var(--wf-text)",
               fontSize: "14px",
               fontWeight: 600,
               cursor: "pointer",

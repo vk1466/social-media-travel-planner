@@ -60,23 +60,24 @@ export function googleMapsDirectionsUrl(latitude: number, longitude: number): st
 export const OSM_BASEMAP_ATTR =
   '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
 
-export const CARTO_BASEMAP_ATTR = OSM_BASEMAP_ATTR;
+export const CARTO_BASEMAP_ATTR =
+  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>';
 
 export function osmStandardTileUrl(): string {
   return "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
 }
 
-/** OpenStreetMap standard raster tiles (keyless, works in production). */
+/** CARTO Voyager raster tiles (keyless, works in production). */
 export function cartoVoyagerTileUrl(): string {
-  return osmStandardTileUrl();
+  return "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png";
 }
 
 export function cartoLightNoLabelsTileUrl(): string {
-  return osmStandardTileUrl();
+  return "https://{s}.basemaps.cartocdn.com/rastertiles/light_nolabels/{z}/{x}/{y}{r}.png";
 }
 
 export function cartoDarkTileUrl(): string {
-  return osmStandardTileUrl();
+  return "https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}{r}.png";
 }
 
 /** OpenStreetMap embed (no API key) for a Google-Maps-like preview. */

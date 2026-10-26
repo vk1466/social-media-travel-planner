@@ -573,7 +573,26 @@ export function readLiveSwatches(): BrandSwatchMap {
 
 function applyPaletteToDom(palette: BrandPalette): void {
   const root = document.documentElement;
+  const isDark =
+    root.getAttribute("data-theme") === "dark" ||
+    (typeof window !== "undefined" &&
+      window.matchMedia?.("(prefers-color-scheme: dark)").matches &&
+      root.getAttribute("data-theme") !== "light");
+
   for (const [token, value] of Object.entries(palette)) {
+    if (
+      isDark &&
+      (token === "--wf-bg" ||
+        token === "--wf-surface" ||
+        token === "--wf-surface-2" ||
+        token === "--wf-text" ||
+        token === "--wf-ink" ||
+        token === "--wf-text-muted" ||
+        token === "--wf-border" ||
+        token === "--wf-border-subtle")
+    ) {
+      continue;
+    }
     root.style.setProperty(token, value);
   }
   root.style.setProperty("--forest-ring", `rgb(var(--wf-forest-rgb) / 0.18)`);

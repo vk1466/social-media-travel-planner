@@ -2,7 +2,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { useAuth, useUser } from "@clerk/clerk-expo";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { Alert, Image, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Alert, Appearance, Image, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { cleanupData, reprocessPlaces } from "@/src/api";
 import { Button, ErrorBanner, SuccessBanner } from "@/src/components/ui";
@@ -164,7 +164,10 @@ export default function SettingsScreen() {
               key={mode}
               label={mode === "light" ? "Light" : mode === "dark" ? "Dark" : "System"}
               variant={themeMode === mode ? "primary" : "secondary"}
-              onPress={() => setThemeMode(mode)}
+              onPress={() => {
+                setThemeMode(mode);
+                Appearance.setColorScheme(mode === "system" ? "unspecified" : mode);
+              }}
               style={styles.flexBtn}
             />
           ))}

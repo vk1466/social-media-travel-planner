@@ -1,7 +1,7 @@
 /**
  * Wanderfile Native Design Tokens — matching docs/ux_spec.md
  */
-import { Platform, type TextStyle, type ViewStyle } from "react-native";
+import { Appearance, Platform, type TextStyle, type ViewStyle } from "react-native";
 
 export const lightColors = {
   bg: "#FAFAF7",
@@ -95,8 +95,14 @@ export const darkColors = {
   otherInk: "#A3A9B3",
 };
 
-// Default export uses light colors for backwards compatibility
-export const colors = lightColors;
+// Dynamic export adapts to active Appearance color scheme
+export const colors: typeof lightColors = new Proxy(lightColors, {
+  get(target, prop: string | symbol) {
+    const scheme = Appearance.getColorScheme();
+    const active = scheme === "dark" ? darkColors : lightColors;
+    return (active as any)[prop] ?? (target as any)[prop];
+  },
+});
 
 export const spacing = {
   xs: 4,

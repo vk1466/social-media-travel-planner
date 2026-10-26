@@ -37,6 +37,26 @@ export function applyTheme(mode: ThemeMode = getStoredTheme()) {
   if (typeof document === "undefined") return;
   const resolved = resolveTheme(mode);
   document.documentElement.setAttribute("data-theme", resolved);
+
+  const root = document.documentElement;
+  if (resolved === "dark") {
+    root.style.removeProperty("--wf-bg");
+    root.style.removeProperty("--wf-surface");
+    root.style.removeProperty("--wf-surface-2");
+    root.style.removeProperty("--wf-text");
+    root.style.removeProperty("--wf-ink");
+    root.style.removeProperty("--wf-text-muted");
+    root.style.removeProperty("--wf-muted");
+    root.style.removeProperty("--wf-border");
+    root.style.removeProperty("--wf-border-subtle");
+    root.style.colorScheme = "dark";
+    document.body.style.backgroundColor = "#0E0F11";
+    document.body.style.color = "#F2F2F0";
+  } else {
+    root.style.colorScheme = "light";
+    document.body.style.backgroundColor = "";
+    document.body.style.color = "";
+  }
 }
 
 // Auto-initialize theme listener on module load

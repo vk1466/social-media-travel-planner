@@ -16,6 +16,8 @@
   --wf-border-control: #E4E4DF;
   --wf-border-dashed: #D1D1CB;
   --wf-bg-dashed: #F8F8F5;
+  --wf-accent: #14161A;
+  --wf-border-hairline: #E4E4DF;
 
   --wf-primary: #0F766E;
   --wf-on-primary: #FFFFFF;
@@ -70,94 +72,98 @@
 }
 
 [data-theme="dark"] {
-  --wf-bg: #0E0F11;
-  --wf-surface: #17191C;
-  --wf-surface-2: #202328;
-  --wf-text: #F2F2F0;
-  --wf-ink: #F2F2F0;
-  --wf-text-muted: #A3A9B3;
-  --wf-muted: #A3A9B3;
-  --wf-body-tinted: #C9CED6;
-  --wf-border: #2A2E34;
-  --wf-border-subtle: #202328;
-  --wf-border-control: #2A2E34;
-  --wf-border-dashed: #363B43;
-  --wf-bg-dashed: #17191C;
+  --wf-bg: #0E0F11 !important;
+  --wf-surface: #17191C !important;
+  --wf-surface-2: #202328 !important;
+  --wf-text: #F2F2F0 !important;
+  --wf-ink: #F2F2F0 !important;
+  --wf-text-muted: #A3A9B3 !important;
+  --wf-muted: #A3A9B3 !important;
+  --wf-body-tinted: #C9CED6 !important;
+  --wf-border: #2A2E34 !important;
+  --wf-border-subtle: #202328 !important;
+  --wf-border-control: #2A2E34 !important;
+  --wf-border-dashed: #363B43 !important;
+  --wf-bg-dashed: #17191C !important;
+  --wf-accent: #F2F2F0 !important;
+  --wf-border-hairline: #2A2E34 !important;
 
-  --wf-primary: #2DD4BF;
-  --wf-on-primary: #04201D;
-  --wf-danger: #F97066;
-  --wf-success: #47CD89;
+  --wf-primary: #2DD4BF !important;
+  --wf-on-primary: #04201D !important;
+  --wf-danger: #F97066 !important;
+  --wf-success: #47CD89 !important;
 
   /* Category accents */
-  --wf-cat-place: #2DD4BF;
-  --wf-cat-food: #FB923C;
-  --wf-cat-watch: #A78BFA;
-  --wf-cat-fashion: #F472B6;
-  --wf-cat-hair: #FACC15;
+  --wf-cat-place: #2DD4BF !important;
+  --wf-cat-food: #FB923C !important;
+  --wf-cat-watch: #A78BFA !important;
+  --wf-cat-fashion: #F472B6 !important;
+  --wf-cat-hair: #FACC15 !important;
 
-  --wf-place-tint: rgba(45, 212, 191, 0.15);
-  --wf-place-ink: #2DD4BF;
-  --wf-recipe-tint: rgba(251, 146, 60, 0.15);
-  --wf-recipe-ink: #FB923C;
-  --wf-movie-tint: rgba(167, 139, 250, 0.15);
-  --wf-movie-ink: #A78BFA;
-  --wf-routine-tint: rgba(71, 205, 137, 0.15);
-  --wf-routine-ink: #47CD89;
-  --wf-other-tint: #202328;
-  --wf-other-ink: #A3A9B3;
-  --wf-alert-tint: rgba(249, 112, 102, 0.15);
-  --wf-alert-ink: #F97066;
+  --wf-place-tint: rgba(45, 212, 191, 0.15) !important;
+  --wf-place-ink: #2DD4BF !important;
+  --wf-recipe-tint: rgba(251, 146, 60, 0.15) !important;
+  --wf-recipe-ink: #FB923C !important;
+  --wf-movie-tint: rgba(167, 139, 250, 0.15) !important;
+  --wf-movie-ink: #A78BFA !important;
+  --wf-routine-tint: rgba(71, 205, 137, 0.15) !important;
+  --wf-routine-ink: #47CD89 !important;
+  --wf-other-tint: #202328 !important;
+  --wf-other-ink: #A3A9B3 !important;
+  --wf-alert-tint: rgba(249, 112, 102, 0.15) !important;
+  --wf-alert-ink: #F97066 !important;
 
   /* In dark mode, depth with lighter surface instead of shadow */
-  --wf-shadow-card: 0 0 0 1px #2A2E34;
-  --wf-shadow-sheet: 0 -8px 24px rgba(0, 0, 0, 0.5), 0 0 0 1px #2A2E34;
-  --wf-shadow-elevated: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px #2A2E34;
+  --wf-shadow-card: 0 0 0 1px #2A2E34 !important;
+  --wf-shadow-sheet: 0 -8px 24px rgba(0, 0, 0, 0.5), 0 0 0 1px #2A2E34 !important;
+  --wf-shadow-elevated: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px #2A2E34 !important;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --wf-bg: #0E0F11;
-    --wf-surface: #17191C;
-    --wf-surface-2: #202328;
-    --wf-text: #F2F2F0;
-    --wf-ink: #F2F2F0;
-    --wf-text-muted: #A3A9B3;
-    --wf-muted: #A3A9B3;
-    --wf-body-tinted: #C9CED6;
-    --wf-border: #2A2E34;
-    --wf-border-subtle: #202328;
-    --wf-border-control: #2A2E34;
-    --wf-border-dashed: #363B43;
-    --wf-bg-dashed: #17191C;
+    --wf-bg: #0E0F11 !important;
+    --wf-surface: #17191C !important;
+    --wf-surface-2: #202328 !important;
+    --wf-text: #F2F2F0 !important;
+    --wf-ink: #F2F2F0 !important;
+    --wf-text-muted: #A3A9B3 !important;
+    --wf-muted: #A3A9B3 !important;
+    --wf-body-tinted: #C9CED6 !important;
+    --wf-border: #2A2E34 !important;
+    --wf-border-subtle: #202328 !important;
+    --wf-border-control: #2A2E34 !important;
+    --wf-border-dashed: #363B43 !important;
+    --wf-bg-dashed: #17191C !important;
+    --wf-accent: #F2F2F0 !important;
+    --wf-border-hairline: #2A2E34 !important;
 
-    --wf-primary: #2DD4BF;
-    --wf-on-primary: #04201D;
-    --wf-danger: #F97066;
-    --wf-success: #47CD89;
+    --wf-primary: #2DD4BF !important;
+    --wf-on-primary: #04201D !important;
+    --wf-danger: #F97066 !important;
+    --wf-success: #47CD89 !important;
 
-    --wf-cat-place: #2DD4BF;
-    --wf-cat-food: #FB923C;
-    --wf-cat-watch: #A78BFA;
-    --wf-cat-fashion: #F472B6;
-    --wf-cat-hair: #FACC15;
+    --wf-cat-place: #2DD4BF !important;
+    --wf-cat-food: #FB923C !important;
+    --wf-cat-watch: #A78BFA !important;
+    --wf-cat-fashion: #F472B6 !important;
+    --wf-cat-hair: #FACC15 !important;
 
-    --wf-place-tint: rgba(45, 212, 191, 0.15);
-    --wf-place-ink: #2DD4BF;
-    --wf-recipe-tint: rgba(251, 146, 60, 0.15);
-    --wf-recipe-ink: #FB923C;
-    --wf-movie-tint: rgba(167, 139, 250, 0.15);
-    --wf-movie-ink: #A78BFA;
-    --wf-routine-tint: rgba(71, 205, 137, 0.15);
-    --wf-routine-ink: #47CD89;
-    --wf-other-tint: #202328;
-    --wf-other-ink: #A3A9B3;
-    --wf-alert-tint: rgba(249, 112, 102, 0.15);
-    --wf-alert-ink: #F97066;
+    --wf-place-tint: rgba(45, 212, 191, 0.15) !important;
+    --wf-place-ink: #2DD4BF !important;
+    --wf-recipe-tint: rgba(251, 146, 60, 0.15) !important;
+    --wf-recipe-ink: #FB923C !important;
+    --wf-movie-tint: rgba(167, 139, 250, 0.15) !important;
+    --wf-movie-ink: #A78BFA !important;
+    --wf-routine-tint: rgba(71, 205, 137, 0.15) !important;
+    --wf-routine-ink: #47CD89 !important;
+    --wf-other-tint: #202328 !important;
+    --wf-other-ink: #A3A9B3 !important;
+    --wf-alert-tint: rgba(249, 112, 102, 0.15) !important;
+    --wf-alert-ink: #F97066 !important;
 
-    --wf-shadow-card: 0 0 0 1px #2A2E34;
-    --wf-shadow-sheet: 0 -8px 24px rgba(0, 0, 0, 0.5), 0 0 0 1px #2A2E34;
-    --wf-shadow-elevated: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px #2A2E34;
+    --wf-shadow-card: 0 0 0 1px #2A2E34 !important;
+    --wf-shadow-sheet: 0 -8px 24px rgba(0, 0, 0, 0.5), 0 0 0 1px #2A2E34 !important;
+    --wf-shadow-elevated: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px #2A2E34 !important;
   }
 }
 
@@ -550,6 +556,12 @@ body:has(.wf-map-main) {
   background: var(--wf-surface-2);
 }
 
+.wf-place-marker svg {
+  width: 14px;
+  height: 14px;
+  display: block;
+}
+
 .wf-map-pane .leaflet-container,
 .wf-map-pane .maplibregl-map {
   position: absolute !important;
@@ -559,8 +571,8 @@ body:has(.wf-map-main) {
 
 @media (max-width: 1023px) {
   .wf-main-content:has(.wf-map-main) {
-    height: calc(100dvh - 57px - 84px) !important;
-    max-height: calc(100dvh - 57px - 84px) !important;
+    height: calc(100dvh - 57px - 60px - env(safe-area-inset-bottom, 0px)) !important;
+    max-height: calc(100dvh - 57px - 60px - env(safe-area-inset-bottom, 0px)) !important;
     padding-bottom: 0 !important;
   }
   .wf-map-main[data-mobile-view="map"] .wf-map-sidebar {

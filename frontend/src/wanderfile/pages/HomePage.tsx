@@ -213,8 +213,8 @@ export function HomePage({ posts, places, loading, loadError, onRefresh }: HomeP
               padding: "0 22px",
               borderRadius: "var(--wf-radius-pill, 9999px)",
               border: 0,
-              background: "var(--wf-accent)",
-              color: "var(--wf-surface)",
+              background: "var(--wf-text)",
+              color: "var(--wf-bg)",
               fontWeight: 700,
               fontSize: "14px",
               cursor: "pointer",
@@ -243,7 +243,7 @@ export function HomePage({ posts, places, loading, loadError, onRefresh }: HomeP
                 borderRadius: "var(--wf-radius-pill, 9999px)",
                 background: "var(--wf-surface-2)",
                 border: "1px solid var(--wf-border)",
-                color: "var(--wf-accent)",
+                color: "var(--wf-text)",
                 fontSize: "13px",
                 fontWeight: 700,
                 cursor: "pointer",
@@ -299,10 +299,10 @@ export function HomePage({ posts, places, loading, loadError, onRefresh }: HomeP
                 </svg>
               </span>
               <div style={{ minWidth: 0 }}>
-                <span style={{ fontWeight: 700, fontSize: "15px", color: "#1B1D1F" }}>
+                <span style={{ fontWeight: 700, fontSize: "15px", color: "var(--wf-text)" }}>
                   {inboxFailures.length} {inboxFailures.length === 1 ? "link couldn't be read" : "links couldn't be read"}
                 </span>
-                <span style={{ fontSize: "13px", color: "#6B6F73", marginLeft: "8px" }}>
+                <span style={{ fontSize: "13px", color: "var(--wf-text-muted)", marginLeft: "8px" }}>
                   Waiting in your inbox
                 </span>
               </div>
@@ -316,12 +316,12 @@ export function HomePage({ posts, places, loading, loadError, onRefresh }: HomeP
                   height: "34px",
                   padding: "0 14px",
                   borderRadius: "999px",
-                  border: "1px solid #D9D5CB",
-                  background: "#FFFFFF",
+                  border: "1px solid var(--wf-border)",
+                  background: "var(--wf-surface)",
                   fontFamily: "inherit",
                   fontSize: "12px",
                   fontWeight: 700,
-                  color: "#1B1D1F",
+                  color: "var(--wf-text)",
                   cursor: "pointer",
                   display: "inline-flex",
                   alignItems: "center",
@@ -337,12 +337,12 @@ export function HomePage({ posts, places, loading, loadError, onRefresh }: HomeP
                   height: "34px",
                   padding: "0 14px",
                   borderRadius: "999px",
-                  border: "1px solid #D9D5CB",
-                  background: "#FFFFFF",
+                  border: "1px solid var(--wf-border)",
+                  background: "var(--wf-surface)",
                   fontFamily: "inherit",
                   fontSize: "12px",
                   fontWeight: 700,
-                  color: "#1B1D1F",
+                  color: "var(--wf-text)",
                   cursor: "pointer",
                 }}
               >
@@ -697,12 +697,12 @@ export function HomePage({ posts, places, loading, loadError, onRefresh }: HomeP
                 height: "38px",
                 padding: "0 16px",
                 borderRadius: "999px",
-                background: "#FFFFFF",
-                border: "1px solid #E6E3DC",
+                background: "var(--wf-surface)",
+                border: "1px solid var(--wf-border)",
                 fontSize: "14px",
                 fontWeight: 600,
                 textDecoration: "none",
-                color: "#1B1D1F",
+                color: "var(--wf-text)",
               }}
             >
               Weekend ideas
@@ -715,12 +715,12 @@ export function HomePage({ posts, places, loading, loadError, onRefresh }: HomeP
                 height: "38px",
                 padding: "0 16px",
                 borderRadius: "999px",
-                background: "#FFFFFF",
-                border: "1px solid #E6E3DC",
+                background: "var(--wf-surface)",
+                border: "1px solid var(--wf-border)",
                 fontSize: "14px",
                 fontWeight: 600,
                 textDecoration: "none",
-                color: "#1B1D1F",
+                color: "var(--wf-text)",
               }}
             >
               Quick to cook
@@ -733,12 +733,12 @@ export function HomePage({ posts, places, loading, loadError, onRefresh }: HomeP
                 height: "38px",
                 padding: "0 16px",
                 borderRadius: "999px",
-                background: "#FFFFFF",
-                border: "1px solid #E6E3DC",
+                background: "var(--wf-surface)",
+                border: "1px solid var(--wf-border)",
                 fontSize: "14px",
                 fontWeight: 600,
                 textDecoration: "none",
-                color: "#1B1D1F",
+                color: "var(--wf-text)",
               }}
             >
               Not tried yet
@@ -751,12 +751,12 @@ export function HomePage({ posts, places, loading, loadError, onRefresh }: HomeP
                 height: "38px",
                 padding: "0 16px",
                 borderRadius: "999px",
-                background: "#FFFFFF",
-                border: "1px solid #E6E3DC",
+                background: "var(--wf-surface)",
+                border: "1px solid var(--wf-border)",
                 fontSize: "14px",
                 fontWeight: 600,
                 textDecoration: "none",
-                color: "#1B1D1F",
+                color: "var(--wf-text)",
               }}
             >
               Tonight's watch

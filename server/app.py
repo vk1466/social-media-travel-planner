@@ -444,9 +444,46 @@ def reconstruct_recipe_post(
 
 
 @app.get("/api/media/proxy")
+@app.head("/api/media/proxy")
 def proxy_media(url: str = Query(..., min_length=8)) -> Response:
   """Proxy Instagram CDN images so the browser is not blocked by CORP."""
   return fetch_proxied_media(url)
+
+
+def _maybe_persist_preview_thumbnail(
+  shortcode: str,
+  clean_url: str,
+  title: str,
+  author: str | None,
+  thumbnail_url: str | None,
+) -> None:
+  if not thumbnail_url:
+    return
+  try:
+    from dataclasses import replace
+    from travelplanner.models import Platform, SavedPost, make_post_id
+    from travelplanner.store import load_post, save_post
+
+    post_id = make_post_id(Platform.INSTAGRAM, shortcode)
+    existing_p = load_post(Platform.INSTAGRAM, shortcode)
+    if existing_p:
+      if not existing_p.thumbnail_url:
+        save_post(replace(existing_p, thumbnail_url=thumbnail_url))
+    else:
+      save_post(
+        SavedPost(
+          post_id=post_id,
+          post_url=clean_url,
+          platform=Platform.INSTAGRAM,
+          media_kind="reel",
+          caption=title,
+          author_handle=author or None,
+          thumbnail_url=thumbnail_url,
+          title=title,
+        )
+      )
+  except Exception as exc:
+    logger.debug("could not persist preview thumbnail for %s: %s", shortcode, exc)
 
 
 _PREVIEW_CACHE: dict[str, tuple[float, LinkPreviewResponse]] = {}
@@ -662,6 +699,13 @@ def get_link_preview(
   # 2. Fast unauthenticated public OpenGraph fetch (<1s)
   og_data = _fetch_instagram_public_og(shortcode)
   if og_data and og_data.get("thumbnail_url"):
+    _maybe_persist_preview_thumbnail(
+      shortcode,
+      clean_url,
+      og_data["title"],
+      og_data.get("author"),
+      og_data.get("thumbnail_url"),
+    )
     resp = LinkPreviewResponse(
       url=clean_url,
       platform="instagram",
@@ -707,6 +751,13 @@ def get_link_preview(
       logger.info("preview answered by source=browserless (unavailable) for shortcode=%s", shortcode)
       return resp
     if browserless_data.get("thumbnail_url"):
+      _maybe_persist_preview_thumbnail(
+        shortcode,
+        clean_url,
+        browserless_data["title"],
+        browserless_data.get("author"),
+        browserless_data.get("thumbnail_url"),
+      )
       resp = LinkPreviewResponse(
         url=clean_url,
         platform="instagram",
@@ -743,6 +794,8 @@ def get_link_preview(
       if first_line
       else (f"Reel by @{author}" if author else "Instagram Reel")
     )
+    if thumbnail_url:
+      _maybe_persist_preview_thumbnail(shortcode, clean_url, snippet, author, thumbnail_url)
     resp = LinkPreviewResponse(
       url=clean_url,
       platform="instagram",

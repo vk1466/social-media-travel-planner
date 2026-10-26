@@ -9,6 +9,7 @@ import { ComingSoonButton } from "../comingSoon/ComingSoonControl";
 import { FeatureFlags } from "../comingSoon/featureRegistry";
 import { useToast } from "../state/ToastContext";
 import { getPostTitle, proxiedMediaUrl, capitalizePlaceName, getEffectiveAddress } from "../../postDisplayUtils";
+import { CARTO_BASEMAP_ATTR, cartoVoyagerTileUrl } from "../../maps";
 import type { Place, SavedPost } from "../../api";
 
 function MiniLocationMap({ lat, lng, displayName }: { lat: number; lng: number; displayName: string }) {
@@ -32,7 +33,9 @@ function MiniLocationMap({ lat, lng, displayName }: { lat: number; lng: number; 
         style={{ width: "100%", height: "100%", zIndex: 1 }}
       >
         <TileLayer
-          url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+          url={cartoVoyagerTileUrl()}
+          attribution={CARTO_BASEMAP_ATTR}
+          subdomains="abcd"
           maxZoom={19}
         />
         <Marker

@@ -5,16 +5,42 @@ import Supercluster, { type PointFeature } from "supercluster";
 import { Search, X } from "lucide-react";
 import { EmptyState } from "../components/EmptyState";
 import { useSavePipeline } from "../state/SavePipelineContext";
-import type { Place } from "../../api";
+import type { Place, SavedPost } from "../../api";
 import { visualForCategory } from "../../placeCategoryVisuals";
+import { categoryTone } from "../../categoryLabels";
 import "maplibre-gl/dist/maplibre-gl.css";
 
 interface MapPageProps {
   places: Place[];
+  posts?: SavedPost[];
   loading: boolean;
 }
 
-export function MapPage({ places, loading }: MapPageProps) {
+function CategoryIcon({ icon, fallback = "📍" }: { icon?: string | null; fallback?: string }) {
+  if (icon && icon.startsWith("<svg")) {
+    return (
+      <span
+        style={{ width: "14px", height: "14px", display: "inline-flex", alignItems: "center", justifyContent: "center" }}
+        dangerouslySetInnerHTML={{ __html: icon }}
+      />
+    );
+  }
+  return <span style={{ fontSize: "12px" }}>{icon || fallback}</span>;
+}
+
+function isFoodPlace(place: Place, postsByPlaceId?: Map<string, SavedPost>): boolean {
+  if (categoryTone(place.category) === "food") return true;
+  const cat = (place.category || "").toLowerCase();
+  if (["food", "restaurant", "cafe", "bar", "bakery", "dinner", "lunch", "breakfast", "dessert", "cocktail"].includes(cat)) {
+    return true;
+  }
+  if (postsByPlaceId && postsByPlaceId.get(place.place_id)?.content_category === "food") {
+    return true;
+  }
+  return false;
+}
+
+export function MapPage({ places, posts, loading }: MapPageProps) {
   const { placeId } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
   const { openSaveSheet } = useSavePipeline();
@@ -30,6 +56,20 @@ export function MapPage({ places, loading }: MapPageProps) {
   const [activeCategory, setActiveCategory] = useState<string>("all");
   const [showSearchThisArea, setShowSearchThisArea] = useState<boolean>(false);
 
+  // Map post by place ID if available
+  const postsByPlaceId = useMemo(() => {
+    if (!posts) return new Map<string, SavedPost>();
+    const map = new Map<string, SavedPost>();
+    for (const post of posts) {
+      if (post.place_ids && Array.isArray(post.place_ids)) {
+        for (const pid of post.place_ids) {
+          map.set(pid, post);
+        }
+      }
+    }
+    return map;
+  }, [posts]);
+
   // Filter mappable places with valid coordinates
   const mappablePlaces = useMemo(() => {
     return places.filter(
@@ -39,8 +79,14 @@ export function MapPage({ places, loading }: MapPageProps) {
 
   const filteredPlaces = useMemo(() => {
     if (activeCategory === "all") return mappablePlaces;
+    if (activeCategory === "food") {
+      return mappablePlaces.filter((p) => isFoodPlace(p, postsByPlaceId));
+    }
+    if (activeCategory === "travel") {
+      return mappablePlaces.filter((p) => !isFoodPlace(p, postsByPlaceId));
+    }
     return mappablePlaces.filter((p) => (p.category || "other") === activeCategory);
-  }, [mappablePlaces, activeCategory]);
+  }, [mappablePlaces, activeCategory, postsByPlaceId]);
 
   const selectedPlace = useMemo(() => {
     return mappablePlaces.find((p) => p.place_id === selectedPlaceId) || null;
@@ -88,13 +134,17 @@ export function MapPage({ places, loading }: MapPageProps) {
     markersRef.current = [];
 
     const bounds = map.getBounds();
-    const bbox: [number, number, number, number] = [
-      bounds.getWest(),
-      bounds.getSouth(),
-      bounds.getEast(),
-      bounds.getNorth(),
-    ];
     const zoom = Math.floor(map.getZoom());
+    // At world zoom (<= 3) or across antimeridian, query full global bounds to avoid dropping pins
+    const bbox: [number, number, number, number] =
+      zoom <= 3 || bounds.getEast() - bounds.getWest() > 300
+        ? [-180, -85, 180, 85]
+        : [
+            Math.max(-180, bounds.getWest()),
+            Math.max(-85, bounds.getSouth()),
+            Math.min(180, bounds.getEast()),
+            Math.min(85, bounds.getNorth()),
+          ];
     const clusters = superclusterIndex.getClusters(bbox, zoom);
 
     for (const feature of clusters) {
@@ -123,9 +173,10 @@ export function MapPage({ places, loading }: MapPageProps) {
         el.style.cursor = "pointer";
         el.innerText = `${count}`;
 
-        el.addEventListener("click", () => {
+        el.addEventListener("click", (e) => {
+          e.stopPropagation();
           const expansionZoom = Math.min(superclusterIndex.getClusterExpansionZoom(clusterId), 17);
-          map.flyTo({ center: [lng, lat], zoom: expansionZoom, duration: 800 });
+          map.flyTo({ center: [lng, lat], zoom: expansionZoom, duration: 600 });
         });
 
         const marker = new maplibregl.Marker({ element: el }).setLngLat([lng, lat]).addTo(map);
@@ -163,7 +214,20 @@ export function MapPage({ places, loading }: MapPageProps) {
         dot.style.color = "#FFFFFF";
         dot.style.fontSize = "12px";
         dot.style.transition = "all 0.15s ease";
-        dot.innerText = visual.icon || "📍";
+
+        if (visual.icon && visual.icon.startsWith("<svg")) {
+          dot.innerHTML = visual.icon;
+          const svgEl = dot.querySelector("svg");
+          if (svgEl) {
+            svgEl.style.width = isSelected ? "18px" : isHovered ? "16px" : "14px";
+            svgEl.style.height = isSelected ? "18px" : isHovered ? "16px" : "14px";
+            svgEl.style.display = "block";
+            svgEl.style.fill = "none";
+            svgEl.style.stroke = "currentColor";
+          }
+        } else {
+          dot.innerText = visual.icon || "📍";
+        }
 
         el.appendChild(dot);
 
@@ -172,6 +236,10 @@ export function MapPage({ places, loading }: MapPageProps) {
           setSelectedPlaceId(place.place_id);
           setSearchParams({ selected: place.place_id });
           map.flyTo({ center: [lng, lat], zoom: Math.max(map.getZoom(), 14), duration: 600 });
+          const listItem = document.getElementById(`wf-place-item-${place.place_id}`);
+          if (listItem) {
+            listItem.scrollIntoView({ behavior: "smooth", block: "nearest" });
+          }
         });
 
         const marker = new maplibregl.Marker({ element: el })
@@ -186,10 +254,19 @@ export function MapPage({ places, loading }: MapPageProps) {
   useEffect(() => {
     if (!mapContainerRef.current) return;
 
-    const initialCenter: [number, number] =
-      mappablePlaces.length > 0
-        ? [mappablePlaces[0].location.longitude!, mappablePlaces[0].location.latitude!]
-        : [0, 20];
+    const calculateBounds = () => {
+      if (mappablePlaces.length === 0) return null;
+      const b = new maplibregl.LngLatBounds();
+      for (const p of mappablePlaces) {
+        b.extend([p.location.longitude!, p.location.latitude!]);
+      }
+      return b;
+    };
+
+    const allBounds = calculateBounds();
+    const initialCenter: [number, number] = allBounds
+      ? [allBounds.getCenter().lng, allBounds.getCenter().lat]
+      : [0, 20];
 
     const map = new maplibregl.Map({
       container: mapContainerRef.current,
@@ -214,12 +291,15 @@ export function MapPage({ places, loading }: MapPageProps) {
         });
         return;
       }
-      const bounds = new maplibregl.LngLatBounds();
+      const b = new maplibregl.LngLatBounds();
       for (const p of mappablePlaces) {
-        bounds.extend([p.location.longitude!, p.location.latitude!]);
+        b.extend([p.location.longitude!, p.location.latitude!]);
       }
-      mapInstance.fitBounds(bounds, {
-        padding: { top: 70, bottom: 70, left: 70, right: 70 },
+      const isDesktop = typeof window !== "undefined" && window.innerWidth >= 1024;
+      mapInstance.fitBounds(b, {
+        padding: isDesktop
+          ? { top: 60, bottom: 60, left: 380 + 40, right: 60 }
+          : { top: 70, bottom: 140, left: 40, right: 40 },
         maxZoom: 13,
         duration: 0,
       });
@@ -271,6 +351,14 @@ export function MapPage({ places, loading }: MapPageProps) {
     });
   }, [selectedPlace]);
 
+  const foodCount = useMemo(() => {
+    return mappablePlaces.filter((p) => isFoodPlace(p, postsByPlaceId)).length;
+  }, [mappablePlaces, postsByPlaceId]);
+
+  const travelCount = useMemo(() => {
+    return mappablePlaces.filter((p) => !isFoodPlace(p, postsByPlaceId)).length;
+  }, [mappablePlaces, postsByPlaceId]);
+
   if (loading && places.length === 0) {
     return (
       <main style={{ maxWidth: "1280px", margin: "0 auto", padding: "40px 16px", width: "100%" }}>
@@ -298,8 +386,8 @@ export function MapPage({ places, loading }: MapPageProps) {
 
   const categoryChips = [
     { key: "all", label: "All places", count: mappablePlaces.length },
-    { key: "travel", label: "Places", count: mappablePlaces.filter((p) => p.category === "travel").length },
-    { key: "food", label: "Food & Drinks", count: mappablePlaces.filter((p) => p.category === "food").length },
+    { key: "travel", label: "Places", count: travelCount },
+    { key: "food", label: "Food & Drinks", count: foodCount },
   ];
 
   return (
@@ -356,6 +444,7 @@ export function MapPage({ places, loading }: MapPageProps) {
             return (
               <div
                 key={p.place_id}
+                id={`wf-place-item-${p.place_id}`}
                 onMouseEnter={() => setHoveredPlaceId(p.place_id)}
                 onMouseLeave={() => setHoveredPlaceId(null)}
                 onClick={() => {
@@ -384,12 +473,11 @@ export function MapPage({ places, loading }: MapPageProps) {
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      fontSize: "12px",
                       color: "#FFFFFF",
                       flexShrink: 0,
                     }}
                   >
-                    {visual.icon || "📍"}
+                    <CategoryIcon icon={visual.icon} fallback="📍" />
                   </span>
                   <span
                     style={{
