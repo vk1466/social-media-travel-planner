@@ -88,11 +88,22 @@ def _commit_items(
 
 
 def _post_url_item(post_url: str) -> dict[str, Any]:
-  return {
+  item: dict[str, Any] = {
     "item_ref": post_url,
     "item_kind": "post_url",
     "status": "pending",
   }
+  try:
+    from travelplanner.links import detect_platform, extract_post_id
+    from travelplanner.models import make_post_id
+
+    plat = detect_platform(post_url)
+    if plat:
+      native_id = extract_post_id(plat, post_url)
+      item["post_id"] = make_post_id(plat, native_id)
+  except Exception:
+    pass
+  return item
 
 
 def _timeline_batch_item(

@@ -50,6 +50,13 @@ def run_instagram_pipeline(ctx: IngestContext) -> PipelineResult[IngestContext]:
   try:
     result = run_pipeline(ctx, INSTAGRAM_HEAD_STEPS, pipeline_name="instagram_head")
     ctx = result.context
+    if ctx.post is not None:
+      try:
+        from travelplanner.store import save_post
+
+        save_post(ctx.post)
+      except Exception:
+        pass
     tail = _instagram_tail_steps(ctx.resource_type)
     if tail:
       tail_result = run_pipeline(ctx, tail, pipeline_name="instagram_tail")

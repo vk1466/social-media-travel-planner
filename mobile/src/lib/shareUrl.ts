@@ -133,7 +133,7 @@ export function parseLinkLines(text: string): {
     }
     if (!isSupportedShareDomain(normalized)) {
       invalid.push(trimmed);
-      validationError = "Only Instagram reels are currently supported. TikTok and YouTube coming soon.";
+      validationError = "Only Instagram reels are currently supported (restaurants, recipes, travel, movies).";
       continue;
     }
     valid.push(normalized);

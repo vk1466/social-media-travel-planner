@@ -39,7 +39,7 @@
 }
 
 html,
-body.wf-app-body {
+body {
   margin: 0;
   padding: 0;
   background-color: var(--wf-bg);
@@ -47,8 +47,9 @@ body.wf-app-body {
   font-family: var(--wf-font-sans);
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
-  max-width: 100%;
+  max-width: 100vw;
   width: 100%;
+  box-sizing: border-box;
 }
 
 .wf-shell-container {
@@ -94,8 +95,9 @@ body.wf-app-body {
   background: #FFFFFF;
   border-bottom: 1px solid #E6E3DC;
   box-sizing: border-box;
-  max-width: 100%;
+  max-width: 100vw;
   width: 100%;
+  overflow-x: hidden;
   position: sticky;
   top: 0;
   z-index: 50;

@@ -144,7 +144,7 @@ export function OnboardingPage() {
               Wanderfile files your saves for you.
             </h1>
             <p style={{ margin: "14px 0 0", fontSize: "17px", lineHeight: 1.55, color: "#4A4E52" }}>
-              Paste a link from Instagram, TikTok or YouTube. We read the post, pull out what matters, and file it under
+              Paste an Instagram reel. We read the post, pull out what matters, and file it under
               travel, movies, food, fashion or hairstyle.
             </p>
 
@@ -467,7 +467,7 @@ export function OnboardingPage() {
               >
                 Soon
               </span>
-              Share a post straight from Instagram, TikTok or YouTube
+              Share a post straight from Instagram
             </Link>
 
             <div style={{ display: "flex", gap: "12px", marginTop: "32px", alignItems: "center" }}>
@@ -590,7 +590,7 @@ export function OnboardingPage() {
                   You're in.
                 </h1>
                 <p style={{ margin: "14px 0 0", fontSize: "17px", lineHeight: 1.55, color: "#4A4E52" }}>
-                  Your library is ready. You can save Instagram, TikTok, or YouTube links anytime using the Save button.
+                  Your library is ready. You can save Instagram reels anytime using the Save button.
                 </p>
               </>
             )}

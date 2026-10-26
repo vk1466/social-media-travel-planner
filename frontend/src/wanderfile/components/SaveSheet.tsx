@@ -43,7 +43,7 @@ export function validateSaveInput(input: string): {
       return {
         isValid: false,
         isError: true,
-        message: "Only Instagram reels are currently supported. TikTok and YouTube coming soon.",
+        message: "Only Instagram reels are currently supported (restaurants, recipes, travel, movies)",
       };
     }
   }
@@ -177,7 +177,7 @@ export function SaveSheet() {
               aria-label="Paste link here"
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
-              placeholder="Paste a link from Instagram, TikTok or YouTube"
+              placeholder="Paste an Instagram reel link"
               style={{
                 width: "100%",
                 height: "100px",

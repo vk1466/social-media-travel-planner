@@ -141,6 +141,29 @@ interface SavePipelineContextType {
   onRefreshLibrary?: () => void;
 }
 
+export function updateFailuresRetainingSpecific(
+  prev: InboxFailure[],
+  newFailure: InboxFailure
+): InboxFailure[] {
+  const existing = prev.find((f) => urlsMatch(f.url, newFailure.url));
+  const isGenericTimeout = newFailure.errorMessage.toLowerCase().includes("timed out");
+  if (
+    existing &&
+    existing.errorMessage &&
+    isGenericTimeout &&
+    !existing.errorMessage.toLowerCase().includes("timed out")
+  ) {
+    return prev;
+  }
+  return [
+    ...prev.filter((f) => !urlsMatch(f.url, newFailure.url)),
+    newFailure,
+  ];
+}
+
+export const MAX_POLL_ATTEMPTS = 20;
+export const POLL_INTERVAL_MS = 1500;
+
 const SavePipelineContext = createContext<SavePipelineContextType | null>(null);
 
 export function SavePipelineProvider({
@@ -284,20 +307,21 @@ export function SavePipelineProvider({
                         ? {
                             ...s,
                             status: "error",
-                            errorMessage: friendly,
+                            errorMessage: (s.errorMessage && !s.errorMessage.toLowerCase().includes("timed out"))
+                              ? s.errorMessage
+                              : friendly,
                           }
                         : s
                     )
                   );
-                  setInboxFailures((prev) => [
-                    ...prev.filter((f) => !urlsMatch(f.url, url)),
-                    {
+                  setInboxFailures((prev) =>
+                    updateFailuresRetainingSpecific(prev, {
                       url,
                       errorMessage: friendly,
                       jobId,
                       failedAt: new Date().toISOString(),
-                    },
-                  ]);
+                    })
+                  );
                   return;
                 }
 
@@ -374,6 +398,32 @@ export function SavePipelineProvider({
                   });
                 }
                 if (job.status === "running") {
+                  if (pollAttempts >= MAX_POLL_ATTEMPTS) {
+                    window.clearInterval(pollInterval);
+                    const friendly = toFriendlyErrorMessage("Request timed out, please retry in a moment", url);
+                    setInFlightSaves((prev) =>
+                      prev.map((s) =>
+                        s.id === id
+                          ? {
+                              ...s,
+                              status: "error",
+                              errorMessage: (s.errorMessage && !s.errorMessage.toLowerCase().includes("timed out"))
+                                ? s.errorMessage
+                                : friendly,
+                            }
+                          : s
+                      )
+                    );
+                    setInboxFailures((prev) =>
+                      updateFailuresRetainingSpecific(prev, {
+                        url,
+                        errorMessage: friendly,
+                        jobId,
+                        failedAt: new Date().toISOString(),
+                      })
+                    );
+                    return;
+                  }
                   const isFetching = link?.status === "fetching";
                   const progress = isFetching ? 65 : 30;
                   const message = isFetching
@@ -423,24 +473,25 @@ export function SavePipelineProvider({
                           ? {
                               ...s,
                               status: "error",
-                              errorMessage: friendly,
+                              errorMessage: (s.errorMessage && !s.errorMessage.toLowerCase().includes("timed out"))
+                                ? s.errorMessage
+                                : friendly,
                             }
                           : s
                       )
                     );
-                    setInboxFailures((prev) => [
-                      ...prev.filter((f) => !urlsMatch(f.url, url)),
-                      {
+                    setInboxFailures((prev) =>
+                      updateFailuresRetainingSpecific(prev, {
                         url,
                         errorMessage: friendly,
                         jobId,
                         failedAt: new Date().toISOString(),
-                      },
-                    ]);
+                      })
+                    );
                   }
                 }
               } catch {
-                if (pollAttempts >= 8) {
+                if (pollAttempts >= MAX_POLL_ATTEMPTS) {
                   window.clearInterval(pollInterval);
                   const friendly = toFriendlyErrorMessage("Request timed out, please retry in a moment", url);
                   setInFlightSaves((prev) =>
@@ -449,23 +500,24 @@ export function SavePipelineProvider({
                         ? {
                             ...s,
                             status: "error",
-                            errorMessage: friendly,
+                            errorMessage: (s.errorMessage && !s.errorMessage.toLowerCase().includes("timed out"))
+                              ? s.errorMessage
+                              : friendly,
                           }
                         : s
                     )
                   );
-                  setInboxFailures((prev) => [
-                    ...prev.filter((f) => !urlsMatch(f.url, url)),
-                    {
+                  setInboxFailures((prev) =>
+                    updateFailuresRetainingSpecific(prev, {
                       url,
                       errorMessage: friendly,
                       jobId,
                       failedAt: new Date().toISOString(),
-                    },
-                  ]);
+                    })
+                  );
                 }
               }
-            }, 1500);
+            }, POLL_INTERVAL_MS);
           } else {
             const friendly = toFriendlyErrorMessage(startError || "Could not start processing this link", url);
             setInFlightSaves((prev) =>
@@ -474,19 +526,20 @@ export function SavePipelineProvider({
                   ? {
                       ...s,
                       status: "error",
-                      errorMessage: friendly,
+                      errorMessage: (s.errorMessage && !s.errorMessage.toLowerCase().includes("timed out"))
+                        ? s.errorMessage
+                        : friendly,
                     }
                   : s
               )
             );
-            setInboxFailures((prev) => [
-              ...prev.filter((f) => !urlsMatch(f.url, url)),
-              {
+            setInboxFailures((prev) =>
+              updateFailuresRetainingSpecific(prev, {
                 url,
                 errorMessage: friendly,
                 failedAt: new Date().toISOString(),
-              },
-            ]);
+              })
+            );
           }
         } catch (err) {
           const friendly = toFriendlyErrorMessage(err instanceof Error ? err.message : "Could not read post", url);
@@ -496,19 +549,20 @@ export function SavePipelineProvider({
                 ? {
                     ...s,
                     status: "error",
-                    errorMessage: friendly,
+                    errorMessage: (s.errorMessage && !s.errorMessage.toLowerCase().includes("timed out"))
+                      ? s.errorMessage
+                      : friendly,
                   }
                 : s
             )
           );
-          setInboxFailures((prev) => [
-            ...prev.filter((f) => !urlsMatch(f.url, url)),
-            {
+          setInboxFailures((prev) =>
+            updateFailuresRetainingSpecific(prev, {
               url,
               errorMessage: friendly,
               failedAt: new Date().toISOString(),
-            },
-          ]);
+            })
+          );
         }
       }
     },

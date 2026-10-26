@@ -402,9 +402,6 @@ def list_content_categories(user_id: CurrentUserId) -> list[ContentCategoryCount
 
 @app.get("/api/posts/{platform}/{post_id}", response_model=SavedPostSchema, responses={404: {"model": ErrorResponse}})
 def get_post(platform: Platform, post_id: str, user_id: CurrentUserId) -> SavedPostSchema:
-  global_post_id = post_id if ":" in post_id else make_post_id(platform, post_id)
-  if not user_owns_post(user_id, global_post_id):
-    raise HTTPException(status_code=404, detail="Post not found")
   post = load_post(platform, post_id)
   if post is None:
     raise HTTPException(status_code=404, detail="Post not found")

@@ -156,17 +156,19 @@ export default function IngestScreen() {
     if (job?.status === "done" && job.job_id === jobId) bumpRefresh();
   }, [job, jobId, bumpRefresh]);
 
+  const inFlightPostId = job?.links.find((l) => Boolean(l.post_id))?.post_id;
   const finishedPostId = job?.links.find(
     (l) => l.post_id && (l.status === "saved" || l.status === "linked" || l.status === "skipped"),
   )?.post_id;
-  const activePost = fetchedPost ?? (finishedPostId ? posts.find((p) => p.post_id === finishedPostId) : null) ?? null;
+  const targetPostId = finishedPostId || inFlightPostId;
+  const activePost = fetchedPost ?? (targetPostId ? posts.find((p) => p.post_id === targetPostId) : null) ?? null;
 
   useEffect(() => {
-    if (!finishedPostId) {
+    if (!targetPostId) {
       setFetchedPost(null);
       return;
     }
-    const inLibrary = posts.find((p) => p.post_id === finishedPostId);
+    const inLibrary = posts.find((p) => p.post_id === targetPostId);
     if (inLibrary) {
       setFetchedPost(inLibrary);
       return;
@@ -174,7 +176,7 @@ export default function IngestScreen() {
     let cancelled = false;
     setLoadingPost(true);
     try {
-      const { platform, nativeId } = parsePostId(finishedPostId);
+      const { platform, nativeId } = parsePostId(targetPostId);
       void fetchPost(platform, nativeId)
         .then((p) => {
           if (!cancelled) {
@@ -191,13 +193,13 @@ export default function IngestScreen() {
     return () => {
       cancelled = true;
     };
-  }, [finishedPostId, posts]);
+  }, [targetPostId, posts]);
 
   const savedOrLinkedCount = (job?.counts.saved ?? 0) + (job?.counts.linked ?? 0);
-  const isRunning = submitting || job?.status === "running" || (shouldAutoStart && !submitError);
-  const isSkipped = Boolean(job?.status === "done" && savedOrLinkedCount === 0 && (job?.counts.skipped ?? 0) > 0);
   const failedLink = job?.links.find((l) => l.status === "error" || l.status === "unsupported");
-  const isFailed = Boolean(submitError || (job?.status === "done" && failedLink && savedOrLinkedCount === 0));
+  const isFailed = Boolean(submitError || (failedLink && savedOrLinkedCount === 0));
+  const isRunning = (submitting || job?.status === "running" || (shouldAutoStart && !submitError)) && !isFailed;
+  const isSkipped = Boolean(job?.status === "done" && savedOrLinkedCount === 0 && (job?.counts.skipped ?? 0) > 0);
   const rawErrorMessage = submitError || failedLink?.error_message || (failedLink?.status === "unsupported" ? "Unsupported platform" : "Could not read this post");
   const failedUrl = failedLink?.post_url || (pendingUrls.length > 0 ? pendingUrls[0] : undefined);
   const friendlyErrorMessage = toFriendlyErrorMessage(rawErrorMessage, failedUrl);
@@ -230,13 +232,24 @@ export default function IngestScreen() {
           /* In-Progress Reading View */
           <ScrollView showsVerticalScrollIndicator={false}>
             <View style={styles.runningCard}>
-              <View style={styles.runningIconWrap}>
-                <ActivityIndicator size="small" color={colors.ink} />
+              <View style={[styles.runningIconWrap, activePost?.thumbnail_url ? { overflow: "hidden" } : null]}>
+                {activePost?.thumbnail_url && proxiedMediaUrl(activePost.thumbnail_url) ? (
+                  <Image
+                    source={{ uri: proxiedMediaUrl(activePost.thumbnail_url)! }}
+                    style={{ width: "100%", height: "100%" }}
+                  />
+                ) : (
+                  <ActivityIndicator size="small" color={colors.ink} />
+                )}
               </View>
               <View style={styles.runningCopy}>
-                <Text style={styles.runningTitle}>Reading your link</Text>
+                <Text style={styles.runningTitle}>
+                  {activePost?.title || "Reading your link"}
+                </Text>
                 <Text style={styles.runningSub}>
-                  Wanderfile is extracting places and details in the background.
+                  {activePost?.author_handle
+                    ? `${activePost.author_handle.startsWith("@") ? activePost.author_handle : `@${activePost.author_handle}`} · Instagram reel`
+                    : "Wanderfile is extracting places and details in the background."}
                 </Text>
               </View>
             </View>
@@ -531,7 +544,7 @@ export default function IngestScreen() {
           <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
             <Text style={styles.title}>Save links</Text>
             <Text style={styles.helpText}>
-              One link per line. Instagram reels are currently supported. TikTok and YouTube support coming soon.
+              One link per line. Instagram reels are currently supported (restaurants, recipes, travel, movies).
             </Text>
 
             {submitError ? <ErrorBanner message={submitError} /> : null}
