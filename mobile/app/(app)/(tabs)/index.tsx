@@ -26,7 +26,7 @@ export default function MobileHomeScreen() {
   const hasSaves = posts.length > 0;
   const placesCount = places.length;
   const recipesCount = posts.filter((p) => p.content_category === "food").length;
-  const titlesCount = posts.filter((p) => p.content_category === "movies").length;
+  const totalSavesCount = posts.length;
 
   const topPlace = places.length > 0 ? places[0] : null;
   const topPlacePhoto = topPlace
@@ -222,11 +222,11 @@ export default function MobileHomeScreen() {
             </Pressable>
 
             <Pressable
-              onPress={() => router.push(appHref("/(app)/(tabs)/movies"))}
+              onPress={() => router.push(appHref("/(app)/(tabs)/posts"))}
               style={styles.metricCard}
             >
-              <Text style={styles.metricCount}>{titlesCount}</Text>
-              <Text style={[styles.metricLabel, { color: colors.movieInk }]}>Watch</Text>
+              <Text style={styles.metricCount}>{totalSavesCount}</Text>
+              <Text style={[styles.metricLabel, { color: colors.ink }]}>Saved reels</Text>
             </Pressable>
           </View>
 

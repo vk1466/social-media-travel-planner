@@ -195,6 +195,35 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
     ? `https://maps.apple.com/?q=${encodeURIComponent(displayName || place.display_name)}&ll=${lat},${lng}`
     : `https://maps.apple.com/?q=${encodeURIComponent(displayName || place.display_name)}`;
 
+  const isGenericBlurb = (summary?: string | null): boolean => {
+    if (!summary) return true;
+    const s = summary.trim().toLowerCase();
+    if (s.startsWith("a notable ") || s.startsWith("notable ")) return true;
+    if (/^a\s+\w+\s+in\s+[^.]+\.?$/i.test(s)) return true;
+    return false;
+  };
+
+  const heroBlurb = !isGenericBlurb(place.summary)
+    ? place.summary
+    : (place.tips && place.tips.length > 0 && !isGenericBlurb(place.tips[0]))
+    ? place.tips[0]
+    : null;
+
+  const cleanAddressLine = (() => {
+    if (effectiveAddress) {
+      const parts = [effectiveAddress];
+      if (place.location?.city && !effectiveAddress.toLowerCase().includes(place.location.city.toLowerCase())) {
+        parts.push(place.location.city);
+      }
+      if (place.location?.country && !effectiveAddress.toLowerCase().includes(place.location.country.toLowerCase())) {
+        parts.push(place.location.country);
+      }
+      return parts.join(", ");
+    }
+    const fallbackParts = [place.location?.city, place.location?.state_province, place.location?.country].filter(Boolean);
+    return fallbackParts.join(", ") || "Location details pending";
+  })();
+
   return (
     <main
       style={{
@@ -273,7 +302,7 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
                 fontWeight: 800,
                 minWidth: 0,
                 wordBreak: "break-word",
-                hyphens: "auto",
+                overflowWrap: "break-word",
               }}
             >
               {displayName || place.display_name}
@@ -293,7 +322,7 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
               </div>
             )}
 
-            {place.summary && (
+            {heroBlurb && (
               <p
                 style={{
                   margin: 0,
@@ -304,7 +333,7 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
                   wordBreak: "break-word",
                 }}
               >
-                {place.summary}
+                {heroBlurb}
               </p>
             )}
           </div>
@@ -425,242 +454,212 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
         </div>
       </section>
 
-      {/* Two columns */}
+      {/* Top Balanced Grid: About & Tips + Location */}
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 340px), 1fr))",
+          gridTemplateColumns: (hasDetails || hasTips) ? "repeat(auto-fit, minmax(min(100%, 340px), 1fr))" : "1fr",
           gap: "24px",
           alignItems: "start",
+          marginBottom: "24px",
           minWidth: 0,
           boxSizing: "border-box",
         }}
       >
-        {/* Left Column: Guidance & Tips + Mentioned in Reels */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "24px", minWidth: 0 }}>
-          {(hasDetails || hasTips) && (
-            <section
+        {(hasDetails || hasTips) && (
+          <section
+            style={{
+              background: "#FFFFFF",
+              border: "1px solid #E6E3DC",
+              borderRadius: "24px",
+              padding: "24px",
+              minWidth: 0,
+              boxSizing: "border-box",
+              wordBreak: "break-word",
+            }}
+          >
+            <h2 style={{ margin: "0 0 12px", fontSize: "18px", fontWeight: 800 }}>About & Tips</h2>
+            {hasDetails && (
+              <p style={{ margin: "0 0 14px", fontSize: "15px", lineHeight: 1.5, color: "#4A4E52", wordBreak: "break-word" }}>
+                {distinctDetails.join(" ")}
+              </p>
+            )}
+            {hasTips && (
+              <ul style={{ margin: 0, paddingLeft: "20px", color: "#4A4E52", fontSize: "14px", lineHeight: 1.6, wordBreak: "break-word" }}>
+                {distinctTips.map((t, idx) => (
+                  <li key={idx} style={{ marginBottom: "6px" }}>{t}</li>
+                ))}
+              </ul>
+            )}
+          </section>
+        )}
+
+        {/* Location Card */}
+        <section
+          style={{
+            background: "#FFFFFF",
+            border: "1px solid #E6E3DC",
+            borderRadius: "24px",
+            padding: "24px",
+            minWidth: 0,
+            boxSizing: "border-box",
+            wordBreak: "break-word",
+          }}
+        >
+          <h2 style={{ margin: "0 0 12px", fontSize: "18px", fontWeight: 800 }}>Location</h2>
+          {hasCoords ? (
+            <MiniLocationMap lat={lat!} lng={lng!} displayName={place.display_name} />
+          ) : (
+            <div
               style={{
-                background: "#FFFFFF",
-                border: "1px solid #E6E3DC",
-                borderRadius: "24px",
-                padding: "24px",
-                minWidth: 0,
-                boxSizing: "border-box",
-                wordBreak: "break-word",
+                height: "140px",
+                borderRadius: "16px",
+                background: "#EAE7DF",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                marginBottom: "16px",
+                gap: "8px",
               }}
             >
-              <h2 style={{ margin: "0 0 12px", fontSize: "18px", fontWeight: 800 }}>About & Tips</h2>
-              {hasDetails && (
-                <p style={{ margin: "0 0 14px", fontSize: "15px", lineHeight: 1.5, color: "#4A4E52", wordBreak: "break-word" }}>
-                  {distinctDetails.join(" ")}
-                </p>
-              )}
-              {hasTips && (
-                <ul style={{ margin: 0, paddingLeft: "20px", color: "#4A4E52", fontSize: "14px", lineHeight: 1.6, wordBreak: "break-word" }}>
-                  {distinctTips.map((t, idx) => (
-                    <li key={idx} style={{ marginBottom: "6px" }}>{t}</li>
-                  ))}
-                </ul>
-              )}
-            </section>
-          )}
-
-          {/* Mentioned in reels */}
-          <section
-            style={{
-              background: "#FFFFFF",
-              border: "1px solid #E6E3DC",
-              borderRadius: "24px",
-              padding: "24px",
-              minWidth: 0,
-              boxSizing: "border-box",
-              wordBreak: "break-word",
-            }}
-          >
-            <h2 style={{ margin: "0 0 14px", fontSize: "18px", fontWeight: 800 }}>
-              Mentioned in {relatedPosts.length} {relatedPosts.length === 1 ? "reel" : "reels"}
-            </h2>
-            {relatedPosts.length > 0 ? (
-              <div style={{ display: "flex", flexDirection: "column", gap: "12px", minWidth: 0 }}>
-                {relatedPosts.map((rp) => (
-                  <Link
-                    key={rp.post_id}
-                    to={`/post/${rp.post_id}`}
-                    state={{ from: `/place/${place.place_id}` }}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "14px",
-                      textDecoration: "none",
-                      color: "#1B1D1F",
-                      padding: "8px 0",
-                      borderBottom: "1px solid #EFEDE7",
-                      minWidth: 0,
-                    }}
-                  >
-                    {rp.thumbnail_url ? (
-                      <img
-                        src={proxiedMediaUrl(rp.thumbnail_url) || ""}
-                        alt=""
-                        style={{
-                          width: "52px",
-                          height: "52px",
-                          borderRadius: "10px",
-                          objectFit: "cover",
-                          flexShrink: 0,
-                          background: "#EAE7DF",
-                        }}
-                      />
-                    ) : (
-                      <div
-                        style={{
-                          width: "52px",
-                          height: "52px",
-                          borderRadius: "10px",
-                          background: "var(--wf-surface-2, #E8E6DF)",
-                          color: "var(--wf-text-muted)",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          flexShrink: 0,
-                        }}
-                      >
-                        📍
-                      </div>
-                    )}
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div
-                        style={{
-                          fontSize: "15px",
-                          fontWeight: 700,
-                          color: "#1B1D1F",
-                          whiteSpace: "nowrap",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                        }}
-                      >
-                        {getPostTitle(rp)}
-                      </div>
-                      <div
-                        style={{
-                          fontSize: "13px",
-                          color: "#6B6F73",
-                          marginTop: "2px",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "8px",
-                        }}
-                      >
-                        {rp.author_handle && <span>@{rp.author_handle}</span>}
-                        <span>Instagram reel ↗</span>
-                      </div>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            ) : (
-              <div style={{ fontSize: "14px", color: "#6B6F73" }}>No linked reels found.</div>
-            )}
-          </section>
-        </div>
-
-        {/* Right Column: Location */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "24px", minWidth: 0 }}>
-          <section
-            style={{
-              background: "#FFFFFF",
-              border: "1px solid #E6E3DC",
-              borderRadius: "24px",
-              padding: "24px",
-              minWidth: 0,
-              boxSizing: "border-box",
-              wordBreak: "break-word",
-            }}
-          >
-            <h2 style={{ margin: "0 0 12px", fontSize: "18px", fontWeight: 800 }}>Location</h2>
-            {hasCoords ? (
-              <MiniLocationMap lat={lat!} lng={lng!} displayName={place.display_name} />
-            ) : (
-              <div
-                style={{
-                  height: "140px",
-                  borderRadius: "16px",
-                  background: "#EAE7DF",
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  marginBottom: "16px",
-                  gap: "8px",
-                }}
-              >
-                <div style={{ textAlign: "center", color: "#1B5E78" }}>
-                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z" />
-                    <circle cx="12" cy="10" r="2.5" />
-                  </svg>
-                  <div style={{ fontSize: "13px", fontWeight: 700, marginTop: "4px" }}>
-                    Location not yet mapped
-                  </div>
+              <div style={{ textAlign: "center", color: "#1B5E78" }}>
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z" />
+                  <circle cx="12" cy="10" r="2.5" />
+                </svg>
+                <div style={{ fontSize: "13px", fontWeight: 700, marginTop: "4px" }}>
+                  Location not yet mapped
                 </div>
               </div>
-            )}
-            <div style={{ display: "flex", gap: "8px", marginBottom: "16px", flexWrap: "wrap" }}>
-              <a
-                href={googleMapsUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  fontSize: "12px",
-                  fontWeight: 700,
-                  color: "#1B5E78",
-                  background: "#FFFFFF",
-                  border: "1px solid #E6E3DC",
-                  padding: "6px 12px",
-                  borderRadius: "999px",
-                  textDecoration: "none",
-                  boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "4px",
-                }}
-              >
-                Google Maps ↗
-              </a>
-              <a
-                href={appleMapsUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  fontSize: "12px",
-                  fontWeight: 700,
-                  color: "#1B5E78",
-                  background: "#FFFFFF",
-                  border: "1px solid #E6E3DC",
-                  padding: "6px 12px",
-                  borderRadius: "999px",
-                  textDecoration: "none",
-                  boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "4px",
-                }}
-              >
-                Apple Maps ↗
-              </a>
             </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: "8px", fontSize: "14px", color: "#4A4E52", minWidth: 0, wordBreak: "break-word" }}>
-              {effectiveAddress && (
-                <div><b>Address:</b> {effectiveAddress}</div>
-              )}
-              {place.location?.city && <div><b>City:</b> {place.location.city}</div>}
-              {place.location?.state_province && <div><b>State / Region:</b> {place.location.state_province}</div>}
-              {place.location?.country && <div><b>Country:</b> {place.location.country}</div>}
-            </div>
-          </section>
-        </div>
+          )}
+          {/* Collapsed single clean address line, no duplicate Google/Apple maps buttons */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "flex-start",
+              gap: "10px",
+              fontSize: "14px",
+              color: "#4A4E52",
+              lineHeight: 1.5,
+              minWidth: 0,
+              wordBreak: "break-word",
+            }}
+          >
+            <span style={{ fontSize: "16px", flexShrink: 0, marginTop: "1px" }}>📍</span>
+            <span style={{ fontWeight: 500, color: "#1B1D1F" }}>{cleanAddressLine}</span>
+          </div>
+        </section>
       </div>
+
+      {/* Full-width Mentioned in reels across bottom */}
+      <section
+        style={{
+          background: "#FFFFFF",
+          border: "1px solid #E6E3DC",
+          borderRadius: "24px",
+          padding: "24px",
+          minWidth: 0,
+          boxSizing: "border-box",
+          wordBreak: "break-word",
+        }}
+      >
+        <h2 style={{ margin: "0 0 16px", fontSize: "18px", fontWeight: 800 }}>
+          Mentioned in {relatedPosts.length} {relatedPosts.length === 1 ? "reel" : "reels"}
+        </h2>
+        {relatedPosts.length > 0 ? (
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 300px), 1fr))",
+              gap: "16px",
+              minWidth: 0,
+            }}
+          >
+            {relatedPosts.map((rp) => (
+              <Link
+                key={rp.post_id}
+                to={`/post/${rp.post_id}`}
+                state={{ from: `/place/${place.place_id}` }}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "14px",
+                  textDecoration: "none",
+                  color: "#1B1D1F",
+                  padding: "12px",
+                  borderRadius: "16px",
+                  background: "#F9F8F5",
+                  border: "1px solid #EFECE6",
+                  minWidth: 0,
+                  transition: "background 0.15s ease",
+                }}
+              >
+                {rp.thumbnail_url ? (
+                  <img
+                    src={proxiedMediaUrl(rp.thumbnail_url) || ""}
+                    alt=""
+                    style={{
+                      width: "56px",
+                      height: "56px",
+                      borderRadius: "12px",
+                      objectFit: "cover",
+                      flexShrink: 0,
+                      background: "#EAE7DF",
+                    }}
+                  />
+                ) : (
+                  <div
+                    style={{
+                      width: "56px",
+                      height: "56px",
+                      borderRadius: "12px",
+                      background: "var(--wf-surface-2, #E8E6DF)",
+                      color: "var(--wf-text-muted)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      flexShrink: 0,
+                    }}
+                  >
+                    📍
+                  </div>
+                )}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div
+                    style={{
+                      fontSize: "15px",
+                      fontWeight: 700,
+                      color: "#1B1D1F",
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                    }}
+                  >
+                    {getPostTitle(rp)}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: "13px",
+                      color: "#6B6F73",
+                      marginTop: "4px",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                    }}
+                  >
+                    {rp.author_handle && <span>@{rp.author_handle}</span>}
+                    <span style={{ color: "#1B5E78", fontWeight: 600 }}>Instagram reel ↗</span>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <div style={{ fontSize: "14px", color: "#6B6F73" }}>No linked reels found.</div>
+        )}
+      </section>
     </main>
   );
 }

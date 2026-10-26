@@ -7,14 +7,11 @@ import { FilterBar, PageHeading } from "@/src/components/LibraryChrome";
 import { useLibrary } from "@/src/context/LibraryContext";
 import { postTitle } from "@/src/display";
 import { placeMatchesPlatform, postsForPlatforms, useLibraryPlatform } from "@/src/libraryPlatform";
-import { aggregateMovies } from "@/src/movies";
 import { appHref } from "@/src/nav";
 import { recipesFromPosts } from "@/src/recipes";
 import { colors, radius, spacing } from "@/src/theme";
 import { GroceryListSheet, RecipeDetailSheet } from "@/src/components/RecipeDetailSheet";
-import { MovieDetailSheet } from "./(tabs)/movies";
 import type { SavedRecipe } from "@/src/recipes";
-import type { AggregatedMovie } from "@/src/movies";
 
 export default function SearchScreen() {
   const router = useRouter();
@@ -23,17 +20,15 @@ export default function SearchScreen() {
   const [query, setQuery] = useState("");
   const [perType, setPerType] = useState(8);
   const [selectedRecipe, setSelectedRecipe] = useState<SavedRecipe | null>(null);
-  const [selectedMovie, setSelectedMovie] = useState<AggregatedMovie | null>(null);
   const [groceryRecipeKeys, setGroceryRecipeKeys] = useState<Set<string>>(new Set());
   const [groceryOpen, setGroceryOpen] = useState(false);
   const q = query.trim().toLowerCase();
   const scopedPosts = postsForPlatforms(posts, platforms);
   const recipes = recipesFromPosts(scopedPosts);
-  const movies = aggregateMovies(scopedPosts);
 
   const results = useMemo(() => {
     if (!q) return [];
-    const hits: { key: string; to: string; label: string; meta: string; recipe?: SavedRecipe; movie?: AggregatedMovie }[] = [];
+    const hits: { key: string; to: string; label: string; meta: string; recipe?: SavedRecipe }[] = [];
     for (const post of scopedPosts) {
       if (`${postTitle(post)} ${post.caption}`.toLowerCase().includes(q)) {
         hits.push({
@@ -66,19 +61,8 @@ export default function SearchScreen() {
         });
       }
     }
-    for (const movie of movies) {
-      if (movie.title.toLowerCase().includes(q)) {
-        hits.push({
-          key: `movie-${movie.key}`,
-          to: "",
-          label: movie.title,
-          meta: "Movie",
-          movie,
-        });
-      }
-    }
     return hits;
-  }, [q, scopedPosts, places, recipes, movies, posts, platforms]);
+  }, [q, scopedPosts, places, recipes, posts, platforms]);
 
   useEffect(() => {
     setPerType(8);
@@ -88,7 +72,6 @@ export default function SearchScreen() {
     { label: "Posts", hits: results.filter((hit) => hit.meta === "Post") },
     { label: "Places", hits: results.filter((hit) => hit.meta === "Place") },
     { label: "Recipes", hits: results.filter((hit) => hit.meta === "Recipe") },
-    { label: "Movies", hits: results.filter((hit) => hit.meta === "Movie") },
   ].filter((group) => group.hits.length > 0);
   const shownCount = groups.reduce((count, group) => count + Math.min(group.hits.length, perType), 0);
   const hasMore = groups.some((group) => group.hits.length > perType);
@@ -98,7 +81,7 @@ export default function SearchScreen() {
       <PageHeading
         kicker="Search Wanderfile"
         title="Find anything you saved"
-        lede="Search posts, places, recipes, and movies from one place."
+        lede="Search posts, places, and recipes from one place."
         count={{
           value: q && shownCount < results.length ? shownCount : results.length,
           label: q && shownCount < results.length ? `of ${results.length}` : "results",
@@ -114,7 +97,6 @@ export default function SearchScreen() {
         <Jump label="Posts" onPress={() => router.replace(appHref("/(app)/(tabs)/posts"))} />
         <Jump label="Places" onPress={() => router.replace(appHref("/(app)/(tabs)/travel"))} />
         <Jump label="Food" onPress={() => router.replace(appHref("/(app)/(tabs)/food"))} />
-        <Jump label="Watch" onPress={() => router.replace(appHref("/(app)/(tabs)/movies"))} />
         <Jump label="Visits" onPress={() => router.replace(appHref("/(app)/(tabs)/history"))} />
       </View> : null}
       {q && shownCount < results.length ? (
@@ -126,7 +108,6 @@ export default function SearchScreen() {
           {group.hits.slice(0, perType).map((hit) => (
             <Pressable key={hit.key} style={styles.row} onPress={() => {
               if (hit.recipe) setSelectedRecipe(hit.recipe);
-              else if (hit.movie) setSelectedMovie(hit.movie);
               else router.push(appHref(hit.to));
             }} accessibilityRole="button" accessibilityLabel={`Open ${hit.meta}: ${hit.label}`}>
               <Text style={styles.label}>{hit.label}</Text>
@@ -147,8 +128,6 @@ export default function SearchScreen() {
         isInGroceryList={groceryRecipeKeys.has(selectedRecipe.key)}
         onAddToGrocery={() => setGroceryRecipeKeys((keys) => new Set(keys).add(selectedRecipe.key))}
         onViewGrocery={() => setGroceryOpen(true)} /> : null}
-      {selectedMovie ? <MovieDetailSheet movie={selectedMovie} onClose={() => setSelectedMovie(null)}
-        onOpenPost={(platform, postId) => { setSelectedMovie(null); router.push(`/posts/${platform}/${postId}`); }} /> : null}
       {groceryOpen ? <GroceryListSheet recipes={recipes.filter((item) => groceryRecipeKeys.has(item.key))} onClose={() => setGroceryOpen(false)} /> : null}
     </ScrollView>
   );

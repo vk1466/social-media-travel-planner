@@ -400,8 +400,8 @@ function buildMapHtml(): string {
         return;
       }
       map.fitBounds(places.map(function (place) { return [place.lat, place.lng]; }), {
-        paddingTopLeft: [40, 40],
-        paddingBottomRight: [40, 160],
+        paddingTopLeft: [30, 80],
+        paddingBottomRight: [30, 140],
         maxZoom: 13,
         animate: false
       });
@@ -525,7 +525,8 @@ function buildMapHtml(): string {
         map.flyTo(coords[0], 14, { duration: 0.8 });
       } else {
         map.flyToBounds(coords, {
-          padding: [70, 70],
+          paddingTopLeft: [30, 80],
+          paddingBottomRight: [30, 140],
           maxZoom: 14,
           duration: 0.8
         });

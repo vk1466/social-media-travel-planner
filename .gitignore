@@ -26,3 +26,5 @@ infra/cdk.context.json
 *.tsbuildinfo
 screenshots/
 *.apk
+.vercel
+.env*

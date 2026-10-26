@@ -55,6 +55,7 @@ export function MapPage({ places, posts, loading }: MapPageProps) {
   const [hoveredPlaceId, setHoveredPlaceId] = useState<string | null>(null);
   const [activeCategory, setActiveCategory] = useState<string>("all");
   const [showSearchThisArea, setShowSearchThisArea] = useState<boolean>(false);
+  const [mobileView, setMobileView] = useState<"map" | "list">("map");
 
   // Map post by place ID if available
   const postsByPlaceId = useMemo(() => {
@@ -391,15 +392,62 @@ export function MapPage({ places, posts, loading }: MapPageProps) {
   ];
 
   return (
-    <main className="wf-map-main" style={{ position: "relative", width: "100%", height: "100%" }}>
+    <main className="wf-map-main" data-mobile-view={mobileView} style={{ position: "relative", width: "100%", height: "100%" }}>
       {/* Desktop 380px Left List Panel */}
       <aside className="wf-map-sidebar">
         {/* Header & Category Filter */}
         <div style={{ padding: "16px", borderBottom: "1px solid var(--wf-border)", display: "flex", flexDirection: "column", gap: "10px" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "8px" }}>
             <h2 className="wf-type-h2" style={{ margin: 0 }}>
               Places
             </h2>
+            {/* Mobile toggle pill in sidebar */}
+            <div
+              className="wf-mobile-only"
+              style={{
+                background: "var(--wf-surface)",
+                borderRadius: "var(--wf-radius-pill)",
+                padding: "2px",
+                border: "1px solid var(--wf-border)",
+                display: "flex",
+                gap: "2px",
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileView("map");
+                  setTimeout(() => mapRef.current?.resize(), 50);
+                }}
+                style={{
+                  border: 0,
+                  background: "transparent",
+                  color: "var(--wf-text-muted)",
+                  padding: "4px 10px",
+                  borderRadius: "var(--wf-radius-pill)",
+                  fontSize: "12px",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                }}
+              >
+                🗺️ Map
+              </button>
+              <button
+                type="button"
+                style={{
+                  border: 0,
+                  background: "var(--wf-text)",
+                  color: "var(--wf-bg)",
+                  padding: "4px 10px",
+                  borderRadius: "var(--wf-radius-pill)",
+                  fontSize: "12px",
+                  fontWeight: 600,
+                  cursor: "default",
+                }}
+              >
+                ☰ Places ({filteredPlaces.length})
+              </button>
+            </div>
             <span style={{ fontSize: "13px", color: "var(--wf-text-muted)" }}>
               {filteredPlaces.length} spot{filteredPlaces.length === 1 ? "" : "s"}
             </span>
@@ -639,6 +687,67 @@ export function MapPage({ places, posts, loading }: MapPageProps) {
             </div>
           </div>
         )}
+
+        {/* Mobile floating Map/Places toggle pill */}
+        <div
+          className="wf-mobile-only"
+          style={{
+            position: "absolute",
+            bottom: "16px",
+            left: "50%",
+            transform: "translateX(-50%)",
+            zIndex: 35,
+            background: "var(--wf-surface)",
+            borderRadius: "var(--wf-radius-pill)",
+            padding: "4px",
+            boxShadow: "0 4px 16px rgba(0,0,0,0.18)",
+            border: "1px solid var(--wf-border)",
+            display: "flex",
+            gap: "4px",
+          }}
+        >
+          <button
+            type="button"
+            onClick={() => {
+              setMobileView("map");
+              mapRef.current?.resize();
+            }}
+            style={{
+              border: 0,
+              background: mobileView === "map" ? "var(--wf-text)" : "transparent",
+              color: mobileView === "map" ? "var(--wf-bg)" : "var(--wf-text-muted)",
+              padding: "6px 14px",
+              borderRadius: "var(--wf-radius-pill)",
+              fontSize: "13px",
+              fontWeight: 700,
+              cursor: "pointer",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "4px",
+            }}
+          >
+            🗺️ Map
+          </button>
+          <button
+            type="button"
+            onClick={() => setMobileView("list")}
+            style={{
+              border: 0,
+              background: mobileView === "list" ? "var(--wf-text)" : "transparent",
+              color: mobileView === "list" ? "var(--wf-bg)" : "var(--wf-text-muted)",
+              padding: "6px 14px",
+              borderRadius: "var(--wf-radius-pill)",
+              fontSize: "13px",
+              fontWeight: 700,
+              cursor: "pointer",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "4px",
+            }}
+          >
+            ☰ Places ({filteredPlaces.length})
+          </button>
+        </div>
       </div>
     </main>
   );

@@ -101,11 +101,8 @@ def synthesize_place_summary(
   if primary_detail:
     return primary_detail if primary_detail.endswith((".", "!", "?")) else f"{primary_detail}."
 
-  if existing_summary:
+  if existing_summary and not existing_summary.strip().lower().startswith(("a notable ", "notable ")):
     return existing_summary
 
-  # Fallback: clean location context
-  cat_label = (category or "destination").replace("_", " ")
-  loc_parts = [p for p in (location.city, location.state_province, location.country) if p]
-  loc_str = ", ".join(loc_parts) if loc_parts else "the area"
-  return f"A notable {cat_label} in {loc_str}."
+  # Do NOT generate generic filler fallback like "A notable landmark in Seoul, South Korea."
+  return None

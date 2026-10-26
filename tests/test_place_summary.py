@@ -55,7 +55,7 @@ def test_synthesize_place_summary_with_details_and_famous_for() -> None:
   assert "Interactive digital art installations" in summary
 
 
-def test_synthesize_place_summary_fallback() -> None:
+def test_synthesize_place_summary_no_generic_fallback() -> None:
   loc = PlaceLocation(
     display_name="Canal View",
     city="Amsterdam",
@@ -66,7 +66,7 @@ def test_synthesize_place_summary_fallback() -> None:
     category="viewpoint",
     location=loc,
   )
-  assert summary == "A notable viewpoint in Amsterdam, Netherlands."
+  assert summary is None
 
 
 def test_saved_post_content_assets_roundtrip() -> None:

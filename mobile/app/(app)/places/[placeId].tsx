@@ -200,6 +200,31 @@ export default function PlaceDetailScreen() {
   });
   const effectiveAddress = getEffectiveAddress(place);
 
+  const isGenericBlurb = (summary?: string | null): boolean => {
+    if (!summary) return true;
+    const s = summary.trim().toLowerCase();
+    if (s.startsWith("a notable ") || s.startsWith("notable ")) return true;
+    if (/^a\s+\w+\s+in\s+[^.]+\.?$/i.test(s)) return true;
+    return false;
+  };
+
+  const heroBlurb = !isGenericBlurb(place.summary) ? place.summary : null;
+
+  const cleanAddressLine = (() => {
+    if (effectiveAddress) {
+      const parts = [effectiveAddress];
+      if (place.location?.city && !effectiveAddress.toLowerCase().includes(place.location.city.toLowerCase())) {
+        parts.push(place.location.city);
+      }
+      if (place.location?.country && !effectiveAddress.toLowerCase().includes(place.location.country.toLowerCase())) {
+        parts.push(place.location.country);
+      }
+      return parts.join(", ");
+    }
+    const fallbackParts = [place.location?.city, place.location?.state_province, place.location?.country].filter(Boolean);
+    return fallbackParts.join(", ") || "Location details pending";
+  })();
+
   const placeTitle = capitalizePlaceName(place.display_name);
   const cleanTitle = placeTitle.trim().toLowerCase();
   const rawTitle = (place.display_name || "").trim().toLowerCase();
@@ -233,8 +258,8 @@ export default function PlaceDetailScreen() {
             {distinctAliases.length > 0 ? (
               <Text style={styles.aliases}>Also known as {distinctAliases.join(", ")}</Text>
             ) : null}
-            {place.summary ? (
-              <Text style={styles.summaryText}>{place.summary}</Text>
+            {heroBlurb ? (
+              <Text style={styles.summaryText}>{heroBlurb}</Text>
             ) : null}
             <View style={styles.headerActions}>
               <Pressable
@@ -289,31 +314,11 @@ export default function PlaceDetailScreen() {
               <PlaceMap places={[place]} selectedPlaceId={place.place_id} height={180} />
             </View>
           ) : null}
-          <View style={styles.surface}>
-            {effectiveAddress ? (
-              <View style={styles.locationDetailRow}>
-                <Text style={styles.locationDetailLabel}>Address:</Text>
-                <Text style={styles.locationDetailValue}>{effectiveAddress}</Text>
-              </View>
-            ) : null}
-            {place.location?.city && (!effectiveAddress || !effectiveAddress.toLowerCase().includes(place.location.city.toLowerCase())) ? (
-              <View style={styles.locationDetailRow}>
-                <Text style={styles.locationDetailLabel}>City:</Text>
-                <Text style={styles.locationDetailValue}>{place.location.city}</Text>
-              </View>
-            ) : null}
-            {place.location?.state_province && (!effectiveAddress || !effectiveAddress.toLowerCase().includes(place.location.state_province.toLowerCase())) ? (
-              <View style={styles.locationDetailRow}>
-                <Text style={styles.locationDetailLabel}>State / Region:</Text>
-                <Text style={styles.locationDetailValue}>{place.location.state_province}</Text>
-              </View>
-            ) : null}
-            {place.location?.country && (!effectiveAddress || !effectiveAddress.toLowerCase().includes(place.location.country.toLowerCase())) ? (
-              <View style={styles.locationDetailRow}>
-                <Text style={styles.locationDetailLabel}>Country:</Text>
-                <Text style={styles.locationDetailValue}>{place.location.country}</Text>
-              </View>
-            ) : null}
+          <View style={[styles.surface, { flexDirection: "row", alignItems: "flex-start", gap: spacing.sm }]}>
+            <Ionicons name="location" size={18} color={colors.brand} style={{ marginTop: 2 }} />
+            <Text style={{ flex: 1, fontSize: 14, color: colors.text, lineHeight: 20 }}>
+              {cleanAddressLine}
+            </Text>
           </View>
         </SectionBlock>
 
