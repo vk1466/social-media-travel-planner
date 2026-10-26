@@ -887,13 +887,14 @@ def test_preview_existing_post(dynamodb) -> None:
 
 def test_preview_deleted_post(monkeypatch, dynamodb) -> None:
   def fake_fetch_post(*args, **kwargs):
-    raise RuntimeError("Instagram post C2xQ5T2ST8l could not be fetched (private or deleted post)")
+    raise RuntimeError("Instagram post any_deleted_code_999 could not be fetched (private or deleted post)")
 
+  monkeypatch.setattr("server.app._fetch_instagram_public_og", lambda sc: None)
   monkeypatch.setattr("travelplanner.clients.mindcase.fetch_post", fake_fetch_post)
 
   client = TestClient(app)
   res = client.get(
-    "/api/preview?url=https://www.instagram.com/reel/C2xQ5T2ST8l/",
+    "/api/preview?url=https://www.instagram.com/reel/any_deleted_code_999/",
     headers={"X-User-Id": "user-a"},
   )
   assert res.status_code == 200
@@ -901,6 +902,31 @@ def test_preview_deleted_post(monkeypatch, dynamodb) -> None:
   assert data["status"] == "unavailable"
   assert data["is_available"] is False
   assert data["error_message"] == "Private or deleted post"
+
+
+def test_preview_public_og_rich_data(monkeypatch, dynamodb) -> None:
+  monkeypatch.setattr(
+    "server.app._fetch_instagram_public_og",
+    lambda sc: {
+      "title": "Sunset in Santorini",
+      "author": "greek_explorer",
+      "thumbnail_url": "https://example.com/santorini.jpg",
+      "caption": "Sunset in Santorini\nBest views",
+    },
+  )
+
+  client = TestClient(app)
+  res = client.get(
+    "/api/preview?url=https://www.instagram.com/reel/santorini123/",
+    headers={"X-User-Id": "user-a"},
+  )
+  assert res.status_code == 200
+  data = res.json()
+  assert data["status"] == "available"
+  assert data["is_available"] is True
+  assert data["author"] == "greek_explorer"
+  assert data["thumbnail_url"] == "https://example.com/santorini.jpg"
+  assert data["title"] == "Sunset in Santorini"
 
 
 def test_preview_timeout_returns_unknown_status(monkeypatch, dynamodb) -> None:

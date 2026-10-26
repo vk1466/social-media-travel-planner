@@ -122,7 +122,7 @@ body {
     display: inline-flex !important;
   }
   .wf-main-content {
-    padding-bottom: 104px !important;
+    padding-bottom: calc(72px + env(safe-area-inset-bottom, 12px)) !important;
   }
   .wf-header {
     gap: 8px;

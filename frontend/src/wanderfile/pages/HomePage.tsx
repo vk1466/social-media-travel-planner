@@ -23,7 +23,7 @@ interface HomePageProps {
 }
 
 export function HomePage({ posts, places, loading, loadError, onRefresh }: HomePageProps) {
-  const { inboxFailures, retryAllFailed, retryFailedLink, removeFailedLink, openSaveSheet } = useSavePipeline();
+  const { inboxFailures, retryAllFailed, retryFailedLink, removeFailedLink, dismissAllFailed, openSaveSheet } = useSavePipeline();
   const [editingPost, setEditingPost] = useState<SavedPost | null>(null);
   const [inboxExpanded, setInboxExpanded] = useState(false);
 
@@ -175,9 +175,7 @@ export function HomePage({ posts, places, loading, loadError, onRefresh }: HomeP
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  inboxFailures.forEach((f) => removeFailedLink(f.url));
-                }}
+                onClick={dismissAllFailed}
                 style={{
                   height: "34px",
                   padding: "0 12px",

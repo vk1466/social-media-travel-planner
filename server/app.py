@@ -450,6 +450,148 @@ def proxy_media(user_id: CurrentUserId, url: str = Query(..., min_length=8)) -> 
   return fetch_proxied_media(url)
 
 
+_PREVIEW_CACHE: dict[str, tuple[float, LinkPreviewResponse]] = {}
+_PREVIEW_CACHE_TTL = 600.0  # 10 minutes
+
+
+def _fetch_instagram_public_og(shortcode: str) -> dict[str, Any] | None:
+  """Fast unauthenticated public OpenGraph fetch using a standard crawler User-Agent."""
+  import html as html_module
+  import re
+  import ssl
+  import urllib.request
+  import certifi
+
+  url = f"https://www.instagram.com/reel/{shortcode}/"
+  ssl_ctx = ssl.create_default_context(cafile=certifi.where())
+  ua = "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)"
+  req = urllib.request.Request(
+    url,
+    headers={"User-Agent": ua, "Accept-Language": "en-US,en;q=0.9"},
+  )
+  try:
+    with urllib.request.urlopen(req, timeout=3.5, context=ssl_ctx) as resp:
+      text = resp.read().decode("utf-8", errors="ignore")
+      imgs = re.findall(r'<meta[^>]+property=[\"\']og:image[\"\'][^>]+content=[\"\'](.*?)[\"\']', text)
+      titles = re.findall(r'<meta[^>]+property=[\"\']og:title[\"\'][^>]+content=[\"\'](.*?)[\"\']', text)
+      descs = re.findall(r'<meta[^>]+property=[\"\']og:description[\"\'][^>]+content=[\"\'](.*?)[\"\']', text)
+      if imgs and titles:
+        thumb = html_module.unescape(imgs[0])
+        raw_title = html_module.unescape(titles[0])
+        raw_desc = html_module.unescape(descs[0]) if descs else ""
+        author = None
+        title = raw_title
+        if " on Instagram:" in raw_title:
+          parts = raw_title.split(" on Instagram:", 1)
+          author = parts[0].strip()
+          snippet = parts[1].strip().strip('\"').strip('&quot;').strip('“').strip('”')
+          first_line = snippet.split("\n")[0].strip()
+          title = first_line or (f"Reel by @{author}" if author else "Instagram Reel")
+        if raw_desc:
+          m = re.search(r'-\s*([a-zA-Z0-9._]+)\s+on\s+', raw_desc)
+          if m:
+            author = m.group(1)
+        return {
+          "thumbnail_url": thumb,
+          "title": title,
+          "author": author,
+          "caption": raw_title,
+        }
+  except Exception as exc:
+    logger.debug("public og fetch failed shortcode=%s: %s", shortcode, exc)
+  return None
+
+
+def _check_instagram_embed_unavailable(shortcode: str) -> bool:
+  """Fast unauthenticated check via Instagram embed endpoint to detect broken/removed posts (<0.5s)."""
+  import re
+  import ssl
+  import urllib.request
+  import urllib.error
+  import certifi
+
+  url = f"https://www.instagram.com/p/{shortcode}/embed/captioned/"
+  ssl_ctx = ssl.create_default_context(cafile=certifi.where())
+  req = urllib.request.Request(
+    url,
+    headers={"User-Agent": "Mozilla/5.0", "Accept-Language": "en-US,en;q=0.9"},
+  )
+  try:
+    with urllib.request.urlopen(req, timeout=3.5, context=ssl_ctx) as resp:
+      text = resp.read().decode("utf-8", errors="ignore")
+      clean = re.sub(r"<(script|style)[^>]*>.*?</\1>", "", text, flags=re.DOTALL)
+      stripped = re.sub(r"<[^>]+>", " ", clean).lower()
+      return (
+        "may be broken, or the post may have been removed" in stripped
+        or "the link to this photo or video may be broken" in stripped
+      )
+  except urllib.error.HTTPError as e:
+    if e.code in (404, 410):
+      return True
+  except Exception as exc:
+    logger.debug("embed check failed shortcode=%s: %s", shortcode, exc)
+  return False
+
+
+def _fetch_browserless_preview(shortcode: str) -> dict[str, Any] | None:
+  """Render page via Browserless to detect unavailable reels or extract OG tags."""
+  try:
+    from travelplanner.clients.browserless import fetch_rendered_html
+    import html as html_module
+    import re
+
+    url = f"https://www.instagram.com/reel/{shortcode}/"
+    html = fetch_rendered_html(url, timeout=7)
+    if not html:
+      return None
+
+    stripped = re.sub(r'<[^>]+>', ' ', html).lower()
+    is_unavailable = any(
+      phrase in stripped
+      for phrase in (
+        "post isn't available",
+        "post isn’t available",
+        "the link may be broken",
+        "page not found",
+        "sorry, this page isn't available",
+        "sorry, this page isn’t available",
+      )
+    )
+
+    if is_unavailable:
+      return {"unavailable": True}
+
+    og_images = re.findall(r'<meta[^>]+property=[\"\']og:image[\"\'][^>]+content=[\"\'](.*?)[\"\']', html)
+    og_titles = re.findall(r'<meta[^>]+property=[\"\']og:title[\"\'][^>]+content=[\"\'](.*?)[\"\']', html)
+    og_descs = re.findall(r'<meta[^>]+property=[\"\']og:description[\"\'][^>]+content=[\"\'](.*?)[\"\']', html)
+
+    if og_images and og_titles:
+      thumb = html_module.unescape(og_images[0])
+      raw_title = html_module.unescape(og_titles[0])
+      raw_desc = html_module.unescape(og_descs[0]) if og_descs else ""
+      author = None
+      title = raw_title
+      if " on Instagram:" in raw_title:
+        parts = raw_title.split(" on Instagram:", 1)
+        author = parts[0].strip()
+        snippet = parts[1].strip().strip('\"').strip('&quot;').strip('“').strip('”')
+        first_line = snippet.split("\n")[0].strip()
+        title = first_line or (f"Reel by @{author}" if author else "Instagram Reel")
+      if raw_desc:
+        m = re.search(r'-\s*([a-zA-Z0-9._]+)\s+on\s+', raw_desc)
+        if m:
+          author = m.group(1)
+      return {
+        "thumbnail_url": thumb,
+        "title": title,
+        "author": author,
+        "caption": raw_title,
+      }
+  except Exception as exc:
+    logger.debug("browserless preview fetch failed shortcode=%s: %s", shortcode, exc)
+  return None
+
+
 @app.get(
   "/api/preview",
   response_model=LinkPreviewResponse,
@@ -460,6 +602,7 @@ def get_link_preview(
   url: str = Query(..., min_length=1),
 ) -> LinkPreviewResponse:
   """Preview link metadata before saving, detecting deleted/private posts fast."""
+  import time
   del user_id
   clean_url = url.strip()
   platform = detect_platform(clean_url)
@@ -485,16 +628,12 @@ def get_link_preview(
 
   global_post_id = make_post_id(Platform.INSTAGRAM, shortcode)
 
-  # Special known deleted reel from regression test suite
-  if shortcode == "C2xQ5T2ST8l":
-    return LinkPreviewResponse(
-      url=clean_url,
-      platform="instagram",
-      shortcode=shortcode,
-      is_available=False,
-      status="unavailable",
-      error_message="Private or deleted post",
-    )
+  # Check in-memory cache
+  if shortcode in _PREVIEW_CACHE:
+    cached_time, cached_resp = _PREVIEW_CACHE[shortcode]
+    if time.monotonic() - cached_time < _PREVIEW_CACHE_TTL:
+      logger.info("preview answered by source=cache for shortcode=%s", shortcode)
+      return cached_resp
 
   # 1. Fast path: check if post already exists in Posts table
   existing = load_post(Platform.INSTAGRAM, shortcode) or load_post_by_id(global_post_id)
@@ -506,7 +645,7 @@ def get_link_preview(
       if first_line
       else (f"Reel by @{existing.author_handle}" if existing.author_handle else "Instagram Reel")
     )
-    return LinkPreviewResponse(
+    resp = LinkPreviewResponse(
       url=clean_url,
       platform="instagram",
       shortcode=shortcode,
@@ -517,13 +656,79 @@ def get_link_preview(
       is_available=True,
       status="available",
     )
+    _PREVIEW_CACHE[shortcode] = (time.monotonic(), resp)
+    logger.info("preview answered by source=db for shortcode=%s", shortcode)
+    return resp
 
-  # 2. Fast check: try Mindcase lightweight fetch with short timeout (4.0s)
+  # 2. Fast unauthenticated public OpenGraph fetch (<1s)
+  og_data = _fetch_instagram_public_og(shortcode)
+  if og_data and og_data.get("thumbnail_url"):
+    resp = LinkPreviewResponse(
+      url=clean_url,
+      platform="instagram",
+      shortcode=shortcode,
+      title=og_data["title"],
+      caption=og_data.get("caption", ""),
+      author=og_data.get("author"),
+      thumbnail_url=og_data.get("thumbnail_url"),
+      is_available=True,
+      status="available",
+    )
+    _PREVIEW_CACHE[shortcode] = (time.monotonic(), resp)
+    logger.info("preview answered by source=public_og for shortcode=%s", shortcode)
+    return resp
+
+  # 3. Fast embed check to detect deleted/broken posts (<0.5s)
+  if _check_instagram_embed_unavailable(shortcode):
+    resp = LinkPreviewResponse(
+      url=clean_url,
+      platform="instagram",
+      shortcode=shortcode,
+      is_available=False,
+      status="unavailable",
+      error_message="Private or deleted post",
+    )
+    _PREVIEW_CACHE[shortcode] = (time.monotonic(), resp)
+    logger.info("preview answered by source=embed_check (unavailable) for shortcode=%s", shortcode)
+    return resp
+
+  # 4. Browserless fallback check (fast headless verification ~2s)
+  browserless_data = _fetch_browserless_preview(shortcode)
+  if browserless_data:
+    if browserless_data.get("unavailable"):
+      resp = LinkPreviewResponse(
+        url=clean_url,
+        platform="instagram",
+        shortcode=shortcode,
+        is_available=False,
+        status="unavailable",
+        error_message="Private or deleted post",
+      )
+      _PREVIEW_CACHE[shortcode] = (time.monotonic(), resp)
+      logger.info("preview answered by source=browserless (unavailable) for shortcode=%s", shortcode)
+      return resp
+    if browserless_data.get("thumbnail_url"):
+      resp = LinkPreviewResponse(
+        url=clean_url,
+        platform="instagram",
+        shortcode=shortcode,
+        title=browserless_data["title"],
+        caption=browserless_data.get("caption", ""),
+        author=browserless_data.get("author"),
+        thumbnail_url=browserless_data.get("thumbnail_url"),
+        is_available=True,
+        status="available",
+      )
+      _PREVIEW_CACHE[shortcode] = (time.monotonic(), resp)
+      logger.info("preview answered by source=browserless (og_tags) for shortcode=%s", shortcode)
+      return resp
+
+  # 4. Mindcase fetch with 6.0s timeout
   try:
     from travelplanner.clients.mindcase import fetch_post
     from travelplanner.steps.instagram.media import trim_post_info
 
-    raw = fetch_post(post_url=clean_url, shortcode=shortcode, timeout_seconds=4.0)
+    raw = fetch_post(post_url=clean_url, shortcode=shortcode, timeout_seconds=6.0)
     trimmed = trim_post_info(raw)
     caption = trimmed.get("caption") or ""
     first_line = caption.split("\n")[0].strip() if caption else ""
@@ -539,7 +744,7 @@ def get_link_preview(
       if first_line
       else (f"Reel by @{author}" if author else "Instagram Reel")
     )
-    return LinkPreviewResponse(
+    resp = LinkPreviewResponse(
       url=clean_url,
       platform="instagram",
       shortcode=shortcode,
@@ -550,6 +755,9 @@ def get_link_preview(
       is_available=True,
       status="available",
     )
+    _PREVIEW_CACHE[shortcode] = (time.monotonic(), resp)
+    logger.info("preview answered by source=mindcase for shortcode=%s", shortcode)
+    return resp
   except Exception as exc:
     msg = str(exc).lower()
     if (
@@ -561,7 +769,7 @@ def get_link_preview(
       or "returned no post" in msg
       or "does not exist" in msg
     ):
-      return LinkPreviewResponse(
+      resp = LinkPreviewResponse(
         url=clean_url,
         platform="instagram",
         shortcode=shortcode,
@@ -569,61 +777,70 @@ def get_link_preview(
         status="unavailable",
         error_message="Private or deleted post",
       )
+      _PREVIEW_CACHE[shortcode] = (time.monotonic(), resp)
+      logger.info("preview answered by source=mindcase (unavailable) for shortcode=%s", shortcode)
+      return resp
 
-    # If Mindcase timed out or gave a transient error, check Instagram oEmbed for positive evidence
-    if shortcode:
-      try:
-        import json
-        import urllib.request
-        import urllib.error
-        oembed_url = f"https://www.instagram.com/oembed/?url=https://www.instagram.com/reel/{shortcode}/"
-        req = urllib.request.Request(oembed_url, headers={"User-Agent": "Mozilla/5.0"})
-        with urllib.request.urlopen(req, timeout=3.0) as resp:
-          status_code = getattr(resp, "status", getattr(resp, "code", 200))
-          if status_code == 200:
-            data = json.loads(resp.read().decode("utf-8"))
-            oembed_author = data.get("author_name")
-            oembed_thumb = data.get("thumbnail_url")
-            raw_title = data.get("title") or ""
-            first_line = raw_title.split("\n")[0].strip() if raw_title else ""
-            snippet = first_line or (f"Reel by @{oembed_author}" if oembed_author else "Instagram Reel")
-            return LinkPreviewResponse(
-              url=clean_url,
-              platform="instagram",
-              shortcode=shortcode,
-              title=snippet,
-              caption=raw_title,
-              author=oembed_author,
-              thumbnail_url=oembed_thumb,
-              is_available=True,
-              status="available",
-            )
-      except urllib.error.HTTPError as http_err:
-        if http_err.code in (404, 400, 410):
-          # Positive evidence: deleted or private post
-          return LinkPreviewResponse(
+  # 5. oEmbed check for positive evidence
+  if shortcode:
+    try:
+      import json
+      import urllib.request
+      import urllib.error
+      oembed_url = f"https://www.instagram.com/oembed/?url=https://www.instagram.com/reel/{shortcode}/"
+      req = urllib.request.Request(oembed_url, headers={"User-Agent": "Mozilla/5.0"})
+      with urllib.request.urlopen(req, timeout=2.5) as resp:
+        status_code = getattr(resp, "status", getattr(resp, "code", 200))
+        if status_code == 200:
+          data = json.loads(resp.read().decode("utf-8"))
+          oembed_author = data.get("author_name")
+          oembed_thumb = data.get("thumbnail_url")
+          raw_title = data.get("title") or ""
+          first_line = raw_title.split("\n")[0].strip() if raw_title else ""
+          snippet = first_line or (f"Reel by @{oembed_author}" if oembed_author else "Instagram Reel")
+          resp_obj = LinkPreviewResponse(
             url=clean_url,
             platform="instagram",
             shortcode=shortcode,
-            is_available=False,
-            status="unavailable",
-            error_message="Private or deleted post",
+            title=snippet,
+            caption=raw_title,
+            author=oembed_author,
+            thumbnail_url=oembed_thumb,
+            is_available=True,
+            status="available",
           )
-      except Exception:
-        pass
+          _PREVIEW_CACHE[shortcode] = (time.monotonic(), resp_obj)
+          logger.info("preview answered by source=oembed for shortcode=%s", shortcode)
+          return resp_obj
+    except urllib.error.HTTPError as http_err:
+      if http_err.code in (404, 400, 410):
+        resp_obj = LinkPreviewResponse(
+          url=clean_url,
+          platform="instagram",
+          shortcode=shortcode,
+          is_available=False,
+          status="unavailable",
+          error_message="Private or deleted post",
+        )
+        _PREVIEW_CACHE[shortcode] = (time.monotonic(), resp_obj)
+        logger.info("preview answered by source=oembed (unavailable) for shortcode=%s", shortcode)
+        return resp_obj
+    except Exception:
+      pass
 
-    # If it was a timeout in preview and no positive evidence of deleted, return neutral unknown status
-    return LinkPreviewResponse(
-      url=clean_url,
-      platform="instagram",
-      shortcode=shortcode,
-      title="Instagram Reel",
-      caption="",
-      author=None,
-      thumbnail_url=None,
-      is_available=True,
-      status="unknown",
-    )
+  # Neutral unknown fallback
+  logger.info("preview answered by source=neutral_fallback for shortcode=%s", shortcode)
+  return LinkPreviewResponse(
+    url=clean_url,
+    platform="instagram",
+    shortcode=shortcode,
+    title="Instagram Reel",
+    caption="",
+    author=None,
+    thumbnail_url=None,
+    is_available=True,
+    status="unknown",
+  )
 
 
 @app.delete("/api/posts/{platform}/{post_id}", status_code=204, response_class=Response)

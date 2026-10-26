@@ -138,8 +138,14 @@ interface SavePipelineContextType {
   retryFailedLink: (url: string) => Promise<void>;
   removeFailedLink: (url: string) => void;
   retryAllFailed: () => Promise<void>;
+  dismissAllFailed: () => void;
   changeSavedCategory: (saveId: string, newCategory: string) => void;
   onRefreshLibrary?: () => void;
+}
+
+export function isDeletedOrPrivateMessage(msg: string): boolean {
+  const m = (msg || "").toLowerCase();
+  return m.includes("private") || m.includes("deleted");
 }
 
 export function updateFailuresRetainingSpecific(
@@ -186,19 +192,13 @@ export function SavePipelineProvider({
           const m = (item.errorMessage || "").toLowerCase();
           if (u.includes("tiktok") || u.includes("youtube") || u.includes("youtu.be")) return false;
           if (m.includes("tiktok") || m.includes("youtube")) return false;
+          if (m.includes("private") || m.includes("deleted")) return false;
           return true;
         })
-        .map((item) => {
-          let msg = item.errorMessage;
-          // Re-classify existing failed rows with positive evidence (e.g. C2xQ5T2ST8l deleted reel)
-          if (item.url && item.url.includes("C2xQ5T2ST8l")) {
-            msg = "Private or deleted post";
-          }
-          return {
-            ...item,
-            errorMessage: toFriendlyErrorMessage(msg, item.url),
-          };
-        });
+        .map((item) => ({
+          ...item,
+          errorMessage: toFriendlyErrorMessage(item.errorMessage, item.url),
+        }));
     } catch {
       return [];
     }
@@ -217,6 +217,15 @@ export function SavePipelineProvider({
 
   const removeFailedLink = useCallback((url: string) => {
     setInboxFailures((prev) => prev.filter((f) => !urlsMatch(f.url, url)));
+  }, []);
+
+  const dismissAllFailed = useCallback(() => {
+    setInboxFailures([]);
+    try {
+      localStorage.removeItem("wf_inbox_failures");
+    } catch {
+      // ignore storage error
+    }
   }, []);
 
   const saveUrl = useCallback(
@@ -340,14 +349,18 @@ export function SavePipelineProvider({
                         : s
                     )
                   );
-                  setInboxFailures((prev) =>
-                    updateFailuresRetainingSpecific(prev, {
-                      url,
-                      errorMessage: friendly,
-                      jobId,
-                      failedAt: new Date().toISOString(),
-                    })
-                  );
+                  if (!isDeletedOrPrivateMessage(friendly)) {
+                    setInboxFailures((prev) =>
+                      updateFailuresRetainingSpecific(prev, {
+                        url,
+                        errorMessage: friendly,
+                        jobId,
+                        failedAt: new Date().toISOString(),
+                      })
+                    );
+                  } else {
+                    setInboxFailures((prev) => prev.filter((f) => !urlsMatch(f.url, url)));
+                  }
                   return;
                 }
 
@@ -506,14 +519,18 @@ export function SavePipelineProvider({
                           : s
                       )
                     );
-                    setInboxFailures((prev) =>
-                      updateFailuresRetainingSpecific(prev, {
-                        url,
-                        errorMessage: friendly,
-                        jobId,
-                        failedAt: new Date().toISOString(),
-                      })
-                    );
+                    if (!isDeletedOrPrivateMessage(friendly)) {
+                      setInboxFailures((prev) =>
+                        updateFailuresRetainingSpecific(prev, {
+                          url,
+                          errorMessage: friendly,
+                          jobId,
+                          failedAt: new Date().toISOString(),
+                        })
+                      );
+                    } else {
+                      setInboxFailures((prev) => prev.filter((f) => !urlsMatch(f.url, url)));
+                    }
                   }
                 }
               } catch {
@@ -559,13 +576,17 @@ export function SavePipelineProvider({
                   : s
               )
             );
-            setInboxFailures((prev) =>
-              updateFailuresRetainingSpecific(prev, {
-                url,
-                errorMessage: friendly,
-                failedAt: new Date().toISOString(),
-              })
-            );
+            if (!isDeletedOrPrivateMessage(friendly)) {
+              setInboxFailures((prev) =>
+                updateFailuresRetainingSpecific(prev, {
+                  url,
+                  errorMessage: friendly,
+                  failedAt: new Date().toISOString(),
+                })
+              );
+            } else {
+              setInboxFailures((prev) => prev.filter((f) => !urlsMatch(f.url, url)));
+            }
           }
         } catch (err) {
           const friendly = toFriendlyErrorMessage(err instanceof Error ? err.message : "Could not read post", url);
@@ -582,13 +603,17 @@ export function SavePipelineProvider({
                 : s
             )
           );
-          setInboxFailures((prev) =>
-            updateFailuresRetainingSpecific(prev, {
-              url,
-              errorMessage: friendly,
-              failedAt: new Date().toISOString(),
-            })
-          );
+          if (!isDeletedOrPrivateMessage(friendly)) {
+            setInboxFailures((prev) =>
+              updateFailuresRetainingSpecific(prev, {
+                url,
+                errorMessage: friendly,
+                failedAt: new Date().toISOString(),
+              })
+            );
+          } else {
+            setInboxFailures((prev) => prev.filter((f) => !urlsMatch(f.url, url)));
+          }
         }
       }
     },
@@ -657,6 +682,7 @@ export function SavePipelineProvider({
         retryFailedLink,
         removeFailedLink,
         retryAllFailed,
+        dismissAllFailed,
         changeSavedCategory,
         onRefreshLibrary,
       }}

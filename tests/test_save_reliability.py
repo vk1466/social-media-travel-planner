@@ -118,9 +118,31 @@ def test_fetch_media_slow_reel_generous_timeout_and_retry(monkeypatch) -> None:
   result_ctx = fetch_media(ctx)
 
   assert len(calls) == 2
-  for call_kwargs in calls:
-    assert call_kwargs.get("timeout_seconds") >= 120.0
+  assert calls[0].get("timeout_seconds") == 25.0
+  assert calls[1].get("timeout_seconds") == 15.0
   assert result_ctx.post is not None
   assert result_ctx.post.caption == "Generous timeout reel"
   assert result_ctx.post.author_handle == "traveler"
+
+
+def test_fetch_media_does_not_retry_on_non_retryable_error(monkeypatch) -> None:
+  """Deleted or private posts must fail immediately without retrying or blocking for minutes."""
+  import pytest
+  from travelplanner.flow.context import IngestContext
+  from travelplanner.steps.instagram.fetch_media import fetch_media
+
+  calls = []
+  def fake_fetch_post(*args, **kwargs):
+    calls.append(kwargs)
+    raise RuntimeError("Instagram post C0kT3lQIcO6 returned empty data (private or deleted post)")
+
+  monkeypatch.setattr("travelplanner.steps.instagram.fetch_media.fetch_post", fake_fetch_post)
+
+  ctx = IngestContext(post_url="https://www.instagram.com/reel/C0kT3lQIcO6/", user_id="user_123")
+  with pytest.raises(RuntimeError) as exc_info:
+    fetch_media(ctx)
+
+  assert "private or deleted post" in str(exc_info.value)
+  assert len(calls) == 1  # Exactly 1 call, NEVER retried!
+
 

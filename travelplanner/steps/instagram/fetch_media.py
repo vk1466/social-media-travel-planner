@@ -16,16 +16,32 @@ from travelplanner.steps.instagram.media import (
 logger = logging.getLogger(__name__)
 
 
+def is_non_retryable_error(exc: Exception) -> bool:
+  msg = str(exc).lower()
+  return (
+    "private" in msg
+    or "deleted" in msg
+    or "not found" in msg
+    or "could not be fetched" in msg
+    or "empty data" in msg
+    or "returned no post" in msg
+    or "does not exist" in msg
+  )
+
+
 def fetch_media(ctx: IngestContext) -> IngestContext:
   shortcode = ctx.shortcode or extract_instagram_shortcode(ctx.post_url)
   ctx.shortcode = shortcode
   logger.info("fetch_media start shortcode=%s", shortcode)
-  timeout_seconds = 120.0
+  timeout_seconds = 25.0
   try:
     raw = fetch_post(post_url=ctx.post_url, shortcode=shortcode, timeout_seconds=timeout_seconds)
   except Exception as exc:
-    logger.warning("fetch_media attempt 1 failed (%s), retrying with generous timeout...", exc)
-    raw = fetch_post(post_url=ctx.post_url, shortcode=shortcode, timeout_seconds=timeout_seconds)
+    if is_non_retryable_error(exc):
+      logger.warning("fetch_media failed with definite non-retryable error: %s", exc)
+      raise
+    logger.warning("fetch_media attempt 1 failed with transient error (%s), retrying...", exc)
+    raw = fetch_post(post_url=ctx.post_url, shortcode=shortcode, timeout_seconds=15.0)
   ctx.raw_payload = raw
 
   if not raw:

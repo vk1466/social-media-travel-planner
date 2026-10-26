@@ -474,6 +474,7 @@ export function Header({
   const navigate = useNavigate();
   const { savingCount, openSaveSheet, saveUrl } = useSavePipeline();
   const [inputValue, setInputValue] = useState("");
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
 
   const handleSearchSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -504,104 +505,216 @@ export function Header({
   };
 
   return (
-    <header className="wf-header">
-      <Link
-        to="/"
+    <header
+      className="wf-header"
+      style={{
+        flexDirection: "column",
+        alignItems: "stretch",
+        gap: mobileSearchOpen ? "8px" : "0px",
+        padding: mobileSearchOpen ? "8px 12px 10px" : undefined,
+      }}
+    >
+      <div
         style={{
           display: "flex",
           alignItems: "center",
           gap: "10px",
-          textDecoration: "none",
-          fontWeight: 800,
-          fontSize: "20px",
-          letterSpacing: "-0.03em",
-          color: "#1B1D1F",
-          flexShrink: 0,
+          width: "100%",
         }}
       >
-        <span
-          aria-hidden="true"
+        <Link
+          to="/"
           style={{
-            width: "30px",
-            height: "30px",
-            borderRadius: "10px",
-            background: "#1B1D1F",
-            color: "#FFFFFF",
             display: "flex",
             alignItems: "center",
-            justifyContent: "center",
+            gap: "10px",
+            textDecoration: "none",
+            fontWeight: 800,
+            fontSize: "20px",
+            letterSpacing: "-0.03em",
+            color: "#1B1D1F",
             flexShrink: 0,
           }}
         >
-          <svg
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+          <span
             aria-hidden="true"
+            style={{
+              width: "30px",
+              height: "30px",
+              borderRadius: "10px",
+              background: "#1B1D1F",
+              color: "#FFFFFF",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+            }}
           >
-            <path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z" />
-            <circle cx="12" cy="10" r="2.5" />
-          </svg>
-        </span>
-        <span className="wf-logo-text">Wanderfile</span>
-      </Link>
-
-      <nav aria-label="Main" className="wf-header-nav wf-desktop-only">
-        {navItems.map((item) => {
-          const active = isCurrent(item.path);
-          return (
-            <Link
-              key={item.path}
-              to={item.path}
-              style={{
-                padding: "9px 16px",
-                borderRadius: "999px",
-                fontSize: "15px",
-                fontWeight: 600,
-                textDecoration: "none",
-                background: active ? "#1B1D1F" : "transparent",
-                color: active ? "#FFFFFF" : "#4A4E52",
-                transition: "all 0.15s ease",
-              }}
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
             >
-              {item.label}
-            </Link>
-          );
-        })}
-      </nav>
+              <path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z" />
+              <circle cx="12" cy="10" r="2.5" />
+            </svg>
+          </span>
+          <span className="wf-logo-text">Wanderfile</span>
+        </Link>
 
-      {/* Omnibox / Search & Paste bar */}
-      <form
-        onSubmit={handleSearchSubmit}
-        className="wf-header-search-form"
-        style={{
-          marginLeft: "auto",
-          flex: "1 1 0%",
-          minWidth: 0,
-          maxWidth: "540px",
-          display: "flex",
-          alignItems: "center",
-        }}
-      >
-        <label
+        <nav aria-label="Main" className="wf-header-nav wf-desktop-only">
+          {navItems.map((item) => {
+            const active = isCurrent(item.path);
+            return (
+              <Link
+                key={item.path}
+                to={item.path}
+                style={{
+                  padding: "9px 16px",
+                  borderRadius: "999px",
+                  fontSize: "15px",
+                  fontWeight: 600,
+                  textDecoration: "none",
+                  background: active ? "#1B1D1F" : "transparent",
+                  color: active ? "#FFFFFF" : "#4A4E52",
+                  transition: "all 0.15s ease",
+                }}
+              >
+                {item.label}
+              </Link>
+            );
+          })}
+        </nav>
+
+        {/* Omnibox / Search & Paste bar (Desktop) */}
+        <form
+          onSubmit={handleSearchSubmit}
+          className="wf-header-search-form wf-desktop-only"
           style={{
-            width: "100%",
+            marginLeft: "auto",
+            flex: "1 1 0%",
             minWidth: 0,
+            maxWidth: "540px",
             display: "flex",
             alignItems: "center",
-            gap: "8px",
-            height: "40px",
-            padding: "0 8px 0 12px",
-            borderRadius: "999px",
-            background: "#F6F5F1",
+          }}
+        >
+          <label
+            style={{
+              width: "100%",
+              minWidth: 0,
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              height: "40px",
+              padding: "0 8px 0 12px",
+              borderRadius: "999px",
+              background: "#F6F5F1",
+              border: "1px solid #E6E3DC",
+              color: "#6B6F73",
+              boxSizing: "border-box",
+            }}
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+              style={{ flexShrink: 0 }}
+            >
+              <path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1" />
+              <path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1" />
+            </svg>
+            <input
+              aria-label="Search or paste link"
+              placeholder="Search or paste link"
+              value={inputValue}
+              size={1}
+              onChange={(e) => setInputValue(e.target.value)}
+              style={{
+                flex: "1 1 0%",
+                width: "100%",
+                minWidth: 0,
+                border: 0,
+                background: "transparent",
+                fontFamily: "inherit",
+                fontSize: "14px",
+                color: "#1B1D1F",
+                outline: "none",
+              }}
+            />
+            <button
+              type="button"
+              className="wf-desktop-only"
+              onClick={async () => {
+                try {
+                  const clip = await navigator.clipboard.readText();
+                  if (clip) {
+                    setInputValue(clip);
+                    if (clip.startsWith("http://") || clip.startsWith("https://")) {
+                      await saveUrl(clip);
+                      openSaveSheet();
+                      setInputValue("");
+                    }
+                  }
+                } catch {
+                  // Clipboard permissions might be denied
+                }
+              }}
+              title="Paste from clipboard"
+              style={{
+                fontSize: "12px",
+                fontWeight: 700,
+                padding: "5px 9px",
+                borderRadius: "999px",
+                background: "#FFFFFF",
+                border: "1px solid #E6E3DC",
+                color: "#1B1D1F",
+                cursor: "pointer",
+                flexShrink: 0,
+              }}
+            >
+              ⌘V
+            </button>
+          </label>
+        </form>
+
+        {/* Switch Account in Header (Super Admin - Desktop) */}
+        {isSuperAdmin ? (
+          <div className="wf-desktop-only">
+            <ViewAsSwitcher enabled={isSuperAdmin} onChange={onViewAsChange} />
+          </div>
+        ) : null}
+
+        {/* Mobile search toggle button */}
+        <button
+          type="button"
+          className="wf-mobile-only"
+          onClick={() => setMobileSearchOpen((prev) => !prev)}
+          aria-label="Toggle search"
+          style={{
+            marginLeft: "auto",
+            width: "36px",
+            height: "36px",
+            borderRadius: "50%",
             border: "1px solid #E6E3DC",
-            color: "#6B6F73",
-            boxSizing: "border-box",
+            background: mobileSearchOpen ? "#1B1D1F" : "#F6F5F1",
+            color: mobileSearchOpen ? "#FFFFFF" : "#1B1D1F",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "pointer",
+            flexShrink: 0,
           }}
         >
           <svg
@@ -614,163 +727,216 @@ export function Header({
             strokeLinecap="round"
             strokeLinejoin="round"
             aria-hidden="true"
-            style={{ flexShrink: 0 }}
           >
-            <path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1" />
-            <path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1" />
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
           </svg>
-          <input
-            aria-label="Search or paste link"
-            placeholder="Search or paste link"
-            value={inputValue}
-            size={1}
-            onChange={(e) => setInputValue(e.target.value)}
+        </button>
+
+        {/* Saving status indicator */}
+        {savingCount > 0 ? (
+          <button
+            type="button"
+            onClick={() => openSaveSheet()}
             style={{
-              flex: "1 1 0%",
-              width: "100%",
-              minWidth: 0,
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              fontSize: "14px",
+              fontWeight: 600,
+              textDecoration: "none",
+              color: "#4A4E52",
               border: 0,
               background: "transparent",
-              fontFamily: "inherit",
-              fontSize: "14px",
-              color: "#1B1D1F",
-              outline: "none",
-            }}
-          />
-          <button
-            type="button"
-            className="wf-desktop-only"
-            onClick={async () => {
-              try {
-                const clip = await navigator.clipboard.readText();
-                if (clip) {
-                  setInputValue(clip);
-                  if (clip.startsWith("http://") || clip.startsWith("https://")) {
-                    await saveUrl(clip);
-                    openSaveSheet();
-                    setInputValue("");
-                  }
-                }
-              } catch {
-                // Clipboard permissions might be denied
-              }
-            }}
-            title="Paste from clipboard"
-            style={{
-              fontSize: "12px",
-              fontWeight: 700,
-              padding: "5px 9px",
-              borderRadius: "999px",
-              background: "#FFFFFF",
-              border: "1px solid #E6E3DC",
-              color: "#1B1D1F",
               cursor: "pointer",
               flexShrink: 0,
             }}
           >
-            ⌘V
+            <span
+              aria-hidden="true"
+              style={{
+                width: "8px",
+                height: "8px",
+                borderRadius: "50%",
+                background: "#2F9E6B",
+                animation: "wf-skeleton-pulse 1.2s infinite",
+              }}
+            />
+            Saving {savingCount}
           </button>
-        </label>
-      </form>
+        ) : (
+          <>
+            <button
+              type="button"
+              onClick={() => openSaveSheet()}
+              className="wf-desktop-only"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                height: "38px",
+                padding: "0 14px",
+                borderRadius: "999px",
+                border: "1px solid #D9D5CB",
+                background: "#FFFFFF",
+                fontFamily: "inherit",
+                fontSize: "14px",
+                fontWeight: 700,
+                color: "#1B1D1F",
+                cursor: "pointer",
+              }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+              Save
+            </button>
+            <button
+              type="button"
+              onClick={() => openSaveSheet()}
+              className="wf-mobile-save-btn"
+              aria-label="Save a link"
+              title="Save a link"
+              style={{
+                alignItems: "center",
+                justifyContent: "center",
+                width: "36px",
+                height: "36px",
+                borderRadius: "50%",
+                border: "1px solid #1B1D1F",
+                background: "#1B1D1F",
+                color: "#FFFFFF",
+                cursor: "pointer",
+                flexShrink: 0,
+              }}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+            </button>
+          </>
+        )}
 
-      {/* Switch Account in Header (Super Admin - Desktop) */}
-      {isSuperAdmin ? (
-        <div className="wf-desktop-only">
-          <ViewAsSwitcher enabled={isSuperAdmin} onChange={onViewAsChange} />
+        {/* Account menu */}
+        <div style={{ flexShrink: 0 }}>
+          <AccountMenu
+            isAdmin={isAdmin}
+            isSuperAdmin={isSuperAdmin}
+            onViewAsChange={onViewAsChange}
+          />
         </div>
-      ) : null}
+      </div>
 
-      {/* Saving status indicator */}
-      {savingCount > 0 ? (
-        <button
-          type="button"
-          onClick={() => openSaveSheet()}
+      {/* Expandable Mobile Search Drawer */}
+      {mobileSearchOpen && (
+        <div
+          className="wf-mobile-only"
           style={{
-            display: "flex",
+            width: "100%",
+            paddingTop: "4px",
             alignItems: "center",
             gap: "8px",
-            fontSize: "14px",
-            fontWeight: 600,
-            textDecoration: "none",
-            color: "#4A4E52",
-            border: 0,
-            background: "transparent",
-            cursor: "pointer",
           }}
         >
-          <span
-            aria-hidden="true"
-            style={{
-              width: "8px",
-              height: "8px",
-              borderRadius: "50%",
-              background: "#2F9E6B",
-              animation: "wf-skeleton-pulse 1.2s infinite",
+          <form
+            onSubmit={(e) => {
+              handleSearchSubmit(e);
+              setMobileSearchOpen(false);
             }}
-          />
-          Saving {savingCount}
-        </button>
-      ) : (
-        <>
-          <button
-            type="button"
-            onClick={() => openSaveSheet()}
-            className="wf-desktop-only"
             style={{
-              display: "inline-flex",
+              flex: 1,
+              minWidth: 0,
+              display: "flex",
               alignItems: "center",
-              gap: "6px",
-              height: "38px",
-              padding: "0 14px",
-              borderRadius: "999px",
-              border: "1px solid #D9D5CB",
-              background: "#FFFFFF",
-              fontFamily: "inherit",
-              fontSize: "14px",
-              fontWeight: 700,
-              color: "#1B1D1F",
-              cursor: "pointer",
             }}
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <path d="M12 5v14M5 12h14" />
-            </svg>
-            Save
-          </button>
+            <label
+              style={{
+                width: "100%",
+                minWidth: 0,
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                height: "38px",
+                padding: "0 10px",
+                borderRadius: "999px",
+                background: "#F6F5F1",
+                border: "1px solid #E6E3DC",
+                color: "#6B6F73",
+                boxSizing: "border-box",
+              }}
+            >
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+                style={{ flexShrink: 0 }}
+              >
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+              <input
+                autoFocus
+                aria-label="Search or paste link"
+                placeholder="Search or paste link..."
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                style={{
+                  flex: "1 1 0%",
+                  width: "100%",
+                  minWidth: 0,
+                  border: 0,
+                  background: "transparent",
+                  fontFamily: "inherit",
+                  fontSize: "14px",
+                  color: "#1B1D1F",
+                  outline: "none",
+                }}
+              />
+              {inputValue ? (
+                <button
+                  type="button"
+                  onClick={() => setInputValue("")}
+                  style={{
+                    border: 0,
+                    background: "transparent",
+                    color: "#8C9094",
+                    fontSize: "14px",
+                    cursor: "pointer",
+                    padding: "2px",
+                    display: "flex",
+                    alignItems: "center",
+                  }}
+                >
+                  ✕
+                </button>
+              ) : null}
+            </label>
+          </form>
           <button
             type="button"
-            onClick={() => openSaveSheet()}
-            className="wf-mobile-save-btn"
-            aria-label="Save a link"
-            title="Save a link"
+            onClick={() => setMobileSearchOpen(false)}
             style={{
-              alignItems: "center",
-              justifyContent: "center",
-              width: "36px",
-              height: "36px",
-              borderRadius: "50%",
-              border: "1px solid #1B1D1F",
-              background: "#1B1D1F",
-              color: "#FFFFFF",
+              border: 0,
+              background: "transparent",
+              color: "#4A4E52",
+              fontSize: "13px",
+              fontWeight: 600,
               cursor: "pointer",
+              padding: "4px 8px",
               flexShrink: 0,
             }}
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <path d="M12 5v14M5 12h14" />
-            </svg>
+            Cancel
           </button>
-        </>
+        </div>
       )}
-
-      {/* Account menu */}
-      <div style={{ flexShrink: 0 }}>
-        <AccountMenu
-          isAdmin={isAdmin}
-          isSuperAdmin={isSuperAdmin}
-          onViewAsChange={onViewAsChange}
-        />
-      </div>
     </header>
   );
 }
