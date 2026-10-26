@@ -23,22 +23,52 @@ import { WanderfileApp } from "./wanderfile/WanderfileApp";
 function AppRoutes({ authReady }: { authReady: boolean }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const [posts, setPosts] = useState<SavedPost[]>([]);
-  const [places, setPlaces] = useState<Place[]>([]);
-  const [loadingPosts, setLoadingPosts] = useState(true);
+  const [posts, setPosts] = useState<SavedPost[]>(() => {
+    try {
+      const cached = sessionStorage.getItem("wf_cached_posts");
+      return cached ? JSON.parse(cached) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [places, setPlaces] = useState<Place[]>(() => {
+    try {
+      const cached = sessionStorage.getItem("wf_cached_places");
+      return cached ? JSON.parse(cached) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [loadingPosts, setLoadingPosts] = useState(() => {
+    try {
+      return !sessionStorage.getItem("wf_cached_posts");
+    } catch {
+      return true;
+    }
+  });
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
   const refresh = useCallback(async () => {
-    setLoadingPosts(true);
+    setLoadingPosts((prev) => (posts.length > 0 ? false : prev));
     try {
       const [postsResult, placesResult] = await Promise.allSettled([
         fetchPosts(),
         fetchPlaces(),
       ]);
-      if (postsResult.status === "fulfilled") setPosts(postsResult.value);
-      if (placesResult.status === "fulfilled") setPlaces(placesResult.value);
+      if (postsResult.status === "fulfilled") {
+        setPosts(postsResult.value);
+        try {
+          sessionStorage.setItem("wf_cached_posts", JSON.stringify(postsResult.value));
+        } catch {}
+      }
+      if (placesResult.status === "fulfilled") {
+        setPlaces(placesResult.value);
+        try {
+          sessionStorage.setItem("wf_cached_places", JSON.stringify(placesResult.value));
+        } catch {}
+      }
 
       const failures: { name: string; reason: unknown }[] = [];
       if (postsResult.status === "rejected") failures.push({ name: "posts", reason: postsResult.reason });
@@ -54,7 +84,7 @@ function AppRoutes({ authReady }: { authReady: boolean }) {
     } finally {
       setLoadingPosts(false);
     }
-  }, []);
+  }, [posts.length]);
 
   const handleLibraryChanged = useCallback(() => {
     void refresh();
@@ -72,6 +102,10 @@ function AppRoutes({ authReady }: { authReady: boolean }) {
       return;
     }
     let cancelled = false;
+
+    // Immediately run library refresh in parallel with admin privileges check
+    void refresh();
+
     void (async () => {
       try {
         const me = await fetchAdminMe();
@@ -82,6 +116,7 @@ function AppRoutes({ authReady }: { authReady: boolean }) {
         setIsSuperAdmin(Boolean(me.is_super_admin));
         if (!me.is_super_admin && getViewAsUserId()) {
           setViewAsUserId(null);
+          void refresh();
         }
       } catch {
         if (cancelled) {
@@ -90,9 +125,6 @@ function AppRoutes({ authReady }: { authReady: boolean }) {
         setIsAdmin(false);
         setIsSuperAdmin(false);
         setViewAsUserId(null);
-      }
-      if (!cancelled) {
-        await refresh();
       }
     })();
     return () => {

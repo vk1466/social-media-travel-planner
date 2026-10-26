@@ -87,7 +87,7 @@ body.wf-app-body {
   z-index: 50;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1023px) {
   .wf-desktop-only {
     display: none !important;
   }
@@ -98,11 +98,17 @@ body.wf-app-body {
     display: inline-flex !important;
   }
   .wf-main-content {
-    padding-bottom: 96px !important;
+    padding-bottom: 104px !important;
   }
   .wf-header {
     gap: 10px;
     padding: 10px 14px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .wf-mobile-only {
+    display: none !important;
   }
 }
 

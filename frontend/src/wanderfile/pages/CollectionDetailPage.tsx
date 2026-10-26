@@ -15,7 +15,7 @@ export function CollectionDetailPage({ posts }: CollectionDetailPageProps) {
   const isWatch = id === "watch" || id === "movies";
 
   const collectionTitle = isRecipes ? "Recipes" : isWatch ? "Watch" : id ? id.charAt(0).toUpperCase() + id.slice(1) : "Collection";
-  const kitLabel = isRecipes ? "Recipe kit" : isWatch ? "Title kit" : "Collection";
+  const kitLabel = isRecipes ? "Recipe kit" : isWatch ? "Watch kit" : "Collection";
 
   const matchingPosts = posts.filter((p) => {
     if (isRecipes) return p.content_category === "food";

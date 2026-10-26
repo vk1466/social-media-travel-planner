@@ -69,13 +69,17 @@ def friendly_error_message(error: str | None) -> str:
     or "returned no post" in lowered
     or "private" in lowered
     or "deleted" in lowered
+    or "does not exist" in lowered
+    or "could not be fetched" in lowered
     or "could not extract instagram shortcode" in lowered
   ):
     return "Private or deleted post"
-  if "unsupported" in lowered or "unrecognized url" in lowered:
+  if "unsupported" in lowered or "unrecognized url" in lowered or "no fetcher" in lowered:
     return "Unsupported platform"
   if "timeout" in lowered or "timed out" in lowered:
     return "Request timed out, please retry in a moment"
+  if "network" in lowered or "connection" in lowered or "dns" in lowered or "oserror" in lowered:
+    return "Network error, please retry"
   if "empty url" in lowered:
     return "Please enter a valid link"
   if "failed at step" in lowered:
@@ -243,15 +247,36 @@ def ingest_link(
   if not refresh and has_post(platform, native_post_id):
     existing = load_post(platform, native_post_id) or load_post_by_id(global_post_id)
     if existing is not None:
-      already_linked = user_posts_repo.user_has_post(user_id, existing.post_id)
-      _link_post_to_user(user_id, existing)
-      outcome = "skipped" if already_linked else "linked"
-      logger.info("ingest %s post_id=%s places=%d", outcome, existing.post_id, len(existing.place_ids))
-      _clear_failure(deps, post_url=post_url, user_id=user_id)
-      result = IngestResult(post_url=post_url, outcome=outcome, post_id=existing.post_id)
-      if mark_visited and result.post_id:
-        _auto_mark_visited_for_post(user_id=user_id, post_id=result.post_id)
-      return result
+      is_placeholder = (
+        not existing.caption
+        and not existing.author_handle
+        and not existing.places
+        and not existing.thumbnail_url
+      )
+      if is_placeholder:
+        logger.info("Found placeholder post_id=%s, deleting and re-fetching", global_post_id)
+        try:
+          from travelplanner.store import delete_post
+          delete_post(platform, native_post_id)
+        except Exception:
+          pass
+      else:
+        already_linked = user_posts_repo.user_has_post(user_id, existing.post_id)
+        if already_linked:
+          logger.info("ingest skipped post_id=%s places=%d", existing.post_id, len(existing.place_ids))
+          _clear_failure(deps, post_url=post_url, user_id=user_id)
+          result = IngestResult(post_url=post_url, outcome="skipped", post_id=existing.post_id)
+          if mark_visited and result.post_id:
+            _auto_mark_visited_for_post(user_id=user_id, post_id=result.post_id)
+          return result
+        else:
+          _link_post_to_user(user_id, existing)
+          logger.info("ingest linked post_id=%s places=%d", existing.post_id, len(existing.place_ids))
+          _clear_failure(deps, post_url=post_url, user_id=user_id)
+          result = IngestResult(post_url=post_url, outcome="linked", post_id=existing.post_id)
+          if mark_visited and result.post_id:
+            _auto_mark_visited_for_post(user_id=user_id, post_id=result.post_id)
+          return result
 
   ctx = IngestContext(post_url=post_url, user_id=user_id, refresh=refresh, platform=platform)
   try:

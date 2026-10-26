@@ -62,12 +62,12 @@ export function KitsPage() {
           </ul>
         </section>
 
-        {/* Title Kit */}
+        {/* Watch Kit */}
         <section style={{ background: "#FFFFFF", border: "1px solid #E6E3DC", borderRadius: "24px", padding: "28px" }}>
           <span style={{ fontSize: "12px", fontWeight: 800, padding: "3px 8px", borderRadius: "999px", background: "#ECE8F7", color: "#4B3C8C" }}>
             Layer 2 Kit
           </span>
-          <h2 style={{ margin: "14px 0 8px", fontSize: "22px", fontWeight: 800 }}>Title Kit (Movies & Series)</h2>
+          <h2 style={{ margin: "14px 0 8px", fontSize: "22px", fontWeight: 800 }}>Watch Kit (Movies & Series)</h2>
           <p style={{ margin: "0 0 16px", fontSize: "14px", color: "#6B6F73" }}>
             Dark hero aesthetic matching cinema.
           </p>

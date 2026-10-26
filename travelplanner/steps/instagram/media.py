@@ -14,25 +14,40 @@ MAX_SLIDE_IMAGE_URLS = 10
 
 
 def extract_caption(raw: dict[str, Any]) -> str:
-  if caption := raw.get("caption"):
-    return str(caption).strip()
+  val = raw.get("caption")
+  if isinstance(val, str) and val.strip():
+    return val.strip()
+  if isinstance(val, dict):
+    text = val.get("text")
+    if isinstance(text, str) and text.strip():
+      return text.strip()
+
+  for key in ("text", "description", "title", "captionText"):
+    val = raw.get(key)
+    if isinstance(val, str) and val.strip():
+      return val.strip()
 
   edges = raw.get("edge_media_to_caption", {}).get("edges", [])
-  if edges:
-    return str(edges[0].get("node", {}).get("text", "")).strip()
+  if isinstance(edges, list) and edges:
+    node = edges[0].get("node", {}) if isinstance(edges[0], dict) else {}
+    if isinstance(node, dict) and node.get("text"):
+      return str(node["text"]).strip()
   return ""
 
 
 def extract_author_handle(raw: dict[str, Any]) -> str | None:
-  for key in ("authorUsername", "username"):
+  for key in ("authorUsername", "username", "ownerUsername", "author"):
     value = raw.get(key)
     if isinstance(value, str) and value.strip():
-      return value.strip()
+      return value.strip().lstrip("@")
+    if isinstance(value, dict) and value.get("username"):
+      return str(value["username"]).strip().lstrip("@")
   owner = raw.get("owner") or raw.get("user") or {}
-  if not isinstance(owner, dict):
-    return None
-  username = owner.get("username")
-  return str(username) if username else None
+  if isinstance(owner, dict):
+    username = owner.get("username") or owner.get("screen_name")
+    if username:
+      return str(username).strip().lstrip("@")
+  return None
 
 
 def extract_media_kind(raw: dict[str, Any]) -> str:
@@ -232,10 +247,15 @@ def extract_hashtags(caption: str) -> tuple[str, ...]:
 
 
 def extract_thumbnail_url(raw: dict[str, Any]) -> str | None:
-  for key in ("display_url", "thumbnail_src", "thumbnail_url", "image"):
+  for key in ("display_url", "thumbnail_src", "thumbnail_url", "image", "imageUrl", "displayUrl", "coverUrl", "thumbnail"):
     value = raw.get(key)
     if isinstance(value, str) and value.strip():
       return value.strip()
+  image_versions = raw.get("image_versions2", {}).get("candidates", []) if isinstance(raw.get("image_versions2"), dict) else []
+  if isinstance(image_versions, list) and image_versions:
+    candidate = image_versions[0]
+    if isinstance(candidate, dict) and candidate.get("url"):
+      return str(candidate["url"]).strip()
   return None
 
 

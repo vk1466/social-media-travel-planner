@@ -289,7 +289,7 @@ export function HomePage({ posts, places, loading, loadError, onRefresh }: HomeP
         </div>
         {hasSaves && (
           <div style={{ fontSize: "15px", color: "#6B6F73" }}>
-            {posts.length} saves · {placesCount} places · {recipesCount} recipes · {titlesCount} titles
+            {posts.length} saves · {placesCount} places · {recipesCount} recipes · {titlesCount} to watch
           </div>
         )}
       </section>
@@ -820,7 +820,7 @@ export function HomePage({ posts, places, loading, loadError, onRefresh }: HomeP
                 </span>
                 <span style={{ flex: 1 }}>
                   <span style={{ display: "block", fontSize: "17px", fontWeight: 700 }}>Watch</span>
-                  <span style={{ display: "block", fontSize: "13px", color: "#6B6F73" }}>Title kit</span>
+                  <span style={{ display: "block", fontSize: "13px", color: "#6B6F73" }}>Watch kit</span>
                 </span>
                 <span style={{ fontSize: "22px", fontWeight: 800 }}>{titlesCount}</span>
               </Link>

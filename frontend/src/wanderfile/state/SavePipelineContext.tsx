@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
-import { startIngest, fetchJob, type Job } from "../../api";
+import { startIngest, fetchJob, fetchPost, parsePostId, type Job } from "../../api";
 
 export interface InboxFailure {
   url: string;
@@ -24,6 +24,28 @@ export interface InFlightSave {
   errorMessage?: string;
 }
 
+export function urlsMatch(url1?: string | null, url2?: string | null): boolean {
+  if (!url1 || !url2) return false;
+  if (url1 === url2) return true;
+  const clean = (u: string) => {
+    let s = u.trim().toLowerCase();
+    s = s.replace(/^https?:\/\//, "").replace(/^www\./, "");
+    s = s.split("?")[0].split("#")[0];
+    return s.replace(/\/+$/, "");
+  };
+  const c1 = clean(url1);
+  const c2 = clean(url2);
+  if (c1 === c2) return true;
+  const igExtract = (s: string) => {
+    const m = s.match(/(?:instagram\.com\/|instagr\.am\/)(?:p|reel|reels)\/([A-Za-z0-9_-]+)/);
+    return m ? m[1] : null;
+  };
+  const code1 = igExtract(url1);
+  const code2 = igExtract(url2);
+  if (code1 && code2 && code1 === code2) return true;
+  return false;
+}
+
 export function toFriendlyErrorMessage(raw?: string | null): string {
   if (!raw) return "Could not read this post right now. Please retry in a moment.";
   const lowered = raw.toLowerCase();
@@ -34,11 +56,23 @@ export function toFriendlyErrorMessage(raw?: string | null): string {
     lowered.includes("404") ||
     lowered.includes("not found") ||
     lowered.includes("returned no post") ||
+    lowered.includes("does not exist") ||
+    lowered.includes("no longer exists") ||
+    lowered.includes("empty or nonexistent") ||
     lowered.includes("private") ||
     lowered.includes("deleted") ||
     lowered.includes("shortcode")
   ) {
     return "Private or deleted post";
+  }
+  if (
+    lowered.includes("network") ||
+    lowered.includes("connection") ||
+    lowered.includes("dns") ||
+    lowered.includes("econnrefused") ||
+    lowered.includes("failed to fetch")
+  ) {
+    return "Network error, please retry";
   }
   if (lowered.includes("unsupported") || lowered.includes("unrecognized url")) {
     return "Unsupported platform";
@@ -127,7 +161,7 @@ export function SavePipelineProvider({
   }, [inboxFailures]);
 
   const removeFailedLink = useCallback((url: string) => {
-    setInboxFailures((prev) => prev.filter((f) => f.url !== url));
+    setInboxFailures((prev) => prev.filter((f) => !urlsMatch(f.url, url)));
   }, []);
 
   const saveUrl = useCallback(
@@ -149,7 +183,7 @@ export function SavePipelineProvider({
           // If completely invalid, record a failure immediately so saves never vanish silently
           const friendly = "Please enter a valid web link";
           setInboxFailures((prev) => [
-            ...prev.filter((f) => f.url !== token),
+            ...prev.filter((f) => !urlsMatch(f.url, token)),
             {
               url: token,
               errorMessage: friendly,
@@ -171,12 +205,43 @@ export function SavePipelineProvider({
         setInFlightSaves((prev) => [...prev, newSave]);
         setActiveSaveId(id);
 
+        const fetchPostDetails = async (postId: string) => {
+          try {
+            const { platform, nativeId } = parsePostId(postId);
+            const post = await fetchPost(platform, nativeId);
+            if (!post) return {};
+            const title =
+              post.title ||
+              post.extracted_recipe?.title ||
+              post.extracted_movies?.[0]?.title ||
+              post.places?.[0]?.place_name ||
+              (post.caption ? post.caption.slice(0, 80) : undefined);
+            const author = post.author_handle
+              ? post.author_handle.startsWith("@")
+                ? post.author_handle
+                : `@${post.author_handle}`
+              : undefined;
+            const category =
+              post.content_category ||
+              (post.extracted_recipe
+                ? "recipe"
+                : post.extracted_movies && post.extracted_movies.length > 0
+                ? "movie"
+                : "place");
+            const thumbnailUrl = post.thumbnail_url || undefined;
+            return { title, author, category, thumbnailUrl };
+          } catch {
+            return {};
+          }
+        };
+
         try {
           let jobId: string | null = null;
+          let startError: string | null = null;
           try {
             jobId = await startIngest([url], false);
           } catch (e) {
-            console.warn("Backend startIngest failed or offline, simulating background ingest:", e);
+            startError = e instanceof Error ? e.message : "Backend unavailable";
           }
 
           if (jobId) {
@@ -191,7 +256,7 @@ export function SavePipelineProvider({
               try {
                 pollAttempts++;
                 const job: Job = await fetchJob(jobId!);
-                const link = job.links.find((l) => l.post_url === url);
+                const link = job.links.find((l) => urlsMatch(l.post_url, url));
 
                 // 1. Fail fast: if link status is error or unsupported, fail immediately!
                 if (link && (link.status === "error" || link.status === "unsupported")) {
@@ -209,7 +274,7 @@ export function SavePipelineProvider({
                     )
                   );
                   setInboxFailures((prev) => [
-                    ...prev.filter((f) => f.url !== url),
+                    ...prev.filter((f) => !urlsMatch(f.url, url)),
                     {
                       url,
                       errorMessage: friendly,
@@ -223,6 +288,10 @@ export function SavePipelineProvider({
                 // 2. Duplicate detection: already saved
                 if (link && link.status === "skipped") {
                   window.clearInterval(pollInterval);
+                  let details: { title?: string; author?: string; category?: string; thumbnailUrl?: string } = {};
+                  if (link.post_id) {
+                    details = await fetchPostDetails(link.post_id);
+                  }
                   setInFlightSaves((prev) =>
                     prev.map((s) =>
                       s.id === id
@@ -233,6 +302,10 @@ export function SavePipelineProvider({
                             stepMessage: "Already saved",
                             isDuplicate: true,
                             postId: link.post_id || undefined,
+                            title: details.title,
+                            author: details.author,
+                            category: details.category || "place",
+                            thumbnailUrl: details.thumbnailUrl,
                           }
                         : s
                     )
@@ -244,6 +317,10 @@ export function SavePipelineProvider({
                 // 3. Successfully saved or linked
                 if (link && (link.status === "saved" || link.status === "linked")) {
                   window.clearInterval(pollInterval);
+                  let details: { title?: string; author?: string; category?: string; thumbnailUrl?: string } = {};
+                  if (link.post_id) {
+                    details = await fetchPostDetails(link.post_id);
+                  }
                   setInFlightSaves((prev) =>
                     prev.map((s) =>
                       s.id === id
@@ -254,7 +331,10 @@ export function SavePipelineProvider({
                             stepMessage: "Saved to your library",
                             isDuplicate: false,
                             postId: link.post_id || undefined,
-                            category: "place",
+                            title: details.title,
+                            author: details.author,
+                            category: details.category || "place",
+                            thumbnailUrl: details.thumbnailUrl,
                           }
                         : s
                     )
@@ -284,6 +364,10 @@ export function SavePipelineProvider({
                 } else if (job.status === "done") {
                   window.clearInterval(pollInterval);
                   if (link && (link.status === "saved" || link.status === "linked")) {
+                    let details: { title?: string; author?: string; category?: string; thumbnailUrl?: string } = {};
+                    if (link.post_id) {
+                      details = await fetchPostDetails(link.post_id);
+                    }
                     setInFlightSaves((prev) =>
                       prev.map((s) =>
                         s.id === id
@@ -293,7 +377,10 @@ export function SavePipelineProvider({
                               progressPercent: 100,
                               stepMessage: "Saved to your library",
                               postId: link.post_id || undefined,
-                              category: "place",
+                              title: details.title,
+                              author: details.author,
+                              category: details.category || "place",
+                              thumbnailUrl: details.thumbnailUrl,
                             }
                           : s
                       )
@@ -313,7 +400,7 @@ export function SavePipelineProvider({
                       )
                     );
                     setInboxFailures((prev) => [
-                      ...prev.filter((f) => f.url !== url),
+                      ...prev.filter((f) => !urlsMatch(f.url, url)),
                       {
                         url,
                         errorMessage: friendly,
@@ -339,7 +426,7 @@ export function SavePipelineProvider({
                     )
                   );
                   setInboxFailures((prev) => [
-                    ...prev.filter((f) => f.url !== url),
+                    ...prev.filter((f) => !urlsMatch(f.url, url)),
                     {
                       url,
                       errorMessage: friendly,
@@ -351,39 +438,26 @@ export function SavePipelineProvider({
               }
             }, 1500);
           } else {
-            // Simulated progression when running against local mock
-            setTimeout(() => {
-              setInFlightSaves((prev) =>
-                prev.map((s) =>
-                  s.id === id
-                    ? {
-                        ...s,
-                        progressPercent: 60,
-                        stepMessage: "Finding places and details...",
-                      }
-                    : s
-                )
-              );
-            }, 1000);
-
-            setTimeout(() => {
-              setInFlightSaves((prev) =>
-                prev.map((s) =>
-                  s.id === id
-                    ? {
-                        ...s,
-                        status: "done",
-                        progressPercent: 100,
-                        stepMessage: "Saved to your library",
-                        category: url.includes("recipe") || url.includes("food") ? "recipe" : "place",
-                        title: "Saved social link",
-                        author: "@creator",
-                      }
-                    : s
-                )
-              );
-              onRefreshLibrary?.();
-            }, 2000);
+            const friendly = toFriendlyErrorMessage(startError || "Could not start processing this link");
+            setInFlightSaves((prev) =>
+              prev.map((s) =>
+                s.id === id
+                  ? {
+                      ...s,
+                      status: "error",
+                      errorMessage: friendly,
+                    }
+                  : s
+              )
+            );
+            setInboxFailures((prev) => [
+              ...prev.filter((f) => !urlsMatch(f.url, url)),
+              {
+                url,
+                errorMessage: friendly,
+                failedAt: new Date().toISOString(),
+              },
+            ]);
           }
         } catch (err) {
           const friendly = toFriendlyErrorMessage(err instanceof Error ? err.message : "Could not read post");
@@ -399,7 +473,7 @@ export function SavePipelineProvider({
             )
           );
           setInboxFailures((prev) => [
-            ...prev.filter((f) => f.url !== url),
+            ...prev.filter((f) => !urlsMatch(f.url, url)),
             {
               url,
               errorMessage: friendly,

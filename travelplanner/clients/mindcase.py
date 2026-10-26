@@ -42,15 +42,44 @@ def api_key() -> str:
 
 def fetch_post(*, post_url: str | None = None, shortcode: str | None = None) -> dict[str, Any]:
   """One Instagram post/reel by URL (preferred) or shortcode."""
+  api_key()
   url = (post_url or "").strip()
-  if not url:
-    code = (shortcode or "").strip()
-    if not code:
-      raise ValueError("post_url or shortcode is required")
-    url = f"https://www.instagram.com/p/{code}/"
-  rows = fetch_posts(post_urls=[url])
+  code = (shortcode or "").strip()
+  if not code and url:
+    try:
+      from travelplanner.links import extract_instagram_shortcode
+
+      code = extract_instagram_shortcode(url)
+    except Exception:
+      pass
+
+  urls_to_try: list[str] = []
+  if url:
+    urls_to_try.append(url)
+    if code:
+      alt_p = f"https://www.instagram.com/p/{code}/"
+      alt_reel = f"https://www.instagram.com/reel/{code}/"
+      if alt_p != url and alt_p not in urls_to_try:
+        urls_to_try.append(alt_p)
+      if alt_reel != url and alt_reel not in urls_to_try:
+        urls_to_try.append(alt_reel)
+  elif code:
+    urls_to_try.append(f"https://www.instagram.com/p/{code}/")
+    urls_to_try.append(f"https://www.instagram.com/reel/{code}/")
+  else:
+    raise ValueError("post_url or shortcode is required")
+
+  rows: list[dict[str, Any]] = []
+  for candidate_url in urls_to_try:
+    try:
+      rows = fetch_posts(post_urls=[candidate_url])
+      if rows:
+        break
+    except Exception:
+      continue
+
   if not rows:
-    raise RuntimeError(f"Mindcase returned no post for {url}")
+    raise RuntimeError(f"Mindcase returned no post for {url or code}")
   return rows[0]
 
 

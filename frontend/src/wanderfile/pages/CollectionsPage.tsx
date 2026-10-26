@@ -180,7 +180,7 @@ export function CollectionsPage({ posts, places }: CollectionsPageProps) {
           <div>
             <h2 style={{ margin: 0, fontSize: "22px", fontWeight: 800 }}>Watch</h2>
             <p style={{ margin: "4px 0 0", fontSize: "14px", color: "#6B6F73" }}>
-              Movies and series to stream · Title kit
+              Movies and series to stream · Watch kit
             </p>
           </div>
         </Link>

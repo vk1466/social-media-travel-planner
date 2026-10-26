@@ -28,7 +28,7 @@ export function PostCard({ post, onEdit, onDelete, style }: PostCardProps) {
   const catLabels: Record<string, { label: string; bg: string; ink: string }> = {
     travel: { label: "Place", bg: "#E3F0F4", ink: "#1B5E78" },
     food: { label: "Recipe", bg: "#FBEBDD", ink: "#9A4513" },
-    movies: { label: "Title", bg: "#ECE8F7", ink: "#4B3C8C" },
+    movies: { label: "Watch", bg: "#ECE8F7", ink: "#4B3C8C" },
     fashion: { label: "Fashion", bg: "#F4EBF7", ink: "#73248A" },
     hairstyle: { label: "Hairstyle", bg: "#EBF7F2", ink: "#1D7553" },
     other: { label: "Other", bg: "#ECECEA", ink: "#4A4E52" },

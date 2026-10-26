@@ -62,6 +62,17 @@ export function SaveSheet() {
     }
   }, [isSaveSheetOpen, resetActiveSave]);
 
+  useEffect(() => {
+    if (!isSaveSheetOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        closeSaveSheet();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isSaveSheetOpen, closeSaveSheet]);
+
   if (!isSaveSheetOpen) return null;
 
   const validation = validateSaveInput(inputText);
@@ -87,7 +98,7 @@ export function SaveSheet() {
   const categories = [
     { key: "place", label: "Place" },
     { key: "recipe", label: "Recipe" },
-    { key: "movie", label: "Title" },
+    { key: "movie", label: "Watch" },
     { key: "fashion", label: "Fashion" },
     { key: "hairstyle", label: "Hairstyle" },
     { key: "other", label: "Other" },
@@ -395,21 +406,29 @@ export function SaveSheet() {
 
             <div style={{ display: "flex", gap: "20px", marginTop: "24px", padding: "16px", borderRadius: "22px", background: "#F6F5F1" }}>
               <div
-                aria-hidden="true"
                 style={{
                   flex: "none",
                   width: "100px",
                   height: "140px",
                   borderRadius: "16px",
+                  overflow: "hidden",
                   background: "linear-gradient(160deg, #8CC3D6, #2D6A82)",
                 }}
-              />
+              >
+                {activeSave?.thumbnailUrl ? (
+                  <img
+                    src={activeSave.thumbnailUrl}
+                    alt=""
+                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                  />
+                ) : null}
+              </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: "17px", lineHeight: 1.3, fontWeight: 700 }}>
-                  {activeSave?.title || "Saved social link"}
+                  {activeSave?.title || "Saved link"}
                 </div>
                 <div style={{ fontSize: "14px", color: "#6B6F73", marginTop: "4px" }}>
-                  {activeSave?.author || "@creator"} · Instagram reel
+                  {[activeSave?.author, "Instagram reel"].filter(Boolean).join(" · ")}
                 </div>
                 {!activeSave?.isDuplicate && (
                   <>

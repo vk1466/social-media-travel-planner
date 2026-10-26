@@ -453,9 +453,13 @@ def proxy_media(user_id: CurrentUserId, url: str = Query(..., min_length=8)) -> 
 
 @app.delete("/api/posts/{platform}/{post_id}", status_code=204, response_class=Response)
 def remove_post(platform: Platform, post_id: str, user_id: CurrentUserId) -> Response:
+  from travelplanner.store import delete_post
+
   global_post_id = post_id if ":" in post_id else make_post_id(platform, post_id)
   if not unlink_post_from_user(user_id, global_post_id):
     raise HTTPException(status_code=404, detail="Post not found")
+  # Remove all associated post data so custom edits/metadata are cleared
+  delete_post(platform, global_post_id)
   return Response(status_code=204)
 
 

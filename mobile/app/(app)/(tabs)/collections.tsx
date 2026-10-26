@@ -59,7 +59,7 @@ export default function MobileCollectionsScreen() {
       id: "watch",
       name: "Watch",
       meta: `${moviePosts.length} saves`,
-      kit: "Title kit",
+      kit: "Watch kit",
       kitBg: "#ECE8F7",
       kitInk: "#4B3C8C",
       route: "/(app)/(tabs)/movies",

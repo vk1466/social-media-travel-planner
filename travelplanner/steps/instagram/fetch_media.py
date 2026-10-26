@@ -22,7 +22,25 @@ def fetch_media(ctx: IngestContext) -> IngestContext:
   logger.info("fetch_media start shortcode=%s", shortcode)
   raw = fetch_post(post_url=ctx.post_url, shortcode=shortcode)
   ctx.raw_payload = raw
+
+  if not raw:
+    raise RuntimeError(f"Instagram post {shortcode} returned empty data (private or deleted post)")
+
+  if raw.get("error") or raw.get("message") in {"Not found", "Post not found", "User not found"}:
+    detail = raw.get("error") or raw.get("message")
+    raise RuntimeError(f"Instagram post {shortcode} not found: {detail}")
+
   trimmed = trim_post_info(raw)
+
+  # A real post MUST have at least an author, caption, or thumbnail/media URL.
+  # If all of these are missing, the post does not exist or was deleted/private.
+  has_author = bool(trimmed.get("author_handle"))
+  has_caption = bool(trimmed.get("caption") and trimmed["caption"].strip())
+  has_media = bool(trimmed.get("thumbnail_url") or raw.get("videoUrl") or raw.get("image") or raw.get("display_url"))
+
+  if not has_author and not has_caption and not has_media:
+    raise RuntimeError(f"Instagram post {shortcode} could not be fetched (private, deleted, or does not exist)")
+
   media_kind = trimmed["media_kind"]
   ctx.resource_type = extract_media_kind(raw) if raw else media_kind
 
