@@ -504,20 +504,7 @@ export function Header({
   };
 
   return (
-    <header
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: "24px",
-        padding: "14px 40px",
-        background: "#FFFFFF",
-        borderBottom: "1px solid #E6E3DC",
-        boxSizing: "border-box",
-        position: "sticky",
-        top: 0,
-        zIndex: 50,
-      }}
-    >
+    <header className="wf-header">
       <Link
         to="/"
         style={{
@@ -714,31 +701,56 @@ export function Header({
           Saving {savingCount}
         </button>
       ) : (
-        <button
-          type="button"
-          onClick={() => openSaveSheet()}
-          className="wf-desktop-only"
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "6px",
-            height: "38px",
-            padding: "0 14px",
-            borderRadius: "999px",
-            border: "1px solid #D9D5CB",
-            background: "#FFFFFF",
-            fontFamily: "inherit",
-            fontSize: "14px",
-            fontWeight: 700,
-            color: "#1B1D1F",
-            cursor: "pointer",
-          }}
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-            <path d="M12 5v14M5 12h14" />
-          </svg>
-          Save
-        </button>
+        <>
+          <button
+            type="button"
+            onClick={() => openSaveSheet()}
+            className="wf-desktop-only"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
+              height: "38px",
+              padding: "0 14px",
+              borderRadius: "999px",
+              border: "1px solid #D9D5CB",
+              background: "#FFFFFF",
+              fontFamily: "inherit",
+              fontSize: "14px",
+              fontWeight: 700,
+              color: "#1B1D1F",
+              cursor: "pointer",
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+            Save
+          </button>
+          <button
+            type="button"
+            onClick={() => openSaveSheet()}
+            className="wf-mobile-save-btn"
+            aria-label="Save a link"
+            title="Save a link"
+            style={{
+              alignItems: "center",
+              justifyContent: "center",
+              width: "36px",
+              height: "36px",
+              borderRadius: "50%",
+              border: "1px solid #1B1D1F",
+              background: "#1B1D1F",
+              color: "#FFFFFF",
+              cursor: "pointer",
+              flexShrink: 0,
+            }}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+          </button>
+        </>
       )}
 
       {/* Account menu */}

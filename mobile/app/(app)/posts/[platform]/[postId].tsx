@@ -6,10 +6,12 @@ import {
   Alert,
   Image,
   Linking,
+  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from "react-native";
 
@@ -18,6 +20,7 @@ import {
   fetchPlaceDetail,
   fetchPost,
   nativePostId,
+  updatePost,
   type SavedPost,
 } from "@/src/api";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -40,6 +43,35 @@ export default function PostDetailScreen() {
   const [recipeMultiplier, setRecipeMultiplier] = useState(1);
   const [checkedIngredients, setCheckedIngredients] = useState<Set<number>>(new Set());
   const [removing, setRemoving] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState("");
+  const [editCategory, setEditCategory] = useState("other");
+  const [savingEdit, setSavingEdit] = useState(false);
+
+  const handleOpenEdit = () => {
+    if (!post) return;
+    setEditTitle(post.title || post.caption?.slice(0, 75) || "");
+    setEditCategory(post.content_category || "other");
+    setEditing(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!post) return;
+    setSavingEdit(true);
+    try {
+      const updated = await updatePost(post.platform, nativePostId(post), {
+        title: editTitle.trim() || null,
+        content_category: editCategory,
+      });
+      setPost(updated);
+      bumpRefresh();
+      setEditing(false);
+    } catch (err) {
+      Alert.alert("Error", err instanceof Error ? err.message : "Failed to update save");
+    } finally {
+      setSavingEdit(false);
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -374,6 +406,12 @@ export default function PostDetailScreen() {
 
         <View style={styles.actions}>
           <Pressable
+            style={[styles.actionBtn, styles.actionBtnSecondary]}
+            onPress={handleOpenEdit}
+          >
+            <Text style={styles.actionBtnText}>Edit save</Text>
+          </Pressable>
+          <Pressable
             style={styles.actionBtn}
             onPress={() => void Linking.openURL(post.post_url)}
           >
@@ -391,6 +429,85 @@ export default function PostDetailScreen() {
         </View>
       </View>
       </ScrollView>
+
+      {/* Edit Post Modal */}
+      <Modal
+        visible={editing}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setEditing(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Edit save</Text>
+              <Pressable onPress={() => setEditing(false)} hitSlop={12}>
+                <Ionicons name="close" size={22} color={colors.ink} />
+              </Pressable>
+            </View>
+
+            <Text style={styles.inputLabel}>Title</Text>
+            <TextInput
+              style={styles.modalInput}
+              value={editTitle}
+              onChangeText={setEditTitle}
+              placeholder="Title for this save"
+              placeholderTextColor={colors.muted}
+            />
+
+            <Text style={styles.inputLabel}>Category</Text>
+            <View style={styles.categoryPills}>
+              {[
+                { key: "travel", label: "Place (Travel)" },
+                { key: "food", label: "Recipe (Food)" },
+                { key: "movies", label: "Watch (Movie)" },
+                { key: "fashion", label: "Fashion" },
+                { key: "hairstyle", label: "Hairstyle" },
+                { key: "other", label: "Other" },
+              ].map((c) => {
+                const isSelected = editCategory === c.key;
+                return (
+                  <Pressable
+                    key={c.key}
+                    onPress={() => setEditCategory(c.key)}
+                    style={[
+                      styles.categoryChip,
+                      isSelected && styles.categoryChipSelected,
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.categoryChipText,
+                        isSelected && styles.categoryChipTextSelected,
+                      ]}
+                    >
+                      {c.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+
+            <View style={styles.modalActionRow}>
+              <Pressable
+                style={styles.modalCancelBtn}
+                onPress={() => setEditing(false)}
+              >
+                <Text style={styles.modalCancelBtnText}>Cancel</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.modalSaveBtn, savingEdit && { opacity: 0.6 }]}
+                disabled={savingEdit}
+                onPress={handleSaveEdit}
+              >
+                <Text style={styles.modalSaveBtnText}>
+                  {savingEdit ? "Saving…" : "Save changes"}
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </DetailSheetChrome>
   );
 }
@@ -511,4 +628,105 @@ const styles = StyleSheet.create({
   actionBtnText: { color: colors.brand, fontWeight: "700", fontSize: 13 },
   actionBtnDanger: { borderColor: colors.dangerSoft },
   actionBtnDangerText: { color: colors.danger },
+  actionBtnSecondary: { backgroundColor: colors.surfaceAlt },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "flex-end",
+  },
+  modalContainer: {
+    backgroundColor: colors.surface,
+    borderTopLeftRadius: radius.xl,
+    borderTopRightRadius: radius.xl,
+    padding: spacing.lg,
+    maxHeight: "85%",
+  },
+  modalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: spacing.md,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "800",
+    color: colors.ink,
+  },
+  inputLabel: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: colors.muted,
+    marginBottom: 6,
+    marginTop: spacing.sm,
+    textTransform: "uppercase",
+  },
+  modalInput: {
+    height: 48,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingHorizontal: 14,
+    fontSize: 15,
+    color: colors.ink,
+    backgroundColor: colors.bg,
+  },
+  categoryPills: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 4,
+    marginBottom: spacing.md,
+  },
+  categoryChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.bg,
+  },
+  categoryChipSelected: {
+    backgroundColor: colors.ink,
+    borderColor: colors.ink,
+  },
+  categoryChipText: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: colors.ink,
+  },
+  categoryChipTextSelected: {
+    color: "#FFFFFF",
+  },
+  modalActionRow: {
+    flexDirection: "row",
+    gap: 12,
+    marginTop: spacing.md,
+  },
+  modalCancelBtn: {
+    flex: 1,
+    height: 48,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  modalCancelBtnText: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: colors.ink,
+  },
+  modalSaveBtn: {
+    flex: 1,
+    height: 48,
+    borderRadius: radius.pill,
+    backgroundColor: colors.ink,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  modalSaveBtnText: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#FFFFFF",
+  },
 });

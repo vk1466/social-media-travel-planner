@@ -61,7 +61,30 @@ body.wf-app-body {
 }
 
 .wf-mobile-only {
-  display: none;
+  display: none !important;
+}
+
+.wf-mobile-save-btn {
+  display: none !important;
+}
+
+.wf-main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.wf-header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 14px 40px;
+  background: #FFFFFF;
+  border-bottom: 1px solid #E6E3DC;
+  box-sizing: border-box;
+  position: sticky;
+  top: 0;
+  z-index: 50;
 }
 
 @media (max-width: 768px) {
@@ -69,7 +92,17 @@ body.wf-app-body {
     display: none !important;
   }
   .wf-mobile-only {
-    display: block !important;
+    display: flex !important;
+  }
+  .wf-mobile-save-btn {
+    display: inline-flex !important;
+  }
+  .wf-main-content {
+    padding-bottom: 96px !important;
+  }
+  .wf-header {
+    gap: 10px;
+    padding: 10px 14px;
   }
 }
 

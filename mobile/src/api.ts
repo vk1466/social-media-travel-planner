@@ -134,6 +134,7 @@ export interface SavedPost {
   post_url: string;
   platform: string;
   media_kind: string;
+  title?: string | null;
   caption: string;
   hashtags: string[];
   author_handle?: string | null;
@@ -535,6 +536,24 @@ export async function fetchPost(platform: string, postId: string): Promise<Saved
 
 export async function deletePost(platform: string, postId: string): Promise<void> {
   await request<void>(`/api/posts/${platform}/${postId}`, { method: "DELETE" });
+}
+
+export interface UpdatePostInput {
+  title?: string | null;
+  content_category?: string | null;
+  caption?: string | null;
+}
+
+export async function updatePost(
+  platform: string,
+  postId: string,
+  updates: UpdatePostInput,
+): Promise<SavedPost> {
+  return request<SavedPost>(`/api/posts/${platform}/${postId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(updates),
+  });
 }
 
 export async function reconstructRecipe(platform: string, postId: string): Promise<SavedPost> {

@@ -2,6 +2,9 @@ import type { SavedPost } from "./api";
 import { API_BASE_URL } from "./api";
 
 export function getPostTitle(post: SavedPost): string {
+  if (post.title && post.title.trim()) {
+    return post.title.trim();
+  }
   const caption = post.caption?.trim() ?? "";
   if (!caption) {
     return post.author_handle ? `@${post.author_handle}` : "Untitled post";

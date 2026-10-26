@@ -23,7 +23,7 @@ export function AppShell({
         isSuperAdmin={isSuperAdmin}
         onViewAsChange={onViewAsChange}
       />
-      <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+      <div className="wf-main-content">
         {children}
       </div>
       <BottomTabBar />

@@ -137,6 +137,14 @@ export function LinkSubmitForm({
         </View>
       )}
 
+      {/* Inline validation warning */}
+      {text.trim().length > 0 && parsed.validationError ? (
+        <View style={styles.errorRow}>
+          <Ionicons name="alert-circle" size={15} color="#DC2626" />
+          <Text style={styles.errorText}>{parsed.validationError}</Text>
+        </View>
+      ) : null}
+
       {/* S4: Full-width pill, 52px high, enabled ink, disabled #E6E3DC */}
       <Pressable
         accessibilityRole="button"
@@ -255,5 +263,19 @@ const styles = StyleSheet.create({
   },
   saveButtonTextDisabled: {
     color: colors.faint,
+  },
+  errorRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 8,
+    marginBottom: 4,
+    paddingHorizontal: 4,
+  },
+  errorText: {
+    fontSize: 13,
+    color: "#DC2626",
+    fontWeight: "600",
+    flex: 1,
   },
 });

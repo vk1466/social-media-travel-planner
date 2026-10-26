@@ -36,7 +36,6 @@ export function BottomTabBar() {
         padding: "8px 12px 20px",
         background: "#FFFFFF",
         borderTop: "1px solid #E6E3DC",
-        display: "flex",
         alignItems: "center",
         justifyContent: "space-around",
         zIndex: 90,
