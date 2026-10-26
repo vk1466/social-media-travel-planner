@@ -8,6 +8,11 @@ import { PostCard } from "../components/PostCard";
 import { EditPostModal } from "../components/EditPostModal";
 import { useSavePipeline, toFriendlyErrorMessage } from "../state/SavePipelineContext";
 import { deletePost, parsePostId, type SavedPost, type Place } from "../../api";
+import { proxiedMediaUrl } from "../../postDisplayUtils";
+
+function pluralize(count: number, singular: string, plural: string = `${singular}s`): string {
+  return `${count} ${count === 1 ? singular : plural}`;
+}
 
 interface HomePageProps {
   posts: SavedPost[];
@@ -20,6 +25,7 @@ interface HomePageProps {
 export function HomePage({ posts, places, loading, loadError, onRefresh }: HomePageProps) {
   const { inboxFailures, retryAllFailed, retryFailedLink, removeFailedLink, openSaveSheet } = useSavePipeline();
   const [editingPost, setEditingPost] = useState<SavedPost | null>(null);
+  const [inboxExpanded, setInboxExpanded] = useState(false);
 
   const handleDeletePost = async (postToDelete: SavedPost) => {
     try {
@@ -73,72 +79,98 @@ export function HomePage({ posts, places, loading, loadError, onRefresh }: HomeP
         />
       )}
 
-      {/* Inbox card for failed links */}
+      {/* Compact, collapsible notice for failed links */}
       {inboxFailures.length > 0 && (
         <section
           style={{
             display: "flex",
             flexDirection: "column",
-            gap: "16px",
-            padding: "20px 24px",
+            gap: "12px",
+            padding: "14px 20px",
             background: "#FFFFFF",
             border: "1px solid #E6E3DC",
-            borderRadius: "20px",
+            borderRadius: "18px",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.03)",
           }}
         >
           <div
             style={{
               display: "flex",
               alignItems: "center",
-              gap: "16px",
+              gap: "12px",
+              justifyContent: "space-between",
               flexWrap: "wrap",
             }}
           >
-            <span
-              aria-hidden="true"
-              style={{
-                width: "40px",
-                height: "40px",
-                borderRadius: "12px",
-                background: "#FBEBDD",
-                color: "#9A4513",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                flexShrink: 0,
-              }}
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="9" />
-                <path d="M12 8v5M12 16.5v.01" />
-              </svg>
-            </span>
-            <div style={{ flex: 1, minWidth: "140px" }}>
-              <div style={{ fontWeight: 700, fontSize: "16px", color: "#1B1D1F" }}>
-                {inboxFailures.length} {inboxFailures.length === 1 ? "link couldn't be read" : "links couldn't be read"}
-              </div>
-              <div style={{ fontSize: "14px", color: "#6B6F73", marginTop: "2px" }}>
-                Waiting in your inbox. You can retry or dismiss individual items below.
+            <div style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: 0 }}>
+              <span
+                aria-hidden="true"
+                style={{
+                  width: "32px",
+                  height: "32px",
+                  borderRadius: "10px",
+                  background: "#FBEBDD",
+                  color: "#9A4513",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                }}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="9" />
+                  <path d="M12 8v5M12 16.5v.01" />
+                </svg>
+              </span>
+              <div style={{ minWidth: 0 }}>
+                <span style={{ fontWeight: 700, fontSize: "15px", color: "#1B1D1F" }}>
+                  {inboxFailures.length} {inboxFailures.length === 1 ? "link couldn't be read" : "links couldn't be read"}
+                </span>
+                <span style={{ fontSize: "13px", color: "#6B6F73", marginLeft: "8px" }}>
+                  Waiting in your inbox
+                </span>
               </div>
             </div>
-            <div style={{ display: "flex", gap: "8px" }}>
+
+            <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
               <button
                 type="button"
-                onClick={retryAllFailed}
+                onClick={() => setInboxExpanded((prev) => !prev)}
                 style={{
-                  height: "38px",
-                  padding: "0 16px",
+                  height: "34px",
+                  padding: "0 14px",
                   borderRadius: "999px",
                   border: "1px solid #D9D5CB",
                   background: "#FFFFFF",
                   fontFamily: "inherit",
-                  fontSize: "13px",
+                  fontSize: "12px",
+                  fontWeight: 700,
+                  color: "#1B1D1F",
+                  cursor: "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                }}
+              >
+                {inboxExpanded ? "Hide details ▲" : "View details ▼"}
+              </button>
+              <button
+                type="button"
+                onClick={retryAllFailed}
+                style={{
+                  height: "34px",
+                  padding: "0 14px",
+                  borderRadius: "999px",
+                  border: "1px solid #D9D5CB",
+                  background: "#FFFFFF",
+                  fontFamily: "inherit",
+                  fontSize: "12px",
                   fontWeight: 700,
                   color: "#1B1D1F",
                   cursor: "pointer",
                 }}
               >
-                Retry all ({inboxFailures.length})
+                Retry all
               </button>
               <button
                 type="button"
@@ -146,13 +178,13 @@ export function HomePage({ posts, places, loading, loadError, onRefresh }: HomeP
                   inboxFailures.forEach((f) => removeFailedLink(f.url));
                 }}
                 style={{
-                  height: "38px",
-                  padding: "0 16px",
+                  height: "34px",
+                  padding: "0 12px",
                   borderRadius: "999px",
                   border: 0,
                   background: "#ECECEA",
                   fontFamily: "inherit",
-                  fontSize: "13px",
+                  fontSize: "12px",
                   fontWeight: 700,
                   color: "#4A4E52",
                   cursor: "pointer",
@@ -163,93 +195,95 @@ export function HomePage({ posts, places, loading, loadError, onRefresh }: HomeP
             </div>
           </div>
 
-          {/* Individual items */}
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "8px",
-              paddingTop: "12px",
-              borderTop: "1px solid #EFEDE7",
-            }}
-          >
-            {inboxFailures.map((item) => (
-              <div
-                key={item.url}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  gap: "12px",
-                  padding: "10px 14px",
-                  background: "#FBFAF7",
-                  border: "1px solid #EFECE6",
-                  borderRadius: "14px",
-                  flexWrap: "wrap",
-                }}
-              >
-                <div style={{ flex: 1, minWidth: "140px", display: "flex", flexDirection: "column", gap: "3px" }}>
-                  <div
-                    style={{
-                      fontSize: "14px",
-                      fontWeight: 600,
-                      color: "#1B1D1F",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                      maxWidth: "540px",
-                    }}
-                    title={item.url}
-                  >
-                    {item.url}
+          {/* Individual items (Collapsible) */}
+          {inboxExpanded && (
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "8px",
+                paddingTop: "12px",
+                borderTop: "1px solid #EFEDE7",
+              }}
+            >
+              {inboxFailures.map((item) => (
+                <div
+                  key={item.url}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: "12px",
+                    padding: "10px 14px",
+                    background: "#FBFAF7",
+                    border: "1px solid #EFECE6",
+                    borderRadius: "14px",
+                    flexWrap: "wrap",
+                  }}
+                >
+                  <div style={{ flex: 1, minWidth: "140px", display: "flex", flexDirection: "column", gap: "3px" }}>
+                    <div
+                      style={{
+                        fontSize: "14px",
+                        fontWeight: 600,
+                        color: "#1B1D1F",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                        maxWidth: "540px",
+                      }}
+                      title={item.url}
+                    >
+                      {item.url}
+                    </div>
+                    <div style={{ fontSize: "13px", color: "#C53B27", display: "flex", alignItems: "center", gap: "6px" }}>
+                      <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#C53B27", flexShrink: 0 }} />
+                      {toFriendlyErrorMessage(item.errorMessage, item.url)}
+                    </div>
                   </div>
-                  <div style={{ fontSize: "13px", color: "#C53B27", display: "flex", alignItems: "center", gap: "6px" }}>
-                    <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#C53B27", flexShrink: 0 }} />
-                    {toFriendlyErrorMessage(item.errorMessage, item.url)}
-                  </div>
-                </div>
 
-                <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-                  <button
-                    type="button"
-                    onClick={() => retryFailedLink(item.url)}
-                    style={{
-                      height: "32px",
-                      padding: "0 14px",
-                      borderRadius: "999px",
-                      border: "1px solid #D9D5CB",
-                      background: "#FFFFFF",
-                      fontFamily: "inherit",
-                      fontSize: "13px",
-                      fontWeight: 700,
-                      color: "#1B1D1F",
-                      cursor: "pointer",
-                    }}
-                  >
-                    Retry
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => removeFailedLink(item.url)}
-                    style={{
-                      height: "32px",
-                      padding: "0 12px",
-                      borderRadius: "999px",
-                      border: 0,
-                      background: "#ECECEA",
-                      fontFamily: "inherit",
-                      fontSize: "13px",
-                      fontWeight: 700,
-                      color: "#4A4E52",
-                      cursor: "pointer",
-                    }}
-                  >
-                    Dismiss
-                  </button>
+                  <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                    <button
+                      type="button"
+                      onClick={() => retryFailedLink(item.url)}
+                      style={{
+                        height: "32px",
+                        padding: "0 14px",
+                        borderRadius: "999px",
+                        border: "1px solid #D9D5CB",
+                        background: "#FFFFFF",
+                        fontFamily: "inherit",
+                        fontSize: "13px",
+                        fontWeight: 700,
+                        color: "#1B1D1F",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Retry
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => removeFailedLink(item.url)}
+                      style={{
+                        height: "32px",
+                        padding: "0 12px",
+                        borderRadius: "999px",
+                        border: 0,
+                        background: "#ECECEA",
+                        fontFamily: "inherit",
+                        fontSize: "13px",
+                        fontWeight: 700,
+                        color: "#4A4E52",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Dismiss
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </section>
       )}
 
@@ -290,7 +324,7 @@ export function HomePage({ posts, places, loading, loadError, onRefresh }: HomeP
         </div>
         {hasSaves && (
           <div style={{ fontSize: "15px", color: "#6B6F73" }}>
-            {posts.length} saves · {placesCount} places · {recipesCount} recipes · {titlesCount} to watch
+            {pluralize(posts.length, "save")} · {pluralize(placesCount, "place")} · {pluralize(recipesCount, "recipe")} · {titlesCount} to watch
           </div>
         )}
       </section>
@@ -555,144 +589,225 @@ export function HomePage({ posts, places, loading, loadError, onRefresh }: HomeP
 
           {/* Hero next up card & Collections panel */}
           <section style={{ display: "flex", gap: "24px", flexWrap: "wrap" }}>
-            {places.length > 0 ? (
-              <div
-                style={{
-                  flex: "2 1 640px",
-                  minHeight: "440px",
-                  borderRadius: "28px",
-                  position: "relative",
-                  overflow: "hidden",
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "flex-end",
-                  padding: "32px",
-                  boxSizing: "border-box",
-                  background:
-                    "linear-gradient(180deg, rgba(20,12,8,0) 30%, rgba(20,12,8,0.78) 100%), linear-gradient(120deg, #C98A5B 0%, #8E4A2B 45%, #3A2217 100%)",
-                  color: "#FFFFFF",
-                }}
-              >
-                <span
+            {places.length > 0 ? (() => {
+              const heroPlace = places[0];
+              const heroPost = posts.find(
+                (p) =>
+                  heroPlace.source_post_ids?.includes(p.post_id) ||
+                  p.place_ids?.includes(heroPlace.place_id),
+              );
+              const heroRawImage = heroPost?.thumbnail_url;
+              const heroImageUrl = heroRawImage
+                ? proxiedMediaUrl(heroRawImage)
+                : "https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=1200&q=80";
+
+              return (
+                <div
                   style={{
-                    alignSelf: "flex-start",
-                    fontSize: "13px",
-                    fontWeight: 700,
-                    padding: "6px 12px",
-                    borderRadius: "999px",
-                    background: "rgba(255,255,255,0.2)",
+                    flex: "2 1 640px",
+                    minHeight: "440px",
+                    borderRadius: "28px",
+                    position: "relative",
+                    overflow: "hidden",
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "flex-end",
+                    padding: "32px",
+                    boxSizing: "border-box",
+                    background:
+                      "linear-gradient(180deg, rgba(20,12,8,0) 30%, rgba(20,12,8,0.78) 100%), linear-gradient(120deg, #C98A5B 0%, #8E4A2B 45%, #3A2217 100%)",
+                    color: "#FFFFFF",
                   }}
                 >
-                  Next up · Want to go
-                </span>
-                <h2
+                  {heroImageUrl && (
+                    <>
+                      <img
+                        src={heroImageUrl}
+                        alt={heroPlace.display_name}
+                        style={{
+                          position: "absolute",
+                          top: 0,
+                          left: 0,
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
+                          zIndex: 0,
+                        }}
+                      />
+                      <div
+                        style={{
+                          position: "absolute",
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          background:
+                            "linear-gradient(180deg, rgba(20,12,8,0.2) 0%, rgba(20,12,8,0.85) 100%)",
+                          zIndex: 1,
+                        }}
+                      />
+                    </>
+                  )}
+                  <div style={{ position: "relative", zIndex: 2, display: "flex", flexDirection: "column" }}>
+                    <span
+                      style={{
+                        alignSelf: "flex-start",
+                        fontSize: "13px",
+                        fontWeight: 700,
+                        padding: "6px 12px",
+                        borderRadius: "999px",
+                        background: "rgba(255,255,255,0.2)",
+                        backdropFilter: "blur(8px)",
+                      }}
+                    >
+                      Next up · Want to go
+                    </span>
+                    <h2
+                      style={{
+                        margin: "14px 0 4px",
+                        fontSize: "56px",
+                        lineHeight: 1,
+                        letterSpacing: "-0.03em",
+                        fontWeight: 800,
+                      }}
+                    >
+                      {heroPlace.display_name}
+                    </h2>
+                    <div style={{ fontSize: "16px", color: "rgba(255,255,255,0.88)" }}>
+                      {[heroPlace.location?.city, heroPlace.location?.state_province, heroPlace.location?.country].filter(Boolean).join(", ")}
+                    </div>
+                    <div style={{ display: "flex", gap: "12px", marginTop: "20px" }}>
+                      <Link
+                        to={`/map?place=${heroPlace.place_id}`}
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "8px",
+                          height: "46px",
+                          padding: "0 22px",
+                          borderRadius: "999px",
+                          background: "#FFFFFF",
+                          color: "#1B1D1F",
+                          fontSize: "15px",
+                          fontWeight: 700,
+                          textDecoration: "none",
+                        }}
+                      >
+                        Open on map
+                      </Link>
+                      <Link
+                        to={`/place/${heroPlace.place_id}`}
+                        state={{ from: "/" }}
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          height: "46px",
+                          padding: "0 22px",
+                          borderRadius: "999px",
+                          border: "1px solid rgba(255,255,255,0.5)",
+                          background: "rgba(255,255,255,0.12)",
+                          color: "#FFFFFF",
+                          fontSize: "15px",
+                          fontWeight: 700,
+                          textDecoration: "none",
+                        }}
+                      >
+                        Details
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              );
+            })() : (() => {
+              const latestPost = posts[0];
+              const latestImageUrl = latestPost?.thumbnail_url ? proxiedMediaUrl(latestPost.thumbnail_url) : null;
+              return (
+                <div
                   style={{
-                    margin: "14px 0 4px",
-                    fontSize: "56px",
-                    lineHeight: 1,
-                    letterSpacing: "-0.03em",
-                    fontWeight: 800,
+                    flex: "2 1 640px",
+                    minHeight: "440px",
+                    borderRadius: "28px",
+                    position: "relative",
+                    overflow: "hidden",
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "flex-end",
+                    padding: "32px",
+                    boxSizing: "border-box",
+                    background:
+                      "linear-gradient(180deg, rgba(20,12,8,0) 30%, rgba(20,12,8,0.78) 100%), linear-gradient(120deg, #5B8EC9 0%, #2B4E8E 45%, #17243A 100%)",
+                    color: "#FFFFFF",
                   }}
                 >
-                  {places[0].display_name}
-                </h2>
-                <div style={{ fontSize: "16px", color: "rgba(255,255,255,0.88)" }}>
-                  {[places[0].location?.city, places[0].location?.state_province, places[0].location?.country].filter(Boolean).join(", ")}
+                  {latestImageUrl && (
+                    <>
+                      <img
+                        src={latestImageUrl}
+                        alt=""
+                        style={{
+                          position: "absolute",
+                          top: 0,
+                          left: 0,
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
+                          zIndex: 0,
+                        }}
+                      />
+                      <div
+                        style={{
+                          position: "absolute",
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          background:
+                            "linear-gradient(180deg, rgba(20,12,8,0.2) 0%, rgba(20,12,8,0.85) 100%)",
+                          zIndex: 1,
+                        }}
+                      />
+                    </>
+                  )}
+                  <div style={{ position: "relative", zIndex: 2, display: "flex", flexDirection: "column" }}>
+                    <span
+                      style={{
+                        alignSelf: "flex-start",
+                        fontSize: "13px",
+                        fontWeight: 700,
+                        padding: "6px 12px",
+                        borderRadius: "999px",
+                        background: "rgba(255,255,255,0.2)",
+                        backdropFilter: "blur(8px)",
+                      }}
+                    >
+                      Latest save
+                    </span>
+                    <h2 style={{ margin: "14px 0 4px", fontSize: "40px", lineHeight: 1.1, fontWeight: 800 }}>
+                      {posts[0]?.caption?.slice(0, 50) || "Saved Reel"}
+                    </h2>
+                    <div style={{ display: "flex", gap: "12px", marginTop: "20px" }}>
+                      <Link
+                        to={`/post/${posts[0]?.post_id}`}
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          height: "46px",
+                          padding: "0 22px",
+                          borderRadius: "999px",
+                          background: "#FFFFFF",
+                          color: "#1B1D1F",
+                          fontSize: "15px",
+                          fontWeight: 700,
+                          textDecoration: "none",
+                        }}
+                      >
+                        View details
+                      </Link>
+                    </div>
+                  </div>
                 </div>
-                <div style={{ display: "flex", gap: "12px", marginTop: "20px" }}>
-                  <Link
-                    to={`/map?place=${places[0].place_id}`}
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: "8px",
-                      height: "46px",
-                      padding: "0 22px",
-                      borderRadius: "999px",
-                      background: "#FFFFFF",
-                      color: "#1B1D1F",
-                      fontSize: "15px",
-                      fontWeight: 700,
-                      textDecoration: "none",
-                    }}
-                  >
-                    Open on map
-                  </Link>
-                  <Link
-                    to={`/place/${places[0].place_id}`}
-                    state={{ from: "/" }}
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      height: "46px",
-                      padding: "0 22px",
-                      borderRadius: "999px",
-                      border: "1px solid rgba(255,255,255,0.5)",
-                      background: "rgba(255,255,255,0.12)",
-                      color: "#FFFFFF",
-                      fontSize: "15px",
-                      fontWeight: 700,
-                      textDecoration: "none",
-                    }}
-                  >
-                    Details
-                  </Link>
-                </div>
-              </div>
-            ) : (
-              <div
-                style={{
-                  flex: "2 1 640px",
-                  minHeight: "440px",
-                  borderRadius: "28px",
-                  position: "relative",
-                  overflow: "hidden",
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "flex-end",
-                  padding: "32px",
-                  boxSizing: "border-box",
-                  background:
-                    "linear-gradient(180deg, rgba(20,12,8,0) 30%, rgba(20,12,8,0.78) 100%), linear-gradient(120deg, #5B8EC9 0%, #2B4E8E 45%, #17243A 100%)",
-                  color: "#FFFFFF",
-                }}
-              >
-                <span
-                  style={{
-                    alignSelf: "flex-start",
-                    fontSize: "13px",
-                    fontWeight: 700,
-                    padding: "6px 12px",
-                    borderRadius: "999px",
-                    background: "rgba(255,255,255,0.2)",
-                  }}
-                >
-                  Latest save
-                </span>
-                <h2 style={{ margin: "14px 0 4px", fontSize: "40px", lineHeight: 1.1, fontWeight: 800 }}>
-                  {posts[0]?.caption?.slice(0, 50) || "Saved Reel"}
-                </h2>
-                <div style={{ display: "flex", gap: "12px", marginTop: "20px" }}>
-                  <Link
-                    to={`/post/${posts[0]?.post_id}`}
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      height: "46px",
-                      padding: "0 22px",
-                      borderRadius: "999px",
-                      background: "#FFFFFF",
-                      color: "#1B1D1F",
-                      fontSize: "15px",
-                      fontWeight: 700,
-                      textDecoration: "none",
-                    }}
-                  >
-                    View details
-                  </Link>
-                </div>
-              </div>
-            )}
+              );
+            })()}
 
             {/* Collections panel */}
             <div

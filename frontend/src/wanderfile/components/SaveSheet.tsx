@@ -251,26 +251,51 @@ export function SaveSheet() {
                 </div>
               ) : validation.isValid ? (
                 <div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "10px", color: "#1F7A4D", fontWeight: 600 }}>
-                    <span
-                      aria-hidden="true"
-                      style={{
-                        width: "22px",
-                        height: "22px",
-                        borderRadius: "50%",
-                        background: "#E3F4EA",
-                        color: "#1F7A4D",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                        <path d="m5 12.5 4.5 4.5L19 7.5" />
-                      </svg>
-                    </span>
-                    Ready to save Instagram reel
-                  </div>
+                  {previewLoading && (
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px", color: "#6B6F73", fontWeight: 600 }}>
+                      <span
+                        aria-hidden="true"
+                        style={{
+                          width: "22px",
+                          height: "22px",
+                          borderRadius: "50%",
+                          background: "#EFEDE7",
+                          color: "#6B6F73",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                          <circle cx="12" cy="12" r="9" strokeDasharray="30" strokeDashoffset="10" />
+                        </svg>
+                      </span>
+                      Checking Instagram reel…
+                    </div>
+                  )}
+
+                  {!previewLoading && (!previewData || previewData.is_available) && (
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px", color: "#1F7A4D", fontWeight: 600 }}>
+                      <span
+                        aria-hidden="true"
+                        style={{
+                          width: "22px",
+                          height: "22px",
+                          borderRadius: "50%",
+                          background: "#E3F4EA",
+                          color: "#1F7A4D",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                          <path d="m5 12.5 4.5 4.5L19 7.5" />
+                        </svg>
+                      </span>
+                      Ready to save Instagram reel
+                    </div>
+                  )}
 
                   {/* Preview State: Skeleton loading */}
                   {previewLoading && (
@@ -413,7 +438,7 @@ export function SaveSheet() {
                 </div>
               ) : (
                 <div style={{ color: "#6B6F73" }}>
-                  Instagram reels are currently supported (restaurants, recipes, travel, movies)
+                  Instagram reels are supported across food, travel, culture, and more
                 </div>
               )}
             </div>

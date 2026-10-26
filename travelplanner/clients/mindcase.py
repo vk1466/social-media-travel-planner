@@ -40,11 +40,14 @@ def api_key() -> str:
   return value
 
 
+DEFAULT_FETCH_POST_TIMEOUT = 30.0
+
+
 def fetch_post(
   *,
   post_url: str | None = None,
   shortcode: str | None = None,
-  timeout_seconds: float = 6.0,
+  timeout_seconds: float = DEFAULT_FETCH_POST_TIMEOUT,
 ) -> dict[str, Any]:
   """One Instagram post/reel by URL (preferred) or shortcode."""
   api_key()
@@ -66,15 +69,7 @@ def fetch_post(
   else:
     raise ValueError("post_url or shortcode is required")
 
-  try:
-    rows = fetch_posts(post_urls=urls_to_try, max_wait_seconds=timeout_seconds)
-  except RuntimeError as exc:
-    msg = str(exc).lower()
-    if "timed out" in msg or "timeout" in msg:
-      raise RuntimeError(
-        f"Instagram post {code or url} could not be fetched (private or deleted post): {exc}"
-      ) from exc
-    raise
+  rows = fetch_posts(post_urls=urls_to_try, max_wait_seconds=timeout_seconds)
 
   if not rows:
     raise RuntimeError(f"Mindcase returned no post for {url or code} (private or deleted post)")

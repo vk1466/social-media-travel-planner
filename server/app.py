@@ -541,6 +541,7 @@ def get_link_preview(
       or "not found" in msg
       or "could not be fetched" in msg
       or "empty data" in msg
+      or "returned no post" in msg
     ):
       return LinkPreviewResponse(
         url=clean_url,
@@ -549,7 +550,41 @@ def get_link_preview(
         is_available=False,
         error_message="Private or deleted post",
       )
-    # If Mindcase is unavailable or transient error, return graceful fallback preview with shortcode
+
+    # If Mindcase timed out or gave a transient error, check Instagram oEmbed for positive evidence
+    if shortcode:
+      try:
+        import urllib.request
+        import urllib.error
+        oembed_url = f"https://www.instagram.com/oembed/?url=https://www.instagram.com/reel/{shortcode}/"
+        req = urllib.request.Request(oembed_url, headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(req, timeout=3.0) as resp:
+          if resp.status == 200:
+            # Positive evidence: post exists and is public
+            return LinkPreviewResponse(
+              url=clean_url,
+              platform="instagram",
+              shortcode=shortcode,
+              title="Instagram Reel",
+              caption="",
+              author=None,
+              thumbnail_url=None,
+              is_available=True,
+            )
+      except urllib.error.HTTPError as http_err:
+        if http_err.code in (404, 400):
+          # Positive evidence: deleted or private post
+          return LinkPreviewResponse(
+            url=clean_url,
+            platform="instagram",
+            shortcode=shortcode,
+            is_available=False,
+            error_message="Private or deleted post",
+          )
+      except Exception:
+        pass
+
+    # If it was a timeout in preview and no positive evidence of deleted, return graceful fallback preview
     return LinkPreviewResponse(
       url=clean_url,
       platform="instagram",

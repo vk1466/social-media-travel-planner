@@ -1,7 +1,7 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Image, Pressable, StyleSheet, Switch, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Image, Pressable, StyleSheet, Switch, Text, TextInput, View } from "react-native";
 
 import { fetchLinkPreview, type LinkPreview } from "../api";
 import { parseLinkLines } from "../lib/shareUrl";
@@ -134,13 +134,23 @@ export function LinkSubmitForm({
       {/* S3: Counter on left with green check; Advanced options on right with chevron */}
       <View style={styles.counterRow}>
         <View style={styles.counterLeft}>
-          {validCount > 0 ? (
+          {previewLoading ? (
+            <ActivityIndicator size="small" color={colors.muted} style={{ marginRight: 4 }} />
+          ) : previewData && !previewData.is_available ? (
+            <View style={[styles.checkBadge, { backgroundColor: "#FEE2E2" }]}>
+              <Ionicons name="close" size={13} color="#DC2626" />
+            </View>
+          ) : validCount > 0 ? (
             <View style={styles.checkBadge}>
               <Ionicons name="checkmark" size={13} color="#1F7A4D" />
             </View>
           ) : null}
           <Text style={styles.counterText}>
-            {validCount} URLs · Instagram reels
+            {previewLoading
+              ? "Checking Instagram reel…"
+              : previewData && !previewData.is_available
+              ? "Unavailable post"
+              : `${validCount} URLs · Instagram reels`}
           </Text>
         </View>
 

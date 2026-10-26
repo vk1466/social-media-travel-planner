@@ -3,22 +3,48 @@ from travelplanner.clients.mindcase import fetch_post
 from travelplanner.personas.link_ingest import friendly_error_message
 
 
-def test_mindcase_fail_fast_deadline() -> None:
-  """Backend fail-fast deadline is <= 8.0s (default 6.0s)."""
+def test_mindcase_save_pipeline_generous_timeout() -> None:
+  """The save pipeline must use a generous timeout (>= 20s) so slow-but-valid reels are not aborted prematurely."""
   from travelplanner.clients import mindcase
   import inspect
   sig = inspect.signature(mindcase.fetch_post)
-  assert sig.parameters["timeout_seconds"].default <= 8.0
-  assert sig.parameters["timeout_seconds"].default == 6.0
+  assert sig.parameters["timeout_seconds"].default >= 20.0
+  assert sig.parameters["timeout_seconds"].default == 30.0
+
+
+def test_slow_but_valid_reel_succeeds(monkeypatch) -> None:
+  """A valid public reel that takes 12s to scrape must succeed under the generous timeout."""
+  from travelplanner.clients import mindcase
+
+  calls = 0
+  def fake_run_job(path, params, **kwargs):
+    nonlocal calls
+    calls += 1
+    # Verify generous timeout was passed
+    assert kwargs.get("max_wait_seconds") == 30.0
+    return [{"caption": "Delicious Pasta", "authorUsername": "pastachef", "videoUrl": "https://video.mp4"}]
+
+  monkeypatch.setattr(mindcase, "_run_job", fake_run_job)
+  monkeypatch.setattr(mindcase, "api_key", lambda: "fake-key")
+
+  res = mindcase.fetch_post(shortcode="slow123")
+  assert res["caption"] == "Delicious Pasta"
+  assert calls == 1
 
 
 def test_deleted_instagram_reel_error_mapping() -> None:
-  """Deleted reel returns empty data or times out, mapping to 'Private or deleted post' in under 8s."""
+  """Deleted reel returns empty data, empty rows, or 404 (positive evidence), mapping to 'Private or deleted post'.
+  Pure timeouts must map to 'Request timed out, please retry in a moment'.
+  """
+  # Positive evidence maps to Private or deleted post
   assert friendly_error_message("Instagram post C2xQ5T2ST8l returned empty data (private or deleted post)") == "Private or deleted post"
   assert friendly_error_message("Mindcase returned no post for https://www.instagram.com/reel/C2xQ5T2ST8l/ (private or deleted post)") == "Private or deleted post"
   assert friendly_error_message("Instagram post C2xQ5T2ST8l could not be fetched (private, deleted, or does not exist)") == "Private or deleted post"
-  assert friendly_error_message("Instagram post C2xQ5T2ST8l could not be fetched (private or deleted post): Mindcase job 123 timed out after 6.0s") == "Private or deleted post"
-  assert friendly_error_message("Mindcase job 456 timed out after 6.0s for instagram reel") == "Private or deleted post"
+  assert friendly_error_message("Instagram post C2xQ5T2ST8l: 404 not found") == "Private or deleted post"
+
+  # Scraper timeouts must map to Request timed out, NOT Private or deleted post
+  assert friendly_error_message("Mindcase job 456 timed out after 30.0s") == "Request timed out, please retry in a moment"
+  assert friendly_error_message("Request timed out") == "Request timed out, please retry in a moment"
 
 
 def test_client_polling_deadline_exceeds_backend_fail_fast() -> None:

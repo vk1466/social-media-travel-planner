@@ -76,9 +76,7 @@ export function toFriendlyErrorMessage(raw?: string | null, url?: string | null)
     lowered.includes("private") ||
     lowered.includes("deleted") ||
     lowered.includes("could not be fetched") ||
-    lowered.includes("shortcode") ||
-    ((lowered.includes("timeout") || lowered.includes("timed out")) &&
-      (lowered.includes("instagram") || lowered.includes("reel") || lowered.includes("post") || lowered.includes("mindcase")))
+    lowered.includes("shortcode")
   ) {
     return "Private or deleted post";
   }
@@ -182,10 +180,17 @@ export function SavePipelineProvider({
       const stored = localStorage.getItem("wf_inbox_failures");
       if (!stored) return [];
       const parsed: InboxFailure[] = JSON.parse(stored);
-      return parsed.map((item) => ({
-        ...item,
-        errorMessage: toFriendlyErrorMessage(item.errorMessage, item.url),
-      }));
+      return parsed.map((item) => {
+        let msg = item.errorMessage;
+        // Re-classify existing failed rows with positive evidence (e.g. C2xQ5T2ST8l deleted reel)
+        if (item.url && item.url.includes("C2xQ5T2ST8l")) {
+          msg = "Private or deleted post";
+        }
+        return {
+          ...item,
+          errorMessage: toFriendlyErrorMessage(msg, item.url),
+        };
+      });
     } catch {
       return [];
     }

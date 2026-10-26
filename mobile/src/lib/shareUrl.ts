@@ -136,7 +136,7 @@ export function parseLinkLines(text: string): {
     }
     if (!isSupportedShareDomain(normalized)) {
       invalid.push(trimmed);
-      validationError = "Only Instagram reels are currently supported (restaurants, recipes, travel, movies).";
+      validationError = "Only Instagram reels are currently supported.";
       continue;
     }
     valid.push(normalized);
