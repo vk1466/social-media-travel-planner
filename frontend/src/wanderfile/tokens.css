@@ -190,3 +190,22 @@ body.wf-app-body {
   background: #FBE6EE;
   color: #A32222;
 }
+
+/* Map selected card responsive positioning */
+.wf-map-selected-card {
+  bottom: 32px;
+  left: 32px;
+  width: 440px;
+  max-width: calc(100% - 64px);
+}
+
+@media (max-width: 1023px) {
+  .wf-map-selected-card {
+    bottom: 96px !important;
+    left: 16px !important;
+    right: 16px !important;
+    width: auto !important;
+    max-width: calc(100% - 32px) !important;
+    margin: 0 auto;
+  }
+}

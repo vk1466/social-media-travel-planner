@@ -317,6 +317,7 @@ def test_list_categories(dynamodb) -> None:
 
 
 def test_cleanup_data_endpoint(monkeypatch, dynamodb) -> None:
+  monkeypatch.setenv("ADMIN_USER_IDS", "user-a")
   monkeypatch.setattr("server.app.cleanup_all_data", lambda: (2, 5, 3))
 
   client = TestClient(app)
@@ -480,6 +481,7 @@ def test_timeline_review_accept_discard_endpoints(dynamodb) -> None:
 
 
 def test_reprocess_places_endpoint(monkeypatch, dynamodb) -> None:
+  monkeypatch.setenv("ADMIN_USER_IDS", "user-a")
   called = {"reprocess": False}
 
   def fake_reprocess() -> None:
@@ -563,16 +565,23 @@ def test_list_posts_filters_content_category(dynamodb) -> None:
   assert unknown.status_code == 400
 
 
-def test_admin_me_reports_admin(dynamodb) -> None:
+def test_admin_me_reports_admin(monkeypatch, dynamodb) -> None:
   client = TestClient(app)
+  # When user is not in ADMIN_USER_IDS, is_admin is False
   response = client.get("/api/admin/me", headers=HEADERS)
   assert response.status_code == 200
   body = response.json()
-  assert body["is_admin"] is True
+  assert body["is_admin"] is False
   assert body["is_super_admin"] is False
   assert body["authenticated_user_id"] == "user-a"
   assert body["acting_user_id"] == "user-a"
   assert "place_pipeline" not in body
+
+  # When user is in ADMIN_USER_IDS, is_admin is True
+  monkeypatch.setenv("ADMIN_USER_IDS", "user-a")
+  admin_resp = client.get("/api/admin/me", headers=HEADERS)
+  assert admin_resp.status_code == 200
+  assert admin_resp.json()["is_admin"] is True
 
 
 def test_super_admin_can_view_as_another_user(monkeypatch, dynamodb) -> None:
@@ -621,6 +630,7 @@ def test_super_admin_can_view_as_another_user(monkeypatch, dynamodb) -> None:
 
 
 def test_admin_locate_read_only(monkeypatch, dynamodb) -> None:
+  monkeypatch.setenv("ADMIN_USER_IDS", "user-a")
   from types import SimpleNamespace
 
   location = PlaceLocation(
@@ -659,7 +669,8 @@ def test_admin_locate_read_only(monkeypatch, dynamodb) -> None:
   assert places.load_all_places() == []
 
 
-def test_admin_list_place_candidates(dynamodb) -> None:
+def test_admin_list_place_candidates(monkeypatch, dynamodb) -> None:
+  monkeypatch.setenv("ADMIN_USER_IDS", "user-a")
   from travelplanner.places.candidates import record_candidate
 
   record_candidate(
@@ -697,6 +708,27 @@ def test_admin_list_place_candidates(dynamodb) -> None:
   )
   assert filtered.status_code == 200
   assert filtered.json()["candidates"][0]["resolved_place_id"] == "us-maybe-falls"
+
+
+def test_non_admin_forbidden_on_all_admin_endpoints(dynamodb) -> None:
+  client = TestClient(app)
+  # user-a is not an admin when ADMIN_USER_IDS is not set or doesn't include user-a
+  assert client.post("/api/places/reprocess", headers=HEADERS).status_code == 403
+  assert client.post("/api/data/cleanup", headers=HEADERS).status_code == 403
+  assert client.get("/api/admin/places/candidates", headers=HEADERS).status_code == 403
+  assert (
+    client.post(
+      "/api/admin/places/locate",
+      headers=HEADERS,
+      json={"place_name": "Test Place"},
+    ).status_code
+    == 403
+  )
+  assert client.get("/api/admin/users", headers=HEADERS).status_code == 403
+  assert (
+    client.post("/api/places/some-place-id/facts/refresh", headers=HEADERS).status_code
+    == 403
+  )
 
 
 def test_reconstruct_recipe_endpoint(monkeypatch, dynamodb) -> None:

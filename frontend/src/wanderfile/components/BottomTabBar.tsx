@@ -5,10 +5,9 @@ export function BottomTabBar() {
   const location = useLocation();
   const { openSaveSheet, isSaveSheetOpen } = useSavePipeline();
 
-  // Hide bottom tab bar on detail pages, onboarding, or when save sheet is open
+  // Hide bottom tab bar on post detail, onboarding, or when save sheet is open
   const isDetailPage =
     location.pathname.startsWith("/post/") ||
-    location.pathname.startsWith("/place/") ||
     location.pathname === "/welcome";
 
   if (isDetailPage || isSaveSheetOpen) {

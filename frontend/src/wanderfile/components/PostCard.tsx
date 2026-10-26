@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import type { SavedPost } from "../../api";
 
 interface PostCardProps {
@@ -10,6 +10,7 @@ interface PostCardProps {
 }
 
 export function PostCard({ post, onEdit, onDelete, style }: PostCardProps) {
+  const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -52,6 +53,7 @@ export function PostCard({ post, onEdit, onDelete, style }: PostCardProps) {
     >
       <Link
         to={targetUrl}
+        state={{ from: location.pathname }}
         style={{
           display: "flex",
           flexDirection: "column",

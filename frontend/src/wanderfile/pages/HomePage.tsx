@@ -619,6 +619,7 @@ export function HomePage({ posts, places, loading, loadError, onRefresh }: HomeP
                   </Link>
                   <Link
                     to={`/place/${places[0].place_id}`}
+                    state={{ from: "/" }}
                     style={{
                       display: "inline-flex",
                       alignItems: "center",

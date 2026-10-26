@@ -90,12 +90,8 @@ def get_acting_user_id(
 def require_admin(
   user_id: Annotated[str, Depends(get_authenticated_user_id)],
 ) -> str:
-  admins = settings.admin_user_ids()
-  if settings.is_super_admin_user(user_id):
-    return user_id
-  if admins and user_id not in admins:
+  if not settings.is_admin_user(user_id):
     raise HTTPException(status_code=403, detail="Admin access required")
-  # When ADMIN_USER_IDS is empty, any authenticated user may run maintenance (dev).
   return user_id
 
 

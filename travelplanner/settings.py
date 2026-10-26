@@ -142,11 +142,13 @@ def is_super_admin_user(user_id: str) -> bool:
 
 
 def is_admin_user(user_id: str) -> bool:
-  """True when ADMIN_USER_IDS is empty (dev), listed, or user is super admin."""
+  """True only when user is super admin or listed in ADMIN_USER_IDS."""
+  if not user_id:
+    return False
   if is_super_admin_user(user_id):
     return True
   admins = admin_user_ids()
-  return not admins or user_id in admins
+  return bool(admins and user_id in admins)
 
 
 def clerk_secret_key() -> str | None:

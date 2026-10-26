@@ -1,23 +1,203 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
+import { MapContainer, Marker, TileLayer, Tooltip, useMap, useMapEvents } from "react-leaflet";
+import L from "leaflet";
 import { EmptyState } from "../components/EmptyState";
 import { ComingSoonButton } from "../comingSoon/ComingSoonControl";
 import { useSavePipeline } from "../state/SavePipelineContext";
 import type { Place } from "../../api";
+import { visualForCategory } from "../../placeCategoryVisuals";
+
+import "leaflet/dist/leaflet.css";
 
 interface MapPageProps {
   places: Place[];
   loading: boolean;
 }
 
+// Ensure default icon paths work if used
+delete (L.Icon.Default.prototype as { _getIconUrl?: unknown })._getIconUrl;
+
+function clusterIcon(count: number): L.DivIcon {
+  const size = count < 10 ? 36 : count < 50 ? 42 : 48;
+  return L.divIcon({
+    className: "wf-cluster-marker",
+    html: `<div style="
+      width: ${size}px;
+      height: ${size}px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #1F6F8B, #14495B);
+      border: 3px solid #FFFFFF;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #FFFFFF;
+      font-weight: 800;
+      font-size: 13px;
+      font-family: 'Figtree', system-ui, sans-serif;
+      cursor: pointer;
+    ">${count}</div>`,
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+  });
+}
+
+function placeIcon(place: Place, isSelected: boolean): L.DivIcon {
+  const visual = visualForCategory(place.category);
+  const color = visual.color || "#1F6F8B";
+  const size = isSelected ? 36 : 28;
+  return L.divIcon({
+    className: "wf-place-marker",
+    html: `<div style="
+      width: ${size}px;
+      height: ${size}px;
+      border-radius: 999px;
+      background: ${isSelected ? "#1B1D1F" : color};
+      border: ${isSelected ? "3px solid #FFFFFF" : "2px solid #FFFFFF"};
+      box-shadow: 0 4px 12px ${isSelected ? "rgba(0,0,0,0.35)" : "rgba(0,0,0,0.2)"};
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #FFFFFF;
+      font-size: ${isSelected ? 16 : 13}px;
+      cursor: pointer;
+      transform: ${isSelected ? "scale(1.1)" : "scale(1)"};
+      transition: transform 0.15s ease;
+    ">
+      <span style="display:inline-block; line-height: 1;">${visual.icon || "📍"}</span>
+    </div>`,
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+  });
+}
+
+function InvalidateSize() {
+  const map = useMap();
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => map.invalidateSize());
+    const observer = new ResizeObserver(() => map.invalidateSize());
+    observer.observe(map.getContainer());
+    return () => {
+      window.cancelAnimationFrame(frame);
+      observer.disconnect();
+    };
+  }, [map]);
+  return null;
+}
+
+function FitAllBounds({ places }: { places: Place[] }) {
+  const map = useMap();
+  useEffect(() => {
+    const valid = places.filter(
+      (p) => typeof p.location?.latitude === "number" && typeof p.location?.longitude === "number",
+    );
+    if (valid.length === 0) return;
+    if (valid.length === 1) {
+      map.setView([valid[0].location.latitude!, valid[0].location.longitude!], 13);
+      return;
+    }
+    const bounds = L.latLngBounds(
+      valid.map((p) => [p.location.latitude!, p.location.longitude!]),
+    );
+    map.fitBounds(bounds, { padding: [50, 50], maxZoom: 13 });
+  }, [places, map]);
+  return null;
+}
+
+function PanToSelected({ place }: { place: Place | null }) {
+  const map = useMap();
+  useEffect(() => {
+    if (!place?.location?.latitude || !place?.location?.longitude) return;
+    map.flyTo([place.location.latitude, place.location.longitude], 14, { duration: 0.8 });
+  }, [place, map]);
+  return null;
+}
+
+function ZoomTracker({ onZoomChange }: { onZoomChange: (z: number) => void }) {
+  useMapEvents({
+    zoomend: (e) => {
+      onZoomChange(e.target.getZoom());
+    },
+  });
+  return null;
+}
+
 export function MapPage({ places, loading }: MapPageProps) {
   const [searchParams, setSearchParams] = useSearchParams();
   const { openSaveSheet } = useSavePipeline();
+  const [zoom, setZoom] = useState<number>(4);
+  const [mobileView, setMobileView] = useState<"map" | "list">("map");
+
+  const mappablePlaces = useMemo(() => {
+    return places.filter(
+      (p) => typeof p.location?.latitude === "number" && typeof p.location?.longitude === "number",
+    );
+  }, [places]);
 
   const selectedPlaceId = searchParams.get("place") || (places.length > 0 ? places[0].place_id : null);
   const selectedPlace = useMemo(() => {
     return places.find((p) => p.place_id === selectedPlaceId) || places[0] || null;
   }, [places, selectedPlaceId]);
+
+  // Clustering logic based on map zoom
+  const clusters = useMemo(() => {
+    if (zoom >= 12) {
+      return mappablePlaces.map((p) => ({
+        isCluster: false,
+        place: p,
+        count: 1,
+        lat: p.location.latitude!,
+        lng: p.location.longitude!,
+        places: [p],
+      }));
+    }
+
+    const cellSize = 180 / Math.pow(2, zoom);
+    const grid = new Map<string, Place[]>();
+
+    for (const p of mappablePlaces) {
+      const latIdx = Math.floor(p.location.latitude! / cellSize);
+      const lngIdx = Math.floor(p.location.longitude! / cellSize);
+      const key = `${latIdx}:${lngIdx}`;
+      const list = grid.get(key) || [];
+      list.push(p);
+      grid.set(key, list);
+    }
+
+    const result: Array<{
+      isCluster: boolean;
+      place?: Place;
+      count: number;
+      lat: number;
+      lng: number;
+      places: Place[];
+    }> = [];
+
+    for (const group of grid.values()) {
+      if (group.length === 1) {
+        result.push({
+          isCluster: false,
+          place: group[0],
+          count: 1,
+          lat: group[0].location.latitude!,
+          lng: group[0].location.longitude!,
+          places: group,
+        });
+      } else {
+        const avgLat = group.reduce((sum, p) => sum + p.location.latitude!, 0) / group.length;
+        const avgLng = group.reduce((sum, p) => sum + p.location.longitude!, 0) / group.length;
+        result.push({
+          isCluster: true,
+          count: group.length,
+          lat: avgLat,
+          lng: avgLng,
+          places: group,
+        });
+      }
+    }
+    return result;
+  }, [mappablePlaces, zoom]);
 
   if (places.length === 0 && !loading) {
     return (
@@ -36,6 +216,27 @@ export function MapPage({ places, loading }: MapPageProps) {
     );
   }
 
+  const defaultCenter: [number, number] = mappablePlaces.length > 0
+    ? [mappablePlaces[0].location.latitude!, mappablePlaces[0].location.longitude!]
+    : [20, 0];
+
+  const selLat = selectedPlace?.location?.latitude;
+  const selLng = selectedPlace?.location?.longitude;
+  const selHasCoords = typeof selLat === "number" && typeof selLng === "number";
+
+  const googleMapsUrl = selectedPlace
+    ? (selectedPlace.google_maps_url ||
+       (selHasCoords
+         ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedPlace.display_name)}+${selLat},${selLng}`
+         : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedPlace.display_name)}`))
+    : "";
+
+  const appleMapsUrl = selectedPlace
+    ? (selHasCoords
+        ? `https://maps.apple.com/?q=${encodeURIComponent(selectedPlace.display_name)}&ll=${selLat},${selLng}`
+        : `https://maps.apple.com/?q=${encodeURIComponent(selectedPlace.display_name)}`)
+    : "";
+
   return (
     <main
       style={{
@@ -44,27 +245,50 @@ export function MapPage({ places, loading }: MapPageProps) {
         minHeight: "calc(100vh - 73px)",
         position: "relative",
         fontFamily: "'Figtree', system-ui, sans-serif",
+        overflow: "hidden",
       }}
     >
-      {/* Places list sidebar */}
+      {/* Places list sidebar (Desktop always, mobile toggleable) */}
       <aside
         style={{
-          width: "380px",
+          width: mobileView === "list" ? "100%" : "380px",
+          display: mobileView === "list" ? "flex" : undefined,
           borderRight: "1px solid #E6E3DC",
           background: "#FFFFFF",
-          display: "flex",
           flexDirection: "column",
           boxSizing: "border-box",
           overflowY: "auto",
+          zIndex: 20,
         }}
+        className={mobileView === "map" ? "wf-desktop-only" : ""}
       >
-        <div style={{ padding: "24px 20px 16px", borderBottom: "1px solid #EFEDE7" }}>
-          <h1 style={{ margin: 0, fontSize: "28px", fontWeight: 800, letterSpacing: "-0.02em" }}>
-            Places
-          </h1>
-          <div style={{ fontSize: "14px", color: "#6B6F73", marginTop: "4px" }}>
-            {places.length} saved places on your map
+        <div style={{ padding: "20px 20px 16px", borderBottom: "1px solid #EFEDE7", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div>
+            <h1 style={{ margin: 0, fontSize: "26px", fontWeight: 800, letterSpacing: "-0.02em" }}>
+              Places
+            </h1>
+            <div style={{ fontSize: "14px", color: "#6B6F73", marginTop: "2px" }}>
+              {places.length} saved places on your map
+            </div>
           </div>
+          {mobileView === "list" && (
+            <button
+              type="button"
+              onClick={() => setMobileView("map")}
+              style={{
+                background: "#1B1D1F",
+                color: "#FFFFFF",
+                border: 0,
+                borderRadius: "999px",
+                padding: "8px 16px",
+                fontSize: "13px",
+                fontWeight: 700,
+                cursor: "pointer",
+              }}
+            >
+              Back to Map
+            </button>
+          )}
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", padding: "8px" }}>
@@ -74,7 +298,10 @@ export function MapPage({ places, loading }: MapPageProps) {
               <button
                 key={place.place_id}
                 type="button"
-                onClick={() => setSearchParams({ place: place.place_id })}
+                onClick={() => {
+                  setSearchParams({ place: place.place_id });
+                  setMobileView("map");
+                }}
                 style={{
                   textAlign: "left",
                   padding: "14px 16px",
@@ -116,100 +343,189 @@ export function MapPage({ places, loading }: MapPageProps) {
         </div>
       </aside>
 
-      {/* Map pane & selected place overlay */}
-      <section style={{ flex: 1, position: "relative", background: "#EAE7DF" }}>
-        {/* Placeholder simulated map view with pins */}
+      {/* Interactive Map Pane */}
+      <section
+        style={{
+          flex: 1,
+          position: "relative",
+          background: "#EAE7DF",
+          display: mobileView === "list" ? "none" : "flex",
+          minHeight: "400px",
+        }}
+      >
+        {/* Mobile toggle button to switch to list view */}
         <div
+          className="wf-mobile-only"
           style={{
             position: "absolute",
-            inset: 0,
-            background: "radial-gradient(#D9D5CB 1.5px, transparent 1.5px)",
-            backgroundSize: "24px 24px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
+            top: "16px",
+            right: "16px",
+            zIndex: 1000,
           }}
         >
-          <div style={{ textAlign: "center", color: "#6B6F73" }}>
-            <span
-              style={{
-                width: "48px",
-                height: "48px",
-                borderRadius: "50%",
-                background: "#FFFFFF",
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-                color: "#1B5E78",
-              }}
-            >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z" />
-                <circle cx="12" cy="10" r="2.5" />
-              </svg>
-            </span>
-            <div style={{ marginTop: "12px", fontSize: "14px", fontWeight: 600 }}>
-              {selectedPlace ? selectedPlace.display_name : "Wanderfile Map"}
-            </div>
-          </div>
+          <button
+            type="button"
+            onClick={() => setMobileView("list")}
+            style={{
+              background: "#FFFFFF",
+              color: "#1B1D1F",
+              border: "1px solid #D9D5CB",
+              borderRadius: "999px",
+              padding: "8px 16px",
+              fontSize: "13px",
+              fontWeight: 700,
+              cursor: "pointer",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+            }}
+          >
+            <span>☰</span> Places ({places.length})
+          </button>
         </div>
 
-        {/* Selected place card card overlay matching Places.dc.html */}
+        <MapContainer
+          center={defaultCenter}
+          zoom={zoom}
+          style={{ width: "100%", height: "100%", zIndex: 1 }}
+          scrollWheelZoom
+        >
+          <TileLayer
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+            url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+          />
+          <InvalidateSize />
+          <FitAllBounds places={places} />
+          <PanToSelected place={selectedPlace} />
+          <ZoomTracker onZoomChange={setZoom} />
+
+          {clusters.map((c, i) => {
+            if (c.isCluster) {
+              return (
+                <Marker
+                  key={`cluster-${i}-${c.lat}-${c.lng}`}
+                  position={[c.lat, c.lng]}
+                  icon={clusterIcon(c.count)}
+                  eventHandlers={{
+                    click: () => {
+                      setZoom((z) => Math.min(z + 3, 15));
+                    },
+                  }}
+                >
+                  <Tooltip direction="top" offset={[0, -16]}>
+                    {c.count} saved places (zoom in)
+                  </Tooltip>
+                </Marker>
+              );
+            }
+
+            const p = c.place!;
+            const isSelected = selectedPlace?.place_id === p.place_id;
+
+            return (
+              <Marker
+                key={p.place_id}
+                position={[c.lat, c.lng]}
+                icon={placeIcon(p, isSelected)}
+                zIndexOffset={isSelected ? 1000 : 0}
+                eventHandlers={{
+                  click: () => {
+                    setSearchParams({ place: p.place_id });
+                  },
+                }}
+              >
+                <Tooltip direction="top" offset={[0, -16]}>
+                  {p.display_name}
+                </Tooltip>
+              </Marker>
+            );
+          })}
+        </MapContainer>
+
+        {/* Selected place card overlay - positioned cleanly above bottom nav on mobile */}
         {selectedPlace && (
           <div
+            className="wf-map-selected-card"
             style={{
               position: "absolute",
-              bottom: "32px",
-              left: "32px",
-              right: "32px",
-              maxWidth: "480px",
               background: "#FFFFFF",
               borderRadius: "24px",
               border: "1px solid #E6E3DC",
-              padding: "24px",
-              boxShadow: "0 16px 40px rgba(0,0,0,0.12)",
+              padding: "20px 22px",
+              boxShadow: "0 16px 40px rgba(0,0,0,0.16)",
               display: "flex",
               flexDirection: "column",
-              gap: "14px",
+              gap: "12px",
+              zIndex: 1000,
+              boxSizing: "border-box",
             }}
           >
-            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
-              <div>
+            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "10px" }}>
+              <div style={{ minWidth: 0, flex: 1 }}>
                 <span
                   style={{
-                    fontSize: "12px",
+                    fontSize: "11px",
                     fontWeight: 700,
-                    padding: "3px 8px",
+                    padding: "2px 8px",
                     borderRadius: "999px",
                     background: "#E3F0F4",
                     color: "#1B5E78",
+                    display: "inline-block",
                   }}
                 >
                   {selectedPlace.category || "Place"}
                 </span>
-                <h2 style={{ margin: "8px 0 2px", fontSize: "22px", fontWeight: 800 }}>
+                <h2
+                  style={{
+                    margin: "6px 0 2px",
+                    fontSize: "20px",
+                    fontWeight: 800,
+                    color: "#1B1D1F",
+                    lineHeight: 1.2,
+                    overflowWrap: "anywhere",
+                    wordBreak: "break-word",
+                  }}
+                >
                   {selectedPlace.display_name}
                 </h2>
-                <div style={{ fontSize: "14px", color: "#6B6F73" }}>
+                <div style={{ fontSize: "13px", color: "#6B6F73" }}>
                   {[selectedPlace.location?.city, selectedPlace.location?.state_province, selectedPlace.location?.country].filter(Boolean).join(", ")}
                 </div>
               </div>
+              <button
+                type="button"
+                onClick={() => setSearchParams({})}
+                aria-label="Close"
+                style={{
+                  background: "transparent",
+                  border: 0,
+                  fontSize: "18px",
+                  lineHeight: 1,
+                  color: "#999",
+                  cursor: "pointer",
+                  padding: "4px",
+                }}
+              >
+                ✕
+              </button>
             </div>
 
-            <div style={{ display: "flex", gap: "10px", marginTop: "4px", flexWrap: "wrap" }}>
+            {/* Actions: Details, Add to trip, Google Maps, Apple Maps */}
+            <div style={{ display: "flex", gap: "8px", marginTop: "4px", flexWrap: "wrap", alignItems: "center" }}>
               <Link
                 to={`/place/${selectedPlace.place_id}`}
+                state={{ from: "/map" }}
                 style={{
-                  height: "42px",
-                  padding: "0 20px",
+                  height: "38px",
+                  padding: "0 18px",
                   borderRadius: "999px",
                   background: "#1B1D1F",
                   color: "#FFFFFF",
-                  fontSize: "14px",
+                  fontSize: "13px",
                   fontWeight: 700,
                   textDecoration: "none",
-                  display: "flex",
+                  display: "inline-flex",
                   alignItems: "center",
                 }}
               >
@@ -218,12 +534,12 @@ export function MapPage({ places, loading }: MapPageProps) {
               <ComingSoonButton
                 featureId="trips"
                 style={{
-                  height: "42px",
-                  padding: "0 18px",
+                  height: "38px",
+                  padding: "0 16px",
                   borderRadius: "999px",
                   border: "1px solid #D9D5CB",
                   background: "#FFFFFF",
-                  fontSize: "14px",
+                  fontSize: "13px",
                   fontWeight: 700,
                   color: "#1B1D1F",
                   cursor: "pointer",
@@ -231,26 +547,50 @@ export function MapPage({ places, loading }: MapPageProps) {
               >
                 Add to trip
               </ComingSoonButton>
-              {selectedPlace.google_maps_url && (
+              {googleMapsUrl && (
                 <a
-                  href={selectedPlace.google_maps_url}
+                  href={googleMapsUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{
-                    height: "42px",
-                    padding: "0 16px",
+                    height: "38px",
+                    padding: "0 14px",
                     borderRadius: "999px",
                     border: "1px solid #D9D5CB",
                     background: "#FFFFFF",
-                    fontSize: "14px",
+                    fontSize: "12px",
                     fontWeight: 700,
                     color: "#1B1D1F",
                     textDecoration: "none",
-                    display: "flex",
+                    display: "inline-flex",
                     alignItems: "center",
+                    gap: "4px",
                   }}
                 >
-                  Directions
+                  Google Maps ↗
+                </a>
+              )}
+              {appleMapsUrl && (
+                <a
+                  href={appleMapsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    height: "38px",
+                    padding: "0 14px",
+                    borderRadius: "999px",
+                    border: "1px solid #D9D5CB",
+                    background: "#FFFFFF",
+                    fontSize: "12px",
+                    fontWeight: 700,
+                    color: "#1B1D1F",
+                    textDecoration: "none",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "4px",
+                  }}
+                >
+                  Apple Maps ↗
                 </a>
               )}
             </div>

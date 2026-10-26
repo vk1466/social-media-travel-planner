@@ -312,12 +312,23 @@ function buildMapHtml(): string {
       background: #1F6F8B;
       border: 4px solid #FFFFFF;
       box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+    .marker-cluster-small, .marker-cluster-medium, .marker-cluster-large {
+      background-color: rgba(31, 111, 139, 0.35);
+    }
+    .marker-cluster-small div, .marker-cluster-medium div, .marker-cluster-large div {
+      background-color: #1F6F8B;
+      color: #FFFFFF;
+      font-family: 'Figtree', system-ui, sans-serif;
+      font-weight: 800;
     }
   </style>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
 </head>
 <body>
   <div id="map"></div>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
   <script>
     function esc(value) {
       return String(value == null ? "" : value).replace(/[&<>"']/g, function (ch) {
@@ -344,7 +355,14 @@ function buildMapHtml(): string {
       keepBuffer: 3
     }).addTo(map);
 
-    const markersGroup = L.layerGroup().addTo(map);
+    const markersGroup = (typeof L.markerClusterGroup === 'function')
+      ? L.markerClusterGroup({
+          showCoverageOnHover: false,
+          maxClusterRadius: 40,
+          spiderfyOnMaxZoom: true,
+          zoomToBoundsOnClick: true
+        }).addTo(map)
+      : L.layerGroup().addTo(map);
     let currentPlaces = [];
     let selectedPlaceId = null;
     let placeKey = "";

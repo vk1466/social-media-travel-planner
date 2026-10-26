@@ -8,15 +8,18 @@ import {
 } from "@/src/api";
 import { FilterChips, PageHeading } from "@/src/components/LibraryChrome";
 import { EmptyState, ErrorBanner } from "@/src/components/ui";
+import { useLibrary } from "@/src/context/LibraryContext";
 import { colors, radius, spacing } from "@/src/theme";
 
 export default function AdminScreen() {
+  const { isAdmin } = useLibrary();
   const [status, setStatus] = useState<PlaceCandidateStatusFilter>("unresolved");
   const [candidates, setCandidates] = useState<PlaceCandidate[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!isAdmin) return;
     let cancelled = false;
     setLoading(true);
     void fetchPlaceCandidates({ status })
@@ -38,7 +41,18 @@ export default function AdminScreen() {
     return () => {
       cancelled = true;
     };
-  }, [status]);
+  }, [status, isAdmin]);
+
+  if (!isAdmin) {
+    return (
+      <View style={[styles.screen, styles.content]}>
+        <EmptyState
+          title="Access Denied"
+          body="You do not have administrative privileges to view this page."
+        />
+      </View>
+    );
+  }
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>

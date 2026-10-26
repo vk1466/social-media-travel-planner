@@ -5,6 +5,7 @@ import {
   ActivityIndicator,
   FlatList,
   Image,
+  Linking,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -15,6 +16,8 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+import { googleMapsUrl } from "@/src/maps";
 
 import {
   fetchVisitedPlaceIds,
@@ -467,7 +470,7 @@ export default function TravelScreen() {
         <View
           style={[
             styles.selectedSheet,
-            { bottom: 0 },
+            { bottom: 84 + insets.bottom + 8, marginHorizontal: 12, borderRadius: 24 },
           ]}
         >
           {/* Drag Handle */}
@@ -539,6 +542,38 @@ export default function TravelScreen() {
               style={styles.detailsBtn}
             >
               <Ionicons name="navigate-outline" size={20} color="#1B1D1F" />
+            </Pressable>
+          </View>
+
+          {/* External Map links */}
+          <View style={styles.sheetMapsRow}>
+            {selectedPlace.google_maps_url || googleMapsUrl(selectedPlace.location) ? (
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => {
+                  const url = selectedPlace.google_maps_url || googleMapsUrl(selectedPlace.location);
+                  if (url) void Linking.openURL(url);
+                }}
+                style={styles.mapActionBtn}
+              >
+                <Ionicons name="map-outline" size={14} color="#1B5E78" />
+                <Text style={styles.mapActionText}>Google Maps</Text>
+              </Pressable>
+            ) : null}
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => {
+                const lat = selectedPlace.location?.latitude;
+                const lng = selectedPlace.location?.longitude;
+                const appleUrl = lat != null && lng != null
+                  ? `https://maps.apple.com/?q=${encodeURIComponent(selectedPlace.display_name)}&ll=${lat},${lng}`
+                  : `https://maps.apple.com/?q=${encodeURIComponent(selectedPlace.display_name)}`;
+                void Linking.openURL(appleUrl);
+              }}
+              style={styles.mapActionBtn}
+            >
+              <Ionicons name="navigate-outline" size={14} color="#1B5E78" />
+              <Text style={styles.mapActionText}>Apple Maps</Text>
             </Pressable>
           </View>
         </View>
@@ -1010,6 +1045,28 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     alignItems: "center",
     justifyContent: "center",
+  },
+  sheetMapsRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 10,
+  },
+  mapActionBtn: {
+    flex: 1,
+    height: 38,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "#D9D5CB",
+    backgroundColor: "#F6F5F1",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+  },
+  mapActionText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#1B5E78",
   },
   browseOverlay: {
     ...StyleSheet.absoluteFill,
