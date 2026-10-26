@@ -46,9 +46,22 @@ export function urlsMatch(url1?: string | null, url2?: string | null): boolean {
   return false;
 }
 
-export function toFriendlyErrorMessage(raw?: string | null): string {
+export function toFriendlyErrorMessage(raw?: string | null, url?: string | null): string {
+  if (url) {
+    const loweredUrl = url.toLowerCase();
+    if (
+      loweredUrl.includes("tiktok.com") ||
+      loweredUrl.includes("youtube.com") ||
+      loweredUrl.includes("youtu.be")
+    ) {
+      return "TikTok and YouTube aren't supported yet - only Instagram reels are currently supported";
+    }
+  }
   if (!raw) return "Could not read this post right now. Please retry in a moment.";
   const lowered = raw.toLowerCase();
+  if (lowered.includes("tiktok") || lowered.includes("youtube")) {
+    return "TikTok and YouTube aren't supported yet - only Instagram reels are currently supported";
+  }
   if (lowered.includes("429") || lowered.includes("rate limit") || lowered.includes("too many requests")) {
     return "Rate limited, please retry in a minute";
   }
@@ -58,6 +71,7 @@ export function toFriendlyErrorMessage(raw?: string | null): string {
     lowered.includes("returned no post") ||
     lowered.includes("does not exist") ||
     lowered.includes("no longer exists") ||
+    lowered.includes("empty data") ||
     lowered.includes("empty or nonexistent") ||
     lowered.includes("private") ||
     lowered.includes("deleted") ||
@@ -70,7 +84,9 @@ export function toFriendlyErrorMessage(raw?: string | null): string {
     lowered.includes("connection") ||
     lowered.includes("dns") ||
     lowered.includes("econnrefused") ||
-    lowered.includes("failed to fetch")
+    lowered.includes("failed to fetch") ||
+    lowered.includes("blocked") ||
+    lowered.includes("403")
   ) {
     return "Network error, please retry";
   }
@@ -89,7 +105,7 @@ export function toFriendlyErrorMessage(raw?: string | null): string {
   if (lowered.includes("failed at step")) {
     const parts = raw.split(":");
     if (parts.length > 1) {
-      return toFriendlyErrorMessage(parts.slice(1).join(":").trim());
+      return toFriendlyErrorMessage(parts.slice(1).join(":").trim(), url);
     }
     return "Could not read this post right now. Please retry in a moment.";
   }
@@ -142,7 +158,7 @@ export function SavePipelineProvider({
       const parsed: InboxFailure[] = JSON.parse(stored);
       return parsed.map((item) => ({
         ...item,
-        errorMessage: toFriendlyErrorMessage(item.errorMessage),
+        errorMessage: toFriendlyErrorMessage(item.errorMessage, item.url),
       }));
     } catch {
       return [];
@@ -261,7 +277,7 @@ export function SavePipelineProvider({
                 // 1. Fail fast: if link status is error or unsupported, fail immediately!
                 if (link && (link.status === "error" || link.status === "unsupported")) {
                   window.clearInterval(pollInterval);
-                  const friendly = toFriendlyErrorMessage(link.error_message || "Link could not be read");
+                  const friendly = toFriendlyErrorMessage(link.error_message || "Link could not be read", url);
                   setInFlightSaves((prev) =>
                     prev.map((s) =>
                       s.id === id
@@ -343,7 +359,20 @@ export function SavePipelineProvider({
                   return;
                 }
 
-                // 4. In progress: real stages
+                // 4. In progress: real stages & eager preview fetch
+                if (link?.post_id) {
+                  void fetchPostDetails(link.post_id).then((details) => {
+                    if (details.title || details.thumbnailUrl) {
+                      setInFlightSaves((prev) =>
+                        prev.map((s) =>
+                          s.id === id && (!s.title || !s.thumbnailUrl)
+                            ? { ...s, ...details }
+                            : s
+                        )
+                      );
+                    }
+                  });
+                }
                 if (job.status === "running") {
                   const isFetching = link?.status === "fetching";
                   const progress = isFetching ? 65 : 30;
@@ -387,7 +416,7 @@ export function SavePipelineProvider({
                     );
                     onRefreshLibrary?.();
                   } else {
-                    const friendly = toFriendlyErrorMessage(link?.error_message || "Link could not be read");
+                    const friendly = toFriendlyErrorMessage(link?.error_message || "Link could not be read", url);
                     setInFlightSaves((prev) =>
                       prev.map((s) =>
                         s.id === id
@@ -411,9 +440,9 @@ export function SavePipelineProvider({
                   }
                 }
               } catch {
-                if (pollAttempts > 30) {
+                if (pollAttempts >= 8) {
                   window.clearInterval(pollInterval);
-                  const friendly = "Request timed out, please retry in a moment";
+                  const friendly = toFriendlyErrorMessage("Request timed out, please retry in a moment", url);
                   setInFlightSaves((prev) =>
                     prev.map((s) =>
                       s.id === id
@@ -438,7 +467,7 @@ export function SavePipelineProvider({
               }
             }, 1500);
           } else {
-            const friendly = toFriendlyErrorMessage(startError || "Could not start processing this link");
+            const friendly = toFriendlyErrorMessage(startError || "Could not start processing this link", url);
             setInFlightSaves((prev) =>
               prev.map((s) =>
                 s.id === id
@@ -460,7 +489,7 @@ export function SavePipelineProvider({
             ]);
           }
         } catch (err) {
-          const friendly = toFriendlyErrorMessage(err instanceof Error ? err.message : "Could not read post");
+          const friendly = toFriendlyErrorMessage(err instanceof Error ? err.message : "Could not read post", url);
           setInFlightSaves((prev) =>
             prev.map((s) =>
               s.id === id
@@ -529,7 +558,9 @@ export function SavePipelineProvider({
   }, []);
 
   const activeSave = activeSaveId ? inFlightSaves.find((s) => s.id === activeSaveId) || null : null;
-  const savingCount = inFlightSaves.filter((s) => s.status !== "done").length;
+  const savingCount = inFlightSaves.filter(
+    (s) => s.status === "reading" || s.status === "categorizing"
+  ).length;
 
   return (
     <SavePipelineContext.Provider

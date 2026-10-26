@@ -21,6 +21,7 @@ import {
   parsePostId,
   postRouteParts,
   startIngest,
+  toFriendlyErrorMessage,
   type Job,
   type SavedPost,
 } from "@/src/api";
@@ -197,6 +198,9 @@ export default function IngestScreen() {
   const isSkipped = Boolean(job?.status === "done" && savedOrLinkedCount === 0 && (job?.counts.skipped ?? 0) > 0);
   const failedLink = job?.links.find((l) => l.status === "error" || l.status === "unsupported");
   const isFailed = Boolean(submitError || (job?.status === "done" && failedLink && savedOrLinkedCount === 0));
+  const rawErrorMessage = submitError || failedLink?.error_message || (failedLink?.status === "unsupported" ? "Unsupported platform" : "Could not read this post");
+  const failedUrl = failedLink?.post_url || (pendingUrls.length > 0 ? pendingUrls[0] : undefined);
+  const friendlyErrorMessage = toFriendlyErrorMessage(rawErrorMessage, failedUrl);
   const isDone = Boolean(job?.status === "done" && (activePost || finishedPostId || isSkipped) && !isFailed);
 
   return (
@@ -470,12 +474,64 @@ export default function IngestScreen() {
               </Pressable>
             </View>
           </ScrollView>
+        ) : isFailed ? (
+          /* Failed View */
+          <ScrollView showsVerticalScrollIndicator={false}>
+            <View style={styles.savedHeaderRow}>
+              <View style={styles.savedHeaderLeft}>
+                <View style={[styles.checkIcon, { backgroundColor: "#FCE8E6" }]}>
+                  <Ionicons name="alert-circle" size={16} color="#C53B27" />
+                </View>
+                <Text style={styles.savedTitle}>Save failed</Text>
+              </View>
+              <Pressable hitSlop={8} onPress={handleClose}>
+                <Text style={styles.undoText}>Close</Text>
+              </Pressable>
+            </View>
+
+            <View style={{ marginTop: 16, padding: 16, borderRadius: 16, backgroundColor: "#FBFAF7", borderWidth: 1, borderColor: "#EFECE6" }}>
+              {failedUrl ? (
+                <Text style={{ fontSize: 14, fontWeight: "600", color: colors.ink, marginBottom: 6 }} numberOfLines={1}>
+                  {failedUrl}
+                </Text>
+              ) : null}
+              <Text style={{ fontSize: 14, color: "#C53B27", lineHeight: 20 }}>
+                {friendlyErrorMessage}
+              </Text>
+            </View>
+
+            <View style={styles.savedActionRow}>
+              <Pressable
+                onPress={() => {
+                  setJobId(null);
+                  setSubmitError(null);
+                  clearAllPendingShares();
+                }}
+                style={styles.saveAnotherBtn}
+              >
+                <Text style={styles.saveAnotherBtnText}>Try another</Text>
+              </Pressable>
+
+              <Pressable
+                onPress={() => {
+                  if (failedUrl) {
+                    void handleSubmit([failedUrl], false);
+                  } else {
+                    handleClose();
+                  }
+                }}
+                style={styles.viewLibraryBtn}
+              >
+                <Text style={styles.viewLibraryBtnText}>Retry link</Text>
+              </Pressable>
+            </View>
+          </ScrollView>
         ) : (
           /* S1-S5: Mobile-Save View */
           <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
             <Text style={styles.title}>Save links</Text>
             <Text style={styles.helpText}>
-              One link per line. Instagram reels work best, or share a reel to this app.
+              One link per line. Instagram reels are currently supported. TikTok and YouTube support coming soon.
             </Text>
 
             {submitError ? <ErrorBanner message={submitError} /> : null}

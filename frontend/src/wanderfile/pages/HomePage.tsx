@@ -5,7 +5,7 @@ import { SkeletonGrid } from "../components/SkeletonCard";
 import { ComingSoonButton } from "../comingSoon/ComingSoonControl";
 import { PostCard } from "../components/PostCard";
 import { EditPostModal } from "../components/EditPostModal";
-import { useSavePipeline } from "../state/SavePipelineContext";
+import { useSavePipeline, toFriendlyErrorMessage } from "../state/SavePipelineContext";
 import { deletePost, parsePostId, type SavedPost, type Place } from "../../api";
 
 interface HomePageProps {
@@ -204,7 +204,7 @@ export function HomePage({ posts, places, loading, loadError, onRefresh }: HomeP
                   </div>
                   <div style={{ fontSize: "13px", color: "#C53B27", display: "flex", alignItems: "center", gap: "6px" }}>
                     <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#C53B27", flexShrink: 0 }} />
-                    {item.errorMessage}
+                    {toFriendlyErrorMessage(item.errorMessage, item.url)}
                   </div>
                 </div>
 

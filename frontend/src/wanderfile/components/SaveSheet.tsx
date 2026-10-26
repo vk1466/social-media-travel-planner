@@ -30,24 +30,25 @@ export function validateSaveInput(input: string): {
     const isInstagram = lowered.includes("instagram.com");
     const isTikTok = lowered.includes("tiktok.com");
     const isYouTube = lowered.includes("youtube.com") || lowered.includes("youtu.be");
-    const isReddit = lowered.includes("reddit.com");
 
-    if (!isInstagram && !isTikTok && !isYouTube && !isReddit) {
+    if (isTikTok || isYouTube) {
       return {
         isValid: false,
         isError: true,
-        message: "Unsupported domain. We support Instagram, TikTok, and YouTube.",
+        message: "TikTok and YouTube aren't supported yet - only Instagram reels are currently supported",
+      };
+    }
+
+    if (!isInstagram) {
+      return {
+        isValid: false,
+        isError: true,
+        message: "Only Instagram reels are currently supported. TikTok and YouTube coming soon.",
       };
     }
   }
 
-  const loweredFirst = lines[0].toLowerCase();
-  let platform: "instagram" | "tiktok" | "youtube" | "other" = "other";
-  if (loweredFirst.includes("instagram.com")) platform = "instagram";
-  else if (loweredFirst.includes("tiktok.com")) platform = "tiktok";
-  else if (loweredFirst.includes("youtube.com") || loweredFirst.includes("youtu.be")) platform = "youtube";
-
-  return { isValid: true, platform };
+  return { isValid: true, platform: "instagram" };
 }
 
 export function SaveSheet() {
@@ -222,17 +223,11 @@ export function SaveSheet() {
                       <path d="m5 12.5 4.5 4.5L19 7.5" />
                     </svg>
                   </span>
-                  {validation.platform === "instagram"
-                    ? "Instagram reel detected"
-                    : validation.platform === "tiktok"
-                    ? "TikTok video detected"
-                    : validation.platform === "youtube"
-                    ? "YouTube video detected"
-                    : "Supported link detected"}
+                  Ready to save Instagram reel
                 </div>
               ) : (
                 <div style={{ color: "#6B6F73" }}>
-                  Supports Instagram reels, restaurants, recipes, movies
+                  Instagram reels are currently supported (restaurants, recipes, travel, movies)
                 </div>
               )}
             </div>
@@ -271,12 +266,26 @@ export function SaveSheet() {
                   height: "150px",
                   borderRadius: "18px",
                   background: "linear-gradient(160deg, #8CC3D6, #2D6A82)",
+                  overflow: "hidden",
                 }}
-              />
-              <div style={{ flex: 1 }}>
-                <h2 style={{ margin: 0, fontSize: "26px", letterSpacing: "-0.03em", fontWeight: 800 }}>
-                  Reading your post
+              >
+                {activeSave?.thumbnailUrl ? (
+                  <img
+                    src={activeSave.thumbnailUrl}
+                    alt=""
+                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                  />
+                ) : null}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <h2 style={{ margin: 0, fontSize: "24px", letterSpacing: "-0.03em", fontWeight: 800 }}>
+                  {activeSave?.title || "Reading your post"}
                 </h2>
+                {activeSave?.author && (
+                  <div style={{ margin: "4px 0 0", fontSize: "14px", color: "#6B6F73", fontWeight: 600 }}>
+                    {activeSave.author} · Instagram reel
+                  </div>
+                )}
                 <div
                   style={{
                     height: "8px",

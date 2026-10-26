@@ -52,20 +52,44 @@ export function isSupportedShareDomain(urlStr: string): boolean {
   }
 }
 
-export function toFriendlyErrorMessage(err: unknown): string {
+export function toFriendlyErrorMessage(err: unknown, url?: string): string {
+  if (url) {
+    const loweredUrl = url.toLowerCase();
+    if (
+      loweredUrl.includes("tiktok.com") ||
+      loweredUrl.includes("youtube.com") ||
+      loweredUrl.includes("youtu.be")
+    ) {
+      return "TikTok and YouTube aren't supported yet - only Instagram reels are currently supported";
+    }
+  }
   const msg = err instanceof Error ? err.message : String(err || "");
   const lowered = msg.toLowerCase();
-  if (lowered.includes("429") || lowered.includes("rate limit") || lowered.includes("too many requests")) {
-    return "Rate limited. Please retry in a minute.";
+  if (lowered.includes("tiktok") || lowered.includes("youtube")) {
+    return "TikTok and YouTube aren't supported yet - only Instagram reels are currently supported";
   }
-  if (lowered.includes("404") || lowered.includes("private") || lowered.includes("deleted") || lowered.includes("not found")) {
-    return "This post is private or was deleted.";
+  if (lowered.includes("429") || lowered.includes("rate limit") || lowered.includes("too many requests")) {
+    return "Rate limited, please retry in a minute";
+  }
+  if (
+    lowered.includes("404") ||
+    lowered.includes("private") ||
+    lowered.includes("deleted") ||
+    lowered.includes("not found") ||
+    lowered.includes("does not exist") ||
+    lowered.includes("empty data") ||
+    lowered.includes("returned no post")
+  ) {
+    return "Private or deleted post";
   }
   if (lowered.includes("unsupported") || lowered.includes("no fetcher")) {
-    return "Unsupported link. Please paste an Instagram, TikTok, or YouTube link.";
+    return "Unsupported platform";
   }
   if (lowered.includes("timeout") || lowered.includes("timed out")) {
-    return "Request timed out. Please try again.";
+    return "Request timed out, please retry in a moment";
+  }
+  if (lowered.includes("network") || lowered.includes("connection") || lowered.includes("dns") || lowered.includes("blocked")) {
+    return "Network error, please retry";
   }
   return msg || "Failed to process link. Please try again.";
 }
@@ -99,9 +123,17 @@ export function parseLinkLines(text: string): {
       validationError = "Please enter a valid web link (e.g. https://...)";
       continue;
     }
+    const lowered = normalized.toLowerCase();
+    const isTikTok = lowered.includes("tiktok.com");
+    const isYouTube = lowered.includes("youtube.com") || lowered.includes("youtu.be");
+    if (isTikTok || isYouTube) {
+      invalid.push(trimmed);
+      validationError = "TikTok and YouTube aren't supported yet - only Instagram reels are currently supported";
+      continue;
+    }
     if (!isSupportedShareDomain(normalized)) {
       invalid.push(trimmed);
-      validationError = "Unsupported domain. We support Instagram, TikTok, and YouTube.";
+      validationError = "Only Instagram reels are currently supported. TikTok and YouTube coming soon.";
       continue;
     }
     valid.push(normalized);

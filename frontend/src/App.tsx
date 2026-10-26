@@ -20,13 +20,24 @@ import { MobileSaveDesignDemos } from "./components/MobileSaveDesignDemos";
 import { clerkEnabled } from "./authMode";
 import { WanderfileApp } from "./wanderfile/WanderfileApp";
 
+function dedupePosts(list: SavedPost[]): SavedPost[] {
+  const seen = new Set<string>();
+  const out: SavedPost[] = [];
+  for (const p of list) {
+    if (!p.post_id || seen.has(p.post_id)) continue;
+    seen.add(p.post_id);
+    out.push(p);
+  }
+  return out;
+}
+
 function AppRoutes({ authReady }: { authReady: boolean }) {
   const navigate = useNavigate();
   const location = useLocation();
   const [posts, setPosts] = useState<SavedPost[]>(() => {
     try {
       const cached = sessionStorage.getItem("wf_cached_posts");
-      return cached ? JSON.parse(cached) : [];
+      return cached ? dedupePosts(JSON.parse(cached)) : [];
     } catch {
       return [];
     }
@@ -58,9 +69,10 @@ function AppRoutes({ authReady }: { authReady: boolean }) {
         fetchPlaces(),
       ]);
       if (postsResult.status === "fulfilled") {
-        setPosts(postsResult.value);
+        const deduped = dedupePosts(postsResult.value);
+        setPosts(deduped);
         try {
-          sessionStorage.setItem("wf_cached_posts", JSON.stringify(postsResult.value));
+          sessionStorage.setItem("wf_cached_posts", JSON.stringify(deduped));
         } catch {}
       }
       if (placesResult.status === "fulfilled") {

@@ -56,11 +56,17 @@ def unlink_post_from_user(user_id: str, post_id: str) -> bool:
   return user_posts_repo.unlink_user_post(user_id, post_id)
 
 
-def friendly_error_message(error: str | None) -> str:
+def friendly_error_message(error: str | None, post_url: str | None = None) -> str:
   """Map raw backend and API errors to user-friendly explanations."""
+  if post_url:
+    p_lowered = post_url.lower()
+    if "tiktok.com" in p_lowered or "youtube.com" in p_lowered or "youtu.be" in p_lowered:
+      return "TikTok and YouTube aren't supported yet - only Instagram reels are currently supported"
   if not error:
     return "Could not read this post"
   lowered = error.lower()
+  if "tiktok" in lowered or "youtube" in lowered:
+    return "TikTok and YouTube aren't supported yet - only Instagram reels are currently supported"
   if "429" in lowered or "rate limit" in lowered or "too many requests" in lowered:
     return "Rate limited, please retry in a minute"
   if (
@@ -72,20 +78,21 @@ def friendly_error_message(error: str | None) -> str:
     or "does not exist" in lowered
     or "could not be fetched" in lowered
     or "could not extract instagram shortcode" in lowered
+    or "empty data" in lowered
   ):
     return "Private or deleted post"
   if "unsupported" in lowered or "unrecognized url" in lowered or "no fetcher" in lowered:
     return "Unsupported platform"
   if "timeout" in lowered or "timed out" in lowered:
     return "Request timed out, please retry in a moment"
-  if "network" in lowered or "connection" in lowered or "dns" in lowered or "oserror" in lowered:
+  if "network" in lowered or "connection" in lowered or "dns" in lowered or "oserror" in lowered or "blocked" in lowered or "403" in lowered:
     return "Network error, please retry"
   if "empty url" in lowered:
     return "Please enter a valid link"
   if "failed at step" in lowered:
     parts = error.split(":", 1)
     if len(parts) > 1:
-      return friendly_error_message(parts[1].strip())
+      return friendly_error_message(parts[1].strip(), post_url=post_url)
     return "Could not read this post"
   return error
 
@@ -100,7 +107,7 @@ def _persist_failure(
   error_message: str | None = None,
   post_id: str | None = None,
 ) -> None:
-  friendly = friendly_error_message(error_message) if error_message else None
+  friendly = friendly_error_message(error_message, post_url=post_url) if error_message else None
   try:
     deps.record_failure(
       post_url=post_url,
@@ -211,15 +218,19 @@ def ingest_link(
   platform = detect_platform(post_url)
   if platform is None or platform != Platform.INSTAGRAM:
     logger.info("ingest unsupported url=%s platform=%s user_id=%s", post_url, platform, user_id)
+    if platform in (Platform.TIKTOK, Platform.YOUTUBE) or any(d in post_url.lower() for d in ("tiktok", "youtube", "youtu.be")):
+      msg = "TikTok and YouTube aren't supported yet - only Instagram reels are currently supported"
+    else:
+      msg = f"Unsupported platform: {platform.value}" if platform else "Unrecognized URL"
     _persist_failure(
       deps,
       post_url=post_url,
       user_id=user_id,
       status="unsupported",
       stage="unsupported",
-      error_message=f"Unsupported platform: {platform.value}" if platform else "Unrecognized URL",
+      error_message=msg,
     )
-    return IngestResult(post_url=post_url, outcome="unsupported")
+    return IngestResult(post_url=post_url, outcome="unsupported", reason=msg)
 
   try:
     native_post_id = extract_post_id(platform, post_url)

@@ -764,3 +764,69 @@ export async function optimizeRoute(
   });
 }
 
+export function toFriendlyErrorMessage(raw?: string | null, url?: string | null): string {
+  if (url) {
+    const loweredUrl = url.toLowerCase();
+    if (
+      loweredUrl.includes("tiktok.com") ||
+      loweredUrl.includes("youtube.com") ||
+      loweredUrl.includes("youtu.be")
+    ) {
+      return "TikTok and YouTube aren't supported yet - only Instagram reels are currently supported";
+    }
+  }
+  if (!raw) return "Could not read this post right now. Please retry in a moment.";
+  const lowered = raw.toLowerCase();
+  if (lowered.includes("tiktok") || lowered.includes("youtube")) {
+    return "TikTok and YouTube aren't supported yet - only Instagram reels are currently supported";
+  }
+  if (lowered.includes("429") || lowered.includes("rate limit") || lowered.includes("too many requests")) {
+    return "Rate limited, please retry in a minute";
+  }
+  if (
+    lowered.includes("404") ||
+    lowered.includes("not found") ||
+    lowered.includes("returned no post") ||
+    lowered.includes("does not exist") ||
+    lowered.includes("no longer exists") ||
+    lowered.includes("empty data") ||
+    lowered.includes("empty or nonexistent") ||
+    lowered.includes("private") ||
+    lowered.includes("deleted") ||
+    lowered.includes("shortcode")
+  ) {
+    return "Private or deleted post";
+  }
+  if (
+    lowered.includes("network") ||
+    lowered.includes("connection") ||
+    lowered.includes("dns") ||
+    lowered.includes("econnrefused") ||
+    lowered.includes("failed to fetch") ||
+    lowered.includes("blocked") ||
+    lowered.includes("403")
+  ) {
+    return "Network error, please retry";
+  }
+  if (lowered.includes("unsupported") || lowered.includes("unrecognized url")) {
+    return "Unsupported platform";
+  }
+  if (lowered.includes("timeout") || lowered.includes("timed out")) {
+    return "Request timed out, please retry in a moment";
+  }
+  if (lowered.includes("empty url")) {
+    return "Please enter a valid link";
+  }
+  if (lowered.includes("invalid url") || lowered.includes("invalid web link")) {
+    return "Invalid web link";
+  }
+  if (lowered.includes("failed at step")) {
+    const parts = raw.split(":");
+    if (parts.length > 1) {
+      return toFriendlyErrorMessage(parts.slice(1).join(":").trim(), url);
+    }
+    return "Could not read this post right now. Please retry in a moment.";
+  }
+  return raw;
+}
+

@@ -40,7 +40,12 @@ def api_key() -> str:
   return value
 
 
-def fetch_post(*, post_url: str | None = None, shortcode: str | None = None) -> dict[str, Any]:
+def fetch_post(
+  *,
+  post_url: str | None = None,
+  shortcode: str | None = None,
+  timeout_seconds: float = 9.5,
+) -> dict[str, Any]:
   """One Instagram post/reel by URL (preferred) or shortcode."""
   api_key()
   url = (post_url or "").strip()
@@ -56,31 +61,35 @@ def fetch_post(*, post_url: str | None = None, shortcode: str | None = None) -> 
   urls_to_try: list[str] = []
   if url:
     urls_to_try.append(url)
-    if code:
-      alt_p = f"https://www.instagram.com/p/{code}/"
-      alt_reel = f"https://www.instagram.com/reel/{code}/"
-      if alt_p != url and alt_p not in urls_to_try:
-        urls_to_try.append(alt_p)
-      if alt_reel != url and alt_reel not in urls_to_try:
-        urls_to_try.append(alt_reel)
   elif code:
-    urls_to_try.append(f"https://www.instagram.com/p/{code}/")
     urls_to_try.append(f"https://www.instagram.com/reel/{code}/")
   else:
     raise ValueError("post_url or shortcode is required")
 
-  rows: list[dict[str, Any]] = []
-  for candidate_url in urls_to_try:
-    try:
-      rows = fetch_posts(post_urls=[candidate_url])
-      if rows:
-        break
-    except Exception:
-      continue
+  rows = fetch_posts(post_urls=urls_to_try, max_wait_seconds=timeout_seconds)
 
   if not rows:
-    raise RuntimeError(f"Mindcase returned no post for {url or code}")
-  return rows[0]
+    raise RuntimeError(f"Mindcase returned no post for {url or code} (private or deleted post)")
+
+  post_row = rows[0]
+  # Check if row is empty/all nulls (which Mindcase returns for deleted or private posts)
+  has_content = any(
+    post_row.get(k) is not None
+    for k in (
+      "caption",
+      "authorUsername",
+      "authorName",
+      "videoUrl",
+      "image",
+      "likes",
+      "plays",
+      "views",
+    )
+  )
+  if not has_content:
+    raise RuntimeError(f"Instagram post {code or url} returned empty data (private or deleted post)")
+
+  return post_row
 
 
 def search_reels(query: str, *, limit: int) -> list[dict[str, Any]]:
@@ -110,6 +119,7 @@ def fetch_posts(
   post_urls: list[str] | None = None,
   handle: str | None = None,
   max_results: int | None = None,
+  max_wait_seconds: float | None = None,
 ) -> list[dict[str, Any]]:
   params: dict[str, Any] = {}
   urls = [url.strip() for url in (post_urls or []) if url and url.strip()]
@@ -121,7 +131,7 @@ def fetch_posts(
     params["maxResults"] = max_results
   if not params:
     raise ValueError("post_urls or handle is required")
-  return _run_job(POSTS_RUN_PATH, params)
+  return _run_job(POSTS_RUN_PATH, params, max_wait_seconds=max_wait_seconds)
 
 
 def fetch_google_maps_places(
@@ -153,6 +163,7 @@ def _run_job(
   params: dict[str, Any],
   *,
   ready_row_count: int | None = None,
+  max_wait_seconds: float | None = None,
 ) -> list[dict[str, Any]]:
   started = _request("POST", path, {"params": params})
   rows = _rows_if_ready(started, ready_row_count=ready_row_count)
@@ -166,9 +177,11 @@ def _run_job(
     )
   logger.info("mindcase job started job_id=%s path=%s", job_id, path)
 
-  deadline = time.monotonic() + MAX_WAIT_SECONDS
+  wait_limit = max_wait_seconds if max_wait_seconds is not None else MAX_WAIT_SECONDS
+  deadline = time.monotonic() + wait_limit
+  poll_interval = 1.0 if wait_limit <= 15 else POLL_INTERVAL_SECONDS
   while time.monotonic() < deadline:
-    time.sleep(POLL_INTERVAL_SECONDS)
+    time.sleep(poll_interval)
     results = _request("GET", f"/jobs/{urllib.parse.quote(job_id, safe='')}/results")
     status = str(results.get("status") or "").lower()
     logger.info(
@@ -183,7 +196,7 @@ def _run_job(
     if status in {"failed", "error", "cancelled"}:
       detail = results.get("message") or results.get("error") or "no details"
       raise RuntimeError(f"Mindcase job {job_id} {status}: {detail}")
-  raise RuntimeError(f"Mindcase job {job_id} timed out after {MAX_WAIT_SECONDS}s")
+  raise RuntimeError(f"Mindcase job {job_id} timed out after {wait_limit:.1f}s")
 
 
 def _data_rows(payload: dict[str, Any]) -> list[dict[str, Any]] | None:
