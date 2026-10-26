@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { useRouter } from "expo-router";
 
 import {
   fetchPlaceCandidates,
@@ -7,11 +8,13 @@ import {
   type PlaceCandidateStatusFilter,
 } from "@/src/api";
 import { FilterChips, PageHeading } from "@/src/components/LibraryChrome";
-import { EmptyState, ErrorBanner } from "@/src/components/ui";
+import { Button, EmptyState, ErrorBanner } from "@/src/components/ui";
 import { useLibrary } from "@/src/context/LibraryContext";
+import { appHref } from "@/src/nav";
 import { colors, radius, spacing } from "@/src/theme";
 
 export default function AdminScreen() {
+  const router = useRouter();
   const { isAdmin } = useLibrary();
   const [status, setStatus] = useState<PlaceCandidateStatusFilter>("unresolved");
   const [candidates, setCandidates] = useState<PlaceCandidate[]>([]);
@@ -47,9 +50,17 @@ export default function AdminScreen() {
     return (
       <View style={[styles.screen, styles.content]}>
         <EmptyState
+          icon="shield-outline"
           title="Access Denied"
           body="You do not have administrative privileges to view this page."
         />
+        <View style={{ marginTop: spacing.md, alignItems: "center" }}>
+          <Button
+            label="Back to Home"
+            variant="secondary"
+            onPress={() => router.replace(appHref("/(app)/(tabs)"))}
+          />
+        </View>
       </View>
     );
   }

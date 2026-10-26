@@ -57,26 +57,26 @@ export function googleMapsDirectionsUrl(latitude: number, longitude: number): st
   return `https://www.google.com/maps/dir/?${params.toString()}`;
 }
 
-export const CARTO_BASEMAP_ATTR =
-  '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
+export const OSM_BASEMAP_ATTR =
+  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
 
-/** Voyager raster tiles. CARTO now requires `key` on every request. */
+export const CARTO_BASEMAP_ATTR = OSM_BASEMAP_ATTR;
+
+export function osmStandardTileUrl(): string {
+  return "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
+}
+
+/** OpenStreetMap standard raster tiles (keyless, works in production). */
 export function cartoVoyagerTileUrl(): string {
-  return cartoTileUrl("voyager");
+  return osmStandardTileUrl();
 }
 
 export function cartoLightNoLabelsTileUrl(): string {
-  return cartoTileUrl("light_nolabels");
+  return osmStandardTileUrl();
 }
 
 export function cartoDarkTileUrl(): string {
-  return cartoTileUrl("dark_all");
-}
-
-function cartoTileUrl(style: "voyager" | "light_nolabels" | "dark_all"): string {
-  const key = import.meta.env.VITE_CARTO_BASEMAPS_API_KEY?.trim() ?? "";
-  const base = `https://{s}.basemaps.cartocdn.com/rastertiles/${style}/{z}/{x}/{y}{r}.png`;
-  return key ? `${base}?key=${encodeURIComponent(key)}` : base;
+  return osmStandardTileUrl();
 }
 
 /** OpenStreetMap embed (no API key) for a Google-Maps-like preview. */

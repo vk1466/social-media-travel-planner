@@ -211,3 +211,56 @@ body {
     margin: 0 auto;
   }
 }
+
+/* Map container sizing - no viewport scrolling on desktop */
+.wf-map-main {
+  display: flex;
+  flex: 1;
+  height: calc(100vh - 69px);
+  max-height: calc(100vh - 69px);
+  position: relative;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+/* Cluster and Place Marker reset for clear visibility */
+.wf-cluster-marker,
+.wf-place-marker {
+  background: transparent !important;
+  border: none !important;
+}
+
+/* Place Detail Hero responsive layout: 361-767px stacks in a single column */
+.wf-place-hero {
+  display: flex;
+  flex-direction: row;
+  gap: 24px;
+  background: #FFFFFF;
+  border: 1px solid #E6E3DC;
+  border-radius: 24px;
+  padding: 24px;
+  margin-bottom: 28px;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.wf-place-hero-image {
+  width: 100%;
+  max-width: 260px;
+  height: 240px;
+  border-radius: 20px;
+  background: linear-gradient(160deg, #8CC3D6, #2D6A82);
+  flex-shrink: 0;
+}
+
+@media (max-width: 767px) {
+  .wf-place-hero {
+    flex-direction: column !important;
+  }
+  .wf-place-hero-image {
+    max-width: 100% !important;
+    width: 100% !important;
+    height: 220px !important;
+  }
+}
+

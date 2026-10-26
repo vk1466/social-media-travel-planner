@@ -18,10 +18,13 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
 
   // Dynamic back navigation based on history/location state
   const from = (location.state as { from?: string } | null)?.from;
-  let backLabel = "Back to Map";
-  let fallbackTo = "/map";
+  let backLabel = "Back to Home";
+  let fallbackTo = "/";
   if (from) {
-    if (from.startsWith("/library")) {
+    if (from.startsWith("/map")) {
+      backLabel = "Back to Map";
+      fallbackTo = "/map";
+    } else if (from.startsWith("/library")) {
       backLabel = "Back to Library";
       fallbackTo = "/library";
     } else if (from.startsWith("/collections")) {
@@ -51,8 +54,8 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
           screenLabel="Place detail"
           headline="Place not found"
           description="This place is not in your saved library."
-          primaryActionLabel="Back to Map"
-          onPrimaryAction={() => navigate("/map")}
+          primaryActionLabel="Back to Home"
+          onPrimaryAction={() => navigate("/")}
           iconPath="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"
           tint="#E3F0F4"
           ink="#1B5E78"
@@ -116,30 +119,8 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
       </div>
 
       {/* Hero */}
-      <section
-        style={{
-          background: "#FFFFFF",
-          border: "1px solid #E6E3DC",
-          borderRadius: "24px",
-          padding: "24px",
-          display: "flex",
-          gap: "24px",
-          flexWrap: "wrap",
-          marginBottom: "28px",
-          minWidth: 0,
-          boxSizing: "border-box",
-        }}
-      >
-        <div
-          style={{
-            width: "100%",
-            maxWidth: "260px",
-            height: "240px",
-            borderRadius: "20px",
-            background: "linear-gradient(160deg, #8CC3D6, #2D6A82)",
-            flexShrink: 0,
-          }}
-        />
+      <section className="wf-place-hero">
+        <div className="wf-place-hero-image" />
 
         <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
           <div style={{ minWidth: 0 }}>

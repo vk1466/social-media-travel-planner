@@ -1,3 +1,16 @@
 {
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+  "rewrites": [
+    {
+      "source": "/api",
+      "destination": "https://tb5bi7r4sjpvsfxdulnpolhx2u0aswhk.lambda-url.us-west-2.on.aws/api"
+    },
+    {
+      "source": "/api/(.*)",
+      "destination": "https://tb5bi7r4sjpvsfxdulnpolhx2u0aswhk.lambda-url.us-west-2.on.aws/api/$1"
+    },
+    {
+      "source": "/((?!api(?:/|$)).*)",
+      "destination": "/index.html"
+    }
+  ]
 }

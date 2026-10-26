@@ -34,7 +34,7 @@ export function OsmPlaceMap({
   );
   const html = useMemo(() => buildMapHtml(), []);
   const source = useMemo(
-    () => ({ html, baseUrl: "https://basemaps.cartocdn.com" }),
+    () => ({ html, baseUrl: "https://tile.openstreetmap.org" }),
     [html],
   );
   const webViewRef = useRef<WebView>(null);
@@ -205,10 +205,7 @@ function markerPayload(places: Place[], visitedPlaceIds: ReadonlySet<string>): s
 }
 
 function buildMapHtml(): string {
-  const tileKey = process.env.EXPO_PUBLIC_CARTO_BASEMAPS_API_KEY?.trim() ?? "";
-  const tileUrl = tileKey
-    ? `https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png?key=${encodeURIComponent(tileKey)}`
-    : "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png";
+  const tileUrl = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
 
   return `<!DOCTYPE html>
 <html>
@@ -347,8 +344,7 @@ function buildMapHtml(): string {
     });
     L.control.attribution({ position: "bottomleft", prefix: false }).addTo(map);
     L.tileLayer(${JSON.stringify(tileUrl)}, {
-      attribution: "&copy; OSM &copy; CARTO",
-      subdomains: "abcd",
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
       maxZoom: 19,
       updateWhenIdle: true,
       updateWhenZooming: false,

@@ -13,6 +13,7 @@ import { OnboardingPage } from "./pages/OnboardingPage";
 import { ComingSoonPage } from "./comingSoon/ComingSoonPage";
 import { KitsPage } from "./pages/KitsPage";
 import { AdminPage } from "../components/AdminPage";
+import { EmptyState } from "./components/EmptyState";
 import type { SavedPost, Place } from "../api";
 import "./tokens.css";
 
@@ -75,7 +76,27 @@ export function WanderfileApp({
                 <Route path="/collections/:id" element={<CollectionDetailPage posts={posts} />} />
                 <Route path="/post/:id" element={<PostDetailPage posts={posts} onRefresh={onRefresh} />} />
                 <Route path="/place/:id" element={<PlaceDetailPage places={places} posts={posts} />} />
-                <Route path="/admin" element={isAdmin ? <AdminPage /> : <Navigate to="/" replace />} />
+                <Route
+                  path="/admin"
+                  element={
+                    isAdmin ? (
+                      <AdminPage />
+                    ) : (
+                      <main style={{ maxWidth: "1280px", margin: "0 auto", padding: "40px 16px 80px", width: "100%", boxSizing: "border-box" }}>
+                        <EmptyState
+                          screenLabel="Admin"
+                          headline="Access denied"
+                          description="You do not have administrative privileges to view this page. Sign in with an administrator account to continue."
+                          primaryActionLabel="Back to Home"
+                          onPrimaryAction={() => navigate("/")}
+                          iconPath="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"
+                          tint="#FBE6EE"
+                          ink="#8A2B57"
+                        />
+                      </main>
+                    )
+                  }
+                />
                 <Route path="/coming-soon/:feature" element={<ComingSoonPage />} />
                 <Route path="/kits" element={<KitsPage />} />
                 <Route path="*" element={<Navigate to="/" replace />} />

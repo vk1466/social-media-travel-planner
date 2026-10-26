@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import { MapContainer, Marker, TileLayer, Tooltip, useMap, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import { EmptyState } from "../components/EmptyState";
@@ -19,7 +19,7 @@ interface MapPageProps {
 delete (L.Icon.Default.prototype as { _getIconUrl?: unknown })._getIconUrl;
 
 function clusterIcon(count: number): L.DivIcon {
-  const size = count < 10 ? 36 : count < 50 ? 42 : 48;
+  const size = count < 10 ? 38 : count < 50 ? 44 : 50;
   return L.divIcon({
     className: "wf-cluster-marker",
     html: `<div style="
@@ -28,15 +28,17 @@ function clusterIcon(count: number): L.DivIcon {
       border-radius: 999px;
       background: linear-gradient(135deg, #1F6F8B, #14495B);
       border: 3px solid #FFFFFF;
-      box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+      box-shadow: 0 4px 14px rgba(0,0,0,0.35);
       display: flex;
       align-items: center;
       justify-content: center;
       color: #FFFFFF;
       font-weight: 800;
-      font-size: 13px;
+      font-size: 14px;
+      line-height: 1;
       font-family: 'Figtree', system-ui, sans-serif;
       cursor: pointer;
+      user-select: none;
     ">${count}</div>`,
     iconSize: [size, size],
     iconAnchor: [size / 2, size / 2],
@@ -72,11 +74,56 @@ function placeIcon(place: Place, isSelected: boolean): L.DivIcon {
   });
 }
 
-function InvalidateSize() {
+function ClusterMarker({
+  lat,
+  lng,
+  count,
+}: {
+  lat: number;
+  lng: number;
+  count: number;
+}) {
   const map = useMap();
+  return (
+    <Marker
+      position={[lat, lng]}
+      icon={clusterIcon(count)}
+      eventHandlers={{
+        click: () => {
+          map.flyTo([lat, lng], Math.min(map.getZoom() + 3, 16), { duration: 0.6 });
+        },
+      }}
+    >
+      <Tooltip direction="top" offset={[0, -16]}>
+        {count} saved places (zoom in)
+      </Tooltip>
+    </Marker>
+  );
+}
+
+function InvalidateSize({ places, hasSelected }: { places: Place[]; hasSelected: boolean }) {
+  const map = useMap();
+  const placesRef = useRef(places);
+  placesRef.current = places;
+  const hasSelectedRef = useRef(hasSelected);
+  hasSelectedRef.current = hasSelected;
+
   useEffect(() => {
+    const handleResize = () => {
+      map.invalidateSize();
+      if (!hasSelectedRef.current) {
+        const valid = placesRef.current.filter(
+          (p) => typeof p.location?.latitude === "number" && typeof p.location?.longitude === "number",
+        );
+        if (valid.length > 1) {
+          const bounds = L.latLngBounds(valid.map((p) => [p.location.latitude!, p.location.longitude!]));
+          map.fitBounds(bounds, { padding: [50, 50], maxZoom: 13 });
+        }
+      }
+    };
+
     const frame = window.requestAnimationFrame(() => map.invalidateSize());
-    const observer = new ResizeObserver(() => map.invalidateSize());
+    const observer = new ResizeObserver(() => handleResize());
     observer.observe(map.getContainer());
     return () => {
       window.cancelAnimationFrame(frame);
@@ -86,9 +133,10 @@ function InvalidateSize() {
   return null;
 }
 
-function FitAllBounds({ places }: { places: Place[] }) {
+function FitAllBounds({ places, hasSelected }: { places: Place[]; hasSelected: boolean }) {
   const map = useMap();
   useEffect(() => {
+    if (hasSelected) return;
     const valid = places.filter(
       (p) => typeof p.location?.latitude === "number" && typeof p.location?.longitude === "number",
     );
@@ -101,7 +149,7 @@ function FitAllBounds({ places }: { places: Place[] }) {
       valid.map((p) => [p.location.latitude!, p.location.longitude!]),
     );
     map.fitBounds(bounds, { padding: [50, 50], maxZoom: 13 });
-  }, [places, map]);
+  }, [places, hasSelected, map]);
   return null;
 }
 
@@ -124,6 +172,7 @@ function ZoomTracker({ onZoomChange }: { onZoomChange: (z: number) => void }) {
 }
 
 export function MapPage({ places, loading }: MapPageProps) {
+  const { placeId } = useParams<{ placeId?: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
   const { openSaveSheet } = useSavePipeline();
   const [zoom, setZoom] = useState<number>(4);
@@ -135,9 +184,10 @@ export function MapPage({ places, loading }: MapPageProps) {
     );
   }, [places]);
 
-  const selectedPlaceId = searchParams.get("place") || (places.length > 0 ? places[0].place_id : null);
+  const selectedPlaceId = searchParams.get("place") || placeId || null;
   const selectedPlace = useMemo(() => {
-    return places.find((p) => p.place_id === selectedPlaceId) || places[0] || null;
+    if (!selectedPlaceId) return null;
+    return places.find((p) => p.place_id === selectedPlaceId) || null;
   }, [places, selectedPlaceId]);
 
   // Clustering logic based on map zoom
@@ -238,16 +288,7 @@ export function MapPage({ places, loading }: MapPageProps) {
     : "";
 
   return (
-    <main
-      style={{
-        display: "flex",
-        flex: 1,
-        minHeight: "calc(100vh - 73px)",
-        position: "relative",
-        fontFamily: "'Figtree', system-ui, sans-serif",
-        overflow: "hidden",
-      }}
-    >
+    <main className="wf-map-main">
       {/* Places list sidebar (Desktop always, mobile toggleable) */}
       <aside
         style={{
@@ -257,6 +298,8 @@ export function MapPage({ places, loading }: MapPageProps) {
           background: "#FFFFFF",
           flexDirection: "column",
           boxSizing: "border-box",
+          height: "100%",
+          maxHeight: "100%",
           overflowY: "auto",
           zIndex: 20,
         }}
@@ -347,10 +390,12 @@ export function MapPage({ places, loading }: MapPageProps) {
       <section
         style={{
           flex: 1,
+          height: "100%",
+          maxHeight: "100%",
           position: "relative",
           background: "#EAE7DF",
           display: mobileView === "list" ? "none" : "flex",
-          minHeight: "400px",
+          overflow: "hidden",
         }}
       >
         {/* Mobile toggle button to switch to list view */}
@@ -392,31 +437,24 @@ export function MapPage({ places, loading }: MapPageProps) {
           scrollWheelZoom
         >
           <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-            url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+            maxZoom={19}
           />
-          <InvalidateSize />
-          <FitAllBounds places={places} />
+          <InvalidateSize places={places} hasSelected={Boolean(selectedPlace)} />
+          <FitAllBounds places={places} hasSelected={Boolean(selectedPlace)} />
           <PanToSelected place={selectedPlace} />
           <ZoomTracker onZoomChange={setZoom} />
 
           {clusters.map((c, i) => {
             if (c.isCluster) {
               return (
-                <Marker
+                <ClusterMarker
                   key={`cluster-${i}-${c.lat}-${c.lng}`}
-                  position={[c.lat, c.lng]}
-                  icon={clusterIcon(c.count)}
-                  eventHandlers={{
-                    click: () => {
-                      setZoom((z) => Math.min(z + 3, 15));
-                    },
-                  }}
-                >
-                  <Tooltip direction="top" offset={[0, -16]}>
-                    {c.count} saved places (zoom in)
-                  </Tooltip>
-                </Marker>
+                  lat={c.lat}
+                  lng={c.lng}
+                  count={c.count}
+                />
               );
             }
 
