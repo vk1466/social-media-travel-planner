@@ -63,13 +63,14 @@ export function HomePage({ posts, places, loading, loadError, onRefresh }: HomeP
       style={{
         maxWidth: "1280px",
         margin: "0 auto",
-        padding: "40px 24px 80px",
+        padding: "clamp(20px, 4vw, 40px) clamp(16px, 4vw, 24px) 80px",
         display: "flex",
         flexDirection: "column",
         gap: "36px",
         width: "100%",
         boxSizing: "border-box",
         fontFamily: "'Figtree', system-ui, sans-serif",
+        overflowX: "hidden",
       }}
     >
       {loadError && (
@@ -312,11 +313,13 @@ export function HomePage({ posts, places, loading, loadError, onRefresh }: HomeP
           <h1
             style={{
               margin: "8px 0 0",
-              fontSize: "44px",
-              lineHeight: 1.05,
+              fontSize: "clamp(26px, 7vw, 44px)",
+              lineHeight: 1.1,
               letterSpacing: "-0.03em",
               fontWeight: 800,
               color: "#1B1D1F",
+              maxWidth: "100%",
+              wordBreak: "break-word",
             }}
           >
             {hasSaves ? "Pick something to do next." : "Nothing saved yet"}
@@ -500,7 +503,7 @@ export function HomePage({ posts, places, loading, loadError, onRefresh }: HomeP
         /* Populated Home matching Main.dc.html */
         <>
           {/* Smart views */}
-          <section style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+          <section style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap", maxWidth: "100%", boxSizing: "border-box" }}>
             <span
               style={{
                 fontSize: "13px",
@@ -587,8 +590,7 @@ export function HomePage({ posts, places, loading, loadError, onRefresh }: HomeP
             </Link>
           </section>
 
-          {/* Hero next up card & Collections panel */}
-          <section style={{ display: "flex", gap: "24px", flexWrap: "wrap" }}>
+          <section style={{ display: "flex", gap: "24px", flexWrap: "wrap", width: "100%", maxWidth: "100%", boxSizing: "border-box" }}>
             {places.length > 0 ? (() => {
               const heroPlace = places[0];
               const heroPost = posts.find(
@@ -604,15 +606,18 @@ export function HomePage({ posts, places, loading, loadError, onRefresh }: HomeP
               return (
                 <div
                   style={{
-                    flex: "2 1 640px",
-                    minHeight: "440px",
+                    flex: "2 1 320px",
+                    width: "100%",
+                    maxWidth: "100%",
+                    minWidth: 0,
+                    minHeight: "360px",
                     borderRadius: "28px",
                     position: "relative",
                     overflow: "hidden",
                     display: "flex",
                     flexDirection: "column",
                     justifyContent: "flex-end",
-                    padding: "32px",
+                    padding: "clamp(20px, 5vw, 32px)",
                     boxSizing: "border-box",
                     background:
                       "linear-gradient(180deg, rgba(20,12,8,0) 30%, rgba(20,12,8,0.78) 100%), linear-gradient(120deg, #C98A5B 0%, #8E4A2B 45%, #3A2217 100%)",
@@ -724,15 +729,18 @@ export function HomePage({ posts, places, loading, loadError, onRefresh }: HomeP
               return (
                 <div
                   style={{
-                    flex: "2 1 640px",
-                    minHeight: "440px",
+                    flex: "2 1 320px",
+                    width: "100%",
+                    maxWidth: "100%",
+                    minWidth: 0,
+                    minHeight: "360px",
                     borderRadius: "28px",
                     position: "relative",
                     overflow: "hidden",
                     display: "flex",
                     flexDirection: "column",
                     justifyContent: "flex-end",
-                    padding: "32px",
+                    padding: "clamp(20px, 5vw, 32px)",
                     boxSizing: "border-box",
                     background:
                       "linear-gradient(180deg, rgba(20,12,8,0) 30%, rgba(20,12,8,0.78) 100%), linear-gradient(120deg, #5B8EC9 0%, #2B4E8E 45%, #17243A 100%)",
@@ -812,7 +820,10 @@ export function HomePage({ posts, places, loading, loadError, onRefresh }: HomeP
             {/* Collections panel */}
             <div
               style={{
-                flex: "1 1 340px",
+                flex: "1 1 300px",
+                width: "100%",
+                maxWidth: "100%",
+                minWidth: 0,
                 background: "#FFFFFF",
                 border: "1px solid #E6E3DC",
                 borderRadius: "28px",
@@ -820,6 +831,7 @@ export function HomePage({ posts, places, loading, loadError, onRefresh }: HomeP
                 display: "flex",
                 flexDirection: "column",
                 gap: "2px",
+                boxSizing: "border-box",
               }}
             >
               <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", padding: "0 14px 8px" }}>

@@ -551,7 +551,7 @@ export function Header({
         <span className="wf-logo-text">Wanderfile</span>
       </Link>
 
-      <nav aria-label="Main" className="wf-desktop-only" style={{ display: "flex", gap: "4px" }}>
+      <nav aria-label="Main" className="wf-header-nav wf-desktop-only">
         {navItems.map((item) => {
           const active = isCurrent(item.path);
           return (

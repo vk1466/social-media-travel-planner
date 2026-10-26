@@ -108,6 +108,7 @@ export function SaveSheet() {
             url: firstUrl,
             platform: "instagram",
             is_available: true,
+            status: "unknown",
             title: "Instagram Reel",
           });
           setPreviewLoading(false);
@@ -274,7 +275,7 @@ export function SaveSheet() {
                     </div>
                   )}
 
-                  {!previewLoading && (!previewData || previewData.is_available) && (
+                  {!previewLoading && previewData && previewData.status === "available" && (
                     <div style={{ display: "flex", alignItems: "center", gap: "10px", color: "#1F7A4D", fontWeight: 600 }}>
                       <span
                         aria-hidden="true"
@@ -294,6 +295,31 @@ export function SaveSheet() {
                         </svg>
                       </span>
                       Ready to save Instagram reel
+                    </div>
+                  )}
+
+                  {!previewLoading && previewData && previewData.status === "unknown" && (
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px", color: "#4A4E52", fontWeight: 600 }}>
+                      <span
+                        aria-hidden="true"
+                        style={{
+                          width: "22px",
+                          height: "22px",
+                          borderRadius: "50%",
+                          background: "#EFEDE7",
+                          color: "#6B6F73",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <circle cx="12" cy="12" r="10" />
+                          <line x1="12" y1="16" x2="12" y2="12" />
+                          <line x1="12" y1="8" x2="12.01" y2="8" />
+                        </svg>
+                      </span>
+                      Couldn't verify yet, you can still save
                     </div>
                   )}
 
@@ -328,7 +354,7 @@ export function SaveSheet() {
                   )}
 
                   {/* Preview State: Deleted or Private Post Warning */}
-                  {!previewLoading && previewData && !previewData.is_available && (
+                  {!previewLoading && previewData && (previewData.status === "unavailable" || !previewData.is_available) && (
                     <div
                       style={{
                         marginTop: "12px",
@@ -359,7 +385,7 @@ export function SaveSheet() {
                   )}
 
                   {/* Preview State: Available Preview Card */}
-                  {!previewLoading && previewData && previewData.is_available && (
+                  {!previewLoading && previewData && previewData.is_available && previewData.status !== "unavailable" && (
                     <div
                       style={{
                         marginTop: "12px",
@@ -380,16 +406,32 @@ export function SaveSheet() {
                           borderRadius: "12px",
                           overflow: "hidden",
                           background: previewData.thumbnail_url
-                            ? `url(${proxiedMediaUrl(previewData.thumbnail_url)}) center/cover no-repeat`
+                            ? "#141416"
                             : "linear-gradient(135deg, #F58529, #DD2A7B, #8134AF)",
                           flexShrink: 0,
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
                           color: "#FFFFFF",
+                          position: "relative",
                         }}
                       >
-                        {!previewData.thumbnail_url && (
+                        {previewData.thumbnail_url ? (
+                          <img
+                            src={proxiedMediaUrl(previewData.thumbnail_url) || previewData.thumbnail_url}
+                            alt="Preview thumbnail"
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                              objectFit: "cover",
+                            }}
+                            onError={(e) => {
+                              // On error, fall back to Instagram icon
+                              e.currentTarget.style.display = "none";
+                            }}
+                          />
+                        ) : null}
+                        {(!previewData.thumbnail_url) && (
                           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
                             <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
@@ -430,7 +472,7 @@ export function SaveSheet() {
                             textOverflow: "ellipsis",
                           }}
                         >
-                          {previewData.title || previewData.caption || "Ready to save"}
+                          {((previewData.title || previewData.caption || "").split("\n")[0].trim()) || "Ready to save"}
                         </div>
                       </div>
                     </div>
@@ -446,7 +488,11 @@ export function SaveSheet() {
             <button
               type="button"
               onClick={handleSave}
-              disabled={!validation.isValid || previewLoading || Boolean(previewData && !previewData.is_available)}
+              disabled={
+                !validation.isValid ||
+                previewLoading ||
+                Boolean(previewData && (previewData.status === "unavailable" || !previewData.is_available))
+              }
               style={{
                 width: "100%",
                 height: "52px",
@@ -454,18 +500,24 @@ export function SaveSheet() {
                 borderRadius: "999px",
                 border: 0,
                 background:
-                  validation.isValid && !previewLoading && (!previewData || previewData.is_available)
+                  validation.isValid &&
+                  !previewLoading &&
+                  (!previewData || (previewData.is_available && previewData.status !== "unavailable"))
                     ? "#1B1D1F"
                     : "#ECECEA",
                 fontFamily: "inherit",
                 fontSize: "16px",
                 fontWeight: 700,
                 color:
-                  validation.isValid && !previewLoading && (!previewData || previewData.is_available)
+                  validation.isValid &&
+                  !previewLoading &&
+                  (!previewData || (previewData.is_available && previewData.status !== "unavailable"))
                     ? "#FFFFFF"
                     : "#8A8E92",
                 cursor:
-                  validation.isValid && !previewLoading && (!previewData || previewData.is_available)
+                  validation.isValid &&
+                  !previewLoading &&
+                  (!previewData || (previewData.is_available && previewData.status !== "unavailable"))
                     ? "pointer"
                     : "not-allowed",
               }}

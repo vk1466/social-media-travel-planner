@@ -865,7 +865,7 @@ def test_preview_existing_post(dynamodb) -> None:
     platform=Platform.INSTAGRAM,
     media_kind="reel",
     author_handle="chef_marco",
-    caption="Amazing fresh pasta recipe made from scratch",
+    caption="Amazing fresh pasta recipe made from scratch\nSecond line of caption",
     thumbnail_url="https://example.com/thumb.jpg",
     fetched_at="2026-07-06T21:15:04Z",
   )
@@ -878,10 +878,11 @@ def test_preview_existing_post(dynamodb) -> None:
   )
   assert res.status_code == 200
   data = res.json()
+  assert data["status"] == "available"
   assert data["is_available"] is True
   assert data["author"] == "chef_marco"
   assert data["thumbnail_url"] == "https://example.com/thumb.jpg"
-  assert "pasta" in data["title"].lower()
+  assert data["title"] == "Amazing fresh pasta recipe made from scratch"
 
 
 def test_preview_deleted_post(monkeypatch, dynamodb) -> None:
@@ -897,8 +898,63 @@ def test_preview_deleted_post(monkeypatch, dynamodb) -> None:
   )
   assert res.status_code == 200
   data = res.json()
+  assert data["status"] == "unavailable"
   assert data["is_available"] is False
   assert data["error_message"] == "Private or deleted post"
+
+
+def test_preview_timeout_returns_unknown_status(monkeypatch, dynamodb) -> None:
+  def fake_fetch_post(*args, **kwargs):
+    raise TimeoutError("Mindcase preview timed out")
+
+  def fake_urlopen(*args, **kwargs):
+    raise TimeoutError("oEmbed timed out")
+
+  monkeypatch.setattr("travelplanner.clients.mindcase.fetch_post", fake_fetch_post)
+  monkeypatch.setattr("urllib.request.urlopen", fake_urlopen)
+
+  client = TestClient(app)
+  res = client.get(
+    "/api/preview?url=https://www.instagram.com/reel/slowreel123/",
+    headers={"X-User-Id": "user-a"},
+  )
+  assert res.status_code == 200
+  data = res.json()
+  assert data["status"] == "unknown"
+  assert data["is_available"] is True
+  assert data["title"] == "Instagram Reel"
+
+
+def test_preview_oembed_rich_data(monkeypatch, dynamodb) -> None:
+  import io
+
+  def fake_fetch_post(*args, **kwargs):
+    raise TimeoutError("Mindcase timed out, fall back to oEmbed")
+
+  class FakeResponse:
+    status = 200
+    def read(self):
+      return b'{"title": "First line of caption\\nSecond line", "author_name": "traveler_jane", "thumbnail_url": "https://example.com/jane.jpg"}'
+    def __enter__(self):
+      return self
+    def __exit__(self, *args):
+      pass
+
+  monkeypatch.setattr("travelplanner.clients.mindcase.fetch_post", fake_fetch_post)
+  monkeypatch.setattr("urllib.request.urlopen", lambda req, timeout=None: FakeResponse())
+
+  client = TestClient(app)
+  res = client.get(
+    "/api/preview?url=https://www.instagram.com/reel/C0kT3lQIcO6/",
+    headers={"X-User-Id": "user-a"},
+  )
+  assert res.status_code == 200
+  data = res.json()
+  assert data["status"] == "available"
+  assert data["is_available"] is True
+  assert data["author"] == "traveler_jane"
+  assert data["thumbnail_url"] == "https://example.com/jane.jpg"
+  assert data["title"] == "First line of caption"
 
 
 def test_preview_unsupported_url(dynamodb) -> None:
@@ -909,8 +965,9 @@ def test_preview_unsupported_url(dynamodb) -> None:
   )
   assert res.status_code == 200
   data = res.json()
+  assert data["status"] == "unavailable"
   assert data["is_available"] is False
-  assert "Only Instagram reels are currently supported" in data["error_message"]
+  assert "Only Instagram" in data["error_message"]
 
 
 

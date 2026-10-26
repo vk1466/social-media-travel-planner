@@ -423,6 +423,7 @@ export interface LinkPreview {
   author?: string;
   thumbnail_url?: string;
   is_available: boolean;
+  status?: "available" | "unavailable" | "unknown";
   error_message?: string;
 }
 

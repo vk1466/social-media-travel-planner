@@ -5,6 +5,7 @@ import { ActivityIndicator, Image, Pressable, StyleSheet, Switch, Text, TextInpu
 
 import { fetchLinkPreview, type LinkPreview } from "../api";
 import { parseLinkLines } from "../lib/shareUrl";
+import { proxiedMediaUrl } from "../postDisplayUtils";
 import { colors, radius } from "../theme";
 
 const MANUAL_DRAFT_KEY = "wanderfile.manual-link-draft.v1";
@@ -51,6 +52,7 @@ export function LinkSubmitForm({
             url: singleUrl,
             platform: "instagram",
             is_available: true,
+            status: "unknown",
             title: "Instagram Reel",
           });
           setPreviewLoading(false);
@@ -136,9 +138,13 @@ export function LinkSubmitForm({
         <View style={styles.counterLeft}>
           {previewLoading ? (
             <ActivityIndicator size="small" color={colors.muted} style={{ marginRight: 4 }} />
-          ) : previewData && !previewData.is_available ? (
+          ) : previewData && (previewData.status === "unavailable" || !previewData.is_available) ? (
             <View style={[styles.checkBadge, { backgroundColor: "#FEE2E2" }]}>
               <Ionicons name="close" size={13} color="#DC2626" />
+            </View>
+          ) : previewData && previewData.status === "unknown" ? (
+            <View style={[styles.checkBadge, { backgroundColor: "#F3F4F6" }]}>
+              <Ionicons name="information-circle" size={14} color="#6B7280" />
             </View>
           ) : validCount > 0 ? (
             <View style={styles.checkBadge}>
@@ -148,8 +154,10 @@ export function LinkSubmitForm({
           <Text style={styles.counterText}>
             {previewLoading
               ? "Checking Instagram reel…"
-              : previewData && !previewData.is_available
+              : previewData && (previewData.status === "unavailable" || !previewData.is_available)
               ? "Unavailable post"
+              : previewData && previewData.status === "unknown"
+              ? "Couldn't verify yet, you can still save"
               : `${validCount} URLs · Instagram reels`}
           </Text>
         </View>
@@ -204,7 +212,7 @@ export function LinkSubmitForm({
         </View>
       )}
 
-      {!previewLoading && previewData && !previewData.is_available && (
+      {!previewLoading && previewData && (previewData.status === "unavailable" || !previewData.is_available) && (
         <View style={styles.previewErrorCard}>
           <Ionicons name="alert-circle" size={20} color="#DC2626" />
           <View style={{ flex: 1 }}>
@@ -218,10 +226,13 @@ export function LinkSubmitForm({
         </View>
       )}
 
-      {!previewLoading && previewData && previewData.is_available && (
+      {!previewLoading && previewData && previewData.is_available && previewData.status !== "unavailable" && (
         <View style={styles.previewCard}>
           {previewData.thumbnail_url ? (
-            <Image source={{ uri: previewData.thumbnail_url }} style={styles.previewThumb} />
+            <Image
+              source={{ uri: proxiedMediaUrl(previewData.thumbnail_url) ?? previewData.thumbnail_url }}
+              style={styles.previewThumb}
+            />
           ) : (
             <View style={[styles.previewThumb, styles.previewThumbFallback]}>
               <Ionicons name="logo-instagram" size={24} color="#FFFFFF" />
@@ -235,7 +246,7 @@ export function LinkSubmitForm({
               ) : null}
             </View>
             <Text numberOfLines={1} style={styles.previewTitle}>
-              {previewData.title || previewData.caption || "Ready to save"}
+              {((previewData.title || previewData.caption || "").split("\n")[0].trim()) || "Ready to save"}
             </Text>
           </View>
         </View>
@@ -249,23 +260,29 @@ export function LinkSubmitForm({
           validCount === 0 ||
           disabled ||
           previewLoading ||
-          Boolean(previewData && !previewData.is_available)
+          Boolean(previewData && (previewData.status === "unavailable" || !previewData.is_available))
         }
         onPress={submit}
         style={[
           styles.saveButton,
-          (validCount === 0 || previewLoading || Boolean(previewData && !previewData.is_available)) &&
+          (validCount === 0 ||
+            previewLoading ||
+            Boolean(previewData && (previewData.status === "unavailable" || !previewData.is_available))) &&
             styles.saveButtonDisabled,
         ]}
       >
         <Text
           style={[
             styles.saveButtonText,
-            (validCount === 0 || previewLoading || Boolean(previewData && !previewData.is_available)) &&
+            (validCount === 0 ||
+              previewLoading ||
+              Boolean(previewData && (previewData.status === "unavailable" || !previewData.is_available))) &&
               styles.saveButtonTextDisabled,
           ]}
         >
-          {previewData && !previewData.is_available ? "Cannot save private reel" : buttonLabel}
+          {previewData && (previewData.status === "unavailable" || !previewData.is_available)
+            ? "Cannot save private reel"
+            : buttonLabel}
         </Text>
       </Pressable>
     </View>

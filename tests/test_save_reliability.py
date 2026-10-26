@@ -93,3 +93,34 @@ def test_never_overwrite_specific_error_with_timeout() -> None:
   empty_state = {}
   updated_empty = update_failures_retaining_specific(empty_state, url, "Request timed out, please retry in a moment")
   assert updated_empty[url] == "Request timed out, please retry in a moment"
+
+
+def test_fetch_media_slow_reel_generous_timeout_and_retry(monkeypatch) -> None:
+  """The save pipeline step fetch_media must use a generous timeout (>= 120s) and retry once on transient failure."""
+  from travelplanner.flow.context import IngestContext
+  from travelplanner.steps.instagram.fetch_media import fetch_media
+
+  calls = []
+  def fake_fetch_post(*args, **kwargs):
+    calls.append(kwargs)
+    if len(calls) == 1:
+      raise TimeoutError("First attempt timed out")
+    return {
+      "caption": "Generous timeout reel",
+      "authorUsername": "traveler",
+      "videoUrl": "https://video.mp4",
+      "thumbnailUrl": "https://thumb.jpg",
+    }
+
+  monkeypatch.setattr("travelplanner.steps.instagram.fetch_media.fetch_post", fake_fetch_post)
+
+  ctx = IngestContext(post_url="https://www.instagram.com/reel/C0kT3lQIcO6/", user_id="user_123")
+  result_ctx = fetch_media(ctx)
+
+  assert len(calls) == 2
+  for call_kwargs in calls:
+    assert call_kwargs.get("timeout_seconds") >= 120.0
+  assert result_ctx.post is not None
+  assert result_ctx.post.caption == "Generous timeout reel"
+  assert result_ctx.post.author_handle == "traveler"
+

@@ -69,6 +69,13 @@ body {
   display: block;
 }
 
+.wf-header-nav {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
 .wf-mobile-only {
   display: none !important;
 }
@@ -104,7 +111,8 @@ body {
 }
 
 @media (max-width: 1023px) {
-  .wf-desktop-only {
+  .wf-desktop-only,
+  .wf-header-nav {
     display: none !important;
   }
   .wf-mobile-only {

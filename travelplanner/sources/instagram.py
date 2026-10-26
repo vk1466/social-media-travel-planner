@@ -22,7 +22,11 @@ _trim_post_info = trim_post_info
 def fetch_instagram_post(post_url: str) -> SavedPost:
   """Legacy one-shot fetch+extract. Prefer the Instagram pipeline for new code."""
   shortcode = extract_instagram_shortcode(post_url)
-  raw = fetch_post(post_url=post_url, shortcode=shortcode)
+  timeout_seconds = 120.0
+  try:
+    raw = fetch_post(post_url=post_url, shortcode=shortcode, timeout_seconds=timeout_seconds)
+  except Exception:
+    raw = fetch_post(post_url=post_url, shortcode=shortcode, timeout_seconds=timeout_seconds)
   trimmed = trim_post_info(raw)
   media_kind = trimmed["media_kind"]
   transcript = (

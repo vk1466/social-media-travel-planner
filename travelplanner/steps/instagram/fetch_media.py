@@ -20,7 +20,12 @@ def fetch_media(ctx: IngestContext) -> IngestContext:
   shortcode = ctx.shortcode or extract_instagram_shortcode(ctx.post_url)
   ctx.shortcode = shortcode
   logger.info("fetch_media start shortcode=%s", shortcode)
-  raw = fetch_post(post_url=ctx.post_url, shortcode=shortcode)
+  timeout_seconds = 120.0
+  try:
+    raw = fetch_post(post_url=ctx.post_url, shortcode=shortcode, timeout_seconds=timeout_seconds)
+  except Exception as exc:
+    logger.warning("fetch_media attempt 1 failed (%s), retrying with generous timeout...", exc)
+    raw = fetch_post(post_url=ctx.post_url, shortcode=shortcode, timeout_seconds=timeout_seconds)
   ctx.raw_payload = raw
 
   if not raw:

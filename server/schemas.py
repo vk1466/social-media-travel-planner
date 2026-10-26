@@ -625,5 +625,6 @@ class LinkPreviewResponse(BaseModel):
   author: str | None = None
   thumbnail_url: str | None = None
   is_available: bool = True
+  status: str = "available"  # "available" | "unavailable" | "unknown"
   error_message: str | None = None
 
