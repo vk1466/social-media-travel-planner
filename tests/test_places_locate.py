@@ -279,3 +279,26 @@ def test_name_similarity_aliases() -> None:
   assert name_similarity("Misery Ridge", "Misery Ridge Trail") >= 0.5
   assert name_similarity("Angel Landing", "Angel's Landing") >= 0.5
   assert name_similarity("Smith Rock", "Multnomah Falls") < 0.4
+
+
+def test_extract_display_name_prefers_english() -> None:
+  from travelplanner.clients.geocoder import _extract_display_name
+
+  # When namedetails contains name:en, it takes precedence over foreign OSM name
+  raw_with_namedetails = {
+    "name": "Tháp truyền hình Tokyo Sky Tree",
+    "display_name": "Tokyo Skytree, Sumida, Tokyo, Japan",
+    "namedetails": {
+      "name": "Tháp truyền hình Tokyo Sky Tree",
+      "name:en": "Tokyo Skytree",
+    },
+  }
+  assert _extract_display_name(raw_with_namedetails, fallback="Skytree") == "Tokyo Skytree"
+
+  # When namedetails does not have name:en, English display_name leading part takes precedence over foreign raw name
+  raw_with_translated_display = {
+    "name": "Thap Truyen Hinh Sky Tree",
+    "display_name": "Tokyo Skytree, Sumida, Tokyo, Japan",
+  }
+  assert _extract_display_name(raw_with_translated_display, fallback="Skytree") == "Tokyo Skytree"
+

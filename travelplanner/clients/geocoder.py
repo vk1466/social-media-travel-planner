@@ -61,7 +61,7 @@ def get_client() -> Nominatim:
 def geocode(query: str) -> Location | None:
   """Forward-geocode a free-text query (e.g. "Multnomah Falls, Portland, USA")
   into a canonical location. Nominatim (OSM); rate-limited to 1 req/sec."""
-  return _rate_limited_geocode(query, addressdetails=True, language="en")
+  return _rate_limited_geocode(query, addressdetails=True, namedetails=True, language="en")
 
 
 def geocode_many(
@@ -76,6 +76,7 @@ def geocode_many(
     "exactly_one": False,
     "limit": max(1, limit),
     "addressdetails": True,
+    "namedetails": True,
     "language": "en",
   }
   if viewbox is not None:
@@ -92,7 +93,12 @@ def geocode_many(
 def reverse_geocode(latitude: float, longitude: float) -> Location | None:
   """Reverse-geocode coordinates (e.g. from an Instagram location tag) into a
   canonical location and address hierarchy."""
-  return _rate_limited_reverse((latitude, longitude), addressdetails=True, language="en")
+  return _rate_limited_reverse(
+    (latitude, longitude),
+    addressdetails=True,
+    namedetails=True,
+    language="en",
+  )
 
 
 def viewbox_around(latitude: float, longitude: float, *, half_span_degrees: float = 0.25) -> Viewbox:
@@ -105,12 +111,29 @@ def viewbox_around(latitude: float, longitude: float, *, half_span_degrees: floa
 
 
 def _extract_display_name(raw: dict[str, Any], fallback: str) -> str:
-  name = raw.get("name")
-  if name:
-    return str(name)
+  # 1. Namedetails tag with English or preferred international name
+  namedetails = raw.get("namedetails") if isinstance(raw.get("namedetails"), dict) else {}
+  for key in ("name:en", "int_name"):
+    val = namedetails.get(key)
+    if val and str(val).strip():
+      return str(val).strip()
+
+  # 2. Nominatim translates display_name according to accept-language=en;
+  # its first segment is the English-localized name of the place
   display_name = raw.get("display_name")
   if display_name:
-    return str(display_name).split(",")[0].strip()
+    first_part = str(display_name).split(",")[0].strip()
+    if first_part:
+      return first_part
+
+  # 3. Explicit namedetails or raw OSM name
+  val = namedetails.get("name")
+  if val and str(val).strip():
+    return str(val).strip()
+  name = raw.get("name")
+  if name and str(name).strip():
+    return str(name).strip()
+
   return fallback
 
 

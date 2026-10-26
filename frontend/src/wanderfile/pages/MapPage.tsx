@@ -4,6 +4,7 @@ import { MapContainer, Marker, TileLayer, Tooltip, useMap, useMapEvents } from "
 import L from "leaflet";
 import { EmptyState } from "../components/EmptyState";
 import { ComingSoonButton } from "../comingSoon/ComingSoonControl";
+import { FeatureFlags } from "../comingSoon/featureRegistry";
 import { useSavePipeline } from "../state/SavePipelineContext";
 import type { Place } from "../../api";
 import { visualForCategory } from "../../placeCategoryVisuals";
@@ -316,14 +317,9 @@ export function MapPage({ places, loading }: MapPageProps) {
     : "";
 
   return (
-    <main className="wf-map-main">
+    <main className="wf-map-main" data-mobile-view={mobileView}>
       {/* Places list sidebar (Desktop always, mobile toggleable) */}
-      <aside
-        className={`wf-map-sidebar ${mobileView === "map" ? "wf-desktop-only" : ""}`}
-        style={{
-          display: mobileView === "list" ? "flex" : undefined,
-        }}
-      >
+      <aside className="wf-map-sidebar">
         <div
           style={{
             padding: "20px 20px 16px",
@@ -332,6 +328,8 @@ export function MapPage({ places, loading }: MapPageProps) {
             alignItems: "center",
             justifyContent: "space-between",
             flexShrink: 0,
+            gap: "12px",
+            flexWrap: "wrap",
           }}
         >
           <div>
@@ -342,27 +340,52 @@ export function MapPage({ places, loading }: MapPageProps) {
               {places.length} saved places on your map
             </div>
           </div>
-          {mobileView === "list" && (
+          {/* Mobile toggle pill in list view */}
+          <div
+            className="wf-mobile-only"
+            style={{
+              background: "#FFFFFF",
+              borderRadius: "999px",
+              padding: "4px",
+              boxShadow: "0 2px 10px rgba(0,0,0,0.12)",
+              border: "1px solid #D9D5CB",
+              display: "flex",
+              gap: "4px",
+            }}
+          >
             <button
               type="button"
               onClick={() => setMobileView("map")}
               style={{
-                background: "#1B1D1F",
-                color: "#FFFFFF",
                 border: 0,
+                background: "transparent",
+                color: "#6B6F73",
+                padding: "6px 14px",
                 borderRadius: "999px",
-                padding: "8px 16px",
                 fontSize: "13px",
                 fontWeight: 700,
                 cursor: "pointer",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "6px",
               }}
             >
-              <span>🗺️</span> View Map
+              🗺️ Map
             </button>
-          )}
+            <button
+              type="button"
+              onClick={() => setMobileView("list")}
+              style={{
+                border: 0,
+                background: "#1B1D1F",
+                color: "#FFFFFF",
+                padding: "6px 14px",
+                borderRadius: "999px",
+                fontSize: "13px",
+                fontWeight: 700,
+                cursor: "pointer",
+              }}
+            >
+              ☰ Places ({places.length})
+            </button>
+          </div>
         </div>
 
         <div className="wf-map-sidebar-list">
@@ -420,12 +443,7 @@ export function MapPage({ places, loading }: MapPageProps) {
       </aside>
 
       {/* Interactive Map Pane */}
-      <section
-        className="wf-map-pane"
-        style={{
-          display: mobileView === "list" ? "none" : "flex",
-        }}
-      >
+      <section className="wf-map-pane">
         {/* Mobile toggle pill to switch between map & places list */}
         <div
           className="wf-mobile-only"
@@ -617,22 +635,24 @@ export function MapPage({ places, loading }: MapPageProps) {
               >
                 Details
               </Link>
-              <ComingSoonButton
-                featureId="trips"
-                style={{
-                  height: "38px",
-                  padding: "0 16px",
-                  borderRadius: "999px",
-                  border: "1px solid #D9D5CB",
-                  background: "#FFFFFF",
-                  fontSize: "13px",
-                  fontWeight: 700,
-                  color: "#1B1D1F",
-                  cursor: "pointer",
-                }}
-              >
-                Add to trip
-              </ComingSoonButton>
+              {FeatureFlags.isEnabled("trips") && (
+                <ComingSoonButton
+                  featureId="trips"
+                  style={{
+                    height: "38px",
+                    padding: "0 16px",
+                    borderRadius: "999px",
+                    border: "1px solid #D9D5CB",
+                    background: "#FFFFFF",
+                    fontSize: "13px",
+                    fontWeight: 700,
+                    color: "#1B1D1F",
+                    cursor: "pointer",
+                  }}
+                >
+                  Add to trip
+                </ComingSoonButton>
+              )}
               {googleMapsUrl && (
                 <a
                   href={googleMapsUrl}

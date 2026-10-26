@@ -5,6 +5,8 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { EmptyState } from "../components/EmptyState";
 import { ComingSoonButton } from "../comingSoon/ComingSoonControl";
+import { FeatureFlags } from "../comingSoon/featureRegistry";
+import { getPostTitle, proxiedMediaUrl } from "../../postDisplayUtils";
 import type { Place, SavedPost } from "../../api";
 
 function MiniLocationMap({ lat, lng, displayName }: { lat: number; lng: number; displayName: string }) {
@@ -121,7 +123,18 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
     );
   }
 
-  const relatedPosts = posts.filter((p) => p.place_ids?.includes(place.place_id));
+  const relatedPosts = posts.filter(
+    (p) => p.place_ids?.includes(place.place_id) || place.source_post_ids?.includes(p.post_id),
+  );
+  const heroPost = relatedPosts.find((p) => p.thumbnail_url);
+  const heroImageUrl = heroPost?.thumbnail_url
+    ? proxiedMediaUrl(heroPost.thumbnail_url)
+    : "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80";
+
+  const postTips = relatedPosts.flatMap((p) => p.trip_tips || []);
+  const allTips = Array.from(new Set([...(place.tips || []), ...postTips].filter(Boolean)));
+  const hasDetails = Boolean(place.details && place.details.length > 0);
+  const hasTips = allTips.length > 0;
 
   const lat = place.location?.latitude;
   const lng = place.location?.longitude;
@@ -140,9 +153,9 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
   return (
     <main
       style={{
-        maxWidth: "1280px",
+        maxWidth: "1040px",
         margin: "0 auto",
-        padding: "24px 16px 100px",
+        padding: "24px 20px 60px",
         width: "100%",
         boxSizing: "border-box",
         fontFamily: "'Figtree', system-ui, sans-serif",
@@ -177,7 +190,14 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
 
       {/* Hero */}
       <section className="wf-place-hero">
-        <div className="wf-place-hero-image" />
+        <div
+          className="wf-place-hero-image"
+          style={{
+            backgroundImage: `url(${heroImageUrl})`,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+          }}
+        />
 
         <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
           <div style={{ minWidth: 0 }}>
@@ -265,23 +285,25 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
               {visited ? "Visited ✓" : "Mark visited"}
             </button>
 
-            <ComingSoonButton
-              featureId="trips"
-              style={{
-                height: "42px",
-                padding: "0 18px",
-                borderRadius: "999px",
-                border: "1px solid #D9D5CB",
-                background: "#FFFFFF",
-                fontFamily: "inherit",
-                fontSize: "14px",
-                fontWeight: 700,
-                color: "#1B1D1F",
-                cursor: "pointer",
-              }}
-            >
-              Add to trip
-            </ComingSoonButton>
+            {FeatureFlags.isEnabled("trips") && (
+              <ComingSoonButton
+                featureId="trips"
+                style={{
+                  height: "42px",
+                  padding: "0 18px",
+                  borderRadius: "999px",
+                  border: "1px solid #D9D5CB",
+                  background: "#FFFFFF",
+                  fontFamily: "inherit",
+                  fontSize: "14px",
+                  fontWeight: 700,
+                  color: "#1B1D1F",
+                  cursor: "pointer",
+                }}
+              >
+                Add to trip
+              </ComingSoonButton>
+            )}
 
             <a
               href={googleMapsUrl}
@@ -343,42 +365,43 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 320px), 1fr))",
+          gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 340px), 1fr))",
           gap: "24px",
+          alignItems: "start",
           minWidth: 0,
           boxSizing: "border-box",
         }}
       >
-        {/* Left Column: Guidance & Tips */}
+        {/* Left Column: Guidance & Tips + Mentioned in Reels */}
         <div style={{ display: "flex", flexDirection: "column", gap: "24px", minWidth: 0 }}>
-          <section
-            style={{
-              background: "#FFFFFF",
-              border: "1px solid #E6E3DC",
-              borderRadius: "24px",
-              padding: "24px",
-              minWidth: 0,
-              boxSizing: "border-box",
-              overflowWrap: "anywhere",
-              wordBreak: "break-word",
-            }}
-          >
-            <h2 style={{ margin: "0 0 12px", fontSize: "18px", fontWeight: 800 }}>About & Tips</h2>
-            {place.details && place.details.length > 0 && (
-              <p style={{ margin: "0 0 14px", fontSize: "15px", lineHeight: 1.5, color: "#4A4E52", overflowWrap: "anywhere", wordBreak: "break-word" }}>
-                {place.details.join(" ")}
-              </p>
-            )}
-            {place.tips && place.tips.length > 0 ? (
-              <ul style={{ margin: 0, paddingLeft: "20px", color: "#4A4E52", fontSize: "14px", lineHeight: 1.6, overflowWrap: "anywhere", wordBreak: "break-word" }}>
-                {place.tips.map((t, idx) => (
-                  <li key={idx} style={{ marginBottom: "6px" }}>{t}</li>
-                ))}
-              </ul>
-            ) : (
-              <div style={{ fontSize: "14px", color: "#6B6F73" }}>Tips from the reels will appear here.</div>
-            )}
-          </section>
+          {(hasDetails || hasTips) && (
+            <section
+              style={{
+                background: "#FFFFFF",
+                border: "1px solid #E6E3DC",
+                borderRadius: "24px",
+                padding: "24px",
+                minWidth: 0,
+                boxSizing: "border-box",
+                overflowWrap: "anywhere",
+                wordBreak: "break-word",
+              }}
+            >
+              <h2 style={{ margin: "0 0 12px", fontSize: "18px", fontWeight: 800 }}>About & Tips</h2>
+              {hasDetails && (
+                <p style={{ margin: "0 0 14px", fontSize: "15px", lineHeight: 1.5, color: "#4A4E52", overflowWrap: "anywhere", wordBreak: "break-word" }}>
+                  {place.details.join(" ")}
+                </p>
+              )}
+              {hasTips && (
+                <ul style={{ margin: 0, paddingLeft: "20px", color: "#4A4E52", fontSize: "14px", lineHeight: 1.6, overflowWrap: "anywhere", wordBreak: "break-word" }}>
+                  {allTips.map((t, idx) => (
+                    <li key={idx} style={{ marginBottom: "6px" }}>{t}</li>
+                  ))}
+                </ul>
+              )}
+            </section>
+          )}
 
           {/* Mentioned in reels */}
           <section
@@ -393,11 +416,11 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
               wordBreak: "break-word",
             }}
           >
-            <h2 style={{ margin: "0 0 12px", fontSize: "18px", fontWeight: 800 }}>
+            <h2 style={{ margin: "0 0 14px", fontSize: "18px", fontWeight: 800 }}>
               Mentioned in {relatedPosts.length} {relatedPosts.length === 1 ? "reel" : "reels"}
             </h2>
             {relatedPosts.length > 0 ? (
-              <div style={{ display: "flex", flexDirection: "column", gap: "10px", minWidth: 0 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "12px", minWidth: 0 }}>
                 {relatedPosts.map((rp) => (
                   <Link
                     key={rp.post_id}
@@ -406,7 +429,7 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
                     style={{
                       display: "flex",
                       alignItems: "center",
-                      gap: "12px",
+                      gap: "14px",
                       textDecoration: "none",
                       color: "#1B1D1F",
                       padding: "8px 0",
@@ -414,17 +437,56 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
                       minWidth: 0,
                     }}
                   >
-                    <div
-                      style={{
-                        width: "48px",
-                        height: "48px",
-                        borderRadius: "10px",
-                        background: "linear-gradient(160deg, #8CC3D6, #2D6A82)",
-                        flexShrink: 0,
-                      }}
-                    />
-                    <div style={{ fontSize: "14px", fontWeight: 600, minWidth: 0, overflowWrap: "anywhere", wordBreak: "break-word" }}>
-                      {rp.caption?.slice(0, 60) || "Saved reel"}
+                    {rp.thumbnail_url ? (
+                      <img
+                        src={proxiedMediaUrl(rp.thumbnail_url) || ""}
+                        alt=""
+                        style={{
+                          width: "52px",
+                          height: "52px",
+                          borderRadius: "10px",
+                          objectFit: "cover",
+                          flexShrink: 0,
+                          background: "#EAE7DF",
+                        }}
+                      />
+                    ) : (
+                      <div
+                        style={{
+                          width: "52px",
+                          height: "52px",
+                          borderRadius: "10px",
+                          background: "linear-gradient(160deg, #8CC3D6, #2D6A82)",
+                          flexShrink: 0,
+                        }}
+                      />
+                    )}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div
+                        style={{
+                          fontSize: "15px",
+                          fontWeight: 700,
+                          color: "#1B1D1F",
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                        }}
+                      >
+                        {getPostTitle(rp)}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: "13px",
+                          color: "#6B6F73",
+                          marginTop: "2px",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                        }}
+                      >
+                        {rp.author_handle && <span>@{rp.author_handle}</span>}
+                        <span>Instagram reel ↗</span>
+                      </div>
                     </div>
                   </Link>
                 ))}

@@ -306,11 +306,23 @@ body:has(.wf-map-main) {
     max-height: calc(100dvh - 57px - 84px) !important;
     padding-bottom: 0 !important;
   }
-  .wf-map-sidebar {
+  .wf-map-main[data-mobile-view="map"] .wf-map-sidebar {
+    display: none !important;
+  }
+  .wf-map-main[data-mobile-view="map"] .wf-map-pane {
+    display: flex !important;
+    width: 100% !important;
+    flex: 1 1 0% !important;
+  }
+  .wf-map-main[data-mobile-view="list"] .wf-map-sidebar {
+    display: flex !important;
     width: 100% !important;
     min-width: 100% !important;
     max-width: 100% !important;
     border-right: none !important;
+  }
+  .wf-map-main[data-mobile-view="list"] .wf-map-pane {
+    display: none !important;
   }
   .wf-map-selected-card {
     bottom: 16px !important;
@@ -319,6 +331,7 @@ body:has(.wf-map-main) {
     width: auto !important;
     max-width: calc(100% - 32px) !important;
     margin: 0 auto;
+    z-index: 1000 !important;
   }
 }
 

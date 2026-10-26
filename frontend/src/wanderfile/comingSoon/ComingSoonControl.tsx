@@ -1,5 +1,4 @@
 import React from "react";
-import { useNavigate, useLocation } from "react-router-dom";
 import { FeatureFlags } from "./featureRegistry";
 
 interface SoonBadgeProps {
@@ -44,16 +43,14 @@ export function ComingSoonButton({
   style,
   ...props
 }: ComingSoonButtonProps) {
-  const navigate = useNavigate();
-  const location = useLocation();
   const enabled = FeatureFlags.isEnabled(featureId);
 
+  // Hide unbuilt actions everywhere when feature is disabled
+  if (!enabled) {
+    return null;
+  }
+
   const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-    if (!enabled) {
-      e.preventDefault();
-      navigate(`/coming-soon/${featureId}`, { state: { from: location.pathname } });
-      return;
-    }
     if (onClick) {
       onClick(e);
     }
