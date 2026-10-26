@@ -75,6 +75,7 @@ from server.schemas import (
   PlaceFactsRefreshSchema,
   PlaceFactsSchema,
   SavedPostSchema,
+  UpdatePostRequest,
   TimelineImportStartRequest,
   TimelineUploadUrlResponse,
   VisitCreateRequest,
@@ -456,6 +457,50 @@ def remove_post(platform: Platform, post_id: str, user_id: CurrentUserId) -> Res
   if not unlink_post_from_user(user_id, global_post_id):
     raise HTTPException(status_code=404, detail="Post not found")
   return Response(status_code=204)
+
+
+@app.patch(
+  "/api/posts/{platform}/{post_id}",
+  response_model=SavedPostSchema,
+  responses={400: {"model": ErrorResponse}, 404: {"model": ErrorResponse}},
+)
+def update_post_details(
+  platform: Platform,
+  post_id: str,
+  request: UpdatePostRequest,
+  user_id: CurrentUserId,
+) -> SavedPostSchema:
+  from dataclasses import replace
+  from travelplanner.store import save_post
+
+  global_post_id = post_id if ":" in post_id else make_post_id(platform, post_id)
+  if not user_owns_post(user_id, global_post_id):
+    raise HTTPException(status_code=404, detail="Post not found")
+  post = load_post(platform, post_id)
+  if post is None:
+    raise HTTPException(status_code=404, detail="Post not found")
+
+  updates: dict[str, Any] = {}
+  if request.title is not None:
+    updates["title"] = request.title.strip() or None
+  if request.caption is not None:
+    updates["caption"] = request.caption
+  if request.content_category is not None:
+    cat = request.content_category.strip().lower()
+    cat_aliases = {
+      "place": "travel",
+      "recipe": "food",
+      "movie": "movies",
+      "watch": "movies",
+    }
+    cat = cat_aliases.get(cat, cat)
+    if cat not in CONTENT_CATEGORY_SET:
+      raise HTTPException(status_code=400, detail=f"Invalid category: {request.content_category}")
+    updates["content_category"] = cat
+
+  updated_post = replace(post, **updates)
+  save_post(updated_post)
+  return _post_to_schema(updated_post)
 
 
 @app.post("/api/places/reprocess", response_model=MaintenanceResultSchema)

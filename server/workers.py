@@ -26,16 +26,19 @@ logger = logging.getLogger(__name__)
 
 
 def _ingest_failure_reason(event: dict[str, Any]) -> str:
+  from travelplanner.personas.link_ingest import friendly_error_message
+
   error = event.get("error")
   if isinstance(error, dict):
     name = str(error.get("Error") or "")
     if "Timedout" in name or "Timeout" in name:
       return "Ingest timed out"
     if name:
-      return name
-  if event.get("record_failure"):
-    return "Ingest failed"
-  return "Ingest failed"
+      return friendly_error_message(name)
+  cause = event.get("cause")
+  if cause:
+    return friendly_error_message(str(cause))
+  return "Could not read this post"
 
 
 def ingest_one_link(event: dict[str, Any], context: Any = None) -> dict[str, Any]:

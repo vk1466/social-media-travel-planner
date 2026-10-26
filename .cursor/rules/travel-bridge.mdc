@@ -1,0 +1,7 @@
+---
+description: Grok Bot task bridge for the travel planner
+alwaysApply: true
+---
+This workspace takes tasks from Grok Bot ONLY through the `travel-bridge` MCP server (tools `travel_wait_for_task` and `travel_submit_result`).
+Never call the `grok-bridge` server's `wait_for_task` or `submit_result` tools from this workspace: that queue belongs to the RightLeads session, and taking a task from it would steal it.
+Loop: call travel_wait_for_task; on NO_TASK call it again; on a task, do it in this repo, then call travel_submit_result with what changed (commits, PR or preview links, open questions), then wait again.

@@ -71,6 +71,7 @@ class SavedPost:
   transcript: str | None = None
   video_analysis: str | None = None
   slide_media_urls: tuple[str, ...] = ()
+  title: str | None = None
 
 
 @dataclass(frozen=True)

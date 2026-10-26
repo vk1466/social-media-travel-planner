@@ -56,6 +56,36 @@ def unlink_post_from_user(user_id: str, post_id: str) -> bool:
   return user_posts_repo.unlink_user_post(user_id, post_id)
 
 
+def friendly_error_message(error: str | None) -> str:
+  """Map raw backend and API errors to user-friendly explanations."""
+  if not error:
+    return "Could not read this post"
+  lowered = error.lower()
+  if "429" in lowered or "rate limit" in lowered or "too many requests" in lowered:
+    return "Rate limited, please retry in a minute"
+  if (
+    "404" in lowered
+    or "not found" in lowered
+    or "returned no post" in lowered
+    or "private" in lowered
+    or "deleted" in lowered
+    or "could not extract instagram shortcode" in lowered
+  ):
+    return "Private or deleted post"
+  if "unsupported" in lowered or "unrecognized url" in lowered:
+    return "Unsupported platform"
+  if "timeout" in lowered or "timed out" in lowered:
+    return "Request timed out, please retry in a moment"
+  if "empty url" in lowered:
+    return "Please enter a valid link"
+  if "failed at step" in lowered:
+    parts = error.split(":", 1)
+    if len(parts) > 1:
+      return friendly_error_message(parts[1].strip())
+    return "Could not read this post"
+  return error
+
+
 def _persist_failure(
   deps: IngestDeps,
   *,
@@ -66,13 +96,14 @@ def _persist_failure(
   error_message: str | None = None,
   post_id: str | None = None,
 ) -> None:
+  friendly = friendly_error_message(error_message) if error_message else None
   try:
     deps.record_failure(
       post_url=post_url,
       user_id=user_id,
       status=status,
       stage=stage,
-      error_message=error_message,
+      error_message=friendly,
       post_id=post_id,
     )
   except Exception:
@@ -250,7 +281,7 @@ def ingest_link(
       post_url=post_url,
       outcome="error",
       post_id=post_id,
-      reason=error_message,
+      reason=friendly_error_message(error_message),
     )
 
   post = ctx.post

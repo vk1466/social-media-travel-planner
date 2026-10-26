@@ -3,8 +3,10 @@ import { Link } from "react-router-dom";
 import { ErrorBanner } from "../components/ErrorBanner";
 import { SkeletonGrid } from "../components/SkeletonCard";
 import { ComingSoonButton } from "../comingSoon/ComingSoonControl";
+import { PostCard } from "../components/PostCard";
+import { EditPostModal } from "../components/EditPostModal";
 import { useSavePipeline } from "../state/SavePipelineContext";
-import type { SavedPost, Place } from "../../api";
+import { deletePost, parsePostId, type SavedPost, type Place } from "../../api";
 
 interface HomePageProps {
   posts: SavedPost[];
@@ -15,7 +17,18 @@ interface HomePageProps {
 }
 
 export function HomePage({ posts, places, loading, loadError, onRefresh }: HomePageProps) {
-  const { inboxFailures, retryAllFailed, removeFailedLink, openSaveSheet } = useSavePipeline();
+  const { inboxFailures, retryAllFailed, retryFailedLink, removeFailedLink, openSaveSheet } = useSavePipeline();
+  const [editingPost, setEditingPost] = useState<SavedPost | null>(null);
+
+  const handleDeletePost = async (postToDelete: SavedPost) => {
+    try {
+      const { platform, nativeId } = parsePostId(postToDelete.post_id);
+      await deletePost(platform, nativeId);
+      onRefresh?.();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to delete post");
+    }
+  };
 
   const [dateStr] = useState(() => {
     return new Date().toLocaleDateString("en-US", {
@@ -64,79 +77,178 @@ export function HomePage({ posts, places, loading, loadError, onRefresh }: HomeP
         <section
           style={{
             display: "flex",
-            alignItems: "center",
-            gap: "20px",
-            flexWrap: "wrap",
-            padding: "16px 20px",
+            flexDirection: "column",
+            gap: "16px",
+            padding: "20px 24px",
             background: "#FFFFFF",
             border: "1px solid #E6E3DC",
             borderRadius: "20px",
           }}
         >
-          <span
-            aria-hidden="true"
+          <div
             style={{
-              width: "40px",
-              height: "40px",
-              borderRadius: "12px",
-              background: "#FBEBDD",
-              color: "#9A4513",
               display: "flex",
               alignItems: "center",
-              justifyContent: "center",
+              gap: "16px",
+              flexWrap: "wrap",
             }}
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="9" />
-              <path d="M12 8v5M12 16.5v.01" />
-            </svg>
-          </span>
-          <div style={{ flex: 1, minWidth: "260px" }}>
-            <div style={{ fontWeight: 700, fontSize: "16px", color: "#1B1D1F" }}>
-              {inboxFailures.length} {inboxFailures.length === 1 ? "link couldn't be read" : "links couldn't be read"}
+            <span
+              aria-hidden="true"
+              style={{
+                width: "40px",
+                height: "40px",
+                borderRadius: "12px",
+                background: "#FBEBDD",
+                color: "#9A4513",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+              }}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="9" />
+                <path d="M12 8v5M12 16.5v.01" />
+              </svg>
+            </span>
+            <div style={{ flex: 1, minWidth: "240px" }}>
+              <div style={{ fontWeight: 700, fontSize: "16px", color: "#1B1D1F" }}>
+                {inboxFailures.length} {inboxFailures.length === 1 ? "link couldn't be read" : "links couldn't be read"}
+              </div>
+              <div style={{ fontSize: "14px", color: "#6B6F73", marginTop: "2px" }}>
+                Waiting in your inbox. You can retry or dismiss individual items below.
+              </div>
             </div>
-            <div style={{ fontSize: "14px", color: "#6B6F73", marginTop: "2px" }}>
-              Waiting in your inbox. Everything else is already sorted.
+            <div style={{ display: "flex", gap: "8px" }}>
+              <button
+                type="button"
+                onClick={retryAllFailed}
+                style={{
+                  height: "38px",
+                  padding: "0 16px",
+                  borderRadius: "999px",
+                  border: "1px solid #D9D5CB",
+                  background: "#FFFFFF",
+                  fontFamily: "inherit",
+                  fontSize: "13px",
+                  fontWeight: 700,
+                  color: "#1B1D1F",
+                  cursor: "pointer",
+                }}
+              >
+                Retry all ({inboxFailures.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  inboxFailures.forEach((f) => removeFailedLink(f.url));
+                }}
+                style={{
+                  height: "38px",
+                  padding: "0 16px",
+                  borderRadius: "999px",
+                  border: 0,
+                  background: "#ECECEA",
+                  fontFamily: "inherit",
+                  fontSize: "13px",
+                  fontWeight: 700,
+                  color: "#4A4E52",
+                  cursor: "pointer",
+                }}
+              >
+                Dismiss all
+              </button>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={retryAllFailed}
+
+          {/* Individual items */}
+          <div
             style={{
-              height: "40px",
-              padding: "0 18px",
-              borderRadius: "999px",
-              border: "1px solid #D9D5CB",
-              background: "#FFFFFF",
-              fontFamily: "inherit",
-              fontSize: "14px",
-              fontWeight: 700,
-              color: "#1B1D1F",
-              cursor: "pointer",
+              display: "flex",
+              flexDirection: "column",
+              gap: "8px",
+              paddingTop: "12px",
+              borderTop: "1px solid #EFEDE7",
             }}
           >
-            Retry {inboxFailures.length}
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              inboxFailures.forEach((f) => removeFailedLink(f.url));
-            }}
-            style={{
-              height: "40px",
-              padding: "0 18px",
-              borderRadius: "999px",
-              border: 0,
-              background: "#ECECEA",
-              fontFamily: "inherit",
-              fontSize: "14px",
-              fontWeight: 700,
-              color: "#4A4E52",
-              cursor: "pointer",
-            }}
-          >
-            Dismiss
-          </button>
+            {inboxFailures.map((item) => (
+              <div
+                key={item.url}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: "12px",
+                  padding: "10px 14px",
+                  background: "#FBFAF7",
+                  border: "1px solid #EFECE6",
+                  borderRadius: "14px",
+                  flexWrap: "wrap",
+                }}
+              >
+                <div style={{ flex: 1, minWidth: "220px", display: "flex", flexDirection: "column", gap: "3px" }}>
+                  <div
+                    style={{
+                      fontSize: "14px",
+                      fontWeight: 600,
+                      color: "#1B1D1F",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                      maxWidth: "540px",
+                    }}
+                    title={item.url}
+                  >
+                    {item.url}
+                  </div>
+                  <div style={{ fontSize: "13px", color: "#C53B27", display: "flex", alignItems: "center", gap: "6px" }}>
+                    <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#C53B27", flexShrink: 0 }} />
+                    {item.errorMessage}
+                  </div>
+                </div>
+
+                <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                  <button
+                    type="button"
+                    onClick={() => retryFailedLink(item.url)}
+                    style={{
+                      height: "32px",
+                      padding: "0 14px",
+                      borderRadius: "999px",
+                      border: "1px solid #D9D5CB",
+                      background: "#FFFFFF",
+                      fontFamily: "inherit",
+                      fontSize: "13px",
+                      fontWeight: 700,
+                      color: "#1B1D1F",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Retry
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => removeFailedLink(item.url)}
+                    style={{
+                      height: "32px",
+                      padding: "0 12px",
+                      borderRadius: "999px",
+                      border: 0,
+                      background: "#ECECEA",
+                      fontFamily: "inherit",
+                      fontSize: "13px",
+                      fontWeight: 700,
+                      color: "#4A4E52",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Dismiss
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
         </section>
       )}
 
@@ -849,70 +961,25 @@ export function HomePage({ posts, places, loading, loadError, onRefresh }: HomeP
                 gap: "20px",
               }}
             >
-              {posts.slice(0, 6).map((post) => {
-                const category = post.content_category || "other";
-                const catLabels: Record<string, { label: string; bg: string; ink: string }> = {
-                  travel: { label: "Place", bg: "#E3F0F4", ink: "#1B5E78" },
-                  food: { label: "Recipe", bg: "#FBEBDD", ink: "#9A4513" },
-                  movies: { label: "Title", bg: "#ECE8F7", ink: "#4B3C8C" },
-                  other: { label: "Other", bg: "#ECECEA", ink: "#4A4E52" },
-                };
-                const tag = catLabels[category] || catLabels.other;
-
-                return (
-                  <Link
-                    key={post.post_id}
-                    to={post.place_ids && post.place_ids.length > 0 ? `/place/${post.place_ids[0]}` : `/post/${post.post_id}`}
-                    style={{ display: "block", textDecoration: "none", color: "#1B1D1F" }}
-                  >
-                    <div
-                      style={{
-                        height: "210px",
-                        borderRadius: "20px",
-                        position: "relative",
-                        overflow: "hidden",
-                        background: post.thumbnail_url
-                          ? `url(${post.thumbnail_url}) center/cover no-repeat`
-                          : "linear-gradient(160deg, #8CC3D6, #2D6A82)",
-                      }}
-                    >
-                      <span
-                        style={{
-                          position: "absolute",
-                          left: "10px",
-                          top: "10px",
-                          fontSize: "12px",
-                          fontWeight: 700,
-                          padding: "4px 10px",
-                          borderRadius: "999px",
-                          background: tag.bg,
-                          color: tag.ink,
-                        }}
-                      >
-                        {tag.label}
-                      </span>
-                    </div>
-                    <div
-                      style={{
-                        marginTop: "10px",
-                        fontSize: "14px",
-                        lineHeight: 1.35,
-                        fontWeight: 600,
-                        display: "-webkit-box",
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: "vertical",
-                        overflow: "hidden",
-                      }}
-                    >
-                      {post.caption || "Saved post"}
-                    </div>
-                  </Link>
-                );
-              })}
+              {posts.slice(0, 6).map((post) => (
+                <PostCard
+                  key={post.post_id}
+                  post={post}
+                  onEdit={(p) => setEditingPost(p)}
+                  onDelete={handleDeletePost}
+                />
+              ))}
             </div>
           </section>
         </>
       )}
+
+      <EditPostModal
+        post={editingPost}
+        isOpen={!!editingPost}
+        onClose={() => setEditingPost(null)}
+        onSaved={() => onRefresh?.()}
+      />
     </main>
   );
 }

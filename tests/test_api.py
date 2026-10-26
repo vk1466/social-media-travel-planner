@@ -767,3 +767,63 @@ def test_reconstruct_recipe_endpoint(monkeypatch, dynamodb) -> None:
   assert reloaded.extracted_recipe.title == "Garlic Noodles"
 
 
+def test_delete_post(dynamodb) -> None:
+  post = SavedPost(
+    post_id="instagram:del123",
+    post_url="https://www.instagram.com/reel/del123/",
+    platform=Platform.INSTAGRAM,
+    media_kind="reel",
+    caption="delete me",
+    fetched_at="2026-07-06T21:15:04Z",
+  )
+  save_post(post)
+  user_posts_repo.link_user_post("user-a", post.post_id)
+
+  client = TestClient(app)
+  res = client.delete("/api/posts/instagram/del123", headers={"X-User-Id": "user-a"})
+  assert res.status_code == 204
+  assert client.get("/api/posts", headers={"X-User-Id": "user-a"}).json() == []
+
+
+def test_update_post_title_and_category(dynamodb) -> None:
+  post = SavedPost(
+    post_id="instagram:up123",
+    post_url="https://www.instagram.com/reel/up123/",
+    platform=Platform.INSTAGRAM,
+    media_kind="reel",
+    caption="original caption",
+    fetched_at="2026-07-06T21:15:04Z",
+    content_category="other",
+  )
+  save_post(post)
+  user_posts_repo.link_user_post("user-a", post.post_id)
+
+  client = TestClient(app)
+  res = client.patch(
+    "/api/posts/instagram/up123",
+    headers={"X-User-Id": "user-a"},
+    json={"title": "Updated Title", "content_category": "recipe"},
+  )
+  assert res.status_code == 200
+  body = res.json()
+  assert body["title"] == "Updated Title"
+  assert body["content_category"] == "food"
+
+  # Bad category returns 400
+  bad_res = client.patch(
+    "/api/posts/instagram/up123",
+    headers={"X-User-Id": "user-a"},
+    json={"content_category": "not_real"},
+  )
+  assert bad_res.status_code == 400
+
+  # Unowned post returns 404
+  res_other_user = client.patch(
+    "/api/posts/instagram/up123",
+    headers={"X-User-Id": "user-b"},
+    json={"title": "Stolen"},
+  )
+  assert res_other_user.status_code == 404
+
+
+

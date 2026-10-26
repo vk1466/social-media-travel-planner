@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useSavePipeline } from "../state/SavePipelineContext";
+import { validateSaveInput } from "../components/SaveSheet";
 
 export function OnboardingPage() {
   const navigate = useNavigate();
@@ -11,6 +12,7 @@ export function OnboardingPage() {
     food: true,
   });
   const [pasteLink, setPasteLink] = useState("");
+  const [hasSavedLink, setHasSavedLink] = useState(false);
 
   const markCompleted = () => {
     try {
@@ -32,11 +34,14 @@ export function OnboardingPage() {
     { key: "skincare", label: "Skincare", soon: true },
   ];
 
+  const validation = validateSaveInput(pasteLink);
+
   const handleSaveFirstLink = async () => {
-    if (pasteLink.trim()) {
+    if (validation.isValid && pasteLink.trim()) {
+      setHasSavedLink(true);
       await saveUrl(pasteLink.trim());
+      setStep(3);
     }
-    setStep(3);
   };
 
   const pickedCount = Object.values(picks).filter(Boolean).length;
@@ -417,6 +422,26 @@ export function OnboardingPage() {
               />
             </label>
 
+            {pasteLink.trim() && !validation.isValid && (
+              <div
+                style={{
+                  marginTop: "8px",
+                  fontSize: "13px",
+                  color: "#DC2626",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="8" x2="12" y2="12" />
+                  <line x1="12" y1="16" x2="12.01" y2="16" />
+                </svg>
+                {validation.message || "Invalid link"}
+              </div>
+            )}
+
             <Link
               to="/coming-soon/mobile-share"
               style={{
@@ -467,7 +492,7 @@ export function OnboardingPage() {
               <button
                 type="button"
                 onClick={handleSaveFirstLink}
-                disabled={!pasteLink.trim()}
+                disabled={!pasteLink.trim() || !validation.isValid}
                 style={{
                   height: "52px",
                   padding: "0 28px",
@@ -476,16 +501,19 @@ export function OnboardingPage() {
                   fontSize: "16px",
                   fontWeight: 700,
                   border: 0,
-                  background: pasteLink.trim() ? "#1B1D1F" : "#ECECEA",
-                  color: pasteLink.trim() ? "#FFFFFF" : "#8A8E92",
-                  cursor: pasteLink.trim() ? "pointer" : "default",
+                  background: pasteLink.trim() && validation.isValid ? "#1B1D1F" : "#ECECEA",
+                  color: pasteLink.trim() && validation.isValid ? "#FFFFFF" : "#8A8E92",
+                  cursor: pasteLink.trim() && validation.isValid ? "pointer" : "not-allowed",
                 }}
               >
                 Save link
               </button>
               <button
                 type="button"
-                onClick={() => setStep(3)}
+                onClick={() => {
+                  setHasSavedLink(false);
+                  setStep(3);
+                }}
                 style={{
                   border: 0,
                   background: "transparent",
@@ -506,42 +534,66 @@ export function OnboardingPage() {
         {/* Step 3: You're in */}
         {step === 3 && (
           <div>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "14px", fontWeight: 700, color: "#1F7A4D" }}>
-              <span
-                aria-hidden="true"
-                style={{ width: "10px", height: "10px", borderRadius: "50%", background: "#2F9E6B" }}
-              />
-              Saving 1
-            </div>
-            <h1
-              style={{
-                margin: "10px 0 0",
-                fontSize: "46px",
-                lineHeight: 1.05,
-                letterSpacing: "-0.035em",
-                fontWeight: 800,
-              }}
-            >
-              You're in.
-            </h1>
-            <p style={{ margin: "14px 0 0", fontSize: "17px", lineHeight: 1.55, color: "#4A4E52" }}>
-              Your link is being read. Head to Home. We'll show it there as soon as it is filed.
-            </p>
+            {hasSavedLink ? (
+              <>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "14px", fontWeight: 700, color: "#1F7A4D" }}>
+                  <span
+                    aria-hidden="true"
+                    style={{ width: "10px", height: "10px", borderRadius: "50%", background: "#2F9E6B" }}
+                  />
+                  Saving 1
+                </div>
+                <h1
+                  style={{
+                    margin: "10px 0 0",
+                    fontSize: "46px",
+                    lineHeight: 1.05,
+                    letterSpacing: "-0.035em",
+                    fontWeight: 800,
+                  }}
+                >
+                  You're in.
+                </h1>
+                <p style={{ margin: "14px 0 0", fontSize: "17px", lineHeight: 1.55, color: "#4A4E52" }}>
+                  Your link is being read. Head to Home. We'll show it there as soon as it is filed.
+                </p>
 
-            <div
-              style={{
-                marginTop: "20px",
-                padding: "16px 18px",
-                borderRadius: "20px",
-                border: "2px dashed #C9C5BA",
-                background: "#FBFAF7",
-                fontSize: "14px",
-                lineHeight: 1.5,
-                color: "#4A4E52",
-              }}
-            >
-              If a link can't be read, it waits in your Home inbox with a Retry button. Nothing is lost.
-            </div>
+                <div
+                  style={{
+                    marginTop: "20px",
+                    padding: "16px 18px",
+                    borderRadius: "20px",
+                    border: "2px dashed #C9C5BA",
+                    background: "#FBFAF7",
+                    fontSize: "14px",
+                    lineHeight: 1.5,
+                    color: "#4A4E52",
+                  }}
+                >
+                  If a link can't be read, it waits in your Home inbox with a Retry button. Nothing is lost.
+                </div>
+              </>
+            ) : (
+              <>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "14px", fontWeight: 700, color: "#4A4E52" }}>
+                  Ready to explore
+                </div>
+                <h1
+                  style={{
+                    margin: "10px 0 0",
+                    fontSize: "46px",
+                    lineHeight: 1.05,
+                    letterSpacing: "-0.035em",
+                    fontWeight: 800,
+                  }}
+                >
+                  You're in.
+                </h1>
+                <p style={{ margin: "14px 0 0", fontSize: "17px", lineHeight: 1.55, color: "#4A4E52" }}>
+                  Your library is ready. You can save Instagram, TikTok, or YouTube links anytime using the Save button.
+                </p>
+              </>
+            )}
 
             <div style={{ display: "flex", gap: "12px", marginTop: "32px", alignItems: "center" }}>
               <button

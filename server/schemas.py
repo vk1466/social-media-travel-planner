@@ -140,6 +140,13 @@ class SavedPostSchema(BaseModel):
   transcript: str | None = None
   video_analysis: str | None = None
   slide_media_urls: list[str] = Field(default_factory=list)
+  title: str | None = None
+
+
+class UpdatePostRequest(BaseModel):
+  title: str | None = None
+  content_category: str | None = None
+  caption: str | None = None
 
 
 class PlaceLocationSchema(BaseModel):

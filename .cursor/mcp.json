@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "travel-bridge": {
+      "command": "/Users/vipul/.nvm/versions/node/v22.21.1/bin/node",
+      "args": ["/Users/vipul/travel-planner-bridge/server.js"]
+    }
+  }
+}

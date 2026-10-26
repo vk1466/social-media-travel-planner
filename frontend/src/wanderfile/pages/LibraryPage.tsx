@@ -1,21 +1,35 @@
-import { useMemo } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { EmptyState } from "../components/EmptyState";
 import { SkeletonGrid } from "../components/SkeletonCard";
+import { PostCard } from "../components/PostCard";
+import { EditPostModal } from "../components/EditPostModal";
 import { useSavePipeline } from "../state/SavePipelineContext";
-import type { SavedPost } from "../../api";
+import { deletePost, parsePostId, type SavedPost } from "../../api";
 
 interface LibraryPageProps {
   posts: SavedPost[];
   loading: boolean;
+  onRefresh?: () => void;
 }
 
-export function LibraryPage({ posts, loading }: LibraryPageProps) {
+export function LibraryPage({ posts, loading, onRefresh }: LibraryPageProps) {
   const [searchParams, setSearchParams] = useSearchParams();
   const { openSaveSheet } = useSavePipeline();
+  const [editingPost, setEditingPost] = useState<SavedPost | null>(null);
 
   const activeCategory = searchParams.get("category") || "all";
   const searchQuery = searchParams.get("q") || "";
+
+  const handleDeletePost = async (postToDelete: SavedPost) => {
+    try {
+      const { platform, nativeId } = parsePostId(postToDelete.post_id);
+      await deletePost(platform, nativeId);
+      onRefresh?.();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to delete post");
+    }
+  };
 
   const categories = [
     { key: "all", label: "All" },
@@ -34,10 +48,11 @@ export function LibraryPage({ posts, loading }: LibraryPageProps) {
       }
       if (searchQuery.trim()) {
         const query = searchQuery.toLowerCase();
+        const title = (post.title || "").toLowerCase();
         const caption = (post.caption || "").toLowerCase();
         const author = (post.author_handle || "").toLowerCase();
         const hashtags = (post.hashtags || []).join(" ").toLowerCase();
-        if (!caption.includes(query) && !author.includes(query) && !hashtags.includes(query)) {
+        if (!title.includes(query) && !caption.includes(query) && !author.includes(query) && !hashtags.includes(query)) {
           return false;
         }
       }
@@ -141,80 +156,23 @@ export function LibraryPage({ posts, loading }: LibraryPageProps) {
             gap: "24px",
           }}
         >
-          {filteredPosts.map((post) => {
-            const category = post.content_category || "other";
-            const catLabels: Record<string, { label: string; bg: string; ink: string }> = {
-              travel: { label: "Place", bg: "#E3F0F4", ink: "#1B5E78" },
-              food: { label: "Recipe", bg: "#FBEBDD", ink: "#9A4513" },
-              movies: { label: "Title", bg: "#ECE8F7", ink: "#4B3C8C" },
-              other: { label: "Other", bg: "#ECECEA", ink: "#4A4E52" },
-            };
-            const tag = catLabels[category] || catLabels.other;
-
-            return (
-              <Link
-                key={post.post_id}
-                to={post.place_ids && post.place_ids.length > 0 ? `/place/${post.place_ids[0]}` : `/post/${post.post_id}`}
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  textDecoration: "none",
-                  color: "#1B1D1F",
-                  background: "#FFFFFF",
-                  border: "1px solid #E6E3DC",
-                  borderRadius: "24px",
-                  overflow: "hidden",
-                  transition: "transform 0.15s ease",
-                }}
-              >
-                <div
-                  style={{
-                    height: "220px",
-                    position: "relative",
-                    background: post.thumbnail_url
-                      ? `url(${post.thumbnail_url}) center/cover no-repeat`
-                      : "linear-gradient(160deg, #8CC3D6, #2D6A82)",
-                  }}
-                >
-                  <span
-                    style={{
-                      position: "absolute",
-                      left: "12px",
-                      top: "12px",
-                      fontSize: "12px",
-                      fontWeight: 700,
-                      padding: "4px 10px",
-                      borderRadius: "999px",
-                      background: tag.bg,
-                      color: tag.ink,
-                    }}
-                  >
-                    {tag.label}
-                  </span>
-                </div>
-                <div style={{ padding: "16px", display: "flex", flexDirection: "column", gap: "6px" }}>
-                  <div
-                    style={{
-                      fontSize: "15px",
-                      fontWeight: 700,
-                      lineHeight: 1.35,
-                      display: "-webkit-box",
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: "vertical",
-                      overflow: "hidden",
-                    }}
-                  >
-                    {post.caption || "Saved post"}
-                  </div>
-                  <div style={{ fontSize: "13px", color: "#6B6F73" }}>
-                    {post.author_handle ? `@${post.author_handle}` : "Instagram reel"}
-                  </div>
-                </div>
-              </Link>
-            );
-          })}
+          {filteredPosts.map((post) => (
+            <PostCard
+              key={post.post_id}
+              post={post}
+              onEdit={(p) => setEditingPost(p)}
+              onDelete={handleDeletePost}
+            />
+          ))}
         </div>
       )}
+
+      <EditPostModal
+        post={editingPost}
+        isOpen={!!editingPost}
+        onClose={() => setEditingPost(null)}
+        onSaved={() => onRefresh?.()}
+      />
     </main>
   );
 }

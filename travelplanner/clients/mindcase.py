@@ -202,20 +202,35 @@ def _request(method: str, path: str, body: dict[str, Any] | None = None) -> dict
   if body is not None:
     headers["Content-Type"] = "application/json"
     data = json.dumps(body).encode("utf-8")
-  request = urllib.request.Request(url, data=data, headers=headers, method=method)
-  try:
-    with urllib.request.urlopen(request, timeout=30, context=_SSL_CONTEXT) as resp:
-      text = resp.read().decode("utf-8")
-      status = resp.status
-  except urllib.error.HTTPError as exc:
-    text = exc.read().decode("utf-8", errors="replace")
-    parsed = _parse_json(text)
-    detail = ""
-    if isinstance(parsed, dict):
-      detail = str(parsed.get("error") or parsed.get("message") or "")
-    raise RuntimeError(
-      f"Mindcase {exc.code} {method} {path}: {detail or text[:240]}"
-    ) from exc
+  max_retries = 3
+  for attempt in range(max_retries + 1):
+    request = urllib.request.Request(url, data=data, headers=headers, method=method)
+    try:
+      with urllib.request.urlopen(request, timeout=30, context=_SSL_CONTEXT) as resp:
+        text = resp.read().decode("utf-8")
+        status = resp.status
+        break
+    except urllib.error.HTTPError as exc:
+      if exc.code == 429 and attempt < max_retries:
+        retry_after = exc.headers.get("Retry-After") if exc.headers else None
+        delay = float(retry_after) if retry_after and retry_after.isdigit() else 1.5 * (attempt + 1)
+        logger.warning(
+          "Mindcase 429 rate limit path=%s attempt=%d/%d retrying in %.1fs",
+          path,
+          attempt + 1,
+          max_retries,
+          delay,
+        )
+        time.sleep(delay)
+        continue
+      text = exc.read().decode("utf-8", errors="replace")
+      parsed = _parse_json(text)
+      detail = ""
+      if isinstance(parsed, dict):
+        detail = str(parsed.get("error") or parsed.get("message") or "")
+      raise RuntimeError(
+        f"Mindcase {exc.code} {method} {path}: {detail or text[:240]}"
+      ) from exc
 
   parsed = _parse_json(text)
   if not isinstance(parsed, dict):

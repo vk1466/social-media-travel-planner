@@ -299,3 +299,14 @@ def test_ingest_links_on_result_callback(dynamodb) -> None:
   )
 
   assert len(seen) == 2
+
+
+def test_friendly_error_mapping() -> None:
+  from travelplanner.personas.link_ingest import friendly_error_message
+
+  assert friendly_error_message("instagram_head failed at step 'fetch_media': Mindcase 429") == "Rate limited, please retry in a minute"
+  assert friendly_error_message("Mindcase returned no post for https://...") == "Private or deleted post"
+  assert friendly_error_message("Unsupported platform: youtube") == "Unsupported platform"
+  assert friendly_error_message("Request timed out") == "Request timed out, please retry in a moment"
+  assert friendly_error_message("Empty URL") == "Please enter a valid link"
+

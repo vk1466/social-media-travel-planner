@@ -2,6 +2,54 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSavePipeline } from "../state/SavePipelineContext";
 
+export function validateSaveInput(input: string): {
+  isValid: boolean;
+  platform?: "instagram" | "tiktok" | "youtube" | "other";
+  message?: string;
+  isError?: boolean;
+} {
+  const trimmed = input.trim();
+  if (!trimmed) {
+    return { isValid: false };
+  }
+
+  const lines = trimmed.split(/[\n\s]+/).filter(Boolean);
+  for (const line of lines) {
+    const lowered = line.toLowerCase();
+    const hasProtocol = lowered.startsWith("http://") || lowered.startsWith("https://");
+    const hasDomainDot = lowered.includes(".");
+
+    if (!hasProtocol && !hasDomainDot) {
+      return {
+        isValid: false,
+        isError: true,
+        message: "Please enter a valid web link (e.g. https://...)",
+      };
+    }
+
+    const isInstagram = lowered.includes("instagram.com");
+    const isTikTok = lowered.includes("tiktok.com");
+    const isYouTube = lowered.includes("youtube.com") || lowered.includes("youtu.be");
+    const isReddit = lowered.includes("reddit.com");
+
+    if (!isInstagram && !isTikTok && !isYouTube && !isReddit) {
+      return {
+        isValid: false,
+        isError: true,
+        message: "Unsupported domain. We support Instagram, TikTok, and YouTube.",
+      };
+    }
+  }
+
+  const loweredFirst = lines[0].toLowerCase();
+  let platform: "instagram" | "tiktok" | "youtube" | "other" = "other";
+  if (loweredFirst.includes("instagram.com")) platform = "instagram";
+  else if (loweredFirst.includes("tiktok.com")) platform = "tiktok";
+  else if (loweredFirst.includes("youtube.com") || loweredFirst.includes("youtu.be")) platform = "youtube";
+
+  return { isValid: true, platform };
+}
+
 export function SaveSheet() {
   const { isSaveSheetOpen, closeSaveSheet, resetActiveSave, saveUrl, activeSave, changeSavedCategory } = useSavePipeline();
   const [inputText, setInputText] = useState("");
@@ -16,8 +64,7 @@ export function SaveSheet() {
 
   if (!isSaveSheetOpen) return null;
 
-  const isInstagram = inputText.includes("instagram.com");
-  const isTikTokOrYouTube = inputText.includes("tiktok.com") || inputText.includes("youtube.com") || inputText.includes("youtu.be");
+  const validation = validateSaveInput(inputText);
 
   const stage = !activeSave
     ? 0
@@ -28,7 +75,7 @@ export function SaveSheet() {
     : 1;
 
   const handleSave = async () => {
-    if (!inputText.trim()) return;
+    if (!validation.isValid) return;
     await saveUrl(inputText);
   };
 
@@ -124,7 +171,7 @@ export function SaveSheet() {
                 height: "100px",
                 padding: "16px",
                 borderRadius: "18px",
-                border: "1px solid #D9D5CB",
+                border: validation.isError ? "1.5px solid #D93829" : "1px solid #D9D5CB",
                 background: "#F6F5F1",
                 fontFamily: "inherit",
                 fontSize: "15px",
@@ -135,9 +182,18 @@ export function SaveSheet() {
               }}
             />
 
-            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "14px", fontSize: "14px", color: "#4A4E52" }}>
-              {isInstagram ? (
-                <>
+            <div style={{ marginTop: "14px", fontSize: "14px" }}>
+              {validation.isError ? (
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "#C53B27", fontWeight: 600 }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" y1="8" x2="12" y2="12" />
+                    <line x1="12" y1="16" x2="12.01" y2="16" />
+                  </svg>
+                  {validation.message}
+                </div>
+              ) : validation.isValid ? (
+                <div style={{ display: "flex", alignItems: "center", gap: "10px", color: "#1F7A4D", fontWeight: 600 }}>
                   <span
                     aria-hidden="true"
                     style={{
@@ -155,33 +211,37 @@ export function SaveSheet() {
                       <path d="m5 12.5 4.5 4.5L19 7.5" />
                     </svg>
                   </span>
-                  Instagram reel detected
-                </>
-              ) : isTikTokOrYouTube ? (
-                <span style={{ color: "#6B6F73" }}>TikTok and YouTube reading is currently in early preview</span>
+                  {validation.platform === "instagram"
+                    ? "Instagram reel detected"
+                    : validation.platform === "tiktok"
+                    ? "TikTok video detected"
+                    : validation.platform === "youtube"
+                    ? "YouTube video detected"
+                    : "Supported link detected"}
+                </div>
               ) : (
-                <span style={{ color: "#6B6F73" }}>Supports Instagram reels, restaurants, recipes, movies</span>
+                <div style={{ color: "#6B6F73" }}>
+                  Supports Instagram reels, restaurants, recipes, movies
+                </div>
               )}
-              <span style={{ flex: 1 }} />
-              <span style={{ color: "#6B6F73", fontSize: "13px" }}>Paste several links, one per line</span>
             </div>
 
             <button
               type="button"
               onClick={handleSave}
-              disabled={!inputText.trim()}
+              disabled={!validation.isValid}
               style={{
                 width: "100%",
                 height: "52px",
                 marginTop: "24px",
                 borderRadius: "999px",
                 border: 0,
-                background: inputText.trim() ? "#1B1D1F" : "#ECECEA",
+                background: validation.isValid ? "#1B1D1F" : "#ECECEA",
                 fontFamily: "inherit",
                 fontSize: "16px",
                 fontWeight: 700,
-                color: inputText.trim() ? "#FFFFFF" : "#8A8E92",
-                cursor: inputText.trim() ? "pointer" : "not-allowed",
+                color: validation.isValid ? "#FFFFFF" : "#8A8E92",
+                cursor: validation.isValid ? "pointer" : "not-allowed",
               }}
             >
               Save
@@ -217,7 +277,7 @@ export function SaveSheet() {
                 >
                   <div
                     style={{
-                      width: `${activeSave?.progressPercent || 50}%`,
+                      width: `${activeSave?.progressPercent || 30}%`,
                       height: "100%",
                       borderRadius: "999px",
                       background: "#1B1D1F",
@@ -234,18 +294,22 @@ export function SaveSheet() {
                         width: "22px",
                         height: "22px",
                         borderRadius: "50%",
-                        background: "#E3F4EA",
-                        color: "#1F7A4D",
+                        background: (activeSave?.progressPercent || 0) >= 25 ? "#E3F4EA" : "#ECECEA",
+                        color: (activeSave?.progressPercent || 0) >= 25 ? "#1F7A4D" : "#6B6F73",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
                       }}
                     >
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                        <path d="m5 12.5 4.5 4.5L19 7.5" />
-                      </svg>
+                      {(activeSave?.progressPercent || 0) >= 25 ? (
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                          <path d="m5 12.5 4.5 4.5L19 7.5" />
+                        </svg>
+                      ) : (
+                        <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#6B6F73" }} />
+                      )}
                     </span>
-                    Fetched the post
+                    Connecting to link
                   </div>
 
                   <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
@@ -270,10 +334,10 @@ export function SaveSheet() {
                         <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#6B6F73" }} />
                       )}
                     </span>
-                    Read caption and on-screen text
+                    Reading post content & caption
                   </div>
 
-                  <div style={{ display: "flex", alignItems: "center", gap: "12px", fontWeight: 700 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "12px", fontWeight: (activeSave?.progressPercent || 0) >= 60 ? 700 : 400 }}>
                     <span
                       aria-hidden="true"
                       style={{
@@ -306,8 +370,8 @@ export function SaveSheet() {
                   width: "40px",
                   height: "40px",
                   borderRadius: "50%",
-                  background: "#E3F4EA",
-                  color: "#1F7A4D",
+                  background: activeSave?.isDuplicate ? "#EBF1F5" : "#E3F4EA",
+                  color: activeSave?.isDuplicate ? "#1B5E78" : "#1F7A4D",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -317,9 +381,16 @@ export function SaveSheet() {
                   <path d="m5 12.5 4.5 4.5L19 7.5" />
                 </svg>
               </span>
-              <h2 style={{ flex: 1, margin: 0, fontSize: "26px", letterSpacing: "-0.03em", fontWeight: 800 }}>
-                Saved to your library
-              </h2>
+              <div>
+                <h2 style={{ margin: 0, fontSize: "26px", letterSpacing: "-0.03em", fontWeight: 800 }}>
+                  {activeSave?.isDuplicate ? "Already saved" : "Saved to your library"}
+                </h2>
+                {activeSave?.isDuplicate && (
+                  <p style={{ margin: "4px 0 0", fontSize: "14px", color: "#6B6F73" }}>
+                    This post is already in your library.
+                  </p>
+                )}
+              </div>
             </div>
 
             <div style={{ display: "flex", gap: "20px", marginTop: "24px", padding: "16px", borderRadius: "22px", background: "#F6F5F1" }}>
@@ -340,35 +411,39 @@ export function SaveSheet() {
                 <div style={{ fontSize: "14px", color: "#6B6F73", marginTop: "4px" }}>
                   {activeSave?.author || "@creator"} · Instagram reel
                 </div>
-                <div style={{ fontSize: "12px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#6B6F73", margin: "14px 0 8px" }}>
-                  Filed as
-                </div>
-                <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-                  {categories.map((c) => {
-                    const isSelected = (activeSave?.category || "place") === c.key;
-                    return (
-                      <button
-                        key={c.key}
-                        type="button"
-                        onClick={() => activeSave && changeSavedCategory(activeSave.id, c.key)}
-                        style={{
-                          height: "34px",
-                          padding: "0 14px",
-                          borderRadius: "999px",
-                          fontFamily: "inherit",
-                          fontSize: "13px",
-                          fontWeight: 700,
-                          cursor: "pointer",
-                          border: isSelected ? "0" : "1px solid #D9D5CB",
-                          background: isSelected ? "#1B1D1F" : "#FFFFFF",
-                          color: isSelected ? "#FFFFFF" : "#1B1D1F",
-                        }}
-                      >
-                        {c.label}
-                      </button>
-                    );
-                  })}
-                </div>
+                {!activeSave?.isDuplicate && (
+                  <>
+                    <div style={{ fontSize: "12px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#6B6F73", margin: "14px 0 8px" }}>
+                      Filed as
+                    </div>
+                    <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                      {categories.map((c) => {
+                        const isSelected = (activeSave?.category || "place") === c.key;
+                        return (
+                          <button
+                            key={c.key}
+                            type="button"
+                            onClick={() => activeSave && changeSavedCategory(activeSave.id, c.key)}
+                            style={{
+                              height: "34px",
+                              padding: "0 14px",
+                              borderRadius: "999px",
+                              fontFamily: "inherit",
+                              fontSize: "13px",
+                              fontWeight: 700,
+                              cursor: "pointer",
+                              border: isSelected ? "0" : "1px solid #D9D5CB",
+                              background: isSelected ? "#1B1D1F" : "#FFFFFF",
+                              color: isSelected ? "#FFFFFF" : "#1B1D1F",
+                            }}
+                          >
+                            {c.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
               </div>
             </div>
 
@@ -395,7 +470,11 @@ export function SaveSheet() {
                 type="button"
                 onClick={() => {
                   closeSaveSheet();
-                  navigate("/library");
+                  if (activeSave?.postId) {
+                    navigate(`/post/${activeSave.postId}`);
+                  } else {
+                    navigate("/library");
+                  }
                 }}
                 style={{
                   flex: 1,
@@ -410,7 +489,7 @@ export function SaveSheet() {
                   cursor: "pointer",
                 }}
               >
-                View in Library
+                {activeSave?.isDuplicate ? "View existing item" : "View in Library"}
               </button>
             </div>
           </div>

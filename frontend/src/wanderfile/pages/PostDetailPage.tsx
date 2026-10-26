@@ -1,20 +1,40 @@
 import { useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { EmptyState } from "../components/EmptyState";
 import { ComingSoonButton } from "../comingSoon/ComingSoonControl";
-import type { SavedPost } from "../../api";
+import { EditPostModal } from "../components/EditPostModal";
+import { deletePost, parsePostId, type SavedPost } from "../../api";
 
 interface PostDetailPageProps {
   posts: SavedPost[];
+  onRefresh?: () => void;
 }
 
-export function PostDetailPage({ posts }: PostDetailPageProps) {
+export function PostDetailPage({ posts, onRefresh }: PostDetailPageProps) {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const post = posts.find((p) => p.post_id === id);
 
   const [servings, setServings] = useState(4);
   const [cooked, setCooked] = useState(false);
   const [watched, setWatched] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDelete = async () => {
+    if (!post) return;
+    if (!window.confirm("Are you sure you want to delete this save?")) return;
+    setDeleting(true);
+    try {
+      const { platform, nativeId } = parsePostId(post.post_id);
+      await deletePost(platform, nativeId);
+      onRefresh?.();
+      navigate("/library");
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to delete post");
+      setDeleting(false);
+    }
+  };
 
   if (!post) {
     return (
@@ -125,7 +145,7 @@ export function PostDetailPage({ posts }: PostDetailPageProps) {
             </div>
 
             <h1 style={{ margin: "0 0 12px", fontSize: "36px", lineHeight: 1.15, fontWeight: 800 }}>
-              {post.caption?.slice(0, 75) || "Saved Post"}
+              {post.title || post.caption?.slice(0, 75) || "Saved Post"}
             </h1>
 
             <p style={{ margin: 0, fontSize: "16px", lineHeight: 1.5, opacity: 0.85 }}>
@@ -134,6 +154,58 @@ export function PostDetailPage({ posts }: PostDetailPageProps) {
           </div>
 
           <div style={{ display: "flex", gap: "12px", marginTop: "24px", flexWrap: "wrap", alignItems: "center" }}>
+            <button
+              type="button"
+              onClick={() => setIsEditModalOpen(true)}
+              style={{
+                height: "44px",
+                padding: "0 18px",
+                borderRadius: "999px",
+                border: isMovie ? "1px solid rgba(255,255,255,0.3)" : "1px solid #D9D5CB",
+                background: isMovie ? "rgba(255,255,255,0.1)" : "#FFFFFF",
+                color: isMovie ? "#FFFFFF" : "#1B1D1F",
+                fontFamily: "inherit",
+                fontSize: "14px",
+                fontWeight: 700,
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+              }}
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+              </svg>
+              Edit save
+            </button>
+
+            <button
+              type="button"
+              onClick={handleDelete}
+              disabled={deleting}
+              style={{
+                height: "44px",
+                padding: "0 18px",
+                borderRadius: "999px",
+                border: "1px solid #FCA5A5",
+                background: isMovie ? "rgba(239,68,68,0.15)" : "#FEF2F2",
+                color: "#DC2626",
+                fontFamily: "inherit",
+                fontSize: "14px",
+                fontWeight: 700,
+                cursor: deleting ? "not-allowed" : "pointer",
+                opacity: deleting ? 0.6 : 1,
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+              }}
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+              </svg>
+              {deleting ? "Deleting..." : "Delete save"}
+            </button>
+
             {isRecipe && (
               <>
                 <button
@@ -214,7 +286,7 @@ export function PostDetailPage({ posts }: PostDetailPageProps) {
                   alignItems: "center",
                 }}
               >
-                Open on Instagram
+                Open on original site
               </a>
             )}
           </div>
@@ -354,6 +426,13 @@ export function PostDetailPage({ posts }: PostDetailPageProps) {
           </section>
         </div>
       </div>
+
+      <EditPostModal
+        post={post}
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        onSaved={onRefresh}
+      />
     </main>
   );
 }
