@@ -302,3 +302,19 @@ def test_extract_display_name_prefers_english() -> None:
   }
   assert _extract_display_name(raw_with_translated_display, fallback="Skytree") == "Tokyo Skytree"
 
+
+def test_capitalize_place_name_ichiran_ramen() -> None:
+  from travelplanner.clients.geocoder import capitalize_place_name, _extract_display_name
+
+  assert capitalize_place_name("Ichiran ramen") == "Ichiran Ramen"
+  assert capitalize_place_name("ichiran ramen") == "Ichiran Ramen"
+  assert capitalize_place_name("museum of modern art") == "Museum of Modern Art"
+  assert capitalize_place_name("piazza del colosseo") == "Piazza del Colosseo"
+
+  raw_venue = {
+    "name": "Ichiran ramen",
+    "display_name": "Ichiran ramen, Shibuya, Tokyo, Japan",
+  }
+  assert _extract_display_name(raw_venue, fallback="Ichiran ramen") == "Ichiran Ramen"
+
+

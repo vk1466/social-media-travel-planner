@@ -6,7 +6,7 @@ import "leaflet/dist/leaflet.css";
 import { EmptyState } from "../components/EmptyState";
 import { ComingSoonButton } from "../comingSoon/ComingSoonControl";
 import { FeatureFlags } from "../comingSoon/featureRegistry";
-import { getPostTitle, proxiedMediaUrl } from "../../postDisplayUtils";
+import { getPostTitle, proxiedMediaUrl, capitalizePlaceName, getEffectiveAddress } from "../../postDisplayUtils";
 import type { Place, SavedPost } from "../../api";
 
 function MiniLocationMap({ lat, lng, displayName }: { lat: number; lng: number; displayName: string }) {
@@ -140,15 +140,18 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
   const lng = place.location?.longitude;
   const hasCoords = typeof lat === "number" && typeof lng === "number";
 
+  const displayName = capitalizePlaceName(place.display_name);
+  const effectiveAddress = getEffectiveAddress(place);
+
   const googleMapsUrl =
     place.google_maps_url ||
     (hasCoords
-      ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place.display_name)}+${lat},${lng}`
-      : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place.display_name)}`);
+      ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(displayName || place.display_name)}+${lat},${lng}`
+      : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(displayName || place.display_name)}`);
 
   const appleMapsUrl = hasCoords
-    ? `https://maps.apple.com/?q=${encodeURIComponent(place.display_name)}&ll=${lat},${lng}`
-    : `https://maps.apple.com/?q=${encodeURIComponent(place.display_name)}`;
+    ? `https://maps.apple.com/?q=${encodeURIComponent(displayName || place.display_name)}&ll=${lat},${lng}`
+    : `https://maps.apple.com/?q=${encodeURIComponent(displayName || place.display_name)}`;
 
   return (
     <main
@@ -230,7 +233,7 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
                 wordBreak: "break-word",
               }}
             >
-              {place.display_name}
+              {displayName || place.display_name}
             </h1>
 
             {place.aliases && place.aliases.length > 0 && (
@@ -584,8 +587,8 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
               </a>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: "8px", fontSize: "14px", color: "#4A4E52", minWidth: 0, overflowWrap: "anywhere", wordBreak: "break-word" }}>
-              {place.location?.display_name && (
-                <div><b>Address:</b> {place.location.display_name}</div>
+              {effectiveAddress && (
+                <div><b>Address:</b> {effectiveAddress}</div>
               )}
               {place.location?.city && <div><b>City:</b> {place.location.city}</div>}
               {place.location?.state_province && <div><b>State / Region:</b> {place.location.state_province}</div>}

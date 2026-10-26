@@ -111,3 +111,66 @@ export function proxiedMediaUrl(url: string | null | undefined): string | null {
   }
   return `${API_BASE_URL}/api/media/proxy?url=${encodeURIComponent(trimmed)}`;
 }
+
+const LOWERCASE_ARTICLES = new Set([
+  "a", "an", "the", "and", "but", "or", "for", "nor", "on", "at", "to", "from", "by", "with", "in", "of",
+  "de", "del", "della", "delle", "di", "da", "la", "le", "il", "lo", "el", "los", "las", "du", "des", "van", "von"
+]);
+
+export function capitalizePlaceName(name: string | null | undefined): string {
+  const trimmed = (name ?? "").trim();
+  if (!trimmed) return "";
+  const words = trimmed.split(/\s+/);
+  return words
+    .map((word, i) => {
+      const lower = word.toLowerCase();
+      const hasInternalCaps = /[a-z][A-Z]/.test(word);
+      if (hasInternalCaps) return word;
+      if (word.length > 0 && word[0] === word[0].toUpperCase() && word[0] !== word[0].toLowerCase()) {
+        return word;
+      }
+      if (i > 0 && LOWERCASE_ARTICLES.has(lower)) return lower;
+      return word.charAt(0).toUpperCase() + word.slice(1);
+    })
+    .join(" ");
+}
+
+export function getEffectiveAddress(place: {
+  display_name?: string | null;
+  location?: {
+    display_name?: string | null;
+    city?: string | null;
+    state_province?: string | null;
+    country?: string | null;
+  } | null;
+}): string | null {
+  const rawLoc = place.location?.display_name?.trim() || "";
+  const displayName = (place.display_name || "").trim().toLowerCase();
+
+  if (rawLoc) {
+    const rawLower = rawLoc.toLowerCase();
+    if (rawLower !== displayName) {
+      if (rawLower.startsWith(displayName + ",") || rawLower.startsWith(displayName + " -")) {
+        const stripped = rawLoc.slice(displayName.length + 1).trim().replace(/^[,\s-]+/, "");
+        if (stripped) return stripped;
+      }
+      return rawLoc;
+    }
+  }
+
+  const parts = [
+    place.location?.city,
+    place.location?.state_province,
+    place.location?.country,
+  ].filter(Boolean);
+
+  if (parts.length > 0) {
+    const regionStr = parts.join(", ");
+    if (regionStr.toLowerCase() !== displayName) {
+      return regionStr;
+    }
+  }
+
+  return null;
+}
+

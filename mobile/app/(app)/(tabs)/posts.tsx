@@ -25,6 +25,7 @@ import { usePendingShare } from "@/src/context/PendingShareContext";
 import { postTitle } from "@/src/display";
 import { postsForPlatforms, useLibraryPlatform } from "@/src/libraryPlatform";
 import { appHref } from "@/src/nav";
+import { FeatureFlags } from "@/src/featureRegistry";
 import { colors, radius, shadow } from "@/src/theme";
 
 type DateMode = "saved" | "posted";
@@ -296,17 +297,19 @@ export default function PostsScreen() {
             </Text>
           </Pressable>
 
-          <Pressable
-            onPress={() => {
-              router.push(appHref("/(app)/settings"));
-            }}
-            style={styles.chipDashed}
-          >
-            <Text style={styles.chipDashedText}>+ Workouts?</Text>
-            <View style={styles.soonBadge}>
-              <Text style={styles.soonBadgeText}>Soon</Text>
-            </View>
-          </Pressable>
+          {FeatureFlags.isEnabled("new-kits") ? (
+            <Pressable
+              onPress={() => {
+                router.push(appHref("/(app)/settings"));
+              }}
+              style={styles.chipDashed}
+            >
+              <Text style={styles.chipDashedText}>+ Workouts?</Text>
+              <View style={styles.soonBadge}>
+                <Text style={styles.soonBadgeText}>Soon</Text>
+              </View>
+            </Pressable>
+          ) : null}
 
           <Pressable
             onPress={() => setCollectionFilter((c) => (c === "location" ? "all" : "location"))}

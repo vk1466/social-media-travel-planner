@@ -110,13 +110,41 @@ def viewbox_around(latitude: float, longitude: float, *, half_span_degrees: floa
   return ((south, west), (north, east))
 
 
+LOWERCASE_WORDS = {
+  "a", "an", "the", "and", "but", "or", "for", "nor", "on", "at", "to", "from", "by", "with", "in", "of",
+  "de", "del", "della", "delle", "di", "da", "la", "le", "il", "lo", "el", "los", "las", "du", "des", "van", "von",
+}
+
+
+def capitalize_place_name(name: str) -> str:
+  name = (name or "").strip()
+  if not name:
+    return ""
+  words = name.split()
+  capitalized = []
+  for i, word in enumerate(words):
+    lower_word = word.lower()
+    has_internal_caps = any(c.isupper() for c in word[1:])
+    if has_internal_caps:
+      capitalized.append(word)
+    elif word[0].isupper():
+      # Preserve existing capitalization like 'Hoa Lo Prison', 'The Spheres'
+      capitalized.append(word)
+    elif i > 0 and lower_word in LOWERCASE_WORDS:
+      capitalized.append(lower_word)
+    else:
+      capitalized.append(word[:1].upper() + word[1:])
+  return " ".join(capitalized)
+
+
+
 def _extract_display_name(raw: dict[str, Any], fallback: str) -> str:
   # 1. Namedetails tag with English or preferred international name
   namedetails = raw.get("namedetails") if isinstance(raw.get("namedetails"), dict) else {}
   for key in ("name:en", "int_name"):
     val = namedetails.get(key)
     if val and str(val).strip():
-      return str(val).strip()
+      return capitalize_place_name(str(val).strip())
 
   # 2. Nominatim translates display_name according to accept-language=en;
   # its first segment is the English-localized name of the place
@@ -124,17 +152,18 @@ def _extract_display_name(raw: dict[str, Any], fallback: str) -> str:
   if display_name:
     first_part = str(display_name).split(",")[0].strip()
     if first_part:
-      return first_part
+      return capitalize_place_name(first_part)
 
   # 3. Explicit namedetails or raw OSM name
   val = namedetails.get("name")
   if val and str(val).strip():
-    return str(val).strip()
+    return capitalize_place_name(str(val).strip())
   name = raw.get("name")
   if name and str(name).strip():
-    return str(name).strip()
+    return capitalize_place_name(str(name).strip())
 
-  return fallback
+  return capitalize_place_name(fallback)
+
 
 
 def _category_from_osm(

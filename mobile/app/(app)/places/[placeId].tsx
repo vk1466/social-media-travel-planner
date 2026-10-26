@@ -27,7 +27,9 @@ import { useLibrary } from "@/src/context/LibraryContext";
 import { googleMapsUrl } from "@/src/maps";
 import { compactMentionDetails } from "@/src/mentionDetails";
 import { factsAttribution, factsStructuredRows } from "@/src/placeFacts";
-import { getPlatformLabel, getPostTitle, proxiedMediaUrl } from "@/src/postDisplayUtils";
+import { capitalizePlaceName, getPlatformLabel, getPostTitle, proxiedMediaUrl } from "@/src/postDisplayUtils";
+import { FeatureFlags } from "@/src/featureRegistry";
+import { appHref } from "@/src/nav";
 import { colors, radius, shadow, spacing } from "@/src/theme";
 
 type IconName = keyof typeof Ionicons.glyphMap;
@@ -36,6 +38,38 @@ function locationBreadcrumb(place: PlaceDetail["place"]): string {
   const { city, state_province: stateProvince, country, continent } = place.location;
   return [city, stateProvince, country, continent].filter(Boolean).join(" · ") || "Location unknown";
 }
+
+function getEffectiveAddress(place: PlaceDetail["place"]): string | null {
+  const rawLoc = place.location?.display_name?.trim() || "";
+  const displayName = (place.display_name || "").trim().toLowerCase();
+
+  if (rawLoc) {
+    const rawLower = rawLoc.toLowerCase();
+    if (rawLower !== displayName) {
+      if (rawLower.startsWith(displayName + ",") || rawLower.startsWith(displayName + " -")) {
+        const stripped = rawLoc.slice(displayName.length + 1).trim().replace(/^[,\s-]+/, "");
+        if (stripped) return stripped;
+      }
+      return rawLoc;
+    }
+  }
+
+  const parts = [
+    place.location?.city,
+    place.location?.state_province,
+    place.location?.country,
+  ].filter(Boolean);
+
+  if (parts.length > 0) {
+    const regionStr = parts.join(", ");
+    if (regionStr.toLowerCase() !== displayName) {
+      return regionStr;
+    }
+  }
+
+  return null;
+}
+
 
 function SectionBlock({
   icon,
@@ -146,35 +180,72 @@ export default function PlaceDetailScreen() {
     return !lowerSummary.includes(lowerItem) && !lowerItem.includes(lowerSummary);
   });
   const mapUrl = place.google_maps_url || googleMapsUrl(place.location);
+  const appleMapUrl = place.location?.latitude != null && place.location?.longitude != null
+    ? `https://maps.apple.com/?q=${encodeURIComponent(place.display_name)}&ll=${place.location.latitude},${place.location.longitude}`
+    : `https://maps.apple.com/?q=${encodeURIComponent(place.display_name)}`;
   const breadcrumb = locationBreadcrumb(place);
+  const heroPost = sourcePosts.find((p) => p.thumbnail_url);
+  const heroImageUrl = heroPost?.thumbnail_url ? proxiedMediaUrl(heroPost.thumbnail_url) : null;
+  const postTips = sourcePosts.flatMap((p) => (p.extracted_places || []).flatMap((ep) => ep.tips || []));
+  const allTips = Array.from(new Set([...(place.tips || []), ...postTips].filter(Boolean)));
+  const effectiveAddress = getEffectiveAddress(place);
+
   return (
     <DetailSheetChrome>
       <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
       <View style={styles.main}>
-        <View style={styles.header}>
-          <View style={styles.headerCopy}>
+        {/* Place Detail Hero with real proxied thumbnail */}
+        <View style={styles.heroCard}>
+          {heroImageUrl ? (
+            <Image source={{ uri: heroImageUrl }} style={styles.heroImage} />
+          ) : (
+            <View style={styles.heroImageFallback} />
+          )}
+          <View style={styles.heroCopy}>
+            <View style={styles.tagRow}>
+              <TagChip category={place.category} />
+              {(place.attributes ?? []).map((attr) => (
+                <TagChip key={attr} label={attr} />
+              ))}
+            </View>
             <Text style={styles.breadcrumb}>{breadcrumb}</Text>
-            <Text style={styles.title}>{place.display_name}</Text>
+            <Text style={styles.title}>{capitalizePlaceName(place.display_name)}</Text>
             {place.aliases.length > 0 ? (
               <Text style={styles.aliases}>Also known as {place.aliases.join(", ")}</Text>
             ) : null}
-          </View>
-          <View style={styles.headerActions}>
-            {mapUrl ? (
-              <Pressable accessibilityRole="button" style={[styles.actionChip, styles.mapsAction]} onPress={() => void Linking.openURL(mapUrl)}>
-                <Ionicons name="navigate-outline" size={16} color={colors.onFill} />
-                <Text style={styles.mapsActionText}>Open in Google Maps</Text>
-              </Pressable>
+            {place.summary ? (
+              <Text style={styles.summaryText}>{place.summary}</Text>
             ) : null}
-            <Pressable
-              style={[styles.actionChip, isVisited && styles.actionChipVisited]}
-              onPress={() => void handleToggleVisited()}
-              disabled={visitedSaving}
-            >
-              <Text style={[styles.actionChipText, isVisited && styles.actionChipVisitedText]}>
-                {visitedSaving ? "Saving…" : isVisited ? "✓ Visited" : "Mark visited"}
-              </Text>
-            </Pressable>
+            <View style={styles.headerActions}>
+              <Pressable
+                style={[styles.actionChip, isVisited && styles.actionChipVisited]}
+                onPress={() => void handleToggleVisited()}
+                disabled={visitedSaving}
+              >
+                <Text style={[styles.actionChipText, isVisited && styles.actionChipVisitedText]}>
+                  {visitedSaving ? "Saving…" : isVisited ? "✓ Visited" : "Mark visited"}
+                </Text>
+              </Pressable>
+              {FeatureFlags.isEnabled("trips") ? (
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => router.push(appHref("/(app)/coming-soon"))}
+                  style={styles.actionChip}
+                >
+                  <Text style={styles.actionChipText}>Add to trip</Text>
+                </Pressable>
+              ) : null}
+              {mapUrl ? (
+                <Pressable accessibilityRole="button" style={[styles.actionChip, styles.mapsAction]} onPress={() => void Linking.openURL(mapUrl)}>
+                  <Ionicons name="navigate-outline" size={16} color={colors.onFill} />
+                  <Text style={styles.mapsActionText}>Google Maps</Text>
+                </Pressable>
+              ) : null}
+              <Pressable accessibilityRole="button" style={[styles.actionChip, styles.mapsActionSecondary]} onPress={() => void Linking.openURL(appleMapUrl)}>
+                <Ionicons name="map-outline" size={16} color="#1B5E78" />
+                <Text style={styles.mapsActionSecondaryText}>Apple Maps</Text>
+              </Pressable>
+            </View>
           </View>
         </View>
 
@@ -191,28 +262,40 @@ export default function PlaceDetailScreen() {
 
         {visitedError ? <ErrorBanner message={visitedError} /> : null}
 
-        <View style={styles.tagRow}>
-          <TagChip category={place.category} />
-          {(place.attributes ?? []).map((attr) => (
-            <TagChip key={attr} label={attr} />
-          ))}
-        </View>
-
-        {place.summary ? (
-          <View style={styles.summaryCard}>
-            <View style={styles.summaryHeader}>
-              <Ionicons name="sparkles" size={13} color={colors.brand} />
-              <Text style={styles.summaryTitle}>Overview</Text>
+        {/* Location & Address Section */}
+        <SectionBlock icon="location-outline" title="Location">
+          {place.location?.latitude != null && place.location?.longitude != null ? (
+            <View style={{ borderRadius: radius.lg, overflow: "hidden", marginBottom: spacing.sm, height: 180 }}>
+              <PlaceMap places={[place]} selectedPlaceId={place.place_id} height={180} />
             </View>
-            <Text style={styles.summaryText}>{place.summary}</Text>
+          ) : null}
+          <View style={styles.surface}>
+            {effectiveAddress ? (
+              <View style={styles.locationDetailRow}>
+                <Text style={styles.locationDetailLabel}>Address:</Text>
+                <Text style={styles.locationDetailValue}>{effectiveAddress}</Text>
+              </View>
+            ) : null}
+            {place.location?.city && (!effectiveAddress || !effectiveAddress.toLowerCase().includes(place.location.city.toLowerCase())) ? (
+              <View style={styles.locationDetailRow}>
+                <Text style={styles.locationDetailLabel}>City:</Text>
+                <Text style={styles.locationDetailValue}>{place.location.city}</Text>
+              </View>
+            ) : null}
+            {place.location?.state_province && (!effectiveAddress || !effectiveAddress.toLowerCase().includes(place.location.state_province.toLowerCase())) ? (
+              <View style={styles.locationDetailRow}>
+                <Text style={styles.locationDetailLabel}>State / Region:</Text>
+                <Text style={styles.locationDetailValue}>{place.location.state_province}</Text>
+              </View>
+            ) : null}
+            {place.location?.country && (!effectiveAddress || !effectiveAddress.toLowerCase().includes(place.location.country.toLowerCase())) ? (
+              <View style={styles.locationDetailRow}>
+                <Text style={styles.locationDetailLabel}>Country:</Text>
+                <Text style={styles.locationDetailValue}>{place.location.country}</Text>
+              </View>
+            ) : null}
           </View>
-        ) : null}
-
-        {place.location?.latitude != null && place.location?.longitude != null ? (
-          <View style={{ borderRadius: radius.lg, overflow: "hidden", marginTop: spacing.md, height: 180 }}>
-            <PlaceMap places={[place]} selectedPlaceId={place.place_id} height={180} />
-          </View>
-        ) : null}
+        </SectionBlock>
 
         <SectionBlock icon="flash-outline" title="At a glance">
           {detail.facts_refresh_queued ? (
@@ -289,12 +372,12 @@ export default function PlaceDetailScreen() {
           </SectionBlock>
         ) : null}
 
-        {place.tips.length > 0 ? (
-          <SectionBlock icon="bulb-outline" title={`Creator tips (${place.tips.length})`}>
+        {allTips.length > 0 ? (
+          <SectionBlock icon="bulb-outline" title={`Creator tips (${allTips.length})`}>
             <View style={styles.surface}>
-              <Text style={styles.attributedLabel}>From the creator</Text>
-              {place.tips.map((tip) => (
-                <View key={tip} style={styles.tipCard}>
+              <Text style={styles.attributedLabel}>From creators</Text>
+              {allTips.map((tip, idx) => (
+                <View key={idx} style={styles.tipCard}>
                   <Text style={styles.tipIcon}>💡</Text>
                   <Text style={styles.tipText}>{tip}</Text>
                 </View>
@@ -304,7 +387,10 @@ export default function PlaceDetailScreen() {
         ) : null}
 
         {sourcePosts.length > 0 ? (
-          <SectionBlock icon="albums-outline" title={`Saved from (${sourcePosts.length})`}>
+          <SectionBlock
+            icon="albums-outline"
+            title={`Mentioned in ${sourcePosts.length} ${sourcePosts.length === 1 ? "reel" : "reels"}`}
+          >
             <View style={styles.surface}>
               {sourcePosts.map((post) => {
                 const thumb = proxiedMediaUrl(post.thumbnail_url);
@@ -312,9 +398,13 @@ export default function PlaceDetailScreen() {
                   <Pressable
                     key={post.post_id}
                     style={styles.sourceRow}
-                    onPress={() =>
-                      router.push(`/posts/${post.platform}/${nativePostId(post)}`)
-                    }
+                    onPress={() => {
+                      if (post.post_url) {
+                        void Linking.openURL(post.post_url);
+                      } else {
+                        router.push(`/posts/${post.platform}/${nativePostId(post)}`);
+                      }
+                    }}
                   >
                     {thumb ? (
                       <Image source={{ uri: thumb }} style={styles.sourceThumb} />
@@ -325,9 +415,14 @@ export default function PlaceDetailScreen() {
                       <Text style={styles.sourceTitle} numberOfLines={2}>
                         {getPostTitle(post)}
                       </Text>
-                      <Text style={styles.sourcePlatform}>{getPlatformLabel(post)}</Text>
+                      <View style={styles.sourceMetaRow}>
+                        {post.author_handle ? (
+                          <Text style={styles.sourceAuthor}>@{post.author_handle}</Text>
+                        ) : null}
+                        <Text style={styles.sourcePlatform}>Instagram reel ↗</Text>
+                      </View>
                     </View>
-                    <Ionicons name="chevron-forward" size={16} color={colors.faint} />
+                    <Ionicons name="open-outline" size={16} color={colors.faint} />
                   </Pressable>
                 );
               })}
@@ -529,4 +624,53 @@ const styles = StyleSheet.create({
   sourceCopy: { flex: 1 },
   sourceTitle: { color: colors.ink, fontWeight: "700", fontSize: 14 },
   sourcePlatform: { color: colors.muted, fontSize: 12, marginTop: 2 },
+  sourceMetaRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 4 },
+  sourceAuthor: { color: colors.muted, fontSize: 12, fontWeight: "600" },
+  heroCard: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: colors.border,
+    overflow: "hidden",
+    ...shadow(1),
+  },
+  heroImage: {
+    width: "100%",
+    height: 220,
+    resizeMode: "cover",
+  },
+  heroImageFallback: {
+    width: "100%",
+    height: 160,
+    backgroundColor: "#2D6A82",
+  },
+  heroCopy: {
+    padding: spacing.md,
+    gap: spacing.sm,
+  },
+  mapsActionSecondary: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: colors.surface,
+    borderColor: colors.border,
+    minHeight: 44,
+  },
+  mapsActionSecondaryText: { color: "#1B5E78", fontWeight: "700", fontSize: 13 },
+  locationDetailRow: {
+    flexDirection: "row",
+    gap: 8,
+    paddingVertical: 3,
+  },
+  locationDetailLabel: {
+    fontWeight: "700",
+    color: colors.ink,
+    fontSize: 13,
+    width: 90,
+  },
+  locationDetailValue: {
+    color: colors.bodyTinted,
+    fontSize: 13,
+    flex: 1,
+  },
 });

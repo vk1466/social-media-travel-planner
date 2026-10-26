@@ -13,6 +13,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useLibrary } from "@/src/context/LibraryContext";
 import { appHref } from "@/src/nav";
+import { FeatureFlags } from "@/src/featureRegistry";
 import { proxiedMediaUrl } from "@/src/postDisplayUtils";
 import { colors, fonts } from "@/src/theme";
 
@@ -116,7 +117,7 @@ export default function MobileCollectionsScreen() {
       <Text style={styles.subtitle}>Groups that build themselves as you save.</Text>
 
       {/* C2: Suggested Workouts card */}
-      {showSuggested ? (
+      {showSuggested && FeatureFlags.isEnabled("suggested-collections") ? (
         <View style={styles.suggestedCard}>
           <View style={styles.suggestedTopRow}>
             <View style={styles.suggestedIconWrap} />

@@ -44,7 +44,8 @@ import {
   type AtlasGrouping,
   type AtlasNode,
 } from "@/src/placeAtlasModel";
-import { getPlatformLabel, getPostTitle, proxiedMediaUrl } from "@/src/postDisplayUtils";
+import { FeatureFlags } from "@/src/featureRegistry";
+import { capitalizePlaceName, getPlatformLabel, getPostTitle, proxiedMediaUrl } from "@/src/postDisplayUtils";
 import { colors, fonts, radius, shadow } from "@/src/theme";
 
 type Pane = "map" | "browse";
@@ -445,27 +446,62 @@ export default function TravelScreen() {
         </View>
       </View>
 
-      {/* M6: "Show as list" / "Show map" toggle */}
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={pane === "map" ? "Show as list" : "Show map"}
-        onPress={() => setPane((p) => (p === "map" ? "browse" : "map"))}
+      {/* Map / Places segmented toggle */}
+      <View
         style={[
-          styles.listTogglePill,
+          styles.mapPlacesToggleContainer,
           { bottom: listToggleBottom },
         ]}
       >
-        <Ionicons
-          name={pane === "map" ? "list" : "map"}
-          size={16}
-          color="#FFFFFF"
-        />
-        <Text style={styles.listToggleText}>
-          {pane === "map" ? "Show as list" : "Show map"}
-        </Text>
-      </Pressable>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Map view"
+          onPress={() => setPane("map")}
+          style={[
+            styles.toggleSegment,
+            pane === "map" ? styles.toggleSegmentActive : styles.toggleSegmentInactive,
+          ]}
+        >
+          <Ionicons
+            name="map"
+            size={14}
+            color={pane === "map" ? "#FFFFFF" : "#1B1D1F"}
+          />
+          <Text
+            style={[
+              styles.toggleSegmentText,
+              pane === "map" ? styles.toggleSegmentTextActive : styles.toggleSegmentTextInactive,
+            ]}
+          >
+            Map
+          </Text>
+        </Pressable>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Places list view"
+          onPress={() => setPane("browse")}
+          style={[
+            styles.toggleSegment,
+            pane === "browse" ? styles.toggleSegmentActive : styles.toggleSegmentInactive,
+          ]}
+        >
+          <Ionicons
+            name="list"
+            size={14}
+            color={pane === "browse" ? "#FFFFFF" : "#1B1D1F"}
+          />
+          <Text
+            style={[
+              styles.toggleSegmentText,
+              pane === "browse" ? styles.toggleSegmentTextActive : styles.toggleSegmentTextInactive,
+            ]}
+          >
+            {`Places (${activePlaces.length})`}
+          </Text>
+        </Pressable>
+      </View>
 
-      {/* M4: Selected Place Bottom Sheet or Place Carousel */}
+      {/* Selected Place Card equivalent to web */}
       {selectedPlace != null && pane === "map" ? (
         <View
           style={[
@@ -473,21 +509,30 @@ export default function TravelScreen() {
             { bottom: 84 + insets.bottom + 8, marginHorizontal: 12, borderRadius: 24 },
           ]}
         >
-          {/* Drag Handle */}
-          <Pressable
-            onPress={() => setSelectedPlaceId(null)}
-            style={styles.sheetHandleWrap}
-            hitSlop={10}
-          >
-            <View style={styles.sheetHandle} />
-          </Pressable>
+          {/* Header row with Category pill and Close button */}
+          <View style={styles.sheetHeaderRow}>
+            <View style={styles.sheetCategoryPill}>
+              <Text style={styles.sheetCategoryText}>
+                {selectedPlace.category || "Place"}
+              </Text>
+            </View>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Close place card"
+              onPress={() => setSelectedPlaceId(null)}
+              hitSlop={12}
+              style={styles.sheetCloseBtn}
+            >
+              <Ionicons name="close" size={20} color="#6B6F73" />
+            </Pressable>
+          </View>
 
           {/* Place info */}
           <View style={styles.sheetInfoRow}>
             <View style={styles.sheetPhotoWrap}>
               {selectedPlace && placeImageMap.get(selectedPlace.place_id) ? (
                 <Image
-                  source={{ uri: placeImageMap.get(selectedPlace.place_id)! }}
+                  source={{ uri: proxiedMediaUrl(placeImageMap.get(selectedPlace.place_id)!) || placeImageMap.get(selectedPlace.place_id)! }}
                   style={styles.sheetPhoto}
                 />
               ) : (
@@ -496,7 +541,7 @@ export default function TravelScreen() {
             </View>
             <View style={styles.sheetTextWrap}>
               <Text style={styles.sheetPlaceName} numberOfLines={1}>
-                {selectedPlace.display_name}
+                {capitalizePlaceName(selectedPlace.display_name)}
               </Text>
               <Text style={styles.sheetPlaceRegion} numberOfLines={1}>
                 {placeLocationLine(selectedPlace)}
@@ -507,6 +552,14 @@ export default function TravelScreen() {
 
           {/* Action buttons */}
           <View style={styles.sheetButtonsRow}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Place details"
+              onPress={() => openPlace(selectedPlace.place_id)}
+              style={styles.detailsActionBtn}
+            >
+              <Text style={styles.detailsActionText}>Details</Text>
+            </Pressable>
             <Pressable
               accessibilityRole="button"
               onPress={handleToggleVisited}
@@ -525,24 +578,18 @@ export default function TravelScreen() {
                 {isVisitedSelected ? "Been ✓" : "Mark visited"}
               </Text>
             </Pressable>
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => router.push(appHref("/(app)/coming-soon"))}
-              style={styles.addToTripBtn}
-            >
-              <Text style={styles.addToTripText}>Add to trip</Text>
-              <View style={styles.tripSoonPill}>
-                <Text style={styles.tripSoonText}>Soon</Text>
-              </View>
-            </Pressable>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Place details"
-              onPress={() => openPlace(selectedPlace.place_id)}
-              style={styles.detailsBtn}
-            >
-              <Ionicons name="navigate-outline" size={20} color="#1B1D1F" />
-            </Pressable>
+            {FeatureFlags.isEnabled("trips") ? (
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => router.push(appHref("/(app)/coming-soon"))}
+                style={styles.addToTripBtn}
+              >
+                <Text style={styles.addToTripText}>Add to trip</Text>
+                <View style={styles.tripSoonPill}>
+                  <Text style={styles.tripSoonText}>Soon</Text>
+                </View>
+              </Pressable>
+            ) : null}
           </View>
 
           {/* External Map links */}
@@ -777,6 +824,80 @@ const styles = StyleSheet.create({
   listToggleText: {
     color: "#FFFFFF",
     fontSize: 13,
+    fontWeight: "700",
+    fontFamily: fonts.bold,
+  },
+  mapPlacesToggleContainer: {
+    position: "absolute",
+    right: 16,
+    zIndex: 25,
+    height: 40,
+    borderRadius: 999,
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#E6E3DC",
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 3,
+    gap: 2,
+    ...shadow(2),
+  },
+  toggleSegment: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    height: 32,
+    paddingHorizontal: 12,
+    borderRadius: 999,
+  },
+  toggleSegmentActive: {
+    backgroundColor: "#1B1D1F",
+  },
+  toggleSegmentInactive: {
+    backgroundColor: "transparent",
+  },
+  toggleSegmentText: {
+    fontSize: 13,
+    fontWeight: "700",
+    fontFamily: fonts.bold,
+  },
+  toggleSegmentTextActive: {
+    color: "#FFFFFF",
+  },
+  toggleSegmentTextInactive: {
+    color: "#1B1D1F",
+  },
+  sheetHeaderRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  sheetCategoryPill: {
+    backgroundColor: "#E3F0F4",
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 999,
+  },
+  sheetCategoryText: {
+    fontSize: 11,
+    fontWeight: "800",
+    color: "#1B5E78",
+  },
+  sheetCloseBtn: {
+    padding: 4,
+  },
+  detailsActionBtn: {
+    flex: 1,
+    height: 46,
+    borderRadius: 999,
+    backgroundColor: "#1B1D1F",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  detailsActionText: {
+    color: "#FFFFFF",
+    fontSize: 14,
     fontWeight: "700",
     fontFamily: fonts.bold,
   },
