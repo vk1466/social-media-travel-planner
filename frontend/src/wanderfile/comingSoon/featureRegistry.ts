@@ -74,23 +74,10 @@ export const FEATURE_REGISTRY: Record<string, FeatureDefinition> = {
     ink: "#25623A",
     iconPath: "M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z",
   },
-  "tiktok-youtube": {
-    id: "tiktok-youtube",
-    name: "TikTok and YouTube links",
-    sentence: "Save and organize links from TikTok and YouTube alongside Instagram.",
-    bullets: [
-      "Automatic transcription and place extraction",
-      "Unified search across all platforms",
-      "Same rich kits and details",
-    ],
-    tint: "#ECE8F7",
-    ink: "#4B3C8C",
-    iconPath: "M10 15l5-3-5-3v6z M2 8a4 4 0 0 1 4-4h12a4 4 0 0 1 4 4v8a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z",
-  },
   "mobile-share": {
     id: "mobile-share",
     name: "Share a post to Wanderfile",
-    sentence: "Share a post straight from Instagram, TikTok or YouTube on your phone.",
+    sentence: "Share a post straight from Instagram on your phone.",
     bullets: [
       "Native iOS and Android share extension",
       "Instant background saving without switching apps",
@@ -139,7 +126,6 @@ const DEFAULT_FEATURE_FLAGS: Record<string, boolean> = {
   "make-collection": true,
   "suggested-collections": false,
   "new-kits": false,
-  "tiktok-youtube": false,
   "mobile-share": false,
   "account-settings": false,
   "collection-export": false,

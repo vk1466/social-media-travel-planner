@@ -60,13 +60,13 @@ export function toFriendlyErrorMessage(err: unknown, url?: string): string {
       loweredUrl.includes("youtube.com") ||
       loweredUrl.includes("youtu.be")
     ) {
-      return "TikTok and YouTube aren't supported yet - only Instagram reels are currently supported";
+      return "Only Instagram links are supported right now";
     }
   }
   const msg = err instanceof Error ? err.message : String(err || "");
   const lowered = msg.toLowerCase();
   if (lowered.includes("tiktok") || lowered.includes("youtube")) {
-    return "TikTok and YouTube aren't supported yet - only Instagram reels are currently supported";
+    return "Only Instagram links are supported right now";
   }
   if (lowered.includes("429") || lowered.includes("rate limit") || lowered.includes("too many requests")) {
     return "Rate limited, please retry in a minute";
@@ -131,12 +131,12 @@ export function parseLinkLines(text: string): {
     const isYouTube = lowered.includes("youtube.com") || lowered.includes("youtu.be");
     if (isTikTok || isYouTube) {
       invalid.push(trimmed);
-      validationError = "TikTok and YouTube aren't supported yet - only Instagram reels are currently supported";
+      validationError = "Only Instagram links are supported right now";
       continue;
     }
     if (!isSupportedShareDomain(normalized)) {
       invalid.push(trimmed);
-      validationError = "Only Instagram reels are currently supported.";
+      validationError = "Only Instagram links are supported right now";
       continue;
     }
     valid.push(normalized);

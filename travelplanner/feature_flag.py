@@ -20,6 +20,8 @@ class FeatureFlag:
 
   _flags: dict[str, Any] = {
     "place_facts": False,
+    "tiktok_ingest": False,
+    "youtube_ingest": False,
     # OCR for image posts and carousels (slide URLs from Mindcase).
     "extract_image_text": True,
     # Supadata multimodal extract for reel/video (scene, overlays, places).

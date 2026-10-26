@@ -6,7 +6,7 @@ import { proxiedMediaUrl } from "../../postDisplayUtils";
 
 export function validateSaveInput(input: string): {
   isValid: boolean;
-  platform?: "instagram" | "tiktok" | "youtube" | "other";
+  platform?: "instagram" | "other";
   message?: string;
   isError?: boolean;
 } {
@@ -37,7 +37,7 @@ export function validateSaveInput(input: string): {
       return {
         isValid: false,
         isError: true,
-        message: "TikTok and YouTube aren't supported yet - only Instagram reels are currently supported",
+        message: "Only Instagram links are supported right now",
       };
     }
 
@@ -45,7 +45,7 @@ export function validateSaveInput(input: string): {
       return {
         isValid: false,
         isError: true,
-        message: "Only Instagram reels are currently supported (restaurants, recipes, travel, movies)",
+        message: "Only Instagram links are supported right now",
       };
     }
   }

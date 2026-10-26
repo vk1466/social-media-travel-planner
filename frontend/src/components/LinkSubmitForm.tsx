@@ -30,6 +30,7 @@ export function LinkSubmitForm({
     const lines = text.split("\n");
     const valid: string[] = [];
     const invalid: string[] = [];
+    const unsupported: string[] = [];
 
     for (const line of lines) {
       const trimmed = line.trim();
@@ -37,13 +38,17 @@ export function LinkSubmitForm({
         continue;
       }
       if (isLikelyUrl(trimmed)) {
-        valid.push(trimmed);
+        if (!trimmed.toLowerCase().includes("instagram.com")) {
+          unsupported.push(trimmed);
+        } else {
+          valid.push(trimmed);
+        }
       } else {
         invalid.push(trimmed);
       }
     }
 
-    return { valid, invalid };
+    return { valid, invalid, unsupported };
   }, [text]);
 
   return (
@@ -51,20 +56,24 @@ export function LinkSubmitForm({
       frame="bare"
       icon={<LinkIcon />}
       title="Paste travel links"
-      subtitle="One per line. Instagram reels, blogs, magazine articles — anything."
+      subtitle="One per line. Instagram reels only right now."
     >
       <textarea
         id="links-input"
         className="links-input"
-        placeholder={
-          "https://www.instagram.com/reel/...\nhttps://blog.example.com/tokyo-guide"
-        }
+        placeholder="https://www.instagram.com/reel/..."
         rows={5}
         value={text}
         onChange={(event) => setText(event.target.value)}
         disabled={disabled}
         aria-label="Paste travel links"
       />
+
+      {parsed.unsupported.length > 0 && (
+        <div className="inline-errors" role="alert">
+          <p>Only Instagram links are supported right now</p>
+        </div>
+      )}
 
       {parsed.invalid.length > 0 && (
         <div className="inline-errors" role="alert">
@@ -92,7 +101,7 @@ export function LinkSubmitForm({
         <button
           type="button"
           className="primary-button analyze-button"
-          disabled={disabled || parsed.valid.length === 0}
+          disabled={disabled || parsed.valid.length === 0 || parsed.unsupported.length > 0}
           onClick={() => onSubmit(parsed.valid, refresh)}
         >
           Analyze links

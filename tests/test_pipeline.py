@@ -308,11 +308,11 @@ def test_friendly_error_mapping() -> None:
   assert friendly_error_message("Mindcase returned no post for https://...") == "Private or deleted post"
   assert (
     friendly_error_message("Unsupported platform: youtube")
-    == "TikTok and YouTube aren't supported yet - only Instagram reels are currently supported"
+    == "Only Instagram links are supported right now"
   )
   assert (
     friendly_error_message("Unsupported platform: tiktok")
-    == "TikTok and YouTube aren't supported yet - only Instagram reels are currently supported"
+    == "Only Instagram links are supported right now"
   )
   assert friendly_error_message("Unsupported platform: twitter") == "Unsupported platform"
   assert friendly_error_message("Request timed out") == "Request timed out, please retry in a moment"

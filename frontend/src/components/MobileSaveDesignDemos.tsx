@@ -170,7 +170,7 @@ export function MobileSaveDesignDemos() {
             <span className="msd-flow-kicker">Flow A · From another app</span>
             <h2>Share a link</h2>
             <ol>
-              <li>Tap Share in Instagram, TikTok, YouTube, or a browser; choose Wanderfile.</li>
+              <li>Tap Share in Instagram; choose Wanderfile.</li>
               <li>Wanderfile keeps the link on the device, then submits it automatically. Sign in first if needed.</li>
               <li>A short receipt confirms the link was received. Close to return to the source app, or view the library.</li>
             </ol>
@@ -851,7 +851,7 @@ export function MobileSaveDesignDemos() {
                 <div className="msd-desk-input-col">
                   <div>
                     <h3 style={{ margin: "0 0 6px", fontSize: "18px", color: "#fff" }}>Add Links to Library</h3>
-                    <p style={{ margin: 0, fontSize: "12px", color: "#8cb3c2" }}>Paste Instagram, TikTok, or web URLs</p>
+                    <p style={{ margin: 0, fontSize: "12px", color: "#8cb3c2" }}>Paste Instagram reel URLs</p>
                   </div>
 
                   <textarea
@@ -972,7 +972,7 @@ export function MobileSaveDesignDemos() {
                 <input
                   aria-label="Command bar input"
                   className="msd-command-input"
-                  placeholder="Paste Instagram reels, TikToks, or articles to auto-organize into your library..."
+                  placeholder="Paste Instagram reels to auto-organize into your library..."
                   defaultValue="https://www.instagram.com/reel/DbcHtcHyBfU"
                 />
                 <span className="msd-command-kbd">⌘ V</span>

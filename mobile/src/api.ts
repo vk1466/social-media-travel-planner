@@ -788,13 +788,13 @@ export function toFriendlyErrorMessage(raw?: string | null, url?: string | null)
       loweredUrl.includes("youtube.com") ||
       loweredUrl.includes("youtu.be")
     ) {
-      return "TikTok and YouTube aren't supported yet - only Instagram reels are currently supported";
+      return "Only Instagram links are supported right now";
     }
   }
   if (!raw) return "Could not read this post right now. Please retry in a moment.";
   const lowered = raw.toLowerCase();
   if (lowered.includes("tiktok") || lowered.includes("youtube")) {
-    return "TikTok and YouTube aren't supported yet - only Instagram reels are currently supported";
+    return "Only Instagram links are supported right now";
   }
   if (lowered.includes("429") || lowered.includes("rate limit") || lowered.includes("too many requests")) {
     return "Rate limited, please retry in a minute";

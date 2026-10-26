@@ -87,7 +87,7 @@ export function AddLinksPage({ authReady, onIngestComplete }: AddLinksPageProps)
       <PageHeader
         eyebrow="Add to your library"
         title="Paste a link. We'll do the rest."
-        lede="Drop in Instagram reels, TikToks, YouTube videos, or web links. We read each one, identify what it is about, and organize it in your library."
+        lede="Drop in Instagram reels. We read each one, identify what it is about, and organize it in your library."
       />
 
       <div className="add-page-form-card">

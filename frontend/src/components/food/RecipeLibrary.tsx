@@ -193,7 +193,7 @@ export function RecipeLibrary({ posts, onSelectPost, onPostUpdated }: RecipeLibr
           <p>
             {query.trim() || meal !== "all" || time !== "any" || cuisine !== "all"
               ? "Try a different search or clear a filter."
-              : "Save a food post from Instagram, TikTok, YouTube, or the web to start your cookbook."}
+              : "Save a food reel from Instagram to start your cookbook."}
           </p>
         </div>
       )}

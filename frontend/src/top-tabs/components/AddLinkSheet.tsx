@@ -43,13 +43,21 @@ export function AddLinkSheet({
   const parsed = useMemo(() => {
     const valid: string[] = [];
     const invalid: string[] = [];
+    const unsupported: string[] = [];
     for (const line of text.split("\n")) {
       const trimmed = line.trim();
       if (!trimmed) continue;
-      if (isUrl(trimmed)) valid.push(trimmed);
-      else invalid.push(trimmed);
+      if (isUrl(trimmed)) {
+        if (!trimmed.toLowerCase().includes("instagram.com")) {
+          unsupported.push(trimmed);
+        } else {
+          valid.push(trimmed);
+        }
+      } else {
+        invalid.push(trimmed);
+      }
     }
-    return { valid, invalid };
+    return { valid, invalid, unsupported };
   }, [text]);
 
   useEffect(() => {
@@ -102,7 +110,7 @@ export function AddLinkSheet({
     <DetailSheet title="Add a link" onClose={onClose}>
       <p className="eyebrow">Quick add</p>
       <h2 className="sheet-title">Paste a link</h2>
-      <p className="sheet-copy">Instagram, TikTok, YouTube, or the web. One URL per line.</p>
+      <p className="sheet-copy">Instagram reels only right now. One URL per line.</p>
       <label className="save-workspace-label" htmlFor="quick-add-links">Links to save</label>
       <textarea
         id="quick-add-links"
@@ -118,6 +126,9 @@ export function AddLinkSheet({
         placeholder="https://www.instagram.com/reel/..."
         disabled={starting}
       />
+      {parsed.unsupported.length > 0 ? (
+        <p className="inline-errors">Only Instagram links are supported right now</p>
+      ) : null}
       {parsed.invalid.length > 0 ? (
         <p className="inline-errors">Not a valid URL: {parsed.invalid.join(", ")}</p>
       ) : null}
@@ -137,7 +148,7 @@ export function AddLinkSheet({
         <button
           type="button"
           className="primary"
-          disabled={parsed.valid.length === 0 || starting}
+          disabled={parsed.valid.length === 0 || starting || parsed.unsupported.length > 0}
           onClick={async () => {
             setError(null);
             setStarting(true);

@@ -54,13 +54,13 @@ export function toFriendlyErrorMessage(raw?: string | null, url?: string | null)
       loweredUrl.includes("youtube.com") ||
       loweredUrl.includes("youtu.be")
     ) {
-      return "TikTok and YouTube aren't supported yet - only Instagram reels are currently supported";
+      return "Only Instagram links are supported right now";
     }
   }
   if (!raw) return "Could not read this post right now. Please retry in a moment.";
   const lowered = raw.toLowerCase();
   if (lowered.includes("tiktok") || lowered.includes("youtube")) {
-    return "TikTok and YouTube aren't supported yet - only Instagram reels are currently supported";
+    return "Only Instagram links are supported right now";
   }
   if (lowered.includes("429") || lowered.includes("rate limit") || lowered.includes("too many requests")) {
     return "Rate limited, please retry in a minute";
@@ -180,17 +180,25 @@ export function SavePipelineProvider({
       const stored = localStorage.getItem("wf_inbox_failures");
       if (!stored) return [];
       const parsed: InboxFailure[] = JSON.parse(stored);
-      return parsed.map((item) => {
-        let msg = item.errorMessage;
-        // Re-classify existing failed rows with positive evidence (e.g. C2xQ5T2ST8l deleted reel)
-        if (item.url && item.url.includes("C2xQ5T2ST8l")) {
-          msg = "Private or deleted post";
-        }
-        return {
-          ...item,
-          errorMessage: toFriendlyErrorMessage(msg, item.url),
-        };
-      });
+      return parsed
+        .filter((item) => {
+          const u = (item.url || "").toLowerCase();
+          const m = (item.errorMessage || "").toLowerCase();
+          if (u.includes("tiktok") || u.includes("youtube") || u.includes("youtu.be")) return false;
+          if (m.includes("tiktok") || m.includes("youtube")) return false;
+          return true;
+        })
+        .map((item) => {
+          let msg = item.errorMessage;
+          // Re-classify existing failed rows with positive evidence (e.g. C2xQ5T2ST8l deleted reel)
+          if (item.url && item.url.includes("C2xQ5T2ST8l")) {
+            msg = "Private or deleted post";
+          }
+          return {
+            ...item,
+            errorMessage: toFriendlyErrorMessage(msg, item.url),
+          };
+        });
     } catch {
       return [];
     }
@@ -224,6 +232,16 @@ export function SavePipelineProvider({
 
       for (const token of tokens) {
         const url = normalizeUrlInput(token);
+        const loweredUrl = url.toLowerCase();
+        // Do not process or create failed inbox rows for TikTok/YouTube links
+        if (
+          loweredUrl.includes("tiktok.com") ||
+          loweredUrl.includes("youtube.com") ||
+          loweredUrl.includes("youtu.be")
+        ) {
+          continue;
+        }
+
         const isLikelyUrl = url.startsWith("http://") || url.startsWith("https://") || url.includes(".");
 
         if (!isLikelyUrl) {

@@ -338,7 +338,7 @@ export default function PostsScreen() {
           posts.length === 0 ? (
             <EmptyState
               title="Your library starts with one link"
-              body="Tap the + button to save Instagram, TikTok, YouTube, or web links."
+              body="Tap the + button to save Instagram reels."
             />
           ) : (
             <EmptyState

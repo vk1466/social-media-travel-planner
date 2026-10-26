@@ -358,7 +358,7 @@ export function MovieLibrary({ posts, onSelectPost }: MovieLibraryProps): JSX.El
           <p>
             {searchQuery || kindFilter !== "all" || providerFilter !== "all"
               ? "Try adjusting your search or filters to see more saved titles."
-              : "Save Instagram or TikTok reels about movies and series to build your watchlist."}
+              : "Save Instagram reels about movies and series to build your watchlist."}
           </p>
           {(searchQuery || kindFilter !== "all" || providerFilter !== "all") && (
             <button

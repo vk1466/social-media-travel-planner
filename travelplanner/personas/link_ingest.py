@@ -61,12 +61,12 @@ def friendly_error_message(error: str | None, post_url: str | None = None) -> st
   if post_url:
     p_lowered = post_url.lower()
     if "tiktok.com" in p_lowered or "youtube.com" in p_lowered or "youtu.be" in p_lowered:
-      return "TikTok and YouTube aren't supported yet - only Instagram reels are currently supported"
+      return "Only Instagram links are supported right now"
   if not error:
     return "Could not read this post"
   lowered = error.lower()
   if "tiktok" in lowered or "youtube" in lowered:
-    return "TikTok and YouTube aren't supported yet - only Instagram reels are currently supported"
+    return "Only Instagram links are supported right now"
   if "429" in lowered or "rate limit" in lowered or "too many requests" in lowered:
     return "Rate limited, please retry in a minute"
   if (
@@ -219,7 +219,7 @@ def ingest_link(
   if platform is None or platform != Platform.INSTAGRAM:
     logger.info("ingest unsupported url=%s platform=%s user_id=%s", post_url, platform, user_id)
     if platform in (Platform.TIKTOK, Platform.YOUTUBE) or any(d in post_url.lower() for d in ("tiktok", "youtube", "youtu.be")):
-      msg = "TikTok and YouTube aren't supported yet - only Instagram reels are currently supported"
+      msg = "Only Instagram links are supported right now"
     else:
       msg = f"Unsupported platform: {platform.value}" if platform else "Unrecognized URL"
     _persist_failure(
