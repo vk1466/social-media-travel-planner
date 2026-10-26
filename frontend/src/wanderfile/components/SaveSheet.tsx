@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { X } from "lucide-react";
 import { useSavePipeline } from "../state/SavePipelineContext";
@@ -55,22 +55,55 @@ export function validateSaveInput(input: string): {
   return { isValid: true, platform: "instagram" };
 }
 
+function isInputLikelyComplete(val: string): boolean {
+  const trimmed = val.trim();
+  if (!trimmed) return false;
+  // If user is just typing standard url prefixes like "http", "https", "https://", etc.
+  if (/^https?:?\/?\/?(?:www\.?)?$/i.test(trimmed)) {
+    return false;
+  }
+  if (trimmed.includes(" ") || trimmed.includes("\n")) return true;
+  if (trimmed.includes(".") && (trimmed.includes("/") || trimmed.length > 15)) return true;
+  return trimmed.length > 20;
+}
+
 export function SaveSheet() {
-  const { isSaveSheetOpen, closeSaveSheet, resetActiveSave, saveUrl, activeSave, changeSavedCategory } = useSavePipeline();
+  const {
+    isSaveSheetOpen,
+    closeSaveSheet,
+    resetActiveSave,
+    saveUrl,
+    activeSave,
+    changeSavedCategory,
+    prefillUrl,
+  } = useSavePipeline();
   const { showToast } = useToast();
   const [inputText, setInputText] = useState("");
+  const [showValidationError, setShowValidationError] = useState(false);
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewData, setPreviewData] = useState<LinkPreview | null>(null);
   const [selectedCollection, setSelectedCollection] = useState("unsorted");
   const navigate = useNavigate();
 
   useEffect(() => {
+    if (isSaveSheetOpen && prefillUrl) {
+      setInputText(prefillUrl);
+      setShowValidationError(false);
+    }
+  }, [isSaveSheetOpen, prefillUrl]);
+
+  useEffect(() => {
     if (!isSaveSheetOpen) {
       setInputText("");
+      setShowValidationError(false);
       setPreviewData(null);
       setPreviewLoading(false);
       setSelectedCollection("unsorted");
       resetActiveSave();
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
     }
   }, [isSaveSheetOpen, resetActiveSave]);
 
@@ -86,6 +119,43 @@ export function SaveSheet() {
   }, [isSaveSheetOpen, closeSaveSheet]);
 
   const validation = validateSaveInput(inputText);
+
+  const handleInputChange = (val: string) => {
+    setInputText(val);
+    const nextVal = validateSaveInput(val);
+    if (nextVal.isValid || !val.trim()) {
+      setShowValidationError(false);
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+      return;
+    }
+    // Don't show red error while actively typing incomplete prefixes
+    setShowValidationError(false);
+    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    if (isInputLikelyComplete(val)) {
+      debounceTimerRef.current = setTimeout(() => {
+        setShowValidationError(true);
+      }, 800);
+    }
+  };
+
+  const handleInputBlur = () => {
+    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    if (inputText.trim() && !validation.isValid) {
+      setShowValidationError(true);
+    }
+  };
+
+  const handleInputPaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    const pasted = e.clipboardData.getData("text");
+    setTimeout(() => {
+      const nextVal = validateSaveInput(pasted);
+      if (!nextVal.isValid && pasted.trim()) {
+        setShowValidationError(true);
+      } else {
+        setShowValidationError(false);
+      }
+    }, 0);
+  };
 
   useEffect(() => {
     if (!validation.isValid) {
@@ -205,14 +275,16 @@ export function SaveSheet() {
             <textarea
               aria-label="Paste link here"
               value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
+              onChange={(e) => handleInputChange(e.target.value)}
+              onBlur={handleInputBlur}
+              onPaste={handleInputPaste}
               placeholder="Paste an Instagram reel link"
               style={{
                 width: "100%",
                 height: "100px",
                 padding: "16px",
                 borderRadius: "18px",
-                border: validation.isError ? "1.5px solid #D93829" : "1px solid #D9D5CB",
+                border: showValidationError && validation.isError ? "1.5px solid #D93829" : "1px solid #D9D5CB",
                 background: "#F6F5F1",
                 fontFamily: "inherit",
                 fontSize: "15px",
@@ -224,7 +296,7 @@ export function SaveSheet() {
             />
 
             <div style={{ marginTop: "14px", fontSize: "14px" }}>
-              {validation.isError ? (
+              {showValidationError && validation.isError ? (
                 <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "#C53B27", fontWeight: 600 }}>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                     <circle cx="12" cy="12" r="10" />
@@ -290,13 +362,13 @@ export function SaveSheet() {
                           height: "22px",
                           borderRadius: "50%",
                           background: "#EFEDE7",
-                          color: "#6B6F73",
+                          color: "#4A4E52",
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
                         }}
                       >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                           <circle cx="12" cy="12" r="10" />
                           <line x1="12" y1="16" x2="12" y2="12" />
                           <line x1="12" y1="8" x2="12.01" y2="8" />
@@ -322,8 +394,8 @@ export function SaveSheet() {
                     >
                       <div
                         style={{
-                          width: "56px",
-                          height: "56px",
+                          width: "72px",
+                          height: "96px",
                           borderRadius: "12px",
                           background: "#E6E3DC",
                           flexShrink: 0,
@@ -384,8 +456,8 @@ export function SaveSheet() {
                     >
                       <div
                         style={{
-                          width: "56px",
-                          height: "56px",
+                          width: "72px",
+                          height: "96px",
                           borderRadius: "12px",
                           overflow: "hidden",
                           background: previewData.thumbnail_url
@@ -424,7 +496,7 @@ export function SaveSheet() {
                         )}
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "4px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "4px", minWidth: 0 }}>
                           <span
                             style={{
                               fontSize: "11px",
@@ -435,12 +507,24 @@ export function SaveSheet() {
                               background: "#FDF0F5",
                               padding: "2px 8px",
                               borderRadius: "999px",
+                              whiteSpace: "nowrap",
+                              flexShrink: 0,
                             }}
                           >
-                            Instagram Reel
+                            Reel
                           </span>
                           {previewData.author && (
-                            <span style={{ fontSize: "13px", fontWeight: 700, color: "#1B1D1F" }}>
+                            <span
+                              style={{
+                                fontSize: "13px",
+                                fontWeight: 700,
+                                color: "#1B1D1F",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                whiteSpace: "nowrap",
+                                minWidth: 0,
+                              }}
+                            >
                               @{previewData.author.replace(/^@/, "")}
                             </span>
                           )}

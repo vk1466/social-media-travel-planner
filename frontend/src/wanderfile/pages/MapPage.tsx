@@ -202,15 +202,31 @@ export function MapPage({ places, loading }: MapPageProps) {
 
     mapRef.current = map;
 
-    map.on("load", () => {
-      // Fit to all places on load
-      if (mappablePlaces.length > 1) {
-        const bounds = new maplibregl.LngLatBounds();
-        for (const p of mappablePlaces) {
-          bounds.extend([p.location.longitude!, p.location.latitude!]);
-        }
-        map.fitBounds(bounds, { padding: 50, maxZoom: 13, duration: 0 });
+    const fitToMappablePlaces = (mapInstance: maplibregl.Map) => {
+      if (mappablePlaces.length === 0) return;
+      mapInstance.resize();
+      if (mappablePlaces.length === 1) {
+        const p = mappablePlaces[0];
+        mapInstance.flyTo({
+          center: [p.location.longitude!, p.location.latitude!],
+          zoom: 13,
+          duration: 0,
+        });
+        return;
       }
+      const bounds = new maplibregl.LngLatBounds();
+      for (const p of mappablePlaces) {
+        bounds.extend([p.location.longitude!, p.location.latitude!]);
+      }
+      mapInstance.fitBounds(bounds, {
+        padding: { top: 70, bottom: 70, left: 70, right: 70 },
+        maxZoom: 13,
+        duration: 0,
+      });
+    };
+
+    map.on("load", () => {
+      fitToMappablePlaces(map);
       updateMapMarkers();
     });
 
@@ -224,8 +240,15 @@ export function MapPage({ places, loading }: MapPageProps) {
 
     // InvalidateSize / map resize handled automatically on viewport changes
     map.resize();
+    const resizeTimer = setTimeout(() => {
+      if (mapRef.current) {
+        mapRef.current.resize();
+        fitToMappablePlaces(mapRef.current);
+      }
+    }, 150);
 
     return () => {
+      clearTimeout(resizeTimer);
       map.remove();
       mapRef.current = null;
     };

@@ -396,12 +396,12 @@ function buildMapHtml(): string {
         return;
       }
       if (places.length === 1) {
-        map.setView([places[0].lat, places[0].lng], 12, { animate: false });
+        map.setView([places[0].lat, places[0].lng], 13, { animate: false });
         return;
       }
       map.fitBounds(places.map(function (place) { return [place.lat, place.lng]; }), {
-        padding: [60, 60],
-        maxZoom: 12,
+        padding: [70, 70],
+        maxZoom: 13,
         animate: false
       });
     }

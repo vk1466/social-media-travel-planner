@@ -457,18 +457,27 @@ export function Header({
 }: HeaderProps) {
   const location = useLocation();
   const navigate = useNavigate();
-  const { savingCount, openSaveSheet, saveUrl, inboxFailures } = useSavePipeline();
+  const { savingCount, openSaveSheet, inboxFailures } = useSavePipeline();
   const [inputValue, setInputValue] = useState("");
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
 
-  const handleSearchSubmit = async (e: React.FormEvent) => {
+  // Close mobile search on route transitions
+  useEffect(() => {
+    setMobileSearchOpen(false);
+  }, [location.pathname]);
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const val = inputValue.trim();
     if (!val) return;
 
-    if (val.startsWith("http://") || val.startsWith("https://")) {
-      await saveUrl(val);
-      openSaveSheet();
+    if (
+      val.startsWith("http://") ||
+      val.startsWith("https://") ||
+      val.includes("instagram.com") ||
+      val.includes("instagr.am")
+    ) {
+      openSaveSheet(val);
       setInputValue("");
     } else {
       navigate(`/library?q=${encodeURIComponent(val)}`);
@@ -626,7 +635,33 @@ export function Header({
               placeholder="Search or paste link"
               value={inputValue}
               size={1}
-              onChange={(e) => setInputValue(e.target.value)}
+              onPaste={(e) => {
+                const pasted = e.clipboardData.getData("text")?.trim();
+                if (
+                  pasted &&
+                  (pasted.includes("instagram.com") ||
+                    pasted.includes("instagr.am") ||
+                    pasted.startsWith("http://") ||
+                    pasted.startsWith("https://"))
+                ) {
+                  e.preventDefault();
+                  setInputValue("");
+                  openSaveSheet(pasted);
+                }
+              }}
+              onChange={(e) => {
+                const val = e.target.value;
+                if (
+                  val.includes("instagram.com/reel") ||
+                  val.includes("instagram.com/p/") ||
+                  val.includes("instagr.am/")
+                ) {
+                  setInputValue("");
+                  openSaveSheet(val.trim());
+                  return;
+                }
+                setInputValue(val);
+              }}
               style={{
                 flex: "1 1 0%",
                 width: "100%",
@@ -646,11 +681,17 @@ export function Header({
                 try {
                   const clip = await navigator.clipboard.readText();
                   if (clip) {
-                    setInputValue(clip);
-                    if (clip.startsWith("http://") || clip.startsWith("https://")) {
-                      await saveUrl(clip);
-                      openSaveSheet();
+                    const trimmed = clip.trim();
+                    if (
+                      trimmed.startsWith("http://") ||
+                      trimmed.startsWith("https://") ||
+                      trimmed.includes("instagram.com") ||
+                      trimmed.includes("instagr.am")
+                    ) {
                       setInputValue("");
+                      openSaveSheet(trimmed);
+                    } else {
+                      setInputValue(trimmed);
                     }
                   }
                 } catch {
@@ -682,7 +723,7 @@ export function Header({
           </div>
         ) : null}
 
-        {/* Mobile search toggle button */}
+        {/* Mobile search toggle button (44px tap target) */}
         <button
           type="button"
           className="wf-mobile-only"
@@ -690,21 +731,25 @@ export function Header({
           aria-label="Toggle search"
           style={{
             marginLeft: "auto",
-            width: "36px",
-            height: "36px",
+            width: "44px",
+            height: "44px",
+            minWidth: "44px",
+            minHeight: "44px",
             borderRadius: "50%",
             border: "1px solid #E6E3DC",
             background: mobileSearchOpen ? "#1B1D1F" : "#F6F5F1",
             color: mobileSearchOpen ? "#FFFFFF" : "#1B1D1F",
+            display: "flex",
             alignItems: "center",
             justifyContent: "center",
             cursor: "pointer",
             flexShrink: 0,
+            padding: 0,
           }}
         >
           <svg
-            width="16"
-            height="16"
+            width="18"
+            height="18"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -942,14 +987,23 @@ export function Header({
           <button
             type="button"
             onClick={() => setMobileSearchOpen(false)}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              setMobileSearchOpen(false);
+            }}
             style={{
               border: 0,
               background: "transparent",
               color: "#4A4E52",
-              fontSize: "13px",
+              fontSize: "14px",
               fontWeight: 600,
               cursor: "pointer",
-              padding: "4px 8px",
+              minWidth: "48px",
+              minHeight: "44px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "4px 10px",
               flexShrink: 0,
             }}
           >

@@ -15,6 +15,9 @@ ALLOWED_MEDIA_HOST_SUFFIXES = (
   "cdninstagram.com",
   "fbcdn.net",
   "instagram.com",
+  ".instagram.com",
+  ".fbsbx.com",
+  "fbsbx.com",
 )
 
 # Match geocoder: macOS Python often lacks system CAs without certifi.
@@ -41,8 +44,12 @@ def fetch_proxied_media(url: str) -> Response:
   request = urllib.request.Request(
     url,
     headers={
-      "User-Agent": "Mozilla/5.0",
+      "User-Agent": (
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko)"
+        " Chrome/128.0.0.0 Safari/537.36"
+      ),
       "Accept": "image/avif,image/webp,image/apng,image/*,*/*;q=0.8",
+      "Referer": "https://www.instagram.com/",
     },
   )
   try:
@@ -62,5 +69,6 @@ def fetch_proxied_media(url: str) -> Response:
     media_type=content_type,
     headers={
       "Cache-Control": "public, max-age=86400",
+      "Access-Control-Allow-Origin": "*",
     },
   )

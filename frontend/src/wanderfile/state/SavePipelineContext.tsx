@@ -131,6 +131,7 @@ interface SavePipelineContextType {
   inboxFailures: InboxFailure[];
   isSaveSheetOpen: boolean;
   activeSave: InFlightSave | null;
+  prefillUrl?: string | null;
   openSaveSheet: (initialUrl?: string) => void;
   closeSaveSheet: () => void;
   resetActiveSave: () => void;
@@ -642,6 +643,8 @@ export function SavePipelineProvider({
     );
   }, []);
 
+  const [prefillUrl, setPrefillUrl] = useState<string | null>(null);
+
   const resetActiveSave = useCallback(() => {
     setActiveSaveId(null);
   }, []);
@@ -650,16 +653,18 @@ export function SavePipelineProvider({
     (initialUrl?: string) => {
       setIsSaveSheetOpen(true);
       if (initialUrl) {
-        void saveUrl(initialUrl);
+        setPrefillUrl(initialUrl);
       } else {
+        setPrefillUrl(null);
         setActiveSaveId(null);
       }
     },
-    [saveUrl]
+    []
   );
 
   const closeSaveSheet = useCallback(() => {
     setIsSaveSheetOpen(false);
+    setPrefillUrl(null);
   }, []);
 
   const activeSave = activeSaveId ? inFlightSaves.find((s) => s.id === activeSaveId) || null : null;
@@ -675,6 +680,7 @@ export function SavePipelineProvider({
         inboxFailures,
         isSaveSheetOpen,
         activeSave,
+        prefillUrl,
         openSaveSheet,
         closeSaveSheet,
         resetActiveSave,

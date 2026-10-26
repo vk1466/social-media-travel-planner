@@ -746,9 +746,9 @@ const styles = StyleSheet.create({
     marginBottom: 18,
   },
   previewImage: {
-    width: 60,
-    height: 76,
-    borderRadius: 10,
+    width: 72,
+    height: 96,
+    borderRadius: 12,
   },
   previewInfo: {
     flex: 1,

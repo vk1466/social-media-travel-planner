@@ -28,6 +28,8 @@ export function LinkSubmitForm({
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewData, setPreviewData] = useState<LinkPreview | null>(null);
+  const [showValidationError, setShowValidationError] = useState(false);
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const parsed = useMemo(() => parseLinkLines(text), [text]);
 
   useEffect(() => {
@@ -89,13 +91,47 @@ export function LinkSubmitForm({
     draftWriteQueue.current = write.catch(() => undefined);
   }, [text, draftHydrated]);
 
+  const isInputLikelyComplete = (val: string): boolean => {
+    const trimmed = val.trim();
+    if (!trimmed) return false;
+    if (/^https?:?\/?\/?(?:www\.?)?$/i.test(trimmed)) return false;
+    if (trimmed.includes(" ") || trimmed.includes("\n")) return true;
+    if (trimmed.includes(".") && (trimmed.includes("/") || trimmed.length > 15)) return true;
+    return trimmed.length > 20;
+  };
+
   const updateText = (nextText: string) => {
     editedBeforeHydration.current = true;
     latestText.current = nextText;
     setText(nextText);
+
+    const nextParsed = parseLinkLines(nextText);
+    if (!nextParsed.validationError || !nextText.trim()) {
+      setShowValidationError(false);
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+      return;
+    }
+
+    setShowValidationError(false);
+    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    if (isInputLikelyComplete(nextText)) {
+      debounceTimerRef.current = setTimeout(() => {
+        setShowValidationError(true);
+      }, 800);
+    }
+  };
+
+  const handleBlur = () => {
+    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    if (text.trim().length > 0 && parsed.validationError) {
+      setShowValidationError(true);
+    }
   };
 
   const submit = async () => {
+    if (parsed.validationError) {
+      setShowValidationError(true);
+    }
     if (parsed.valid.length === 0 || disabled) return;
     const submittedText = latestText.current;
     const submittedValid = parseLinkLines(submittedText).valid;
@@ -121,10 +157,14 @@ export function LinkSubmitForm({
     <View style={styles.container}>
       {/* S2: White background, 2px ink border, radius 16px, min 3 lines, 15px text */}
       <TextInput
-        style={styles.input}
+        style={[
+          styles.input,
+          showValidationError && parsed.validationError ? { borderColor: "#DC2626" } : null,
+        ]}
         multiline
         value={text}
         onChangeText={updateText}
+        onBlur={handleBlur}
         editable={!disabled}
         placeholder={"https://www.instagram.com/reel/…\nhttps://www.instagram.com/reel/…"}
         placeholderTextColor={colors.muted}
@@ -194,7 +234,7 @@ export function LinkSubmitForm({
       )}
 
       {/* Inline validation warning */}
-      {text.trim().length > 0 && parsed.validationError ? (
+      {showValidationError && text.trim().length > 0 && parsed.validationError ? (
         <View style={styles.errorRow}>
           <Ionicons name="alert-circle" size={15} color="#DC2626" />
           <Text style={styles.errorText}>{parsed.validationError}</Text>
@@ -240,7 +280,7 @@ export function LinkSubmitForm({
           )}
           <View style={{ flex: 1, minWidth: 0 }}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 2 }}>
-              <Text style={styles.previewBadge}>Instagram Reel</Text>
+              <Text style={styles.previewBadge}>Reel</Text>
               {previewData.author ? (
                 <Text style={styles.previewAuthor}>@{previewData.author.replace(/^@/, "")}</Text>
               ) : null}
@@ -411,9 +451,9 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   previewThumb: {
-    width: 52,
-    height: 52,
-    borderRadius: 10,
+    width: 72,
+    height: 96,
+    borderRadius: 12,
     backgroundColor: colors.surfaceAlt,
   },
   previewThumbFallback: {

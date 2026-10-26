@@ -444,9 +444,8 @@ def reconstruct_recipe_post(
 
 
 @app.get("/api/media/proxy")
-def proxy_media(user_id: CurrentUserId, url: str = Query(..., min_length=8)) -> Response:
+def proxy_media(url: str = Query(..., min_length=8)) -> Response:
   """Proxy Instagram CDN images so the browser is not blocked by CORP."""
-  del user_id
   return fetch_proxied_media(url)
 
 
