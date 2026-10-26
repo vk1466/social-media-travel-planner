@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { useParams, Link, useLocation, useNavigate } from "react-router-dom";
 import { MapContainer, TileLayer, Marker, Tooltip } from "react-leaflet";
+import { Share2, Navigation, Compass } from "lucide-react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { EmptyState } from "../components/EmptyState";
 import { ComingSoonButton } from "../comingSoon/ComingSoonControl";
 import { FeatureFlags } from "../comingSoon/featureRegistry";
+import { useToast } from "../state/ToastContext";
 import { getPostTitle, proxiedMediaUrl, capitalizePlaceName, getEffectiveAddress } from "../../postDisplayUtils";
 import type { Place, SavedPost } from "../../api";
 
@@ -74,6 +76,7 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
   const navigate = useNavigate();
   const place = places.find((p) => p.place_id === id);
   const [visited, setVisited] = useState(false);
+  const { showToast } = useToast();
 
   // Consistent back navigation based on history/location state, defaulting to Map
   const from = (location.state as { from?: string } | null)?.from;
@@ -259,14 +262,15 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
             </div>
 
             <h1
+              className="wf-type-h1"
               style={{
                 margin: "0 0 10px",
                 fontSize: "clamp(24px, 5vw, 36px)",
                 lineHeight: 1.15,
                 fontWeight: 800,
                 minWidth: 0,
-                overflowWrap: "anywhere",
                 wordBreak: "break-word",
+                hyphens: "auto",
               }}
             >
               {displayName || place.display_name}
@@ -279,7 +283,6 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
                   color: "#6B6F73",
                   marginBottom: "12px",
                   minWidth: 0,
-                  overflowWrap: "anywhere",
                   wordBreak: "break-word",
                 }}
               >
@@ -295,7 +298,6 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
                   lineHeight: 1.5,
                   color: "#4A4E52",
                   minWidth: 0,
-                  overflowWrap: "anywhere",
                   wordBreak: "break-word",
                 }}
               >
@@ -309,15 +311,15 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
               type="button"
               onClick={() => setVisited((v) => !v)}
               style={{
-                height: "42px",
+                height: "44px",
                 padding: "0 20px",
-                borderRadius: "999px",
+                borderRadius: "var(--wf-radius-pill)",
                 border: 0,
-                background: visited ? "#25623A" : "#1B1D1F",
-                color: "#FFFFFF",
+                background: visited ? "var(--wf-success)" : "var(--wf-text)",
+                color: "var(--wf-bg)",
                 fontFamily: "inherit",
                 fontSize: "14px",
-                fontWeight: 700,
+                fontWeight: 600,
                 cursor: "pointer",
               }}
             >
@@ -328,15 +330,15 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
               <ComingSoonButton
                 featureId="trips"
                 style={{
-                  height: "42px",
+                  height: "44px",
                   padding: "0 18px",
-                  borderRadius: "999px",
-                  border: "1px solid #D9D5CB",
-                  background: "#FFFFFF",
+                  borderRadius: "var(--wf-radius-pill)",
+                  border: "1px solid var(--wf-border)",
+                  background: "var(--wf-surface)",
                   fontFamily: "inherit",
                   fontSize: "14px",
-                  fontWeight: 700,
-                  color: "#1B1D1F",
+                  fontWeight: 600,
+                  color: "var(--wf-text)",
                   cursor: "pointer",
                 }}
               >
@@ -349,25 +351,22 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
               target="_blank"
               rel="noopener noreferrer"
               style={{
-                height: "42px",
+                height: "44px",
                 padding: "0 16px",
-                borderRadius: "999px",
-                border: "1px solid #D9D5CB",
-                background: "#FFFFFF",
-                fontSize: "13px",
-                fontWeight: 700,
-                color: "#1B1D1F",
+                borderRadius: "var(--wf-radius-pill)",
+                border: "1px solid var(--wf-border)",
+                background: "var(--wf-surface)",
+                fontSize: "14px",
+                fontWeight: 600,
+                color: "var(--wf-text)",
                 textDecoration: "none",
                 display: "inline-flex",
                 alignItems: "center",
                 gap: "6px",
               }}
             >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z" />
-                <circle cx="12" cy="10" r="2.5" />
-              </svg>
-              Google Maps
+              <Navigation size={16} strokeWidth={2} />
+              <span>Google Maps</span>
             </a>
 
             <a
@@ -375,27 +374,50 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
               target="_blank"
               rel="noopener noreferrer"
               style={{
-                height: "42px",
+                height: "44px",
                 padding: "0 16px",
-                borderRadius: "999px",
-                border: "1px solid #D9D5CB",
-                background: "#FFFFFF",
-                fontSize: "13px",
-                fontWeight: 700,
-                color: "#1B1D1F",
+                borderRadius: "var(--wf-radius-pill)",
+                border: "1px solid var(--wf-border)",
+                background: "var(--wf-surface)",
+                fontSize: "14px",
+                fontWeight: 600,
+                color: "var(--wf-text)",
                 textDecoration: "none",
                 display: "inline-flex",
                 alignItems: "center",
                 gap: "6px",
               }}
             >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21" />
-                <line x1="9" y1="3" x2="9" y2="18" />
-                <line x1="15" y1="6" x2="15" y2="21" />
-              </svg>
-              Apple Maps
+              <Compass size={16} strokeWidth={2} />
+              <span>Apple Maps</span>
             </a>
+
+            <button
+              type="button"
+              onClick={() => {
+                if (typeof navigator !== "undefined" && navigator.clipboard) {
+                  navigator.clipboard.writeText(window.location.href);
+                  showToast("Link copied to clipboard!");
+                }
+              }}
+              style={{
+                height: "44px",
+                padding: "0 16px",
+                borderRadius: "var(--wf-radius-pill)",
+                border: "1px solid var(--wf-border)",
+                background: "var(--wf-surface)",
+                fontSize: "14px",
+                fontWeight: 600,
+                color: "var(--wf-text)",
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+              }}
+            >
+              <Share2 size={16} strokeWidth={2} />
+              <span>Share</span>
+            </button>
           </div>
         </div>
       </section>
@@ -422,18 +444,17 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
                 padding: "24px",
                 minWidth: 0,
                 boxSizing: "border-box",
-                overflowWrap: "anywhere",
                 wordBreak: "break-word",
               }}
             >
               <h2 style={{ margin: "0 0 12px", fontSize: "18px", fontWeight: 800 }}>About & Tips</h2>
               {hasDetails && (
-                <p style={{ margin: "0 0 14px", fontSize: "15px", lineHeight: 1.5, color: "#4A4E52", overflowWrap: "anywhere", wordBreak: "break-word" }}>
+                <p style={{ margin: "0 0 14px", fontSize: "15px", lineHeight: 1.5, color: "#4A4E52", wordBreak: "break-word" }}>
                   {distinctDetails.join(" ")}
                 </p>
               )}
               {hasTips && (
-                <ul style={{ margin: 0, paddingLeft: "20px", color: "#4A4E52", fontSize: "14px", lineHeight: 1.6, overflowWrap: "anywhere", wordBreak: "break-word" }}>
+                <ul style={{ margin: 0, paddingLeft: "20px", color: "#4A4E52", fontSize: "14px", lineHeight: 1.6, wordBreak: "break-word" }}>
                   {distinctTips.map((t, idx) => (
                     <li key={idx} style={{ marginBottom: "6px" }}>{t}</li>
                   ))}
@@ -451,7 +472,6 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
               padding: "24px",
               minWidth: 0,
               boxSizing: "border-box",
-              overflowWrap: "anywhere",
               wordBreak: "break-word",
             }}
           >
@@ -495,10 +515,16 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
                           width: "52px",
                           height: "52px",
                           borderRadius: "10px",
-                          background: "linear-gradient(160deg, #8CC3D6, #2D6A82)",
+                          background: "var(--wf-surface-2, #E8E6DF)",
+                          color: "var(--wf-text-muted)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
                           flexShrink: 0,
                         }}
-                      />
+                      >
+                        📍
+                      </div>
                     )}
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div
@@ -546,7 +572,6 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
               padding: "24px",
               minWidth: 0,
               boxSizing: "border-box",
-              overflowWrap: "anywhere",
               wordBreak: "break-word",
             }}
           >
@@ -622,7 +647,7 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
                 Apple Maps ↗
               </a>
             </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: "8px", fontSize: "14px", color: "#4A4E52", minWidth: 0, overflowWrap: "anywhere", wordBreak: "break-word" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px", fontSize: "14px", color: "#4A4E52", minWidth: 0, wordBreak: "break-word" }}>
               {effectiveAddress && (
                 <div><b>Address:</b> {effectiveAddress}</div>
               )}

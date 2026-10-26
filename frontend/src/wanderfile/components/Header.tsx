@@ -5,9 +5,6 @@ import { useSavePipeline } from "../state/SavePipelineContext";
 import { ViewAsSwitcher } from "../../components/ViewAsSwitcher";
 import { getViewAsUserId } from "../../api";
 import { clerkEnabled } from "../../authMode";
-import { wanderfileClerkAppearance } from "../../clerkAppearance";
-import { useBrandVersion } from "../../hooks/useBrandVersion";
-import { readBrandMode } from "../../themeColor";
 
 export interface HeaderProps {
   isAdmin?: boolean;
@@ -76,7 +73,6 @@ interface AccountMenuDropdownProps {
   isAdmin: boolean;
   isSuperAdmin: boolean;
   onViewAsChange?: (userId: string | null) => void;
-  onManageAccount: (() => void) | null;
   onSignOut: () => void;
 }
 
@@ -88,7 +84,6 @@ function AccountMenuDropdown({
   isAdmin,
   isSuperAdmin,
   onViewAsChange,
-  onManageAccount,
   onSignOut,
 }: AccountMenuDropdownProps) {
   const navigate = useNavigate();
@@ -317,15 +312,11 @@ function AccountMenuDropdown({
             className="wf-menu-item"
             onClick={() => {
               setIsOpen(false);
-              if (onManageAccount) {
-                onManageAccount();
-              } else {
-                navigate("/coming-soon/account-settings");
-              }
+              navigate("/settings");
             }}
           >
             <SettingsIcon />
-            <span>Account settings</span>
+            <span>Settings</span>
           </button>
 
           {isAdmin ? (
@@ -395,10 +386,8 @@ function ClerkAccountMenu({
   onViewAsChange?: (userId: string | null) => void;
 }) {
   const { user } = useUser();
-  const { openUserProfile, signOut } = useClerk();
+  const { signOut } = useClerk();
   const navigate = useNavigate();
-  useBrandVersion();
-  const tone = readBrandMode();
 
   const name =
     user?.fullName ||
@@ -418,9 +407,6 @@ function ClerkAccountMenu({
       isAdmin={isAdmin}
       isSuperAdmin={isSuperAdmin}
       onViewAsChange={onViewAsChange}
-      onManageAccount={() => {
-        openUserProfile({ appearance: wanderfileClerkAppearance(tone) });
-      }}
       onSignOut={() => {
         void signOut(() => navigate("/"));
       }}
@@ -445,7 +431,6 @@ function LocalAccountMenu({
       isAdmin={isAdmin}
       isSuperAdmin={isSuperAdmin}
       onViewAsChange={onViewAsChange}
-      onManageAccount={null}
       onSignOut={() => {
         window.location.reload();
       }}
@@ -472,7 +457,7 @@ export function Header({
 }: HeaderProps) {
   const location = useLocation();
   const navigate = useNavigate();
-  const { savingCount, openSaveSheet, saveUrl } = useSavePipeline();
+  const { savingCount, openSaveSheet, saveUrl, inboxFailures } = useSavePipeline();
   const [inputValue, setInputValue] = useState("");
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
 
@@ -816,6 +801,41 @@ export function Header({
             </button>
           </>
         )}
+
+        {inboxFailures && inboxFailures.length > 0 ? (
+          <Link
+            to="/inbox"
+            aria-label={`${inboxFailures.length} links need attention`}
+            title={`${inboxFailures.length} links need attention`}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
+              minHeight: "44px",
+              padding: "0 12px",
+              borderRadius: "999px",
+              background: "#FEE2E2",
+              border: "1px solid #FECACA",
+              color: "#991B1B",
+              fontSize: "13px",
+              fontWeight: 700,
+              textDecoration: "none",
+              flexShrink: 0,
+            }}
+          >
+            <span
+              style={{
+                width: "8px",
+                height: "8px",
+                borderRadius: "50%",
+                background: "#DC2626",
+                display: "inline-block",
+              }}
+            />
+            <span className="wf-desktop-only">Attention ({inboxFailures.length})</span>
+            <span className="wf-mobile-only">{inboxFailures.length}</span>
+          </Link>
+        ) : null}
 
         {/* Account menu */}
         <div style={{ flexShrink: 0 }}>

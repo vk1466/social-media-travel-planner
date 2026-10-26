@@ -1,41 +1,171 @@
-@import url('https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
-:root {
-  --wf-bg: #F6F5F1;
+:root,
+[data-theme="light"] {
+  /* Colors from Wanderfile UX Spec */
+  --wf-bg: #FAFAF7;
   --wf-surface: #FFFFFF;
-  --wf-ink: #1B1D1F;
-  --wf-muted: #6B6F73;
+  --wf-surface-2: #F2F2EE;
+  --wf-text: #14161A;
+  --wf-ink: #14161A;
+  --wf-text-muted: #5B616B;
+  --wf-muted: #5B616B;
   --wf-body-tinted: #4A4E52;
-  --wf-border: #E6E3DC;
+  --wf-border: #E4E4DF;
   --wf-border-subtle: #EFEDE7;
-  --wf-border-control: #D9D5CB;
-  --wf-border-dashed: #C9C5BA;
-  --wf-bg-dashed: #FBFAF7;
+  --wf-border-control: #E4E4DF;
+  --wf-border-dashed: #D1D1CB;
+  --wf-bg-dashed: #F8F8F5;
 
-  /* Category colors */
+  --wf-primary: #0F766E;
+  --wf-on-primary: #FFFFFF;
+  --wf-danger: #B42318;
+  --wf-success: #067647;
+
+  /* Category accents (used only on chip dots & pins) */
+  --wf-cat-place: #0F766E;
+  --wf-cat-food: #C2410C;
+  --wf-cat-watch: #6D28D9;
+  --wf-cat-fashion: #BE185D;
+  --wf-cat-hair: #A16207;
+
+  /* Category tints */
   --wf-place-tint: #E3F0F4;
   --wf-place-ink: #1B5E78;
-  --wf-place-accent: #1F6F8B;
-
   --wf-recipe-tint: #FBEBDD;
   --wf-recipe-ink: #9A4513;
-
   --wf-movie-tint: #ECE8F7;
   --wf-movie-ink: #4B3C8C;
-
   --wf-routine-tint: #E4F2E7;
   --wf-routine-ink: #25623A;
-
-  --wf-other-tint: #ECECEA;
-  --wf-other-ink: #4A4E52;
-
+  --wf-other-tint: #F2F2EE;
+  --wf-other-ink: #5B616B;
   --wf-alert-tint: #FBE6EE;
-  --wf-alert-ink: #8A2B57;
+  --wf-alert-ink: #B42318;
 
-  --wf-font-sans: 'Figtree', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --wf-radius-card-desktop: 24px;
-  --wf-radius-card-mobile: 20px;
-  --wf-radius-pill: 999px;
+  /* Typography */
+  --wf-font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+  /* Spacing base (4pt) */
+  --wf-space-1: 4px;
+  --wf-space-2: 8px;
+  --wf-space-3: 12px;
+  --wf-space-4: 16px;
+  --wf-space-6: 24px;
+  --wf-space-8: 32px;
+  --wf-space-12: 48px;
+
+  /* Radius */
+  --wf-radius-pill: 9999px;
+  --wf-radius-control: 12px;
+  --wf-radius-card: 16px;
+  --wf-radius-modal: 24px;
+  --wf-radius-card-desktop: 16px;
+  --wf-radius-card-mobile: 16px;
+
+  /* Shadows */
+  --wf-shadow-card: 0 1px 2px rgba(0, 0, 0, 0.06), 0 4px 12px rgba(0, 0, 0, 0.06);
+  --wf-shadow-sheet: 0 -8px 24px rgba(0, 0, 0, 0.12);
+  --wf-shadow-elevated: 0 12px 32px rgba(0, 0, 0, 0.12);
+}
+
+[data-theme="dark"] {
+  --wf-bg: #0E0F11;
+  --wf-surface: #17191C;
+  --wf-surface-2: #202328;
+  --wf-text: #F2F2F0;
+  --wf-ink: #F2F2F0;
+  --wf-text-muted: #A3A9B3;
+  --wf-muted: #A3A9B3;
+  --wf-body-tinted: #C9CED6;
+  --wf-border: #2A2E34;
+  --wf-border-subtle: #202328;
+  --wf-border-control: #2A2E34;
+  --wf-border-dashed: #363B43;
+  --wf-bg-dashed: #17191C;
+
+  --wf-primary: #2DD4BF;
+  --wf-on-primary: #04201D;
+  --wf-danger: #F97066;
+  --wf-success: #47CD89;
+
+  /* Category accents */
+  --wf-cat-place: #2DD4BF;
+  --wf-cat-food: #FB923C;
+  --wf-cat-watch: #A78BFA;
+  --wf-cat-fashion: #F472B6;
+  --wf-cat-hair: #FACC15;
+
+  --wf-place-tint: rgba(45, 212, 191, 0.15);
+  --wf-place-ink: #2DD4BF;
+  --wf-recipe-tint: rgba(251, 146, 60, 0.15);
+  --wf-recipe-ink: #FB923C;
+  --wf-movie-tint: rgba(167, 139, 250, 0.15);
+  --wf-movie-ink: #A78BFA;
+  --wf-routine-tint: rgba(71, 205, 137, 0.15);
+  --wf-routine-ink: #47CD89;
+  --wf-other-tint: #202328;
+  --wf-other-ink: #A3A9B3;
+  --wf-alert-tint: rgba(249, 112, 102, 0.15);
+  --wf-alert-ink: #F97066;
+
+  /* In dark mode, depth with lighter surface instead of shadow */
+  --wf-shadow-card: 0 0 0 1px #2A2E34;
+  --wf-shadow-sheet: 0 -8px 24px rgba(0, 0, 0, 0.5), 0 0 0 1px #2A2E34;
+  --wf-shadow-elevated: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px #2A2E34;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --wf-bg: #0E0F11;
+    --wf-surface: #17191C;
+    --wf-surface-2: #202328;
+    --wf-text: #F2F2F0;
+    --wf-ink: #F2F2F0;
+    --wf-text-muted: #A3A9B3;
+    --wf-muted: #A3A9B3;
+    --wf-body-tinted: #C9CED6;
+    --wf-border: #2A2E34;
+    --wf-border-subtle: #202328;
+    --wf-border-control: #2A2E34;
+    --wf-border-dashed: #363B43;
+    --wf-bg-dashed: #17191C;
+
+    --wf-primary: #2DD4BF;
+    --wf-on-primary: #04201D;
+    --wf-danger: #F97066;
+    --wf-success: #47CD89;
+
+    --wf-cat-place: #2DD4BF;
+    --wf-cat-food: #FB923C;
+    --wf-cat-watch: #A78BFA;
+    --wf-cat-fashion: #F472B6;
+    --wf-cat-hair: #FACC15;
+
+    --wf-place-tint: rgba(45, 212, 191, 0.15);
+    --wf-place-ink: #2DD4BF;
+    --wf-recipe-tint: rgba(251, 146, 60, 0.15);
+    --wf-recipe-ink: #FB923C;
+    --wf-movie-tint: rgba(167, 139, 250, 0.15);
+    --wf-movie-ink: #A78BFA;
+    --wf-routine-tint: rgba(71, 205, 137, 0.15);
+    --wf-routine-ink: #47CD89;
+    --wf-other-tint: #202328;
+    --wf-other-ink: #A3A9B3;
+    --wf-alert-tint: rgba(249, 112, 102, 0.15);
+    --wf-alert-ink: #F97066;
+
+    --wf-shadow-card: 0 0 0 1px #2A2E34;
+    --wf-shadow-sheet: 0 -8px 24px rgba(0, 0, 0, 0.5), 0 0 0 1px #2A2E34;
+    --wf-shadow-elevated: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px #2A2E34;
+  }
+}
+
+/* Global Reset & Base Styles */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
 html,
@@ -43,23 +173,84 @@ body {
   margin: 0;
   padding: 0;
   background-color: var(--wf-bg);
-  color: var(--wf-ink);
+  color: var(--wf-text);
   font-family: var(--wf-font-sans);
+  font-size: 16px;
+  line-height: 24px;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
   max-width: 100vw;
   width: 100%;
+}
+
+/* Accessible visible focus ring */
+:focus-visible {
+  outline: 2px solid var(--wf-primary) !important;
+  outline-offset: 2px !important;
+}
+
+/* Interactive elements default tap target minimum 44px */
+button,
+input,
+select,
+textarea,
+.wf-tap-target {
+  min-height: 44px;
   box-sizing: border-box;
 }
 
+/* Typography Classes */
+.wf-type-display {
+  font-size: 32px;
+  line-height: 38px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.wf-type-h1 {
+  font-size: 24px;
+  line-height: 30px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  word-break: break-word;
+  hyphens: auto;
+}
+
+.wf-type-h2 {
+  font-size: 20px;
+  line-height: 26px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  word-break: break-word;
+}
+
+.wf-type-body {
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 400;
+}
+
+.wf-type-callout {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
+}
+
+.wf-type-caption {
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+}
+
+/* Layout Chrome */
 .wf-shell-container {
   min-height: 100vh;
+  min-height: 100dvh;
   max-width: 100%;
   width: 100%;
-  box-sizing: border-box;
-  overflow-x: hidden;
   background-color: var(--wf-bg);
-  color: var(--wf-ink);
+  color: var(--wf-text);
   font-family: var(--wf-font-sans);
   display: flex;
   flex-direction: column;
@@ -90,7 +281,6 @@ body {
   flex-direction: column;
   max-width: 100%;
   width: 100%;
-  box-sizing: border-box;
   overflow-x: hidden;
 }
 
@@ -99,15 +289,14 @@ body {
   align-items: center;
   gap: 20px;
   padding: 14px 40px;
-  background: #FFFFFF;
-  border-bottom: 1px solid #E6E3DC;
-  box-sizing: border-box;
+  background: var(--wf-surface);
+  border-bottom: 1px solid var(--wf-border);
   max-width: 100vw;
   width: 100%;
-  overflow-x: hidden;
   position: sticky;
   top: 0;
   z-index: 50;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 
 @media (max-width: 1023px) {
@@ -160,9 +349,92 @@ body {
 }
 
 .wf-skeleton {
-  background: #E6E3DC;
-  border-radius: 12px;
+  background: var(--wf-surface-2);
+  border-radius: var(--wf-radius-control);
   animation: wf-skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+/* Save Flow Responsive Sheet & Modal (bottom sheet on mobile, 480px modal on desktop) */
+.wf-save-sheet-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.wf-save-sheet-modal {
+  width: 100%;
+  max-width: 480px;
+  background: var(--wf-surface);
+  border: 1px solid var(--wf-border);
+  border-radius: var(--wf-radius-modal);
+  box-shadow: var(--wf-shadow-elevated);
+  padding: 28px;
+  position: relative;
+  box-sizing: border-box;
+  color: var(--wf-text);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+@media (max-width: 767px) {
+  .wf-save-sheet-overlay {
+    align-items: flex-end !important;
+    padding: 0 !important;
+  }
+  .wf-save-sheet-modal {
+    max-width: 100% !important;
+    border-radius: 24px 24px 0 0 !important;
+    border-bottom: none !important;
+    box-shadow: var(--wf-shadow-sheet) !important;
+    padding: 20px 16px calc(24px + env(safe-area-inset-bottom, 16px)) !important;
+  }
+}
+
+/* Responsive Post Card Grid (2 cols at 360/390, 3 at 768, 4 at 1024, 5 at 1440) */
+.wf-responsive-grid {
+  display: grid;
+  width: 100%;
+  box-sizing: border-box;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+@media (min-width: 768px) {
+  .wf-responsive-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .wf-responsive-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+  }
+}
+
+@media (min-width: 1440px) {
+  .wf-responsive-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 16px;
+  }
+}
+
+/* Fallback neutral tile (No gradients per spec) */
+.wf-neutral-tile {
+  background: var(--wf-surface-2);
+  border: 1px solid var(--wf-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--wf-text-muted);
 }
 
 /* Account dropdown styling */
@@ -172,55 +444,36 @@ body {
   gap: 10px;
   width: 100%;
   text-align: left;
-  padding: 9px 12px;
-  border-radius: 12px;
+  padding: 10px 14px;
+  border-radius: var(--wf-radius-control);
   border: 0;
   background: transparent;
   font-family: inherit;
   font-size: 14px;
-  font-weight: 600;
-  color: #1B1D1F;
+  font-weight: 500;
+  color: var(--wf-text);
   cursor: pointer;
-  box-sizing: border-box;
   text-decoration: none;
+  min-height: 44px;
   transition: background 0.15s ease, color 0.15s ease;
 }
 
 .wf-menu-item:hover,
 .wf-menu-item:focus-visible {
-  background: #F6F5F1;
+  background: var(--wf-surface-2);
 }
 
 .wf-menu-item-danger {
-  color: #C93B2B;
+  color: var(--wf-danger);
 }
 
 .wf-menu-item-danger:hover,
 .wf-menu-item-danger:focus-visible {
-  background: #FBE6EE;
-  color: #A32222;
+  background: var(--wf-alert-tint);
+  color: var(--wf-danger);
 }
 
-/* Map selected card responsive positioning */
-.wf-map-selected-card {
-  bottom: 32px;
-  left: 32px;
-  width: 440px;
-  max-width: calc(100% - 64px);
-}
-
-@media (max-width: 1023px) {
-  .wf-map-selected-card {
-    bottom: 96px !important;
-    left: 16px !important;
-    right: 16px !important;
-    width: auto !important;
-    max-width: calc(100% - 32px) !important;
-    margin: 0 auto;
-  }
-}
-
-/* Map container sizing - no viewport scrolling on desktop or mobile */
+/* Map sizing & layout */
 html:has(.wf-map-main),
 body:has(.wf-map-main) {
   height: 100% !important;
@@ -255,7 +508,6 @@ body:has(.wf-map-main) {
   min-height: 0 !important;
   position: relative;
   overflow: hidden;
-  box-sizing: border-box;
 }
 
 .wf-map-sidebar {
@@ -268,9 +520,8 @@ body:has(.wf-map-main) {
   display: flex !important;
   flex-direction: column !important;
   overflow: hidden !important;
-  background: #FFFFFF !important;
-  border-right: 1px solid #E6E3DC !important;
-  box-sizing: border-box !important;
+  background: var(--wf-surface) !important;
+  border-right: 1px solid var(--wf-border) !important;
   flex-shrink: 0 !important;
   z-index: 20;
 }
@@ -280,7 +531,10 @@ body:has(.wf-map-main) {
   min-height: 0 !important;
   overflow-y: auto !important;
   overscroll-behavior: contain !important;
-  padding: 8px !important;
+  padding: 12px !important;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .wf-map-pane {
@@ -293,19 +547,14 @@ body:has(.wf-map-main) {
   display: flex !important;
   flex-direction: column !important;
   overflow: hidden !important;
-  background: #EAE7DF;
+  background: var(--wf-surface-2);
 }
 
-.wf-map-pane .leaflet-container {
+.wf-map-pane .leaflet-container,
+.wf-map-pane .maplibregl-map {
   position: absolute !important;
-  top: 0 !important;
-  bottom: 0 !important;
-  left: 0 !important;
-  right: 0 !important;
   width: 100% !important;
   height: 100% !important;
-  min-height: 100% !important;
-  z-index: 1 !important;
 }
 
 @media (max-width: 1023px) {
@@ -332,55 +581,82 @@ body:has(.wf-map-main) {
   .wf-map-main[data-mobile-view="list"] .wf-map-pane {
     display: none !important;
   }
-  .wf-map-selected-card {
-    bottom: 16px !important;
-    left: 16px !important;
-    right: 16px !important;
-    width: auto !important;
-    max-width: calc(100% - 32px) !important;
-    margin: 0 auto;
-    z-index: 1000 !important;
-  }
 }
 
-/* Cluster and Place Marker reset for clear visibility */
-.wf-cluster-marker,
-.wf-place-marker {
-  background: transparent !important;
-  border: none !important;
-}
-
-/* Place Detail Hero responsive layout: 361-767px stacks in a single column */
+/* Place detail hero */
 .wf-place-hero {
   display: flex;
   flex-direction: row;
   gap: 24px;
-  background: #FFFFFF;
-  border: 1px solid #E6E3DC;
-  border-radius: 24px;
+  background: var(--wf-surface);
+  border: 1px solid var(--wf-border);
+  border-radius: var(--wf-radius-card);
   padding: 24px;
   margin-bottom: 28px;
   min-width: 0;
-  box-sizing: border-box;
+  box-shadow: var(--wf-shadow-card);
 }
 
 .wf-place-hero-image {
   width: 100%;
   max-width: 260px;
-  height: 240px;
-  border-radius: 20px;
-  background: linear-gradient(160deg, #8CC3D6, #2D6A82);
+  aspect-ratio: 16 / 9;
+  height: auto;
+  min-height: 160px;
+  border-radius: var(--wf-radius-control);
+  object-fit: cover;
   flex-shrink: 0;
+  background: var(--wf-surface-2);
 }
 
 @media (max-width: 767px) {
   .wf-place-hero {
     flex-direction: column !important;
+    padding: 16px;
   }
   .wf-place-hero-image {
     max-width: 100% !important;
     width: 100% !important;
-    height: 220px !important;
   }
 }
 
+/* Toast container */
+.wf-toast {
+  position: fixed;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: #14161A;
+  color: #FFFFFF;
+  padding: 12px 18px;
+  border-radius: var(--wf-radius-control);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  min-height: 48px;
+  max-width: calc(100vw - 32px);
+  width: auto;
+}
+
+[data-theme="dark"] .wf-toast {
+  background: #202328;
+  color: #F2F2F0;
+  border: 1px solid #2A2E34;
+}
+
+@media (min-width: 768px) {
+  .wf-toast {
+    bottom: 24px;
+    left: 24px;
+  }
+}
+
+@media (max-width: 767px) {
+  .wf-toast {
+    bottom: calc(76px + env(safe-area-inset-bottom, 12px));
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(100% - 32px);
+    max-width: 400px;
+  }
+}

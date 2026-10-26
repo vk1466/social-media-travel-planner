@@ -32,11 +32,11 @@ export function BottomTabBar() {
         bottom: 0,
         width: "100%",
         maxWidth: "100vw",
-        height: "calc(58px + env(safe-area-inset-bottom, 12px))",
+        height: "calc(60px + env(safe-area-inset-bottom, 12px))",
         boxSizing: "border-box",
-        padding: "6px 6px env(safe-area-inset-bottom, 12px)",
-        background: "#FFFFFF",
-        borderTop: "1px solid #E6E3DC",
+        padding: "4px 6px env(safe-area-inset-bottom, 12px)",
+        background: "var(--wf-surface)",
+        borderTop: "1px solid var(--wf-border-hairline)",
         display: "flex",
         alignItems: "center",
         justifyContent: "space-around",
@@ -49,19 +49,21 @@ export function BottomTabBar() {
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          gap: "3px",
-          minWidth: 0,
+          justifyContent: "center",
+          gap: "2px",
+          minWidth: "44px",
+          minHeight: "44px",
           flex: 1,
           maxWidth: "68px",
           fontSize: "11px",
-          fontWeight: isCurrent("/") ? 700 : 600,
+          fontWeight: isCurrent("/") ? 700 : 500,
           textDecoration: "none",
-          color: isCurrent("/") ? "#1B1D1F" : "#6B6F73",
+          color: isCurrent("/") ? "var(--wf-text)" : "var(--wf-text-muted)",
         }}
       >
         <svg
-          width="24"
-          height="24"
+          width="22"
+          height="22"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
@@ -72,7 +74,7 @@ export function BottomTabBar() {
         >
           <path d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z" />
         </svg>
-        Home
+        <span>Home</span>
       </Link>
 
       <Link
@@ -81,19 +83,21 @@ export function BottomTabBar() {
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          gap: "3px",
-          minWidth: 0,
+          justifyContent: "center",
+          gap: "2px",
+          minWidth: "44px",
+          minHeight: "44px",
           flex: 1,
           maxWidth: "68px",
           fontSize: "11px",
-          fontWeight: isCurrent("/library") ? 700 : 600,
+          fontWeight: isCurrent("/library") ? 700 : 500,
           textDecoration: "none",
-          color: isCurrent("/library") ? "#1B1D1F" : "#6B6F73",
+          color: isCurrent("/library") ? "var(--wf-text)" : "var(--wf-text-muted)",
         }}
       >
         <svg
-          width="24"
-          height="24"
+          width="22"
+          height="22"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
@@ -107,7 +111,7 @@ export function BottomTabBar() {
           <rect x="4" y="13" width="7" height="7" rx="1.5" />
           <rect x="13" y="13" width="7" height="7" rx="1.5" />
         </svg>
-        Library
+        <span>Library</span>
       </Link>
 
       <button
@@ -115,25 +119,27 @@ export function BottomTabBar() {
         aria-label="Save a link"
         onClick={() => openSaveSheet()}
         style={{
-          width: "52px",
-          height: "52px",
+          width: "48px",
+          height: "48px",
+          minWidth: "48px",
+          minHeight: "48px",
           flexShrink: 0,
           borderRadius: "50%",
-          background: "#1B1D1F",
-          color: "#FFFFFF",
+          background: "var(--wf-accent)",
+          color: "var(--wf-surface)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           textDecoration: "none",
-          marginTop: "-16px",
-          boxShadow: "0 6px 16px rgba(0,0,0,0.25)",
+          marginTop: "-12px",
+          boxShadow: "var(--wf-shadow-md)",
           border: 0,
           cursor: "pointer",
         }}
       >
         <svg
-          width="26"
-          height="26"
+          width="24"
+          height="24"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
@@ -151,19 +157,21 @@ export function BottomTabBar() {
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          gap: "3px",
-          minWidth: 0,
+          justifyContent: "center",
+          gap: "2px",
+          minWidth: "44px",
+          minHeight: "44px",
           flex: 1,
           maxWidth: "68px",
           fontSize: "11px",
-          fontWeight: isCurrent("/map") ? 700 : 600,
+          fontWeight: isCurrent("/map") ? 700 : 500,
           textDecoration: "none",
-          color: isCurrent("/map") ? "#1B1D1F" : "#6B6F73",
+          color: isCurrent("/map") ? "var(--wf-text)" : "var(--wf-text-muted)",
         }}
       >
         <svg
-          width="24"
-          height="24"
+          width="22"
+          height="22"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
@@ -175,7 +183,7 @@ export function BottomTabBar() {
           <path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z" />
           <circle cx="12" cy="10" r="2.5" />
         </svg>
-        Map
+        <span>Map</span>
       </Link>
 
       <Link
@@ -184,19 +192,21 @@ export function BottomTabBar() {
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          gap: "3px",
-          minWidth: 0,
+          justifyContent: "center",
+          gap: "2px",
+          minWidth: "44px",
+          minHeight: "44px",
           flex: 1,
           maxWidth: "68px",
           fontSize: "11px",
-          fontWeight: isCurrent("/collections") ? 700 : 600,
+          fontWeight: isCurrent("/collections") ? 700 : 500,
           textDecoration: "none",
-          color: isCurrent("/collections") ? "#1B1D1F" : "#6B6F73",
+          color: isCurrent("/collections") ? "var(--wf-text)" : "var(--wf-text-muted)",
         }}
       >
         <svg
-          width="24"
-          height="24"
+          width="22"
+          height="22"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
@@ -207,7 +217,7 @@ export function BottomTabBar() {
           <path d="m12 4 9 5-9 5-9-5z" />
           <path d="m3 14 9 5 9-5" />
         </svg>
-        Collections
+        <span>Collections</span>
       </Link>
     </nav>
   );

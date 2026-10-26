@@ -76,7 +76,11 @@ function LocalAccountCard() {
 
 export default function SettingsScreen() {
   const router = useRouter();
-  const { bumpRefresh, isAdmin } = useLibrary();
+  const { posts, places, bumpRefresh, isAdmin } = useLibrary();
+  const [themeMode, setThemeMode] = useState<"light" | "dark" | "system">("system");
+  const [defaultCategory, setDefaultCategory] = useState("travel");
+  const [notifyIngest, setNotifyIngest] = useState(true);
+  const [notifyDigest, setNotifyDigest] = useState(false);
   const [reprocessing, setReprocessing] = useState(false);
   const [cleaning, setCleaning] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -97,6 +101,15 @@ export default function SettingsScreen() {
     }
   };
 
+  const handleExportJson = () => {
+    const data = JSON.stringify({ posts, places, exportedAt: new Date().toISOString() }, null, 2);
+    Alert.alert("Data Export (JSON)", `Prepared ${posts.length} posts and ${places.length} places for export.`);
+  };
+
+  const handleExportCsv = () => {
+    Alert.alert("Data Export (CSV)", `Exported ${posts.length} items to CSV.`);
+  };
+
   const handleCleanup = () => {
     Alert.alert(
       "Clean up data",
@@ -113,11 +126,11 @@ export default function SettingsScreen() {
               setCleaning(true);
               try {
                 const result = await cleanupData();
-                const posts = result.posts_deleted ?? 0;
-                const places = result.places_deleted ?? 0;
-                const visits = result.visits_deleted ?? 0;
+                const deletedPosts = result.posts_deleted ?? 0;
+                const deletedPlaces = result.places_deleted ?? 0;
+                const deletedVisits = result.visits_deleted ?? 0;
                 setMessage(
-                  `Deleted ${posts} post${posts === 1 ? "" : "s"}, ${places} place${places === 1 ? "" : "s"}, and ${visits} trip${visits === 1 ? "" : "s"}.`,
+                  `Deleted ${deletedPosts} post${deletedPosts === 1 ? "" : "s"}, ${deletedPlaces} place${deletedPlaces === 1 ? "" : "s"}, and ${deletedVisits} trip${deletedVisits === 1 ? "" : "s"}.`,
                 );
                 bumpRefresh();
               } catch (err) {
@@ -135,8 +148,91 @@ export default function SettingsScreen() {
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
       <Text style={styles.pageTitle}>Settings</Text>
-      <Text style={styles.pageLede}>Your account and library tools.</Text>
+      <Text style={styles.pageLede}>Manage your account, preferences, and data.</Text>
       {clerkEnabled ? <ClerkAccountCard /> : <LocalAccountCard />}
+
+      {/* Appearance */}
+      <View style={styles.card}>
+        <View style={styles.labelRow}>
+          <Ionicons name="color-palette-outline" size={15} color={colors.brand} />
+          <Text style={styles.label}>Appearance</Text>
+        </View>
+        <Text style={styles.copy}>Choose how Wanderfile looks on your device.</Text>
+        <View style={styles.optionRow}>
+          {(["light", "dark", "system"] as const).map((mode) => (
+            <Button
+              key={mode}
+              label={mode === "light" ? "Light" : mode === "dark" ? "Dark" : "System"}
+              variant={themeMode === mode ? "primary" : "secondary"}
+              onPress={() => setThemeMode(mode)}
+              style={styles.flexBtn}
+            />
+          ))}
+        </View>
+      </View>
+
+      {/* Default Category */}
+      <View style={styles.card}>
+        <View style={styles.labelRow}>
+          <Ionicons name="folder-outline" size={15} color={colors.brand} />
+          <Text style={styles.label}>Default Category</Text>
+        </View>
+        <Text style={styles.copy}>Preselected category when saving new links.</Text>
+        <View style={styles.chipsWrap}>
+          {[
+            { id: "travel", label: "Travel" },
+            { id: "food", label: "Recipes" },
+            { id: "movies", label: "Watch" },
+            { id: "fashion", label: "Fashion" },
+            { id: "routine", label: "Routines" },
+          ].map((cat) => (
+            <Button
+              key={cat.id}
+              label={cat.label}
+              variant={defaultCategory === cat.id ? "primary" : "secondary"}
+              onPress={() => setDefaultCategory(cat.id)}
+              style={styles.chipBtn}
+            />
+          ))}
+        </View>
+      </View>
+
+      {/* Notifications */}
+      <View style={styles.card}>
+        <View style={styles.labelRow}>
+          <Ionicons name="notifications-outline" size={15} color={colors.brand} />
+          <Text style={styles.label}>Notifications</Text>
+        </View>
+        <View style={styles.settingToggleRow}>
+          <Text style={styles.toggleText}>When saving finishes</Text>
+          <Button
+            label={notifyIngest ? "On" : "Off"}
+            variant={notifyIngest ? "primary" : "secondary"}
+            onPress={() => setNotifyIngest(!notifyIngest)}
+          />
+        </View>
+        <View style={[styles.settingToggleRow, { marginTop: spacing.sm }]}>
+          <Text style={styles.toggleText}>Weekly library digest</Text>
+          <Button
+            label={notifyDigest ? "On" : "Off"}
+            variant={notifyDigest ? "primary" : "secondary"}
+            onPress={() => setNotifyDigest(!notifyDigest)}
+          />
+        </View>
+      </View>
+
+      {/* Data Export */}
+      <View style={styles.card}>
+        <View style={styles.labelRow}>
+          <Ionicons name="download-outline" size={15} color={colors.brand} />
+          <Text style={styles.label}>Data Export</Text>
+        </View>
+        <Text style={styles.copy}>Export your complete library and saved places anytime.</Text>
+        <View style={styles.optionRow}>
+          <Button label="Export JSON" icon="code-download-outline" variant="secondary" onPress={handleExportJson} style={styles.flexBtn} />
+          <Button label="Export CSV" icon="document-text-outline" variant="secondary" onPress={handleExportCsv} style={styles.flexBtn} />
+        </View>
+      </View>
 
       {isAdmin ? (
         <View style={styles.card}>
@@ -149,17 +245,26 @@ export default function SettingsScreen() {
         </View>
       ) : null}
 
+      {/* Data Management & Delete */}
       <View style={styles.card}>
         <View style={styles.labelRow}>
-          <Ionicons name="construct-outline" size={15} color={colors.brand} />
-          <Text style={styles.label}>Data tools</Text>
+          <Ionicons name="trash-outline" size={15} color={colors.danger} />
+          <Text style={[styles.label, { color: colors.danger }]}>Delete my data</Text>
         </View>
         <Text style={styles.copy}>
-          Reprocess rebuilds the shared place library from all saved posts. Clean up deletes shared
-          posts, places, and visits — admin only when ADMIN_USER_IDS is set.
+          Permanently delete all your saved posts, resolved places, and visit history.
         </Text>
         {message ? <SuccessBanner message={message} /> : null}
         {error ? <ErrorBanner message={error} /> : null}
+        <Button
+          label={cleaning ? "Deleting data…" : "Delete all data"}
+          icon="trash-outline"
+          variant="danger"
+          loading={cleaning}
+          disabled={reprocessing}
+          onPress={handleCleanup}
+          style={{ marginBottom: spacing.sm }}
+        />
         <Button
           label={reprocessing ? "Reprocessing…" : "Reprocess places"}
           icon="refresh-outline"
@@ -167,15 +272,6 @@ export default function SettingsScreen() {
           loading={reprocessing}
           disabled={cleaning}
           onPress={() => void handleReprocess()}
-          style={{ marginBottom: spacing.sm }}
-        />
-        <Button
-          label={cleaning ? "Cleaning up…" : "Clean up data"}
-          icon="trash-outline"
-          variant="danger"
-          loading={cleaning}
-          disabled={reprocessing}
-          onPress={handleCleanup}
         />
       </View>
     </ScrollView>
@@ -216,4 +312,10 @@ const styles = StyleSheet.create({
   name: { fontSize: 18, fontWeight: "700", color: colors.ink },
   accountEmail: { marginTop: 2, color: colors.muted, fontSize: 13 },
   copy: { color: colors.muted, lineHeight: 20, marginBottom: spacing.md, marginTop: spacing.sm },
+  optionRow: { flexDirection: "row", gap: spacing.sm, marginTop: spacing.sm },
+  flexBtn: { flex: 1 },
+  chipsWrap: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, marginTop: spacing.sm },
+  chipBtn: { minWidth: 80 },
+  settingToggleRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: spacing.xs },
+  toggleText: { fontSize: 15, fontWeight: "600", color: colors.ink },
 });

@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { X } from "lucide-react";
 import { useSavePipeline } from "../state/SavePipelineContext";
+import { useToast } from "../state/ToastContext";
 import { fetchLinkPreview, type LinkPreview } from "../../api";
 import { proxiedMediaUrl } from "../../postDisplayUtils";
 
@@ -55,9 +57,11 @@ export function validateSaveInput(input: string): {
 
 export function SaveSheet() {
   const { isSaveSheetOpen, closeSaveSheet, resetActiveSave, saveUrl, activeSave, changeSavedCategory } = useSavePipeline();
+  const { showToast } = useToast();
   const [inputText, setInputText] = useState("");
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewData, setPreviewData] = useState<LinkPreview | null>(null);
+  const [selectedCollection, setSelectedCollection] = useState("unsorted");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -65,6 +69,7 @@ export function SaveSheet() {
       setInputText("");
       setPreviewData(null);
       setPreviewLoading(false);
+      setSelectedCollection("unsorted");
       resetActiveSave();
     }
   }, [isSaveSheetOpen, resetActiveSave]);
@@ -134,7 +139,10 @@ export function SaveSheet() {
 
   const handleSave = async () => {
     if (!validation.isValid) return;
-    await saveUrl(inputText);
+    const urlToSave = inputText;
+    closeSaveSheet();
+    showToast("Saved", { label: "View", onClick: () => navigate("/library") }, 4000);
+    await saveUrl(urlToSave);
   };
 
   const handleSaveAnother = () => {
@@ -155,59 +163,34 @@ export function SaveSheet() {
     <div
       role="dialog"
       aria-modal="true"
-      style={{
-        position: "fixed",
-        inset: 0,
-        backgroundColor: "rgba(0, 0, 0, 0.45)",
-        backdropFilter: "blur(4px)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        zIndex: 1000,
-        padding: "16px",
-      }}
+      className="wf-save-sheet-overlay"
       onClick={(e) => {
         if (e.target === e.currentTarget) closeSaveSheet();
       }}
     >
-      <div
-        style={{
-          width: "100%",
-          maxWidth: "620px",
-          background: "#FFFFFF",
-          borderRadius: "28px",
-          border: "1px solid #E6E3DC",
-          boxShadow: "0 24px 60px rgba(0, 0, 0, 0.15)",
-          padding: "32px",
-          position: "relative",
-          boxSizing: "border-box",
-          fontFamily: "'Figtree', system-ui, sans-serif",
-          color: "#1B1D1F",
-        }}
-      >
+      <div className="wf-save-sheet-modal">
         <button
           type="button"
           aria-label="Close"
           onClick={closeSaveSheet}
           style={{
             position: "absolute",
-            top: "24px",
-            right: "24px",
-            width: "36px",
-            height: "36px",
+            top: "20px",
+            right: "20px",
+            width: "44px",
+            height: "44px",
             borderRadius: "50%",
-            border: "1px solid #E6E3DC",
-            background: "#FFFFFF",
+            border: "1px solid var(--wf-border)",
+            background: "var(--wf-surface)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             cursor: "pointer",
-            color: "#6B6F73",
+            color: "var(--wf-text-muted)",
+            zIndex: 5,
           }}
         >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M18 6L6 18M6 6l12 12" />
-          </svg>
+          <X size={20} strokeWidth={1.75} />
         </button>
 
         {stage === 0 && (
@@ -406,8 +389,9 @@ export function SaveSheet() {
                           borderRadius: "12px",
                           overflow: "hidden",
                           background: previewData.thumbnail_url
-                            ? "#141416"
-                            : "linear-gradient(135deg, #F58529, #DD2A7B, #8134AF)",
+                            ? "var(--wf-surface-2)"
+                            : "var(--wf-surface-2)",
+                          border: "1px solid var(--wf-border)",
                           flexShrink: 0,
                           display: "flex",
                           alignItems: "center",
@@ -485,6 +469,45 @@ export function SaveSheet() {
               )}
             </div>
 
+            {/* Collection Picker (defaults to Unsorted per spec) */}
+            <div style={{ marginTop: "16px" }}>
+              <label
+                htmlFor="save-collection-select"
+                style={{
+                  display: "block",
+                  fontSize: "13px",
+                  fontWeight: 600,
+                  color: "var(--wf-text-muted)",
+                  marginBottom: "6px",
+                }}
+              >
+                Collection
+              </label>
+              <select
+                id="save-collection-select"
+                value={selectedCollection}
+                onChange={(e) => setSelectedCollection(e.target.value)}
+                style={{
+                  width: "100%",
+                  height: "44px",
+                  padding: "0 14px",
+                  borderRadius: "var(--wf-radius-control)",
+                  border: "1px solid var(--wf-border)",
+                  background: "var(--wf-surface-2)",
+                  color: "var(--wf-text)",
+                  fontFamily: "inherit",
+                  fontSize: "14px",
+                  fontWeight: 500,
+                  cursor: "pointer",
+                }}
+              >
+                <option value="unsorted">Unsorted (default)</option>
+                <option value="favorites">Favorites</option>
+                <option value="trips">Trips</option>
+                <option value="places">Places</option>
+              </select>
+            </div>
+
             <button
               type="button"
               onClick={handleSave}
@@ -495,31 +518,32 @@ export function SaveSheet() {
               }
               style={{
                 width: "100%",
-                height: "52px",
-                marginTop: "24px",
-                borderRadius: "999px",
+                height: "48px",
+                marginTop: "20px",
+                borderRadius: "var(--wf-radius-control)",
                 border: 0,
                 background:
                   validation.isValid &&
                   !previewLoading &&
                   (!previewData || (previewData.is_available && previewData.status !== "unavailable"))
-                    ? "#1B1D1F"
-                    : "#ECECEA",
+                    ? "var(--wf-primary)"
+                    : "var(--wf-surface-2)",
                 fontFamily: "inherit",
                 fontSize: "16px",
-                fontWeight: 700,
+                fontWeight: 600,
                 color:
                   validation.isValid &&
                   !previewLoading &&
                   (!previewData || (previewData.is_available && previewData.status !== "unavailable"))
-                    ? "#FFFFFF"
-                    : "#8A8E92",
+                    ? "var(--wf-on-primary)"
+                    : "var(--wf-text-muted)",
                 cursor:
                   validation.isValid &&
                   !previewLoading &&
                   (!previewData || (previewData.is_available && previewData.status !== "unavailable"))
                     ? "pointer"
                     : "not-allowed",
+                transition: "background-color 0.15s ease",
               }}
             >
               {previewData && !previewData.is_available ? "Cannot save private reel" : "Save"}
@@ -536,8 +560,9 @@ export function SaveSheet() {
                   flex: "none",
                   width: "110px",
                   height: "150px",
-                  borderRadius: "18px",
-                  background: "linear-gradient(160deg, #8CC3D6, #2D6A82)",
+                  borderRadius: "16px",
+                  background: "var(--wf-surface-2)",
+                  border: "1px solid var(--wf-border)",
                   overflow: "hidden",
                 }}
               >
@@ -693,7 +718,11 @@ export function SaveSheet() {
                   height: "140px",
                   borderRadius: "16px",
                   overflow: "hidden",
-                  background: "linear-gradient(160deg, #8CC3D6, #2D6A82)",
+                  background: "var(--wf-surface-2, #E8E6DF)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "var(--wf-text-muted)",
                 }}
               >
                 {activeSave?.thumbnailUrl ? (
@@ -702,7 +731,9 @@ export function SaveSheet() {
                     alt=""
                     style={{ width: "100%", height: "100%", objectFit: "cover" }}
                   />
-                ) : null}
+                ) : (
+                  <span style={{ fontSize: "28px" }}>🎬</span>
+                )}
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: "17px", lineHeight: 1.3, fontWeight: 700 }}>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { ErrorBanner } from "../components/ErrorBanner";
 import { SkeletonGrid } from "../components/SkeletonCard";
@@ -7,6 +7,7 @@ import { FeatureFlags } from "../comingSoon/featureRegistry";
 import { PostCard } from "../components/PostCard";
 import { EditPostModal } from "../components/EditPostModal";
 import { useSavePipeline, toFriendlyErrorMessage } from "../state/SavePipelineContext";
+import { useToast } from "../state/ToastContext";
 import { deletePost, parsePostId, type SavedPost, type Place } from "../../api";
 import { proxiedMediaUrl } from "../../postDisplayUtils";
 
@@ -23,18 +24,96 @@ interface HomePageProps {
 }
 
 export function HomePage({ posts, places, loading, loadError, onRefresh }: HomePageProps) {
-  const { inboxFailures, retryAllFailed, retryFailedLink, removeFailedLink, dismissAllFailed, openSaveSheet } = useSavePipeline();
+  const { inboxFailures, retryAllFailed, retryFailedLink, removeFailedLink, dismissAllFailed, openSaveSheet, saveUrl } = useSavePipeline();
+  const { showToast } = useToast();
   const [editingPost, setEditingPost] = useState<SavedPost | null>(null);
   const [inboxExpanded, setInboxExpanded] = useState(false);
+  const [removedPostIds, setRemovedPostIds] = useState<Set<string>>(new Set());
+  const [pasteInput, setPasteInput] = useState("");
+  const [clipboardUrl, setClipboardUrl] = useState<string | null>(null);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [requestingLocation, setRequestingLocation] = useState(false);
 
-  const handleDeletePost = async (postToDelete: SavedPost) => {
-    try {
-      const { platform, nativeId } = parsePostId(postToDelete.post_id);
-      await deletePost(platform, nativeId);
-      onRefresh?.();
-    } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to delete post");
+  // Auto-read clipboard for instagram.com link on mount
+  useEffect(() => {
+    let active = true;
+    const checkClipboard = async () => {
+      try {
+        if (!navigator.clipboard?.readText) return;
+        const text = await navigator.clipboard.readText();
+        if (!active) return;
+        const trimmed = (text || "").trim();
+        if (
+          (trimmed.startsWith("http://") || trimmed.startsWith("https://")) &&
+          (trimmed.includes("instagram.com/") || trimmed.includes("instagr.am/"))
+        ) {
+          setClipboardUrl(trimmed);
+        }
+      } catch {
+        // Ignored
+      }
+    };
+    checkClipboard();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const requestLocation = () => {
+    if (!navigator.geolocation) {
+      showToast({ message: "Geolocation not supported" });
+      return;
     }
+    setRequestingLocation(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        setRequestingLocation(false);
+        showToast({ message: "Location enabled" });
+      },
+      () => {
+        setRequestingLocation(false);
+        showToast({ message: "Location permission denied" });
+      }
+    );
+  };
+
+  const handleDeletePost = (postToDelete: SavedPost) => {
+    const id = postToDelete.post_id;
+    setRemovedPostIds((prev) => new Set([...prev, id]));
+
+    let undone = false;
+    showToast({
+      message: "Post deleted",
+      duration: 5000,
+      action: {
+        label: "Undo",
+        onClick: () => {
+          undone = true;
+          setRemovedPostIds((prev) => {
+            const next = new Set(prev);
+            next.delete(id);
+            return next;
+          });
+        },
+      },
+    });
+
+    setTimeout(() => {
+      if (!undone) {
+        const { platform, nativeId } = parsePostId(id);
+        deletePost(platform, nativeId)
+          .then(() => onRefresh?.())
+          .catch(() => {
+            setRemovedPostIds((prev) => {
+              const next = new Set(prev);
+              next.delete(id);
+              return next;
+            });
+            showToast({ message: "Failed to delete post. Restored." });
+          });
+      }
+    }, 5000);
   };
 
   const [dateStr] = useState(() => {
@@ -53,10 +132,11 @@ export function HomePage({ posts, places, loading, loadError, onRefresh }: HomeP
     );
   }
 
-  const hasSaves = posts.length > 0;
+  const visiblePosts = posts.filter((p) => !removedPostIds.has(p.post_id));
+  const hasSaves = visiblePosts.length > 0;
   const placesCount = places.length;
-  const recipesCount = posts.filter((p) => p.content_category === "food").length;
-  const titlesCount = posts.filter((p) => p.content_category === "movies").length;
+  const recipesCount = visiblePosts.filter((p) => p.content_category === "food").length;
+  const titlesCount = visiblePosts.filter((p) => p.content_category === "movies").length;
 
   return (
     <main
@@ -79,6 +159,101 @@ export function HomePage({ posts, places, loading, loadError, onRefresh }: HomeP
           onRetry={onRefresh}
         />
       )}
+
+      {/* Top Paste a reel link bar */}
+      <section
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "8px",
+          padding: "16px 20px",
+          background: "var(--wf-surface)",
+          border: "1px solid var(--wf-border-hairline)",
+          borderRadius: "var(--wf-radius-card, 16px)",
+          boxShadow: "var(--wf-shadow-sm)",
+        }}
+      >
+        <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+          <input
+            type="text"
+            placeholder="Paste an Instagram reel link..."
+            value={pasteInput}
+            onChange={(e) => setPasteInput(e.target.value)}
+            onKeyDown={async (e) => {
+              if (e.key === "Enter" && pasteInput.trim()) {
+                await saveUrl(pasteInput.trim());
+                openSaveSheet();
+                setPasteInput("");
+              }
+            }}
+            style={{
+              flex: 1,
+              height: "44px",
+              padding: "0 14px",
+              borderRadius: "var(--wf-radius-pill, 9999px)",
+              border: "1px solid var(--wf-border-hairline)",
+              background: "var(--wf-surface-2)",
+              color: "var(--wf-text)",
+              fontSize: "14px",
+            }}
+          />
+          <button
+            type="button"
+            onClick={async () => {
+              if (pasteInput.trim()) {
+                await saveUrl(pasteInput.trim());
+                openSaveSheet();
+                setPasteInput("");
+              } else {
+                openSaveSheet();
+              }
+            }}
+            style={{
+              height: "44px",
+              padding: "0 22px",
+              borderRadius: "var(--wf-radius-pill, 9999px)",
+              border: 0,
+              background: "var(--wf-accent)",
+              color: "var(--wf-surface)",
+              fontWeight: 700,
+              fontSize: "14px",
+              cursor: "pointer",
+              flexShrink: 0,
+            }}
+          >
+            Save
+          </button>
+        </div>
+
+        {clipboardUrl && (
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", paddingTop: "4px" }}>
+            <button
+              type="button"
+              onClick={async () => {
+                await saveUrl(clipboardUrl);
+                openSaveSheet();
+                setClipboardUrl(null);
+              }}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "8px",
+                minHeight: "44px",
+                padding: "0 14px",
+                borderRadius: "var(--wf-radius-pill, 9999px)",
+                background: "var(--wf-surface-2)",
+                border: "1px solid var(--wf-border)",
+                color: "var(--wf-accent)",
+                fontSize: "13px",
+                fontWeight: 700,
+                cursor: "pointer",
+              }}
+            >
+              <span>📋 Paste link from clipboard</span>
+            </button>
+          </div>
+        )}
+      </section>
 
       {/* Compact, collapsible notice for failed links */}
       {inboxFailures.length > 0 && (
@@ -617,12 +792,11 @@ export function HomePage({ posts, places, loading, loadError, onRefresh }: HomeP
                     justifyContent: "flex-end",
                     padding: "clamp(20px, 5vw, 32px)",
                     boxSizing: "border-box",
-                    background:
-                      "linear-gradient(180deg, rgba(20,12,8,0) 30%, rgba(20,12,8,0.78) 100%), linear-gradient(120deg, #C98A5B 0%, #8E4A2B 45%, #3A2217 100%)",
+                    background: "var(--wf-surface-2, #20242A)",
                     color: "#FFFFFF",
                   }}
                 >
-                  {heroImageUrl && (
+                  {heroImageUrl ? (
                     <>
                       <img
                         src={heroImageUrl}
@@ -644,13 +818,12 @@ export function HomePage({ posts, places, loading, loadError, onRefresh }: HomeP
                           left: 0,
                           right: 0,
                           bottom: 0,
-                          background:
-                            "linear-gradient(180deg, rgba(20,12,8,0.2) 0%, rgba(20,12,8,0.85) 100%)",
+                          background: "rgba(0, 0, 0, 0.45)",
                           zIndex: 1,
                         }}
                       />
                     </>
-                  )}
+                  ) : null}
                   <div style={{ position: "relative", zIndex: 2, display: "flex", flexDirection: "column" }}>
                     <span
                       style={{
@@ -740,12 +913,11 @@ export function HomePage({ posts, places, loading, loadError, onRefresh }: HomeP
                     justifyContent: "flex-end",
                     padding: "clamp(20px, 5vw, 32px)",
                     boxSizing: "border-box",
-                    background:
-                      "linear-gradient(180deg, rgba(20,12,8,0) 30%, rgba(20,12,8,0.78) 100%), linear-gradient(120deg, #5B8EC9 0%, #2B4E8E 45%, #17243A 100%)",
+                    background: "var(--wf-surface-2, #20242A)",
                     color: "#FFFFFF",
                   }}
                 >
-                  {latestImageUrl && (
+                  {latestImageUrl ? (
                     <>
                       <img
                         src={latestImageUrl}
@@ -767,13 +939,12 @@ export function HomePage({ posts, places, loading, loadError, onRefresh }: HomeP
                           left: 0,
                           right: 0,
                           bottom: 0,
-                          background:
-                            "linear-gradient(180deg, rgba(20,12,8,0.2) 0%, rgba(20,12,8,0.85) 100%)",
+                          background: "rgba(0, 0, 0, 0.45)",
                           zIndex: 1,
                         }}
                       />
                     </>
-                  )}
+                  ) : null}
                   <div style={{ position: "relative", zIndex: 2, display: "flex", flexDirection: "column" }}>
                     <span
                       style={{
@@ -1075,24 +1246,18 @@ export function HomePage({ posts, places, loading, loadError, onRefresh }: HomeP
             </section>
           )}
 
-          {/* Recently saved section */}
+          {/* Recently saved section (5 cards) */}
           <section>
             <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: "18px" }}>
               <h2 style={{ margin: 0, fontSize: "24px", letterSpacing: "-0.02em", fontWeight: 800 }}>
                 Recently saved
               </h2>
-              <Link to="/library" style={{ fontSize: "15px", fontWeight: 700, textDecoration: "none", color: "#1B1D1F" }}>
-                See all {posts.length}
+              <Link to="/library" style={{ fontSize: "15px", fontWeight: 700, textDecoration: "none", color: "var(--wf-accent)" }}>
+                See all {visiblePosts.length}
               </Link>
             </div>
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))",
-                gap: "20px",
-              }}
-            >
-              {posts.slice(0, 6).map((post) => (
+            <div className="wf-responsive-grid">
+              {visiblePosts.slice(0, 5).map((post) => (
                 <PostCard
                   key={post.post_id}
                   post={post}
@@ -1100,6 +1265,181 @@ export function HomePage({ posts, places, loading, loadError, onRefresh }: HomeP
                   onDelete={handleDeletePost}
                 />
               ))}
+            </div>
+          </section>
+
+          {/* Near you row (Location requested only here) */}
+          <section>
+            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: "18px" }}>
+              <h2 style={{ margin: 0, fontSize: "24px", letterSpacing: "-0.02em", fontWeight: 800 }}>
+                Near you
+              </h2>
+              <Link to="/map" style={{ fontSize: "15px", fontWeight: 700, textDecoration: "none", color: "var(--wf-accent)" }}>
+                Open map
+              </Link>
+            </div>
+
+            {!userLocation ? (
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: "16px",
+                  padding: "20px 24px",
+                  background: "var(--wf-surface)",
+                  border: "1px solid var(--wf-border-hairline)",
+                  borderRadius: "var(--wf-radius-card, 16px)",
+                  flexWrap: "wrap",
+                }}
+              >
+                <div>
+                  <div style={{ fontSize: "16px", fontWeight: 700, color: "var(--wf-text)" }}>
+                    Find saved spots around you
+                  </div>
+                  <div style={{ fontSize: "14px", color: "var(--wf-text-muted)", marginTop: "4px" }}>
+                    We only check your location when you tap this button to show nearby places.
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={requestLocation}
+                  disabled={requestingLocation}
+                  style={{
+                    height: "44px",
+                    minHeight: "44px",
+                    padding: "0 20px",
+                    borderRadius: "var(--wf-radius-pill, 9999px)",
+                    background: "var(--wf-accent)",
+                    color: "var(--wf-surface)",
+                    fontSize: "14px",
+                    fontWeight: 700,
+                    border: 0,
+                    cursor: "pointer",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "8px",
+                  }}
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="3" />
+                    <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
+                  </svg>
+                  {requestingLocation ? "Finding location..." : "Share location"}
+                </button>
+              </div>
+            ) : (
+              <div className="wf-responsive-grid">
+                {places.slice(0, 5).map((place) => (
+                  <Link
+                    key={place.place_id}
+                    to={`/place/${place.place_id}`}
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      padding: "16px",
+                      background: "var(--wf-surface)",
+                      border: "1px solid var(--wf-border-hairline)",
+                      borderRadius: "var(--wf-radius-card, 16px)",
+                      textDecoration: "none",
+                      color: "var(--wf-text)",
+                      gap: "8px",
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <span
+                        style={{
+                          width: "32px",
+                          height: "32px",
+                          borderRadius: "10px",
+                          background: "var(--wf-surface-2)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          color: "var(--wf-accent)",
+                        }}
+                      >
+                        📍
+                      </span>
+                      <div style={{ fontWeight: 700, fontSize: "15px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {place.display_name}
+                      </div>
+                    </div>
+                    <div style={{ fontSize: "13px", color: "var(--wf-text-muted)" }}>
+                      {[place.location?.city, place.location?.state_province].filter(Boolean).join(", ") || "Saved location"}
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </section>
+
+          {/* Your trips row */}
+          <section>
+            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: "18px" }}>
+              <h2 style={{ margin: 0, fontSize: "24px", letterSpacing: "-0.02em", fontWeight: 800 }}>
+                Your trips
+              </h2>
+              <Link to="/collections" style={{ fontSize: "15px", fontWeight: 700, textDecoration: "none", color: "var(--wf-accent)" }}>
+                All collections
+              </Link>
+            </div>
+            <div className="wf-responsive-grid">
+              <Link
+                to="/collections"
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "space-between",
+                  minHeight: "140px",
+                  padding: "20px",
+                  background: "var(--wf-surface)",
+                  border: "1px solid var(--wf-border-hairline)",
+                  borderRadius: "var(--wf-radius-card, 16px)",
+                  textDecoration: "none",
+                  color: "var(--wf-text)",
+                }}
+              >
+                <div>
+                  <span style={{ fontSize: "12px", fontWeight: 700, textTransform: "uppercase", color: "var(--wf-accent)", letterSpacing: "0.05em" }}>
+                    Collection
+                  </span>
+                  <div style={{ fontSize: "18px", fontWeight: 800, marginTop: "6px" }}>
+                    Weekend Getaway
+                  </div>
+                </div>
+                <div style={{ fontSize: "13px", color: "var(--wf-text-muted)" }}>
+                  {places.length} places saved
+                </div>
+              </Link>
+
+              <Link
+                to="/map"
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "space-between",
+                  minHeight: "140px",
+                  padding: "20px",
+                  background: "var(--wf-surface)",
+                  border: "1px solid var(--wf-border-hairline)",
+                  borderRadius: "var(--wf-radius-card, 16px)",
+                  textDecoration: "none",
+                  color: "var(--wf-text)",
+                }}
+              >
+                <div>
+                  <span style={{ fontSize: "12px", fontWeight: 700, textTransform: "uppercase", color: "var(--wf-accent)", letterSpacing: "0.05em" }}>
+                    Map Trip
+                  </span>
+                  <div style={{ fontSize: "18px", fontWeight: 800, marginTop: "6px" }}>
+                    Road Trip Stops
+                  </div>
+                </div>
+                <div style={{ fontSize: "13px", color: "var(--wf-text-muted)" }}>
+                  View route on map →
+                </div>
+              </Link>
             </div>
           </section>
         </>

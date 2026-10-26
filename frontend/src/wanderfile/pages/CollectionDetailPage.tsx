@@ -105,9 +105,17 @@ export function CollectionDetailPage({ posts }: CollectionDetailPageProps) {
                   height: "200px",
                   background: post.thumbnail_url
                     ? `url(${proxiedMediaUrl(post.thumbnail_url)}) center/cover no-repeat`
-                    : "linear-gradient(160deg, #FBEBDD, #C98A5B)",
+                    : "var(--wf-surface-2, #E8E6DF)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "var(--wf-text-muted)",
                 }}
-              />
+              >
+                {!post.thumbnail_url && (
+                  <span style={{ fontSize: "28px" }}>📌</span>
+                )}
+              </div>
               <div style={{ padding: "16px" }}>
                 <div style={{ fontSize: "16px", fontWeight: 700, lineHeight: 1.35 }}>
                   {post.caption || "Saved post"}

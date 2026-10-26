@@ -1,15 +1,15 @@
-export function SkeletonCard({ height = 260 }: { height?: number }) {
+export function SkeletonCard() {
   return (
     <div
       style={{
-        background: "#FFFFFF",
-        border: "1px solid #E6E3DC",
-        borderRadius: "24px",
-        padding: "16px",
+        background: "var(--wf-surface)",
+        border: "1px solid var(--wf-border)",
+        borderRadius: "var(--wf-radius-card)",
+        padding: "12px",
         display: "flex",
         flexDirection: "column",
-        gap: "12px",
-        minHeight: `${height}px`,
+        gap: "10px",
+        boxShadow: "var(--wf-shadow-card)",
         boxSizing: "border-box",
       }}
     >
@@ -17,50 +17,44 @@ export function SkeletonCard({ height = 260 }: { height?: number }) {
         className="wf-skeleton"
         style={{
           width: "100%",
-          height: `${height * 0.55}px`,
-          borderRadius: "16px",
+          aspectRatio: "4 / 5",
+          borderRadius: "var(--wf-radius-control)",
         }}
       />
       <div
         className="wf-skeleton"
         style={{
-          width: "40%",
-          height: "18px",
-          borderRadius: "999px",
+          width: "35%",
+          height: "16px",
+          borderRadius: "var(--wf-radius-pill)",
+          marginTop: "4px",
         }}
       />
       <div
         className="wf-skeleton"
         style={{
           width: "85%",
-          height: "22px",
-          borderRadius: "8px",
+          height: "20px",
+          borderRadius: "6px",
         }}
       />
       <div
         className="wf-skeleton"
         style={{
-          width: "60%",
-          height: "16px",
-          borderRadius: "8px",
+          width: "55%",
+          height: "14px",
+          borderRadius: "6px",
         }}
       />
     </div>
   );
 }
 
-export function SkeletonGrid({ count = 6, height = 260 }: { count?: number; height?: number }) {
+export function SkeletonGrid({ count = 8 }: { count?: number }) {
   return (
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
-        gap: "20px",
-        width: "100%",
-      }}
-    >
+    <div className="wf-responsive-grid">
       {Array.from({ length: count }).map((_, i) => (
-        <SkeletonCard key={i} height={height} />
+        <SkeletonCard key={i} />
       ))}
     </div>
   );

@@ -247,8 +247,8 @@ function buildMapHtml(): string {
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 24px;
-      height: 24px;
+      width: 44px;
+      height: 44px;
       cursor: pointer;
       transition: transform 0.2s ease, opacity 0.2s ease;
     }
@@ -265,8 +265,8 @@ function buildMapHtml(): string {
       opacity: 0.4;
     }
     .saved-map-marker.is-highlighted {
-      width: 32px;
-      height: 32px;
+      width: 44px;
+      height: 44px;
     }
     .saved-map-marker.is-highlighted > i {
       width: 30px;
@@ -438,8 +438,8 @@ function buildMapHtml(): string {
           var icon = L.divIcon({
             className: "saved-map-marker-host",
             html: '<span class="saved-map-marker is-highlighted"><i>' + (stopNumber || '') + '</i></span>',
-            iconSize: [32, 32],
-            iconAnchor: [16, 16]
+            iconSize: [44, 44],
+            iconAnchor: [22, 22]
           });
           var marker = L.marker([place.lat, place.lng], { icon: icon, keyboard: false, zIndexOffset: 800 });
           (function (pid) {
@@ -455,8 +455,8 @@ function buildMapHtml(): string {
           var icon = L.divIcon({
             className: "saved-map-marker-host",
             html: '<span class="saved-map-marker' + (isDimmed ? ' is-dimmed' : '') + '"><i></i></span>',
-            iconSize: [24, 24],
-            iconAnchor: [12, 12]
+            iconSize: [44, 44],
+            iconAnchor: [22, 22]
           });
           var marker = L.marker([place.lat, place.lng], { icon: icon, keyboard: false });
           (function (pid) {

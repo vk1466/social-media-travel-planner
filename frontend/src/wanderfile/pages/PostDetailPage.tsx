@@ -1,8 +1,23 @@
 import { useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
+import {
+  ArrowLeft,
+  ExternalLink,
+  MapPin,
+  Trash2,
+  Edit3,
+  ChevronDown,
+  ChevronUp,
+  Plus,
+  Bookmark,
+  Utensils,
+  Film,
+  Sparkles,
+  Scissors,
+} from "lucide-react";
 import { EmptyState } from "../components/EmptyState";
-import { ComingSoonButton } from "../comingSoon/ComingSoonControl";
 import { EditPostModal } from "../components/EditPostModal";
+import { useToast } from "../state/ToastContext";
 import { deletePost, parsePostId, type SavedPost } from "../../api";
 import { proxiedMediaUrl } from "../../postDisplayUtils";
 
@@ -14,65 +29,102 @@ interface PostDetailPageProps {
 export function PostDetailPage({ posts, onRefresh }: PostDetailPageProps) {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const post = posts.find((p) => p.post_id === id);
 
-  const [servings, setServings] = useState(4);
-  const [cooked, setCooked] = useState(false);
-  const [watched, setWatched] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-
-  const handleDelete = async () => {
-    if (!post) return;
-    if (!window.confirm("Are you sure you want to delete this save?")) return;
-    setDeleting(true);
-    try {
-      const { platform, nativeId } = parsePostId(post.post_id);
-      await deletePost(platform, nativeId);
-      onRefresh?.();
-      navigate("/library");
-    } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to delete post");
-      setDeleting(false);
-    }
-  };
+  const [captionExpanded, setCaptionExpanded] = useState(false);
+  const [imgError, setImgError] = useState(false);
+  const [customPlaces, setCustomPlaces] = useState<string[]>([]);
+  const [newPlaceInput, setNewPlaceInput] = useState("");
+  const [showAddPlace, setShowAddPlace] = useState(false);
 
   if (!post) {
     return (
-      <main style={{ maxWidth: "1280px", margin: "0 auto", padding: "60px 24px 80px", width: "100%", boxSizing: "border-box" }}>
+      <main style={{ maxWidth: "1280px", margin: "0 auto", padding: "60px 16px 80px", width: "100%", boxSizing: "border-box" }}>
         <EmptyState
           screenLabel="Post detail"
           headline="Post not found"
           description="This post is not in your saved library."
           primaryActionLabel="Back to Library"
-          onPrimaryAction={() => {}}
+          onPrimaryAction={() => navigate("/library")}
           iconPath="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm1 14.5h-2v-2h2zm0-4.5h-2V7h2z"
         />
       </main>
     );
   }
 
+  // Delete with 5s Undo Toast (no window.confirm dialog per spec)
+  const handleDelete = () => {
+    const postId = post.post_id;
+    navigate("/library");
+
+    let undone = false;
+    const timer = setTimeout(async () => {
+      if (!undone) {
+        try {
+          const { platform, nativeId } = parsePostId(postId);
+          await deletePost(platform, nativeId);
+          onRefresh?.();
+        } catch {
+          // silently handle or toast
+        }
+      }
+    }, 5000);
+
+    showToast(
+      "Deleted",
+      {
+        label: "Undo",
+        onClick: () => {
+          undone = true;
+          clearTimeout(timer);
+          navigate(`/post/${postId}`);
+        },
+      },
+      5000
+    );
+  };
+
   const category = post.content_category || "other";
-  const isRecipe = category === "food";
-  const isMovie = category === "movies";
 
-  const heroBg = isMovie
-    ? "#17181C"
-    : isRecipe
-    ? "#FBEBDD"
-    : "#FFFFFF";
+  const getCategoryIcon = (cat: string) => {
+    switch (cat) {
+      case "travel":
+        return MapPin;
+      case "food":
+        return Utensils;
+      case "movies":
+        return Film;
+      case "fashion":
+        return Sparkles;
+      case "hairstyle":
+        return Scissors;
+      default:
+        return Bookmark;
+    }
+  };
 
-  const heroColor = isMovie ? "#FFFFFF" : "#1B1D1F";
+  const CategoryIcon = getCategoryIcon(category);
+  const displayTitle = post.title || post.caption || "Saved reel";
+  const hasThumbnail = Boolean(post.thumbnail_url && !imgError);
+
+  const extractedPlaces = [
+    ...(post.extracted_places || []).map((p) => ({
+      name: p.place_name,
+      area: [p.city, p.state_province, p.country].filter(Boolean).join(", ") || p.tips?.[0] || "",
+    })),
+    ...customPlaces.map((name) => ({ name, area: "Custom spot" })),
+  ];
 
   return (
     <main
       style={{
         maxWidth: "1280px",
         margin: "0 auto",
-        padding: "40px 24px 80px",
+        padding: "32px 16px 80px",
         width: "100%",
         boxSizing: "border-box",
-        fontFamily: "'Figtree', system-ui, sans-serif",
       }}
     >
       {/* Back button */}
@@ -84,356 +136,369 @@ export function PostDetailPage({ posts, onRefresh }: PostDetailPageProps) {
             alignItems: "center",
             gap: "8px",
             fontSize: "14px",
-            fontWeight: 700,
-            color: "#6B6F73",
+            fontWeight: 600,
+            color: "var(--wf-text-muted)",
             textDecoration: "none",
+            minHeight: "44px",
           }}
         >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M19 12H5M12 19l-7-7 7-7" />
-          </svg>
-          Back to Library
+          <ArrowLeft size={18} strokeWidth={2} />
+          <span>Back to Library</span>
         </Link>
       </div>
 
       {/* Hero card */}
       <section
         style={{
-          background: heroBg,
-          color: heroColor,
-          border: "1px solid #E6E3DC",
-          borderRadius: "28px",
-          padding: "36px",
+          background: "var(--wf-surface)",
+          color: "var(--wf-text)",
+          border: "1px solid var(--wf-border)",
+          borderRadius: "var(--wf-radius-card)",
+          padding: "24px",
           display: "flex",
-          gap: "36px",
+          gap: "24px",
           flexWrap: "wrap",
-          marginBottom: "36px",
+          marginBottom: "28px",
+          boxShadow: "var(--wf-shadow-card)",
         }}
       >
+        {/* 4:5 Thumbnail or Neutral Tile */}
         <div
           style={{
             width: "220px",
-            height: "300px",
-            borderRadius: "20px",
-            background: post.thumbnail_url
-              ? `url(${proxiedMediaUrl(post.thumbnail_url)}) center/cover no-repeat`
-              : "linear-gradient(160deg, #8CC3D6, #2D6A82)",
+            aspectRatio: "4 / 5",
+            borderRadius: "var(--wf-radius-control)",
+            background: "var(--wf-surface-2)",
+            border: "1px solid var(--wf-border)",
+            overflow: "hidden",
             flexShrink: 0,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
           }}
-        />
+        >
+          {hasThumbnail ? (
+            <img
+              src={proxiedMediaUrl(post.thumbnail_url!) || ""}
+              alt={displayTitle}
+              onError={() => setImgError(true)}
+              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+            />
+          ) : (
+            <div className="wf-neutral-tile" style={{ width: "100%", height: "100%" }}>
+              <CategoryIcon size={36} strokeWidth={1.75} color="var(--wf-primary)" />
+            </div>
+          )}
+        </div>
 
-        <div style={{ flex: 1, minWidth: "280px", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+        {/* Title, Author, Actions */}
+        <div style={{ flex: 1, minWidth: "260px", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
           <div>
-            <div style={{ display: "flex", gap: "8px", alignItems: "center", marginBottom: "12px" }}>
+            <div style={{ display: "flex", gap: "8px", alignItems: "center", marginBottom: "10px" }}>
               <span
                 style={{
                   fontSize: "12px",
-                  fontWeight: 800,
+                  fontWeight: 600,
                   padding: "4px 10px",
-                  borderRadius: "999px",
-                  background: isMovie ? "rgba(255,255,255,0.15)" : "#ECECEA",
-                  color: isMovie ? "#FFFFFF" : "#1B1D1F",
-                  textTransform: "uppercase",
+                  borderRadius: "var(--wf-radius-pill)",
+                  background: "var(--wf-surface-2)",
+                  color: "var(--wf-text)",
+                  textTransform: "capitalize",
                 }}
               >
                 {category}
               </span>
               {post.author_handle && (
-                <span style={{ fontSize: "14px", color: isMovie ? "rgba(255,255,255,0.7)" : "#6B6F73" }}>
-                  @{post.author_handle}
+                <span style={{ fontSize: "14px", color: "var(--wf-text-muted)", fontWeight: 500 }}>
+                  @{post.author_handle.replace(/^@/, "")}
                 </span>
               )}
             </div>
 
-            <h1 style={{ margin: "0 0 12px", fontSize: "36px", lineHeight: 1.15, fontWeight: 800 }}>
-              {post.title || post.caption?.slice(0, 75) || "Saved Post"}
+            <h1 className="wf-type-h1" style={{ margin: "0 0 12px", color: "var(--wf-text)" }}>
+              {displayTitle}
             </h1>
 
-            <p style={{ margin: 0, fontSize: "16px", lineHeight: 1.5, opacity: 0.85 }}>
-              {post.caption || "No caption provided."}
-            </p>
-          </div>
-
-          <div style={{ display: "flex", gap: "12px", marginTop: "24px", flexWrap: "wrap", alignItems: "center" }}>
-            <button
-              type="button"
-              onClick={() => setIsEditModalOpen(true)}
-              style={{
-                height: "44px",
-                padding: "0 18px",
-                borderRadius: "999px",
-                border: isMovie ? "1px solid rgba(255,255,255,0.3)" : "1px solid #D9D5CB",
-                background: isMovie ? "rgba(255,255,255,0.1)" : "#FFFFFF",
-                color: isMovie ? "#FFFFFF" : "#1B1D1F",
-                fontFamily: "inherit",
-                fontSize: "14px",
-                fontWeight: 700,
-                cursor: "pointer",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "6px",
-              }}
-            >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
-              </svg>
-              Edit save
-            </button>
-
-            <button
-              type="button"
-              onClick={handleDelete}
-              disabled={deleting}
-              style={{
-                height: "44px",
-                padding: "0 18px",
-                borderRadius: "999px",
-                border: "1px solid #FCA5A5",
-                background: isMovie ? "rgba(239,68,68,0.15)" : "#FEF2F2",
-                color: "#DC2626",
-                fontFamily: "inherit",
-                fontSize: "14px",
-                fontWeight: 700,
-                cursor: deleting ? "not-allowed" : "pointer",
-                opacity: deleting ? 0.6 : 1,
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "6px",
-              }}
-            >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-              </svg>
-              {deleting ? "Deleting..." : "Delete save"}
-            </button>
-
-            {isRecipe && (
-              <>
-                <button
-                  type="button"
-                  onClick={() => setCooked((c) => !c)}
-                  style={{
-                    height: "44px",
-                    padding: "0 22px",
-                    borderRadius: "999px",
-                    border: 0,
-                    background: cooked ? "#25623A" : "#1B1D1F",
-                    color: "#FFFFFF",
-                    fontFamily: "inherit",
-                    fontSize: "14px",
-                    fontWeight: 700,
-                    cursor: "pointer",
-                  }}
-                >
-                  {cooked ? "Cooked" : "Mark cooked"}
-                </button>
-                <ComingSoonButton
-                  featureId="cook-mode"
-                  style={{
-                    height: "44px",
-                    padding: "0 18px",
-                    borderRadius: "999px",
-                    border: "1px solid #D9D5CB",
-                    background: "#FFFFFF",
-                    color: "#1B1D1F",
-                    fontFamily: "inherit",
-                    fontSize: "14px",
-                    fontWeight: 700,
-                    cursor: "pointer",
-                  }}
-                >
-                  Cook mode
-                </ComingSoonButton>
-              </>
-            )}
-
-            {isMovie && (
-              <button
-                type="button"
-                onClick={() => setWatched((w) => !w)}
-                style={{
-                  height: "44px",
-                  padding: "0 22px",
-                  borderRadius: "999px",
-                  border: 0,
-                  background: watched ? "#25623A" : "#FFFFFF",
-                  color: watched ? "#FFFFFF" : "#1B1D1F",
-                  fontFamily: "inherit",
-                  fontSize: "14px",
-                  fontWeight: 700,
-                  cursor: "pointer",
-                }}
-              >
-                {watched ? "Watched" : "Mark watched"}
-              </button>
-            )}
-
+            {/* Open in Instagram Link */}
             {post.post_url && (
               <a
                 href={post.post_url}
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{
-                  height: "44px",
-                  padding: "0 18px",
-                  borderRadius: "999px",
-                  border: isMovie ? "1px solid rgba(255,255,255,0.3)" : "1px solid #D9D5CB",
-                  background: "transparent",
-                  color: isMovie ? "#FFFFFF" : "#1B1D1F",
-                  fontSize: "14px",
-                  fontWeight: 700,
-                  textDecoration: "none",
                   display: "inline-flex",
                   alignItems: "center",
+                  gap: "6px",
+                  fontSize: "14px",
+                  fontWeight: 600,
+                  color: "var(--wf-primary)",
+                  textDecoration: "none",
+                  marginTop: "4px",
+                  minHeight: "44px",
                 }}
               >
-                Open on original site
+                <ExternalLink size={16} strokeWidth={2} />
+                <span>Open in Instagram</span>
               </a>
             )}
+          </div>
+
+          {/* Action Row */}
+          <div style={{ display: "flex", gap: "10px", marginTop: "20px", flexWrap: "wrap", alignItems: "center" }}>
+            <button
+              type="button"
+              onClick={() => setIsEditModalOpen(true)}
+              style={{
+                height: "44px",
+                padding: "0 18px",
+                borderRadius: "var(--wf-radius-pill)",
+                border: "1px solid var(--wf-border)",
+                background: "var(--wf-surface)",
+                color: "var(--wf-text)",
+                fontFamily: "inherit",
+                fontSize: "14px",
+                fontWeight: 600,
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+              }}
+            >
+              <Edit3 size={16} strokeWidth={1.75} />
+              <span>Edit save</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleDelete}
+              style={{
+                height: "44px",
+                padding: "0 18px",
+                borderRadius: "var(--wf-radius-pill)",
+                border: "1px solid var(--wf-danger)",
+                background: "transparent",
+                color: "var(--wf-danger)",
+                fontFamily: "inherit",
+                fontSize: "14px",
+                fontWeight: 600,
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+              }}
+            >
+              <Trash2 size={16} strokeWidth={1.75} />
+              <span>Delete save</span>
+            </button>
           </div>
         </div>
       </section>
 
-      {/* Two column grid */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))", gap: "28px" }}>
-        {/* Left Column: Details / Sections */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-          {/* Transcript section */}
-          <section style={{ background: "#FFFFFF", border: "1px solid #E6E3DC", borderRadius: "24px", padding: "24px" }}>
-            <h2 style={{ margin: "0 0 12px", fontSize: "18px", fontWeight: 800 }}>Transcript</h2>
-            {post.transcript ? (
-              <p style={{ margin: 0, fontSize: "15px", lineHeight: 1.6, color: "#4A4E52" }}>{post.transcript}</p>
-            ) : (
-              <div style={{ fontSize: "14px", color: "#6B6F73" }}>No transcript for this reel</div>
-            )}
-          </section>
-
-          {/* Top Comments */}
-          <section style={{ background: "#FFFFFF", border: "1px solid #E6E3DC", borderRadius: "24px", padding: "24px" }}>
-            <h2 style={{ margin: "0 0 12px", fontSize: "18px", fontWeight: 800 }}>Top comments</h2>
-            {post.top_comments && post.top_comments.length > 0 ? (
-              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                {post.top_comments.slice(0, 5).map((comment, i) => (
-                  <div key={i} style={{ fontSize: "14px", color: "#4A4E52", paddingBottom: "8px", borderBottom: "1px solid #EFEDE7" }}>
-                    {comment}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div style={{ fontSize: "14px", color: "#6B6F73" }}>No comments to show</div>
-            )}
-          </section>
+      {/* Extracted Places Section */}
+      <section
+        style={{
+          background: "var(--wf-surface)",
+          border: "1px solid var(--wf-border)",
+          borderRadius: "var(--wf-radius-card)",
+          padding: "24px",
+          marginBottom: "24px",
+          boxShadow: "var(--wf-shadow-card)",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: "16px" }}>
+          <h2 className="wf-type-h2" style={{ margin: 0 }}>
+            Extracted places ({extractedPlaces.length})
+          </h2>
+          <button
+            type="button"
+            onClick={() => setShowAddPlace((prev) => !prev)}
+            style={{
+              background: "transparent",
+              border: "none",
+              color: "var(--wf-primary)",
+              fontWeight: 600,
+              fontSize: "14px",
+              cursor: "pointer",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "4px",
+              minHeight: "44px",
+            }}
+          >
+            <Plus size={16} strokeWidth={2} />
+            <span>Add missing place</span>
+          </button>
         </div>
 
-        {/* Right Column: Kit specifics or unfiled prompt */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-          {isRecipe ? (
-            <section style={{ background: "#FFFFFF", border: "1px solid #E6E3DC", borderRadius: "24px", padding: "24px" }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
-                <h2 style={{ margin: 0, fontSize: "18px", fontWeight: 800 }}>Ingredients</h2>
-                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                  <button
-                    type="button"
-                    onClick={() => setServings((s) => Math.max(1, s - 1))}
-                    style={{ width: "28px", height: "28px", borderRadius: "50%", border: "1px solid #D9D5CB", background: "#FFFFFF", cursor: "pointer" }}
-                  >
-                    -
-                  </button>
-                  <span style={{ fontSize: "14px", fontWeight: 700 }}>{servings} servings</span>
-                  <button
-                    type="button"
-                    onClick={() => setServings((s) => s + 1)}
-                    style={{ width: "28px", height: "28px", borderRadius: "50%", border: "1px solid #D9D5CB", background: "#FFFFFF", cursor: "pointer" }}
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
-              <div style={{ fontSize: "14px", color: "#6B6F73" }}>
-                Ingredients extracted from caption and on-screen text.
-              </div>
-              <div style={{ marginTop: "16px" }}>
-                <ComingSoonButton
-                  featureId="grocery-list"
-                  style={{
-                    height: "38px",
-                    padding: "0 16px",
-                    borderRadius: "999px",
-                    border: "1px solid #D9D5CB",
-                    background: "#FFFFFF",
-                    fontFamily: "inherit",
-                    fontSize: "13px",
-                    fontWeight: 700,
-                    color: "#1B1D1F",
-                    cursor: "pointer",
-                  }}
-                >
-                  Add to grocery list
-                </ComingSoonButton>
-              </div>
-            </section>
-          ) : isMovie ? (
-            <section style={{ background: "#FFFFFF", border: "1px solid #E6E3DC", borderRadius: "24px", padding: "24px" }}>
-              <h2 style={{ margin: "0 0 12px", fontSize: "18px", fontWeight: 800 }}>Catalog match</h2>
-              <div style={{ fontSize: "14px", color: "#6B6F73" }}>
-                Title extracted and matched with ratings and streaming services.
-              </div>
-            </section>
-          ) : (
-            <section
+        {showAddPlace && (
+          <div style={{ display: "flex", gap: "8px", marginBottom: "16px" }}>
+            <input
+              type="text"
+              placeholder="Enter spot name…"
+              value={newPlaceInput}
+              onChange={(e) => setNewPlaceInput(e.target.value)}
               style={{
-                border: "2px dashed #C9C5BA",
-                background: "#FBFAF7",
-                borderRadius: "24px",
-                padding: "24px",
+                flex: 1,
+                height: "44px",
+                padding: "0 14px",
+                borderRadius: "var(--wf-radius-control)",
+                border: "1px solid var(--wf-border)",
+                background: "var(--wf-surface-2)",
+                color: "var(--wf-text)",
+                fontSize: "14px",
+                fontFamily: "inherit",
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => {
+                if (newPlaceInput.trim()) {
+                  setCustomPlaces((prev) => [...prev, newPlaceInput.trim()]);
+                  setNewPlaceInput("");
+                  setShowAddPlace(false);
+                  showToast("Place added");
+                }
+              }}
+              style={{
+                height: "44px",
+                padding: "0 18px",
+                borderRadius: "var(--wf-radius-control)",
+                border: "none",
+                background: "var(--wf-primary)",
+                color: "var(--wf-on-primary)",
+                fontWeight: 600,
+                fontSize: "14px",
+                cursor: "pointer",
               }}
             >
-              <h2 style={{ margin: "0 0 8px", fontSize: "18px", fontWeight: 800 }}>
-                No extra details for this category yet
-              </h2>
-              <p style={{ margin: "0 0 16px", fontSize: "14px", color: "#6B6F73", lineHeight: 1.5 }}>
-                Fashion, hairstyle and other categories currently keep only what the post gives us.
-              </p>
-              <Link
-                to="/collections"
+              Add
+            </button>
+          </div>
+        )}
+
+        {extractedPlaces.length === 0 ? (
+          <p style={{ color: "var(--wf-text-muted)", fontSize: "14px", margin: 0 }}>
+            No specific places detected in this save yet.
+          </p>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+            {extractedPlaces.map((item, idx) => (
+              <div
+                key={idx}
                 style={{
-                  display: "inline-flex",
+                  display: "flex",
                   alignItems: "center",
-                  height: "38px",
-                  padding: "0 16px",
-                  borderRadius: "999px",
-                  background: "#1B1D1F",
-                  color: "#FFFFFF",
-                  fontSize: "13px",
-                  fontWeight: 700,
-                  textDecoration: "none",
+                  justifyContent: "space-between",
+                  padding: "12px 14px",
+                  borderRadius: "var(--wf-radius-control)",
+                  background: "var(--wf-surface-2)",
+                  border: "1px solid var(--wf-border)",
                 }}
               >
-                Make a collection
-              </Link>
-            </section>
-          )}
+                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                  <MapPin size={18} strokeWidth={1.75} color="var(--wf-primary)" />
+                  <div>
+                    <div style={{ fontSize: "15px", fontWeight: 600, color: "var(--wf-text)" }}>
+                      {item.name}
+                    </div>
+                    {item.area && (
+                      <div style={{ fontSize: "13px", color: "var(--wf-text-muted)" }}>
+                        {item.area}
+                      </div>
+                    )}
+                  </div>
+                </div>
 
-          {/* Location tag section */}
-          <section style={{ background: "#FFFFFF", border: "1px solid #E6E3DC", borderRadius: "24px", padding: "24px" }}>
-            <h2 style={{ margin: "0 0 8px", fontSize: "18px", fontWeight: 800 }}>Location tag</h2>
-            {post.places && post.places.length > 0 && post.places[0].place_name ? (
-              <div style={{ fontSize: "14px", color: "#1B5E78", fontWeight: 600 }}>
-                {post.places[0].place_name}
+                <Link
+                  to="/map"
+                  style={{
+                    height: "36px",
+                    padding: "0 12px",
+                    borderRadius: "var(--wf-radius-pill)",
+                    background: "var(--wf-surface)",
+                    border: "1px solid var(--wf-border)",
+                    color: "var(--wf-text)",
+                    fontSize: "13px",
+                    fontWeight: 600,
+                    textDecoration: "none",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "4px",
+                  }}
+                >
+                  <span>Map</span>
+                </Link>
               </div>
-            ) : (
-              <div style={{ fontSize: "14px", color: "#6B6F73" }}>No location tag on this post</div>
-            )}
-          </section>
-        </div>
-      </div>
+            ))}
+          </div>
+        )}
+      </section>
 
-      <EditPostModal
-        post={post}
-        isOpen={isEditModalOpen}
-        onClose={() => setIsEditModalOpen(false)}
-        onSaved={onRefresh}
-      />
+      {/* Collapsible Caption Section */}
+      {post.caption && (
+        <section
+          style={{
+            background: "var(--wf-surface)",
+            border: "1px solid var(--wf-border)",
+            borderRadius: "var(--wf-radius-card)",
+            padding: "20px",
+            boxShadow: "var(--wf-shadow-card)",
+          }}
+        >
+          <button
+            type="button"
+            onClick={() => setCaptionExpanded((prev) => !prev)}
+            style={{
+              width: "100%",
+              background: "transparent",
+              border: "none",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              cursor: "pointer",
+              padding: 0,
+              minHeight: "44px",
+            }}
+          >
+            <h2 className="wf-type-h2" style={{ margin: 0, fontSize: "17px" }}>
+              Caption
+            </h2>
+            {captionExpanded ? (
+              <ChevronUp size={20} color="var(--wf-text-muted)" />
+            ) : (
+              <ChevronDown size={20} color="var(--wf-text-muted)" />
+            )}
+          </button>
+
+          {captionExpanded && (
+            <p
+              style={{
+                marginTop: "12px",
+                fontSize: "14px",
+                lineHeight: "22px",
+                color: "var(--wf-body-tinted)",
+                whiteSpace: "pre-wrap",
+                wordBreak: "break-word",
+              }}
+            >
+              {post.caption}
+            </p>
+          )}
+        </section>
+      )}
+
+      {/* Edit Post Modal */}
+      {isEditModalOpen && (
+        <EditPostModal
+          isOpen={isEditModalOpen}
+          post={post}
+          onClose={() => setIsEditModalOpen(false)}
+          onSaved={() => {
+            setIsEditModalOpen(false);
+            onRefresh?.();
+          }}
+        />
+      )}
     </main>
   );
 }

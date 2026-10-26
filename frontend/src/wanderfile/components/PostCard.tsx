@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { MapPin, Utensils, Film, Sparkles, Scissors, Bookmark, MoreHorizontal, Edit3, Trash2, FolderPlus } from "lucide-react";
 import type { SavedPost } from "../../api";
 import { proxiedMediaUrl } from "../../postDisplayUtils";
 
@@ -7,12 +8,14 @@ interface PostCardProps {
   post: SavedPost;
   onEdit?: (post: SavedPost) => void;
   onDelete?: (post: SavedPost) => void;
+  onAddToCollection?: (post: SavedPost) => void;
   style?: React.CSSProperties;
 }
 
-export function PostCard({ post, onEdit, onDelete, style }: PostCardProps) {
+export function PostCard({ post, onEdit, onDelete, onAddToCollection, style }: PostCardProps) {
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [imgError, setImgError] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -27,28 +30,47 @@ export function PostCard({ post, onEdit, onDelete, style }: PostCardProps) {
   }, [menuOpen]);
 
   const category = post.content_category || "other";
-  const catLabels: Record<string, { label: string; bg: string; ink: string }> = {
-    travel: { label: "Place", bg: "#E3F0F4", ink: "#1B5E78" },
-    food: { label: "Recipe", bg: "#FBEBDD", ink: "#9A4513" },
-    movies: { label: "Watch", bg: "#ECE8F7", ink: "#4B3C8C" },
-    fashion: { label: "Fashion", bg: "#F4EBF7", ink: "#73248A" },
-    hairstyle: { label: "Hairstyle", bg: "#EBF7F2", ink: "#1D7553" },
-    other: { label: "Other", bg: "#ECECEA", ink: "#4A4E52" },
+
+  const getCategoryConfig = (cat: string) => {
+    switch (cat) {
+      case "travel":
+        return { label: "Places", dot: "var(--wf-cat-place)", Icon: MapPin };
+      case "food":
+        return { label: "Food", dot: "var(--wf-cat-food)", Icon: Utensils };
+      case "movies":
+        return { label: "Watch", dot: "var(--wf-cat-watch)", Icon: Film };
+      case "fashion":
+        return { label: "Fashion", dot: "var(--wf-cat-fashion)", Icon: Sparkles };
+      case "hairstyle":
+        return { label: "Hair", dot: "var(--wf-cat-hair)", Icon: Scissors };
+      default:
+        return { label: "Other", dot: "var(--wf-text-muted)", Icon: Bookmark };
+    }
   };
-  const tag = catLabels[category] || catLabels.other;
+
+  const { label, dot, Icon } = getCategoryConfig(category);
 
   const targetUrl = post.place_ids && post.place_ids.length > 0
     ? `/place/${post.place_ids[0]}`
     : `/post/${post.post_id}`;
 
-  const displayTitle = post.title || post.caption || "Saved post";
+  const displayTitle = post.title || post.caption || "Saved reel";
+
+  // Build caption line such as "3 places · Lisbon"
+  const placesCount = (post.place_ids?.length || 0) + (post.extracted_places?.length || 0);
+  let captionLine = post.author_handle ? `@${post.author_handle}` : "Instagram save";
+  if (placesCount > 0) {
+    const spot = post.extracted_places?.[0]?.place_name;
+    captionLine = `${placesCount} spot${placesCount === 1 ? "" : "s"}${spot ? ` · ${spot}` : ""}`;
+  }
+
+  const hasRealImage = Boolean(post.thumbnail_url && !imgError);
 
   return (
     <div
       style={{
         position: "relative",
-        borderRadius: "20px",
-        overflow: "visible",
+        borderRadius: "var(--wf-radius-card)",
         ...style,
       }}
     >
@@ -59,66 +81,131 @@ export function PostCard({ post, onEdit, onDelete, style }: PostCardProps) {
           display: "flex",
           flexDirection: "column",
           textDecoration: "none",
-          color: "#1B1D1F",
-          background: "#FFFFFF",
-          border: "1px solid #E6E3DC",
-          borderRadius: "20px",
+          color: "inherit",
+          background: "var(--wf-surface)",
+          border: "1px solid var(--wf-border)",
+          borderRadius: "var(--wf-radius-card)",
           overflow: "hidden",
+          boxShadow: "var(--wf-shadow-card)",
           height: "100%",
+          transition: "transform 0.15s ease, box-shadow 0.15s ease",
         }}
+        className="wf-card-hover"
       >
+        {/* 4:5 ratio image container */}
         <div
           style={{
-            height: "210px",
+            width: "100%",
+            aspectRatio: "4 / 5",
             position: "relative",
-            background: post.thumbnail_url
-              ? `url(${proxiedMediaUrl(post.thumbnail_url)}) center/cover no-repeat`
-              : "linear-gradient(160deg, #8CC3D6, #2D6A82)",
+            background: "var(--wf-surface-2)",
+            overflow: "hidden",
           }}
         >
-          {/* Category tag */}
-          <span
+          {hasRealImage ? (
+            <img
+              src={proxiedMediaUrl(post.thumbnail_url!) || ""}
+              alt={displayTitle}
+              onError={() => setImgError(true)}
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                display: "block",
+              }}
+              loading="lazy"
+            />
+          ) : (
+            /* Neutral surface-2 tile with category icon fallback per spec (NEVER gradient) */
+            <div
+              className="wf-neutral-tile"
+              style={{
+                width: "100%",
+                height: "100%",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "8px",
+              }}
+            >
+              <Icon size={28} strokeWidth={1.75} color={dot} />
+              <span style={{ fontSize: "12px", color: "var(--wf-text-muted)", fontWeight: 500 }}>
+                {label}
+              </span>
+            </div>
+          )}
+
+          {/* Category pill top-left with accent dot */}
+          <div
             style={{
               position: "absolute",
               left: "10px",
               top: "10px",
               fontSize: "12px",
-              fontWeight: 700,
+              fontWeight: 600,
               padding: "4px 10px",
-              borderRadius: "999px",
-              background: tag.bg,
-              color: tag.ink,
+              borderRadius: "var(--wf-radius-pill)",
+              background: "rgba(255, 255, 255, 0.92)",
+              color: "#14161A",
+              backdropFilter: "blur(4px)",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              boxShadow: "0 1px 4px rgba(0,0,0,0.12)",
               zIndex: 2,
             }}
           >
-            {tag.label}
-          </span>
+            <span
+              style={{
+                width: "7px",
+                height: "7px",
+                borderRadius: "50%",
+                background: dot,
+                flexShrink: 0,
+              }}
+            />
+            {label}
+          </div>
         </div>
 
-        <div style={{ padding: "14px", display: "flex", flexDirection: "column", gap: "6px" }}>
+        {/* Text info */}
+        <div style={{ padding: "12px", display: "flex", flexDirection: "column", gap: "4px", flex: 1 }}>
           <div
             style={{
               fontSize: "15px",
-              fontWeight: 700,
-              lineHeight: 1.35,
+              fontWeight: 600,
+              lineHeight: "20px",
+              color: "var(--wf-text)",
               display: "-webkit-box",
               WebkitLineClamp: 2,
               WebkitBoxOrient: "vertical",
               overflow: "hidden",
+              wordBreak: "break-word",
             }}
           >
             {displayTitle}
           </div>
-          <div style={{ fontSize: "13px", color: "#6B6F73" }}>
-            {post.author_handle ? `@${post.author_handle}` : "Instagram reel"}
+          <div
+            style={{
+              fontSize: "13px",
+              lineHeight: "18px",
+              color: "var(--wf-text-muted)",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {captionLine}
           </div>
         </div>
       </Link>
 
-      {/* Menu button */}
+      {/* Menu button (⋯) with 44px tap target */}
       <button
         type="button"
-        aria-label="Post options"
+        aria-label="Save options"
+        aria-expanded={menuOpen}
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
@@ -126,27 +213,37 @@ export function PostCard({ post, onEdit, onDelete, style }: PostCardProps) {
         }}
         style={{
           position: "absolute",
-          top: "10px",
-          right: "10px",
-          width: "32px",
-          height: "32px",
+          top: "6px",
+          right: "6px",
+          width: "44px",
+          height: "44px",
           borderRadius: "50%",
-          background: "rgba(255, 255, 255, 0.9)",
-          border: "1px solid rgba(0, 0, 0, 0.1)",
+          background: "transparent",
+          border: "none",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           cursor: "pointer",
           zIndex: 5,
-          color: "#1B1D1F",
-          boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
         }}
       >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-          <circle cx="12" cy="5" r="2" />
-          <circle cx="12" cy="12" r="2" />
-          <circle cx="12" cy="19" r="2" />
-        </svg>
+        <span
+          style={{
+            width: "32px",
+            height: "32px",
+            borderRadius: "50%",
+            background: "rgba(255, 255, 255, 0.92)",
+            backdropFilter: "blur(4px)",
+            border: "1px solid rgba(0, 0, 0, 0.08)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: "#14161A",
+            boxShadow: "0 2px 6px rgba(0,0,0,0.12)",
+          }}
+        >
+          <MoreHorizontal size={18} strokeWidth={1.75} />
+        </span>
       </button>
 
       {/* Dropdown Menu */}
@@ -155,86 +252,61 @@ export function PostCard({ post, onEdit, onDelete, style }: PostCardProps) {
           ref={menuRef}
           style={{
             position: "absolute",
-            top: "46px",
-            right: "10px",
-            background: "#FFFFFF",
-            border: "1px solid #E6E3DC",
-            borderRadius: "14px",
-            boxShadow: "0 10px 25px rgba(0, 0, 0, 0.15)",
+            top: "52px",
+            right: "8px",
+            background: "var(--wf-surface)",
+            border: "1px solid var(--wf-border)",
+            borderRadius: "var(--wf-radius-control)",
+            boxShadow: "var(--wf-shadow-elevated)",
             zIndex: 10,
-            minWidth: "160px",
+            minWidth: "170px",
             overflow: "hidden",
-            padding: "4px 0",
+            padding: "4px",
           }}
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
           }}
         >
+          {onAddToCollection && (
+            <button
+              type="button"
+              className="wf-menu-item"
+              onClick={() => {
+                setMenuOpen(false);
+                onAddToCollection(post);
+              }}
+            >
+              <FolderPlus size={16} strokeWidth={1.75} />
+              <span>Add to collection</span>
+            </button>
+          )}
+
           {onEdit && (
             <button
               type="button"
+              className="wf-menu-item"
               onClick={() => {
                 setMenuOpen(false);
                 onEdit(post);
               }}
-              style={{
-                width: "100%",
-                padding: "10px 14px",
-                display: "flex",
-                alignItems: "center",
-                gap: "10px",
-                background: "transparent",
-                border: 0,
-                fontFamily: "inherit",
-                fontSize: "14px",
-                fontWeight: 600,
-                color: "#1B1D1F",
-                cursor: "pointer",
-                textAlign: "left",
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#F6F5F1")}
-              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
             >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M12 20h9" />
-                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
-              </svg>
-              Edit save
+              <Edit3 size={16} strokeWidth={1.75} />
+              <span>Edit save</span>
             </button>
           )}
 
           {onDelete && (
             <button
               type="button"
+              className="wf-menu-item wf-menu-item-danger"
               onClick={() => {
                 setMenuOpen(false);
-                if (window.confirm("Are you sure you want to delete this save?")) {
-                  onDelete(post);
-                }
+                onDelete(post);
               }}
-              style={{
-                width: "100%",
-                padding: "10px 14px",
-                display: "flex",
-                alignItems: "center",
-                gap: "10px",
-                background: "transparent",
-                border: 0,
-                fontFamily: "inherit",
-                fontSize: "14px",
-                fontWeight: 600,
-                color: "#D93829",
-                cursor: "pointer",
-                textAlign: "left",
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#FCE8E6")}
-              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
             >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-              </svg>
-              Delete save
+              <Trash2 size={16} strokeWidth={1.75} />
+              <span>Delete save</span>
             </button>
           )}
         </div>

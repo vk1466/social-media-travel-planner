@@ -1,712 +1,534 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
-import { MapContainer, Marker, TileLayer, Tooltip, useMap, useMapEvents } from "react-leaflet";
-import L from "leaflet";
+import * as maplibregl from "maplibre-gl";
+import Supercluster, { type PointFeature } from "supercluster";
+import { Search, X } from "lucide-react";
 import { EmptyState } from "../components/EmptyState";
-import { ComingSoonButton } from "../comingSoon/ComingSoonControl";
-import { FeatureFlags } from "../comingSoon/featureRegistry";
 import { useSavePipeline } from "../state/SavePipelineContext";
 import type { Place } from "../../api";
 import { visualForCategory } from "../../placeCategoryVisuals";
-
-import "leaflet/dist/leaflet.css";
+import "maplibre-gl/dist/maplibre-gl.css";
 
 interface MapPageProps {
   places: Place[];
   loading: boolean;
 }
 
-// Ensure default icon paths work if used
-delete (L.Icon.Default.prototype as { _getIconUrl?: unknown })._getIconUrl;
-
-function clusterIcon(count: number): L.DivIcon {
-  const size = count < 10 ? 38 : count < 50 ? 44 : 50;
-  return L.divIcon({
-    className: "wf-cluster-marker",
-    html: `<div style="
-      width: ${size}px;
-      height: ${size}px;
-      border-radius: 999px;
-      background: linear-gradient(135deg, #1F6F8B, #14495B);
-      border: 3px solid #FFFFFF;
-      box-shadow: 0 4px 14px rgba(0,0,0,0.35);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #FFFFFF;
-      font-weight: 800;
-      font-size: 14px;
-      line-height: 1;
-      font-family: 'Figtree', system-ui, sans-serif;
-      cursor: pointer;
-      user-select: none;
-    ">${count}</div>`,
-    iconSize: [size, size],
-    iconAnchor: [size / 2, size / 2],
-  });
-}
-
-function placeIcon(place: Place, isSelected: boolean): L.DivIcon {
-  const visual = visualForCategory(place.category);
-  const color = visual.color || "#1F6F8B";
-  const size = isSelected ? 36 : 28;
-  return L.divIcon({
-    className: "wf-place-marker",
-    html: `<div style="
-      width: ${size}px;
-      height: ${size}px;
-      border-radius: 999px;
-      background: ${isSelected ? "#1B1D1F" : color};
-      border: ${isSelected ? "3px solid #FFFFFF" : "2px solid #FFFFFF"};
-      box-shadow: 0 4px 12px ${isSelected ? "rgba(0,0,0,0.35)" : "rgba(0,0,0,0.2)"};
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #FFFFFF;
-      font-size: ${isSelected ? 16 : 13}px;
-      cursor: pointer;
-      transform: ${isSelected ? "scale(1.1)" : "scale(1)"};
-      transition: transform 0.15s ease;
-    ">
-      <span style="display:inline-block; line-height: 1;">${visual.icon || "📍"}</span>
-    </div>`,
-    iconSize: [size, size],
-    iconAnchor: [size / 2, size / 2],
-  });
-}
-
-function ClusterMarker({
-  lat,
-  lng,
-  count,
-}: {
-  lat: number;
-  lng: number;
-  count: number;
-}) {
-  const map = useMap();
-  return (
-    <Marker
-      position={[lat, lng]}
-      icon={clusterIcon(count)}
-      eventHandlers={{
-        click: () => {
-          map.flyTo([lat, lng], Math.min(map.getZoom() + 3, 16), { duration: 0.6 });
-        },
-      }}
-    >
-      <Tooltip direction="top" offset={[0, -16]}>
-        {count} saved places (zoom in)
-      </Tooltip>
-    </Marker>
-  );
-}
-
-function InvalidateSize({
-  places,
-  hasSelected,
-  mobileView,
-}: {
-  places: Place[];
-  hasSelected: boolean;
-  mobileView: string;
-}) {
-  const map = useMap();
-  const placesRef = useRef(places);
-  placesRef.current = places;
-  const hasSelectedRef = useRef(hasSelected);
-  hasSelectedRef.current = hasSelected;
-
-  useEffect(() => {
-    const handleResize = () => {
-      map.invalidateSize();
-      if (!hasSelectedRef.current) {
-        const valid = placesRef.current.filter(
-          (p) => typeof p.location?.latitude === "number" && typeof p.location?.longitude === "number",
-        );
-        if (valid.length > 1) {
-          const bounds = L.latLngBounds(valid.map((p) => [p.location.latitude!, p.location.longitude!]));
-          map.fitBounds(bounds, { padding: [50, 50], maxZoom: 13 });
-        }
-      }
-    };
-
-    map.invalidateSize();
-    const frame = window.requestAnimationFrame(() => map.invalidateSize());
-    const t1 = window.setTimeout(() => map.invalidateSize(), 100);
-    const t2 = window.setTimeout(() => map.invalidateSize(), 300);
-    const t3 = window.setTimeout(() => map.invalidateSize(), 800);
-
-    const container = map.getContainer();
-    const observer = new ResizeObserver(() => handleResize());
-    if (container) {
-      observer.observe(container);
-    }
-    return () => {
-      window.cancelAnimationFrame(frame);
-      window.clearTimeout(t1);
-      window.clearTimeout(t2);
-      window.clearTimeout(t3);
-      observer.disconnect();
-    };
-  }, [map]);
-
-  useEffect(() => {
-    if (mobileView === "map") {
-      map.invalidateSize();
-      const t = window.setTimeout(() => map.invalidateSize(), 50);
-      return () => window.clearTimeout(t);
-    }
-  }, [mobileView, map]);
-
-  return null;
-}
-
-function FitAllBounds({ places, hasSelected }: { places: Place[]; hasSelected: boolean }) {
-  const map = useMap();
-  useEffect(() => {
-    if (hasSelected) return;
-    const valid = places.filter(
-      (p) => typeof p.location?.latitude === "number" && typeof p.location?.longitude === "number",
-    );
-    if (valid.length === 0) return;
-    if (valid.length === 1) {
-      map.setView([valid[0].location.latitude!, valid[0].location.longitude!], 13);
-      return;
-    }
-    const bounds = L.latLngBounds(
-      valid.map((p) => [p.location.latitude!, p.location.longitude!]),
-    );
-    map.fitBounds(bounds, { padding: [50, 50], maxZoom: 13 });
-  }, [places, hasSelected, map]);
-  return null;
-}
-
-function PanToSelected({ place }: { place: Place | null }) {
-  const map = useMap();
-  useEffect(() => {
-    if (!place?.location?.latitude || !place?.location?.longitude) return;
-    map.flyTo([place.location.latitude, place.location.longitude], 14, { duration: 0.8 });
-  }, [place, map]);
-  return null;
-}
-
-function ZoomTracker({ onZoomChange }: { onZoomChange: (z: number) => void }) {
-  useMapEvents({
-    zoomend: (e) => {
-      onZoomChange(e.target.getZoom());
-    },
-  });
-  return null;
-}
-
 export function MapPage({ places, loading }: MapPageProps) {
-  const { placeId } = useParams<{ placeId?: string }>();
+  const { placeId } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
   const { openSaveSheet } = useSavePipeline();
-  const [zoom, setZoom] = useState<number>(4);
-  const [mobileView, setMobileView] = useState<"map" | "list">("map");
 
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<maplibregl.Map | null>(null);
+  const markersRef = useRef<maplibregl.Marker[]>([]);
+
+  const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(
+    placeId || searchParams.get("selected") || null
+  );
+  const [hoveredPlaceId, setHoveredPlaceId] = useState<string | null>(null);
+  const [activeCategory, setActiveCategory] = useState<string>("all");
+  const [showSearchThisArea, setShowSearchThisArea] = useState<boolean>(false);
+
+  // Filter mappable places with valid coordinates
   const mappablePlaces = useMemo(() => {
     return places.filter(
-      (p) => typeof p.location?.latitude === "number" && typeof p.location?.longitude === "number",
+      (p) => typeof p.location?.latitude === "number" && typeof p.location?.longitude === "number"
     );
   }, [places]);
 
-  const selectedPlaceId = searchParams.get("place") || placeId || null;
+  const filteredPlaces = useMemo(() => {
+    if (activeCategory === "all") return mappablePlaces;
+    return mappablePlaces.filter((p) => (p.category || "other") === activeCategory);
+  }, [mappablePlaces, activeCategory]);
+
   const selectedPlace = useMemo(() => {
-    if (!selectedPlaceId) return null;
-    return places.find((p) => p.place_id === selectedPlaceId) || null;
-  }, [places, selectedPlaceId]);
+    return mappablePlaces.find((p) => p.place_id === selectedPlaceId) || null;
+  }, [mappablePlaces, selectedPlaceId]);
 
-  // Clustering logic based on map zoom
-  const clusters = useMemo(() => {
-    if (zoom >= 12) {
-      return mappablePlaces.map((p) => ({
-        isCluster: false,
-        place: p,
-        count: 1,
-        lat: p.location.latitude!,
-        lng: p.location.longitude!,
-        places: [p],
+  // Sync route param with selected place
+  useEffect(() => {
+    if (placeId) {
+      setSelectedPlaceId(placeId);
+    }
+  }, [placeId]);
+
+  // Build Supercluster index
+  const superclusterIndex = useMemo(() => {
+    const sc = new Supercluster({
+      radius: 45,
+      maxZoom: 16,
+    });
+    const geojsonFeatures: Array<PointFeature<{ placeId: string; place: Place }>> =
+      filteredPlaces.map((p) => ({
+        type: "Feature",
+        properties: {
+          cluster: false,
+          placeId: p.place_id,
+          place: p,
+        },
+        geometry: {
+          type: "Point",
+          coordinates: [p.location.longitude!, p.location.latitude!],
+        },
       }));
+    sc.load(geojsonFeatures);
+    return sc;
+  }, [filteredPlaces]);
+
+  // Render or update pins & clusters on map
+  const updateMapMarkers = useCallback(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    // Remove existing markers
+    for (const marker of markersRef.current) {
+      marker.remove();
     }
+    markersRef.current = [];
 
-    const cellSize = 180 / Math.pow(2, zoom);
-    const grid = new Map<string, Place[]>();
+    const bounds = map.getBounds();
+    const bbox: [number, number, number, number] = [
+      bounds.getWest(),
+      bounds.getSouth(),
+      bounds.getEast(),
+      bounds.getNorth(),
+    ];
+    const zoom = Math.floor(map.getZoom());
+    const clusters = superclusterIndex.getClusters(bbox, zoom);
 
-    for (const p of mappablePlaces) {
-      const latIdx = Math.floor(p.location.latitude! / cellSize);
-      const lngIdx = Math.floor(p.location.longitude! / cellSize);
-      const key = `${latIdx}:${lngIdx}`;
-      const list = grid.get(key) || [];
-      list.push(p);
-      grid.set(key, list);
-    }
+    for (const feature of clusters) {
+      const [lng, lat] = feature.geometry.coordinates;
+      const isCluster = feature.properties.cluster;
 
-    const result: Array<{
-      isCluster: boolean;
-      place?: Place;
-      count: number;
-      lat: number;
-      lng: number;
-      places: Place[];
-    }> = [];
+      if (isCluster) {
+        const count = feature.properties.point_count;
+        const clusterId = feature.properties.cluster_id;
+        const size = count < 10 ? 38 : count < 50 ? 44 : 50;
 
-    for (const group of grid.values()) {
-      if (group.length === 1) {
-        result.push({
-          isCluster: false,
-          place: group[0],
-          count: 1,
-          lat: group[0].location.latitude!,
-          lng: group[0].location.longitude!,
-          places: group,
+        const el = document.createElement("div");
+        el.className = "wf-cluster-marker";
+        el.style.width = `${size}px`;
+        el.style.height = `${size}px`;
+        el.style.borderRadius = "9999px";
+        el.style.background = "var(--wf-primary)";
+        el.style.border = "2px solid #FFFFFF";
+        el.style.boxShadow = "0 4px 12px rgba(0,0,0,0.3)";
+        el.style.display = "flex";
+        el.style.alignItems = "center";
+        el.style.justifyContent = "center";
+        el.style.color = "#FFFFFF";
+        el.style.fontWeight = "700";
+        el.style.fontSize = "13px";
+        el.style.cursor = "pointer";
+        el.innerText = `${count}`;
+
+        el.addEventListener("click", () => {
+          const expansionZoom = Math.min(superclusterIndex.getClusterExpansionZoom(clusterId), 17);
+          map.flyTo({ center: [lng, lat], zoom: expansionZoom, duration: 800 });
         });
+
+        const marker = new maplibregl.Marker({ element: el }).setLngLat([lng, lat]).addTo(map);
+        markersRef.current.push(marker);
       } else {
-        const avgLat = group.reduce((sum, p) => sum + p.location.latitude!, 0) / group.length;
-        const avgLng = group.reduce((sum, p) => sum + p.location.longitude!, 0) / group.length;
-        result.push({
-          isCluster: true,
-          count: group.length,
-          lat: avgLat,
-          lng: avgLng,
-          places: group,
+        const place: Place = feature.properties.place;
+        const isSelected = selectedPlaceId === place.place_id;
+        const isHovered = hoveredPlaceId === place.place_id;
+        const visual = visualForCategory(place.category);
+        const pinColor = visual.color || "var(--wf-primary)";
+
+        // Outer 44px tap target container
+        const el = document.createElement("div");
+        el.className = "wf-place-marker";
+        el.style.width = "44px";
+        el.style.height = "44px";
+        el.style.display = "flex";
+        el.style.alignItems = "center";
+        el.style.justifyContent = "center";
+        el.style.cursor = "pointer";
+
+        // Inner visual dot/icon
+        const dot = document.createElement("div");
+        dot.style.width = isSelected ? "34px" : isHovered ? "30px" : "24px";
+        dot.style.height = isSelected ? "34px" : isHovered ? "30px" : "24px";
+        dot.style.borderRadius = "50%";
+        dot.style.background = isSelected ? "var(--wf-text)" : pinColor;
+        dot.style.border = "2px solid #FFFFFF";
+        dot.style.boxShadow = isSelected
+          ? "0 4px 14px rgba(0,0,0,0.4)"
+          : "0 2px 8px rgba(0,0,0,0.25)";
+        dot.style.display = "flex";
+        dot.style.alignItems = "center";
+        dot.style.justifyContent = "center";
+        dot.style.color = "#FFFFFF";
+        dot.style.fontSize = "12px";
+        dot.style.transition = "all 0.15s ease";
+        dot.innerText = visual.icon || "📍";
+
+        el.appendChild(dot);
+
+        el.addEventListener("click", (e) => {
+          e.stopPropagation();
+          setSelectedPlaceId(place.place_id);
+          setSearchParams({ selected: place.place_id });
+          map.flyTo({ center: [lng, lat], zoom: Math.max(map.getZoom(), 14), duration: 600 });
         });
+
+        const marker = new maplibregl.Marker({ element: el })
+          .setLngLat([lng, lat])
+          .addTo(map);
+        markersRef.current.push(marker);
       }
     }
-    return result;
-  }, [mappablePlaces, zoom]);
+  }, [superclusterIndex, selectedPlaceId, hoveredPlaceId, setSearchParams]);
 
-  if (places.length === 0 && !loading) {
+  // Initialize MapLibre GL
+  useEffect(() => {
+    if (!mapContainerRef.current) return;
+
+    const initialCenter: [number, number] =
+      mappablePlaces.length > 0
+        ? [mappablePlaces[0].location.longitude!, mappablePlaces[0].location.latitude!]
+        : [0, 20];
+
+    const map = new maplibregl.Map({
+      container: mapContainerRef.current,
+      style: "https://tiles.openfreemap.org/styles/liberty",
+      center: initialCenter,
+      zoom: 3,
+      minZoom: 2,
+      maxZoom: 19,
+    });
+
+    mapRef.current = map;
+
+    map.on("load", () => {
+      // Fit to all places on load
+      if (mappablePlaces.length > 1) {
+        const bounds = new maplibregl.LngLatBounds();
+        for (const p of mappablePlaces) {
+          bounds.extend([p.location.longitude!, p.location.latitude!]);
+        }
+        map.fitBounds(bounds, { padding: 50, maxZoom: 13, duration: 0 });
+      }
+      updateMapMarkers();
+    });
+
+    map.on("dragstart", () => {
+      setShowSearchThisArea(true);
+    });
+
+    map.on("moveend", () => {
+      updateMapMarkers();
+    });
+
+    // InvalidateSize / map resize handled automatically on viewport changes
+    map.resize();
+
+    return () => {
+      map.remove();
+      mapRef.current = null;
+    };
+  }, [mappablePlaces]);
+
+  // Update markers when supercluster index or selections change
+  useEffect(() => {
+    if (mapRef.current?.loaded()) {
+      updateMapMarkers();
+    }
+  }, [updateMapMarkers]);
+
+  // When selected place changes externally, center map
+  useEffect(() => {
+    if (!selectedPlace || !mapRef.current) return;
+    mapRef.current.flyTo({
+      center: [selectedPlace.location.longitude!, selectedPlace.location.latitude!],
+      zoom: Math.max(mapRef.current.getZoom(), 14),
+      duration: 600,
+    });
+  }, [selectedPlace]);
+
+  if (loading && places.length === 0) {
     return (
-      <main style={{ maxWidth: "1280px", margin: "0 auto", padding: "40px 24px 80px", width: "100%", boxSizing: "border-box" }}>
+      <main style={{ maxWidth: "1280px", margin: "0 auto", padding: "40px 16px", width: "100%" }}>
+        <div className="wf-skeleton" style={{ width: "100%", height: "600px", borderRadius: "24px" }} />
+      </main>
+    );
+  }
+
+  if (mappablePlaces.length === 0) {
+    return (
+      <main style={{ maxWidth: "1280px", margin: "0 auto", padding: "60px 16px", width: "100%" }}>
         <EmptyState
-          screenLabel="Map, no places yet"
-          headline="Places appear here"
-          description="When a saved post mentions a location, it is pinned on the map."
-          primaryActionLabel="Save a travel link"
+          screenLabel="Map"
+          headline="No places on the map yet"
+          description="Save a reel with location spots to see them pinned here."
+          primaryActionLabel="Paste a reel"
           onPrimaryAction={() => openSaveSheet()}
           iconPath="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"
-          tint="#E3F0F4"
-          ink="#1B5E78"
+          tint="var(--wf-surface-2)"
+          ink="var(--wf-text)"
         />
       </main>
     );
   }
 
-  const defaultCenter: [number, number] = mappablePlaces.length > 0
-    ? [mappablePlaces[0].location.latitude!, mappablePlaces[0].location.longitude!]
-    : [20, 0];
-
-  const selLat = selectedPlace?.location?.latitude;
-  const selLng = selectedPlace?.location?.longitude;
-  const selHasCoords = typeof selLat === "number" && typeof selLng === "number";
-
-  const googleMapsUrl = selectedPlace
-    ? (selectedPlace.google_maps_url ||
-       (selHasCoords
-         ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedPlace.display_name)}+${selLat},${selLng}`
-         : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedPlace.display_name)}`))
-    : "";
-
-  const appleMapsUrl = selectedPlace
-    ? (selHasCoords
-        ? `https://maps.apple.com/?q=${encodeURIComponent(selectedPlace.display_name)}&ll=${selLat},${selLng}`
-        : `https://maps.apple.com/?q=${encodeURIComponent(selectedPlace.display_name)}`)
-    : "";
+  const categoryChips = [
+    { key: "all", label: "All places", count: mappablePlaces.length },
+    { key: "travel", label: "Places", count: mappablePlaces.filter((p) => p.category === "travel").length },
+    { key: "food", label: "Food & Drinks", count: mappablePlaces.filter((p) => p.category === "food").length },
+  ];
 
   return (
-    <main className="wf-map-main" data-mobile-view={mobileView}>
-      {/* Places list sidebar (Desktop always, mobile toggleable) */}
+    <main className="wf-map-main" style={{ position: "relative", width: "100%", height: "100%" }}>
+      {/* Desktop 380px Left List Panel */}
       <aside className="wf-map-sidebar">
-        <div
-          style={{
-            padding: "20px 20px 16px",
-            borderBottom: "1px solid #EFEDE7",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            flexShrink: 0,
-            gap: "12px",
-            flexWrap: "wrap",
-          }}
-        >
-          <div>
-            <h1 style={{ margin: 0, fontSize: "24px", fontWeight: 800, letterSpacing: "-0.02em" }}>
+        {/* Header & Category Filter */}
+        <div style={{ padding: "16px", borderBottom: "1px solid var(--wf-border)", display: "flex", flexDirection: "column", gap: "10px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+            <h2 className="wf-type-h2" style={{ margin: 0 }}>
               Places
-            </h1>
-            <div style={{ fontSize: "13px", color: "#6B6F73", marginTop: "2px" }}>
-              {places.length} saved places on your map
-            </div>
+            </h2>
+            <span style={{ fontSize: "13px", color: "var(--wf-text-muted)" }}>
+              {filteredPlaces.length} spot{filteredPlaces.length === 1 ? "" : "s"}
+            </span>
           </div>
-          {/* Mobile toggle pill in list view */}
-          <div
-            className="wf-mobile-only"
-            style={{
-              background: "#FFFFFF",
-              borderRadius: "999px",
-              padding: "4px",
-              boxShadow: "0 2px 10px rgba(0,0,0,0.12)",
-              border: "1px solid #D9D5CB",
-              display: "flex",
-              gap: "4px",
-            }}
-          >
-            <button
-              type="button"
-              onClick={() => setMobileView("map")}
-              style={{
-                border: 0,
-                background: "transparent",
-                color: "#6B6F73",
-                padding: "6px 14px",
-                borderRadius: "999px",
-                fontSize: "13px",
-                fontWeight: 700,
-                cursor: "pointer",
-              }}
-            >
-              🗺️ Map
-            </button>
-            <button
-              type="button"
-              onClick={() => setMobileView("list")}
-              style={{
-                border: 0,
-                background: "#1B1D1F",
-                color: "#FFFFFF",
-                padding: "6px 14px",
-                borderRadius: "999px",
-                fontSize: "13px",
-                fontWeight: 700,
-                cursor: "pointer",
-              }}
-            >
-              ☰ Places ({places.length})
-            </button>
+
+          <div style={{ display: "flex", gap: "6px", overflowX: "auto" }}>
+            {categoryChips.map((c) => (
+              <button
+                key={c.key}
+                type="button"
+                onClick={() => setActiveCategory(c.key)}
+                style={{
+                  height: "36px",
+                  padding: "0 12px",
+                  borderRadius: "var(--wf-radius-pill)",
+                  border: activeCategory === c.key ? "1px solid var(--wf-text)" : "1px solid var(--wf-border)",
+                  background: activeCategory === c.key ? "var(--wf-text)" : "var(--wf-surface)",
+                  color: activeCategory === c.key ? "var(--wf-bg)" : "var(--wf-text)",
+                  fontFamily: "inherit",
+                  fontSize: "13px",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                <span>{c.label}</span>
+                <span style={{ opacity: 0.6, fontSize: "11px" }}>{c.count}</span>
+              </button>
+            ))}
           </div>
         </div>
 
+        {/* Scrollable list of places */}
         <div className="wf-map-sidebar-list">
-          {places.map((place) => {
-            const isSelected = selectedPlace?.place_id === place.place_id;
+          {filteredPlaces.map((p) => {
+            const isSelected = selectedPlaceId === p.place_id;
+            const visual = visualForCategory(p.category);
+
             return (
-              <button
-                key={place.place_id}
-                type="button"
+              <div
+                key={p.place_id}
+                onMouseEnter={() => setHoveredPlaceId(p.place_id)}
+                onMouseLeave={() => setHoveredPlaceId(null)}
                 onClick={() => {
-                  setSearchParams({ place: place.place_id });
-                  setMobileView("map");
+                  setSelectedPlaceId(p.place_id);
+                  setSearchParams({ selected: p.place_id });
                 }}
                 style={{
-                  textAlign: "left",
-                  padding: "14px 16px",
-                  borderRadius: "16px",
-                  border: 0,
-                  background: isSelected ? "#F6F5F1" : "transparent",
-                  fontFamily: "inherit",
+                  padding: "12px",
+                  borderRadius: "var(--wf-radius-control)",
+                  border: isSelected ? "2px solid var(--wf-primary)" : "1px solid var(--wf-border)",
+                  background: isSelected ? "var(--wf-surface-2)" : "var(--wf-surface)",
                   cursor: "pointer",
                   display: "flex",
                   flexDirection: "column",
-                  gap: "4px",
-                  width: "100%",
-                  boxSizing: "border-box",
+                  gap: "6px",
+                  transition: "all 0.15s ease",
                 }}
               >
-                <div style={{ fontSize: "16px", fontWeight: 700, color: "#1B1D1F" }}>
-                  {place.display_name}
-                </div>
-                <div style={{ fontSize: "13px", color: "#6B6F73" }}>
-                  {[place.location?.city, place.location?.state_province, place.location?.country].filter(Boolean).join(", ")}
-                </div>
-                {place.category && (
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                   <span
                     style={{
-                      alignSelf: "flex-start",
-                      marginTop: "4px",
-                      fontSize: "11px",
-                      fontWeight: 700,
-                      padding: "2px 8px",
-                      borderRadius: "999px",
-                      background: "#E3F0F4",
-                      color: "#1B5E78",
+                      width: "24px",
+                      height: "24px",
+                      borderRadius: "50%",
+                      background: visual.color || "var(--wf-primary)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: "12px",
+                      color: "#FFFFFF",
+                      flexShrink: 0,
                     }}
                   >
-                    {place.category}
+                    {visual.icon || "📍"}
                   </span>
+                  <span
+                    style={{
+                      fontSize: "15px",
+                      fontWeight: 600,
+                      color: "var(--wf-text)",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                      flex: 1,
+                    }}
+                  >
+                    {p.display_name}
+                  </span>
+                </div>
+
+                <div style={{ fontSize: "13px", color: "var(--wf-text-muted)" }}>
+                  {[p.location?.city, p.location?.country].filter(Boolean).join(", ")}
+                </div>
+
+                {isSelected && (
+                  <div style={{ display: "flex", gap: "8px", marginTop: "4px" }}>
+                    <Link
+                      to={`/place/${p.place_id}`}
+                      state={{ from: "/map" }}
+                      style={{
+                        padding: "4px 10px",
+                        borderRadius: "var(--wf-radius-pill)",
+                        background: "var(--wf-text)",
+                        color: "var(--wf-bg)",
+                        fontSize: "12px",
+                        fontWeight: 600,
+                        textDecoration: "none",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "4px",
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      View details
+                    </Link>
+                  </div>
                 )}
-              </button>
+              </div>
             );
           })}
         </div>
       </aside>
 
-      {/* Interactive Map Pane */}
-      <section className="wf-map-pane">
-        {/* Mobile toggle pill to switch between map & places list */}
-        <div
-          className="wf-mobile-only"
-          style={{
-            position: "absolute",
-            top: "14px",
-            left: "50%",
-            transform: "translateX(-50%)",
-            zIndex: 1000,
-            background: "#FFFFFF",
-            borderRadius: "999px",
-            padding: "4px",
-            boxShadow: "0 4px 16px rgba(0,0,0,0.16)",
-            border: "1px solid #D9D5CB",
-            display: "flex",
-            gap: "4px",
-          }}
-        >
+      {/* Map Canvas Pane */}
+      <div className="wf-map-pane">
+        <div ref={mapContainerRef} style={{ width: "100%", height: "100%", position: "absolute", inset: 0 }} />
+
+        {/* Floating "Search this area" button */}
+        {showSearchThisArea && (
           <button
             type="button"
-            onClick={() => setMobileView("map")}
+            onClick={() => {
+              setShowSearchThisArea(false);
+              updateMapMarkers();
+            }}
             style={{
-              border: 0,
-              background: mobileView === "map" ? "#1B1D1F" : "transparent",
-              color: mobileView === "map" ? "#FFFFFF" : "#6B6F73",
-              padding: "6px 14px",
-              borderRadius: "999px",
-              fontSize: "13px",
-              fontWeight: 700,
+              position: "absolute",
+              top: "16px",
+              left: "50%",
+              transform: "translateX(-50%)",
+              zIndex: 30,
+              height: "40px",
+              padding: "0 16px",
+              borderRadius: "var(--wf-radius-pill)",
+              background: "var(--wf-surface)",
+              color: "var(--wf-text)",
+              border: "1px solid var(--wf-border)",
+              boxShadow: "var(--wf-shadow-card)",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "8px",
+              fontSize: "14px",
+              fontWeight: 600,
               cursor: "pointer",
             }}
           >
-            🗺️ Map
+            <Search size={15} strokeWidth={2} />
+            <span>Search this area</span>
           </button>
-          <button
-            type="button"
-            onClick={() => setMobileView("list")}
-            style={{
-              border: 0,
-              background: mobileView === "list" ? "#1B1D1F" : "transparent",
-              color: mobileView === "list" ? "#FFFFFF" : "#6B6F73",
-              padding: "6px 14px",
-              borderRadius: "999px",
-              fontSize: "13px",
-              fontWeight: 700,
-              cursor: "pointer",
-            }}
-          >
-            ☰ Places ({places.length})
-          </button>
-        </div>
+        )}
 
-        <MapContainer
-          center={defaultCenter}
-          zoom={Math.max(zoom, 3)}
-          minZoom={3}
-          worldCopyJump={true}
-          bounds={mappablePlaces.length > 1 ? L.latLngBounds(mappablePlaces.map((p) => [p.location.latitude!, p.location.longitude!])) : undefined}
-          boundsOptions={{ padding: [40, 40], maxZoom: 13 }}
-          style={{ position: "absolute", top: 0, bottom: 0, left: 0, right: 0, width: "100%", height: "100%", zIndex: 1 }}
-          scrollWheelZoom
-        >
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-            maxZoom={19}
-          />
-          <InvalidateSize places={places} hasSelected={Boolean(selectedPlace)} mobileView={mobileView} />
-          <FitAllBounds places={places} hasSelected={Boolean(selectedPlace)} />
-          <PanToSelected place={selectedPlace} />
-          <ZoomTracker onZoomChange={setZoom} />
-
-          {clusters.map((c, i) => {
-            if (c.isCluster) {
-              return (
-                <ClusterMarker
-                  key={`cluster-${i}-${c.lat}-${c.lng}`}
-                  lat={c.lat}
-                  lng={c.lng}
-                  count={c.count}
-                />
-              );
-            }
-
-            const p = c.place!;
-            const isSelected = selectedPlace?.place_id === p.place_id;
-
-            return (
-              <Marker
-                key={p.place_id}
-                position={[c.lat, c.lng]}
-                icon={placeIcon(p, isSelected)}
-                zIndexOffset={isSelected ? 1000 : 0}
-                eventHandlers={{
-                  click: () => {
-                    setSearchParams({ place: p.place_id });
-                  },
-                }}
-              >
-                <Tooltip direction="top" offset={[0, -16]}>
-                  {p.display_name}
-                </Tooltip>
-              </Marker>
-            );
-          })}
-        </MapContainer>
-
-        {/* Selected place card overlay - positioned cleanly above bottom nav on mobile */}
+        {/* Selected place card on map */}
         {selectedPlace && (
           <div
             className="wf-map-selected-card"
             style={{
               position: "absolute",
-              background: "#FFFFFF",
-              borderRadius: "24px",
-              border: "1px solid #E6E3DC",
-              padding: "20px 22px",
-              boxShadow: "0 16px 40px rgba(0,0,0,0.16)",
+              background: "var(--wf-surface)",
+              borderRadius: "var(--wf-radius-card)",
+              border: "1px solid var(--wf-border)",
+              boxShadow: "var(--wf-shadow-elevated)",
+              padding: "16px",
               display: "flex",
               flexDirection: "column",
-              gap: "12px",
-              zIndex: 1000,
-              boxSizing: "border-box",
+              gap: "8px",
+              zIndex: 30,
             }}
           >
-            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "10px" }}>
-              <div style={{ minWidth: 0, flex: 1 }}>
-                <span
-                  style={{
-                    fontSize: "11px",
-                    fontWeight: 700,
-                    padding: "2px 8px",
-                    borderRadius: "999px",
-                    background: "#E3F0F4",
-                    color: "#1B5E78",
-                    display: "inline-block",
-                  }}
-                >
-                  {selectedPlace.category || "Place"}
-                </span>
-                <h2
-                  style={{
-                    margin: "6px 0 2px",
-                    fontSize: "20px",
-                    fontWeight: 800,
-                    color: "#1B1D1F",
-                    lineHeight: 1.2,
-                    overflowWrap: "anywhere",
-                    wordBreak: "break-word",
-                  }}
-                >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px" }}>
+              <div>
+                <h3 className="wf-type-h2" style={{ margin: 0, fontSize: "18px" }}>
                   {selectedPlace.display_name}
-                </h2>
-                <div style={{ fontSize: "13px", color: "#6B6F73" }}>
-                  {[selectedPlace.location?.city, selectedPlace.location?.state_province, selectedPlace.location?.country].filter(Boolean).join(", ")}
-                </div>
+                </h3>
+                <p style={{ margin: "4px 0 0", fontSize: "13px", color: "var(--wf-text-muted)" }}>
+                  {[selectedPlace.location?.city, selectedPlace.location?.country].filter(Boolean).join(", ")}
+                </p>
               </div>
+
               <button
                 type="button"
-                onClick={() => setSearchParams({})}
                 aria-label="Close"
+                onClick={() => {
+                  setSelectedPlaceId(null);
+                  setSearchParams({});
+                }}
                 style={{
-                  background: "transparent",
-                  border: 0,
-                  fontSize: "18px",
-                  lineHeight: 1,
-                  color: "#999",
+                  width: "36px",
+                  height: "36px",
+                  borderRadius: "50%",
+                  border: "none",
+                  background: "var(--wf-surface-2)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
                   cursor: "pointer",
-                  padding: "4px",
+                  color: "var(--wf-text-muted)",
                 }}
               >
-                ✕
+                <X size={18} strokeWidth={2} />
               </button>
             </div>
 
-            {/* Actions: Details, Add to trip, Google Maps, Apple Maps */}
-            <div style={{ display: "flex", gap: "8px", marginTop: "4px", flexWrap: "wrap", alignItems: "center" }}>
+            <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
               <Link
                 to={`/place/${selectedPlace.place_id}`}
                 state={{ from: "/map" }}
                 style={{
                   height: "38px",
-                  padding: "0 18px",
-                  borderRadius: "999px",
-                  background: "#1B1D1F",
-                  color: "#FFFFFF",
+                  padding: "0 16px",
+                  borderRadius: "var(--wf-radius-pill)",
+                  background: "var(--wf-primary)",
+                  color: "var(--wf-on-primary)",
                   fontSize: "13px",
-                  fontWeight: 700,
+                  fontWeight: 600,
                   textDecoration: "none",
                   display: "inline-flex",
                   alignItems: "center",
+                  justifyContent: "center",
                 }}
               >
-                Details
+                View place details
               </Link>
-              {FeatureFlags.isEnabled("trips") && (
-                <ComingSoonButton
-                  featureId="trips"
-                  style={{
-                    height: "38px",
-                    padding: "0 16px",
-                    borderRadius: "999px",
-                    border: "1px solid #D9D5CB",
-                    background: "#FFFFFF",
-                    fontSize: "13px",
-                    fontWeight: 700,
-                    color: "#1B1D1F",
-                    cursor: "pointer",
-                  }}
-                >
-                  Add to trip
-                </ComingSoonButton>
-              )}
-              {googleMapsUrl && (
-                <a
-                  href={googleMapsUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    height: "38px",
-                    padding: "0 14px",
-                    borderRadius: "999px",
-                    border: "1px solid #D9D5CB",
-                    background: "#FFFFFF",
-                    fontSize: "12px",
-                    fontWeight: 700,
-                    color: "#1B1D1F",
-                    textDecoration: "none",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "4px",
-                  }}
-                >
-                  Google Maps ↗
-                </a>
-              )}
-              {appleMapsUrl && (
-                <a
-                  href={appleMapsUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    height: "38px",
-                    padding: "0 14px",
-                    borderRadius: "999px",
-                    border: "1px solid #D9D5CB",
-                    background: "#FFFFFF",
-                    fontSize: "12px",
-                    fontWeight: 700,
-                    color: "#1B1D1F",
-                    textDecoration: "none",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "4px",
-                  }}
-                >
-                  Apple Maps ↗
-                </a>
-              )}
             </div>
           </div>
         )}
-      </section>
+      </div>
     </main>
   );
 }
