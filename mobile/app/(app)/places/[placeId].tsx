@@ -21,6 +21,7 @@ import {
   type PlaceDetail,
 } from "@/src/api";
 import { DetailSheetChrome } from "@/src/components/DetailSheetChrome";
+import { PlaceMap } from "@/src/components/PlaceMap";
 import { ErrorBanner, TagChip } from "@/src/components/ui";
 import { useLibrary } from "@/src/context/LibraryContext";
 import { googleMapsUrl } from "@/src/maps";
@@ -204,6 +205,12 @@ export default function PlaceDetailScreen() {
               <Text style={styles.summaryTitle}>Overview</Text>
             </View>
             <Text style={styles.summaryText}>{place.summary}</Text>
+          </View>
+        ) : null}
+
+        {place.location?.latitude != null && place.location?.longitude != null ? (
+          <View style={{ borderRadius: radius.lg, overflow: "hidden", marginTop: spacing.md, height: 180 }}>
+            <PlaceMap places={[place]} selectedPlaceId={place.place_id} height={180} />
           </View>
         ) : null}
 

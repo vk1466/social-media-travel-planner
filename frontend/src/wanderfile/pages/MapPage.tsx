@@ -101,7 +101,15 @@ function ClusterMarker({
   );
 }
 
-function InvalidateSize({ places, hasSelected }: { places: Place[]; hasSelected: boolean }) {
+function InvalidateSize({
+  places,
+  hasSelected,
+  mobileView,
+}: {
+  places: Place[];
+  hasSelected: boolean;
+  mobileView: string;
+}) {
   const map = useMap();
   const placesRef = useRef(places);
   placesRef.current = places;
@@ -122,14 +130,34 @@ function InvalidateSize({ places, hasSelected }: { places: Place[]; hasSelected:
       }
     };
 
+    map.invalidateSize();
     const frame = window.requestAnimationFrame(() => map.invalidateSize());
+    const t1 = window.setTimeout(() => map.invalidateSize(), 100);
+    const t2 = window.setTimeout(() => map.invalidateSize(), 300);
+    const t3 = window.setTimeout(() => map.invalidateSize(), 800);
+
+    const container = map.getContainer();
     const observer = new ResizeObserver(() => handleResize());
-    observer.observe(map.getContainer());
+    if (container) {
+      observer.observe(container);
+    }
     return () => {
       window.cancelAnimationFrame(frame);
+      window.clearTimeout(t1);
+      window.clearTimeout(t2);
+      window.clearTimeout(t3);
       observer.disconnect();
     };
   }, [map]);
+
+  useEffect(() => {
+    if (mobileView === "map") {
+      map.invalidateSize();
+      const t = window.setTimeout(() => map.invalidateSize(), 50);
+      return () => window.clearTimeout(t);
+    }
+  }, [mobileView, map]);
+
   return null;
 }
 
@@ -291,26 +319,26 @@ export function MapPage({ places, loading }: MapPageProps) {
     <main className="wf-map-main">
       {/* Places list sidebar (Desktop always, mobile toggleable) */}
       <aside
+        className={`wf-map-sidebar ${mobileView === "map" ? "wf-desktop-only" : ""}`}
         style={{
-          width: mobileView === "list" ? "100%" : "380px",
           display: mobileView === "list" ? "flex" : undefined,
-          borderRight: "1px solid #E6E3DC",
-          background: "#FFFFFF",
-          flexDirection: "column",
-          boxSizing: "border-box",
-          height: "100%",
-          maxHeight: "100%",
-          overflowY: "auto",
-          zIndex: 20,
         }}
-        className={mobileView === "map" ? "wf-desktop-only" : ""}
       >
-        <div style={{ padding: "20px 20px 16px", borderBottom: "1px solid #EFEDE7", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div
+          style={{
+            padding: "20px 20px 16px",
+            borderBottom: "1px solid #EFEDE7",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            flexShrink: 0,
+          }}
+        >
           <div>
-            <h1 style={{ margin: 0, fontSize: "26px", fontWeight: 800, letterSpacing: "-0.02em" }}>
+            <h1 style={{ margin: 0, fontSize: "24px", fontWeight: 800, letterSpacing: "-0.02em" }}>
               Places
             </h1>
-            <div style={{ fontSize: "14px", color: "#6B6F73", marginTop: "2px" }}>
+            <div style={{ fontSize: "13px", color: "#6B6F73", marginTop: "2px" }}>
               {places.length} saved places on your map
             </div>
           </div>
@@ -327,14 +355,17 @@ export function MapPage({ places, loading }: MapPageProps) {
                 fontSize: "13px",
                 fontWeight: 700,
                 cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
               }}
             >
-              Back to Map
+              <span>🗺️</span> View Map
             </button>
           )}
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", padding: "8px" }}>
+        <div className="wf-map-sidebar-list">
           {places.map((place) => {
             const isSelected = selectedPlace?.place_id === place.place_id;
             return (
@@ -356,6 +387,8 @@ export function MapPage({ places, loading }: MapPageProps) {
                   display: "flex",
                   flexDirection: "column",
                   gap: "4px",
+                  width: "100%",
+                  boxSizing: "border-box",
                 }}
               >
                 <div style={{ fontSize: "16px", fontWeight: 700, color: "#1B1D1F" }}>
@@ -388,52 +421,67 @@ export function MapPage({ places, loading }: MapPageProps) {
 
       {/* Interactive Map Pane */}
       <section
+        className="wf-map-pane"
         style={{
-          flex: 1,
-          height: "100%",
-          maxHeight: "100%",
-          position: "relative",
-          background: "#EAE7DF",
           display: mobileView === "list" ? "none" : "flex",
-          overflow: "hidden",
         }}
       >
-        {/* Mobile toggle button to switch to list view */}
+        {/* Mobile toggle pill to switch between map & places list */}
         <div
           className="wf-mobile-only"
           style={{
             position: "absolute",
-            top: "16px",
-            right: "16px",
+            top: "14px",
+            left: "50%",
+            transform: "translateX(-50%)",
             zIndex: 1000,
+            background: "#FFFFFF",
+            borderRadius: "999px",
+            padding: "4px",
+            boxShadow: "0 4px 16px rgba(0,0,0,0.16)",
+            border: "1px solid #D9D5CB",
+            display: "flex",
+            gap: "4px",
           }}
         >
           <button
             type="button"
-            onClick={() => setMobileView("list")}
+            onClick={() => setMobileView("map")}
             style={{
-              background: "#FFFFFF",
-              color: "#1B1D1F",
-              border: "1px solid #D9D5CB",
+              border: 0,
+              background: mobileView === "map" ? "#1B1D1F" : "transparent",
+              color: mobileView === "map" ? "#FFFFFF" : "#6B6F73",
+              padding: "6px 14px",
               borderRadius: "999px",
-              padding: "8px 16px",
               fontSize: "13px",
               fontWeight: 700,
               cursor: "pointer",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
-              display: "flex",
-              alignItems: "center",
-              gap: "6px",
             }}
           >
-            <span>☰</span> Places ({places.length})
+            🗺️ Map
+          </button>
+          <button
+            type="button"
+            onClick={() => setMobileView("list")}
+            style={{
+              border: 0,
+              background: mobileView === "list" ? "#1B1D1F" : "transparent",
+              color: mobileView === "list" ? "#FFFFFF" : "#6B6F73",
+              padding: "6px 14px",
+              borderRadius: "999px",
+              fontSize: "13px",
+              fontWeight: 700,
+              cursor: "pointer",
+            }}
+          >
+            ☰ Places ({places.length})
           </button>
         </div>
 
         <MapContainer
           center={defaultCenter}
           zoom={zoom}
-          style={{ width: "100%", height: "100%", zIndex: 1 }}
+          style={{ position: "absolute", top: 0, bottom: 0, left: 0, right: 0, width: "100%", height: "100%", zIndex: 1 }}
           scrollWheelZoom
         >
           <TileLayer
@@ -441,7 +489,7 @@ export function MapPage({ places, loading }: MapPageProps) {
             url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
             maxZoom={19}
           />
-          <InvalidateSize places={places} hasSelected={Boolean(selectedPlace)} />
+          <InvalidateSize places={places} hasSelected={Boolean(selectedPlace)} mobileView={mobileView} />
           <FitAllBounds places={places} hasSelected={Boolean(selectedPlace)} />
           <PanToSelected place={selectedPlace} />
           <ZoomTracker onZoomChange={setZoom} />

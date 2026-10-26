@@ -119,6 +119,7 @@ export function OsmPlaceMap({
           ref={webViewRef}
           style={{ width: frame.width, height: frame.height, backgroundColor: "#E6EFF2" }}
           originWhitelist={["*"]}
+          userAgent="Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 Wanderfile/1.0"
           source={source}
           javaScriptEnabled
           nestedScrollEnabled
@@ -309,6 +310,7 @@ function buildMapHtml(): string {
       background: #1F6F8B;
       border: 4px solid #FFFFFF;
       box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+    }
     .marker-cluster-small, .marker-cluster-medium, .marker-cluster-large {
       background-color: rgba(31, 111, 139, 0.35);
     }

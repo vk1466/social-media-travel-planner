@@ -58,3 +58,43 @@ def test_admin_api_returns_403_for_non_admin(monkeypatch) -> None:
   assert response.status_code == 403
   assert response.json()["detail"] == "Admin access required"
 
+
+def test_map_container_styles_guard_zero_height() -> None:
+  tokens_path = Path(__file__).resolve().parent.parent / "frontend" / "src" / "wanderfile" / "tokens.css"
+  assert tokens_path.is_file(), "tokens.css must exist"
+  css = tokens_path.read_text(encoding="utf-8")
+
+  # Guard against 0px height in CSS flexbox:
+  assert ".wf-map-pane" in css
+  assert ".wf-map-pane .leaflet-container" in css
+  assert "position: absolute !important;" in css
+  assert "width: 100% !important;" in css
+  assert "height: 100% !important;" in css
+
+  # Guard against desktop/mobile whole page scrolling:
+  assert "html:has(.wf-map-main)" in css
+  assert "body:has(.wf-map-main)" in css
+  assert ".wf-map-sidebar-list" in css
+
+
+def test_map_components_and_mobile_osm_fixes() -> None:
+  map_page_path = Path(__file__).resolve().parent.parent / "frontend" / "src" / "wanderfile" / "pages" / "MapPage.tsx"
+  assert map_page_path.is_file()
+  map_page = map_page_path.read_text(encoding="utf-8")
+  assert "wf-map-pane" in map_page
+  assert "wf-map-sidebar-list" in map_page
+  assert "InvalidateSize" in map_page
+
+  place_detail_path = Path(__file__).resolve().parent.parent / "frontend" / "src" / "wanderfile" / "pages" / "PlaceDetailPage.tsx"
+  assert place_detail_path.is_file()
+  place_detail = place_detail_path.read_text(encoding="utf-8")
+  assert "MiniLocationMap" in place_detail
+
+  osm_native_path = Path(__file__).resolve().parent.parent / "mobile" / "src" / "components" / "OsmPlaceMap.tsx"
+  assert osm_native_path.is_file()
+  osm_native = osm_native_path.read_text(encoding="utf-8")
+  assert 'userAgent="Mozilla/5.0' in osm_native
+  # Confirm closing brace for selected-marker-dot is present before marker-cluster
+  assert ".selected-marker-dot {\n      width: 28px;\n      height: 28px;\n      border-radius: 14px;\n      background: #1F6F8B;\n      border: 4px solid #FFFFFF;\n      box-shadow: 0 3px 10px rgba(0,0,0,0.3);\n    }\n    .marker-cluster-small" in osm_native
+
+

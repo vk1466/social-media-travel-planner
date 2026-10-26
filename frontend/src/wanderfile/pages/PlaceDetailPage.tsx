@@ -1,8 +1,65 @@
 import { useState } from "react";
 import { useParams, Link, useLocation, useNavigate } from "react-router-dom";
+import { MapContainer, TileLayer, Marker, Tooltip } from "react-leaflet";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 import { EmptyState } from "../components/EmptyState";
 import { ComingSoonButton } from "../comingSoon/ComingSoonControl";
 import type { Place, SavedPost } from "../../api";
+
+function MiniLocationMap({ lat, lng, displayName }: { lat: number; lng: number; displayName: string }) {
+  return (
+    <div
+      style={{
+        height: "180px",
+        borderRadius: "16px",
+        overflow: "hidden",
+        position: "relative",
+        marginBottom: "16px",
+        border: "1px solid #E6E3DC",
+      }}
+    >
+      <MapContainer
+        center={[lat, lng]}
+        zoom={14}
+        scrollWheelZoom={false}
+        zoomControl={false}
+        attributionControl={false}
+        style={{ width: "100%", height: "100%", zIndex: 1 }}
+      >
+        <TileLayer
+          url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+          maxZoom={19}
+        />
+        <Marker
+          position={[lat, lng]}
+          icon={L.divIcon({
+            className: "wf-place-marker",
+            html: `<div style="
+              width: 30px;
+              height: 30px;
+              border-radius: 999px;
+              background: #1F6F8B;
+              border: 3px solid #FFFFFF;
+              box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              color: #FFFFFF;
+              font-size: 14px;
+            ">📍</div>`,
+            iconSize: [30, 30],
+            iconAnchor: [15, 15],
+          })}
+        >
+          <Tooltip direction="top" offset={[0, -16]}>
+            {displayName}
+          </Tooltip>
+        </Marker>
+      </MapContainer>
+    </div>
+  );
+}
 
 interface PlaceDetailPageProps {
   places: Place[];
@@ -393,66 +450,76 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
             }}
           >
             <h2 style={{ margin: "0 0 12px", fontSize: "18px", fontWeight: 800 }}>Location</h2>
-            <div
-              style={{
-                height: "180px",
-                borderRadius: "16px",
-                background: "#EAE7DF",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                marginBottom: "16px",
-                gap: "8px",
-              }}
-            >
-              <div style={{ textAlign: "center", color: "#1B5E78" }}>
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z" />
-                  <circle cx="12" cy="10" r="2.5" />
-                </svg>
-                <div style={{ fontSize: "13px", fontWeight: 700, marginTop: "4px" }}>
-                  {hasCoords
-                    ? `${lat!.toFixed(4)}, ${lng!.toFixed(4)}`
-                    : "Coordinates mapped"}
+            {hasCoords ? (
+              <MiniLocationMap lat={lat!} lng={lng!} displayName={place.display_name} />
+            ) : (
+              <div
+                style={{
+                  height: "140px",
+                  borderRadius: "16px",
+                  background: "#EAE7DF",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginBottom: "16px",
+                  gap: "8px",
+                }}
+              >
+                <div style={{ textAlign: "center", color: "#1B5E78" }}>
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z" />
+                    <circle cx="12" cy="10" r="2.5" />
+                  </svg>
+                  <div style={{ fontSize: "13px", fontWeight: 700, marginTop: "4px" }}>
+                    Location not yet mapped
+                  </div>
                 </div>
               </div>
-              <div style={{ display: "flex", gap: "8px" }}>
-                <a
-                  href={googleMapsUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    fontSize: "12px",
-                    fontWeight: 700,
-                    color: "#1B5E78",
-                    background: "#FFFFFF",
-                    padding: "4px 10px",
-                    borderRadius: "999px",
-                    textDecoration: "none",
-                    boxShadow: "0 1px 4px rgba(0,0,0,0.08)",
-                  }}
-                >
-                  Google Maps ↗
-                </a>
-                <a
-                  href={appleMapsUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    fontSize: "12px",
-                    fontWeight: 700,
-                    color: "#1B5E78",
-                    background: "#FFFFFF",
-                    padding: "4px 10px",
-                    borderRadius: "999px",
-                    textDecoration: "none",
-                    boxShadow: "0 1px 4px rgba(0,0,0,0.08)",
-                  }}
-                >
-                  Apple Maps ↗
-                </a>
-              </div>
+            )}
+            <div style={{ display: "flex", gap: "8px", marginBottom: "16px", flexWrap: "wrap" }}>
+              <a
+                href={googleMapsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  fontSize: "12px",
+                  fontWeight: 700,
+                  color: "#1B5E78",
+                  background: "#FFFFFF",
+                  border: "1px solid #E6E3DC",
+                  padding: "6px 12px",
+                  borderRadius: "999px",
+                  textDecoration: "none",
+                  boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "4px",
+                }}
+              >
+                Google Maps ↗
+              </a>
+              <a
+                href={appleMapsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  fontSize: "12px",
+                  fontWeight: 700,
+                  color: "#1B5E78",
+                  background: "#FFFFFF",
+                  border: "1px solid #E6E3DC",
+                  padding: "6px 12px",
+                  borderRadius: "999px",
+                  textDecoration: "none",
+                  boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "4px",
+                }}
+              >
+                Apple Maps ↗
+              </a>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: "8px", fontSize: "14px", color: "#4A4E52", minWidth: 0, overflowWrap: "anywhere", wordBreak: "break-word" }}>
               {place.location?.display_name && (
