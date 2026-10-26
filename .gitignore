@@ -27,4 +27,5 @@ infra/cdk.context.json
 screenshots/
 *.apk
 .vercel
+frontend/.vercel
 .env*
