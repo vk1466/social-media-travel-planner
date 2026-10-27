@@ -1,5 +1,5 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { memo } from "react";
+import { memo, useState } from "react";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 
 import type { SavedPost } from "../api";
@@ -19,6 +19,7 @@ export const PostCard = memo(function PostCard({
   onPress,
   height = 180,
 }: PostCardProps) {
+  const [imgError, setImgError] = useState(false);
   const handle = post.author_handle || "instagram";
   const authorLine = handle.startsWith("@") ? handle : `@${handle}`;
   const spotCount = (post.place_ids?.length || 0) + (post.extracted_places?.length || 0);
@@ -32,8 +33,13 @@ export const PostCard = memo(function PostCard({
       style={({ pressed }) => [styles.tileContainer, pressed && styles.pressed]}
     >
       <View style={[styles.imageWrap, { height }]}>
-        {imageUrl ? (
-          <Image source={{ uri: imageUrl }} style={styles.image} resizeMode="cover" />
+        {imageUrl && !imgError ? (
+          <Image
+            source={{ uri: imageUrl }}
+            style={styles.image}
+            resizeMode="cover"
+            onError={() => setImgError(true)}
+          />
         ) : (
           <View style={[styles.image, styles.imageFallback]}>
             <Ionicons name="film-outline" size={28} color={colors.muted} />

@@ -50,6 +50,27 @@ def extract_author_handle(raw: dict[str, Any]) -> str | None:
   return None
 
 
+def extract_author_avatar_url(raw: dict[str, Any]) -> str | None:
+  for key in (
+    "authorProfilePicUrl",
+    "profile_pic_url",
+    "author_avatar_url",
+    "avatar_url",
+    "avatar",
+    "profilePicUrl",
+  ):
+    value = raw.get(key)
+    if isinstance(value, str) and value.strip():
+      return value.strip()
+  owner = raw.get("owner") or raw.get("user") or {}
+  if isinstance(owner, dict):
+    for key in ("profile_pic_url_hd", "profile_pic_url", "avatar_url"):
+      value = owner.get(key)
+      if isinstance(value, str) and value.strip():
+        return value.strip()
+  return None
+
+
 def extract_media_kind(raw: dict[str, Any]) -> str:
   typename = str(raw.get("__typename") or "")
   is_video = bool(raw.get("is_video"))
@@ -341,6 +362,7 @@ def trim_post_info(raw: dict[str, Any]) -> dict[str, Any]:
     "places": extract_places(raw),
     "hashtags": extract_hashtags_from_raw(raw, caption),
     "thumbnail_url": extract_thumbnail_url(raw),
+    "author_avatar_url": extract_author_avatar_url(raw),
     "slide_media_urls": tuple(extract_slide_image_urls(raw)),
   }
 

@@ -217,18 +217,21 @@ export function CollectionsPage({ posts, places }: CollectionsPageProps) {
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
+                      position: "relative",
                     }}
                   >
+                    <span style={{ fontSize: "18px", opacity: 0.35 }}>📍</span>
                     {thumb ? (
                       <img
                         src={thumb}
                         alt=""
                         loading="lazy"
-                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                        style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+                        onError={(e) => {
+                          e.currentTarget.style.display = "none";
+                        }}
                       />
-                    ) : (
-                      <span style={{ fontSize: "18px", opacity: 0.35 }}>📍</span>
-                    )}
+                    ) : null}
                   </div>
                 );
               })}

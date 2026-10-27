@@ -456,19 +456,32 @@ def _maybe_persist_preview_thumbnail(
   title: str,
   author: str | None,
   thumbnail_url: str | None,
-) -> None:
-  if not thumbnail_url:
-    return
+  avatar_url: str | None = None,
+) -> tuple[str | None, str | None]:
+  if not thumbnail_url and not avatar_url:
+    return thumbnail_url, avatar_url
   try:
     from dataclasses import replace
+    from travelplanner.media.thumbnails import persist_avatar, persist_thumbnail
     from travelplanner.models import Platform, SavedPost, make_post_id
     from travelplanner.store import load_post, save_post
 
     post_id = make_post_id(Platform.INSTAGRAM, shortcode)
+    durable_thumb = persist_thumbnail(post_id, thumbnail_url) if thumbnail_url else None
+    durable_avatar = persist_avatar(author or post_id, avatar_url) if avatar_url else None
+
+    final_thumb = durable_thumb or thumbnail_url
+    final_avatar = durable_avatar or avatar_url
+
     existing_p = load_post(Platform.INSTAGRAM, shortcode)
     if existing_p:
-      if not existing_p.thumbnail_url:
-        save_post(replace(existing_p, thumbnail_url=thumbnail_url))
+      save_post(
+        replace(
+          existing_p,
+          thumbnail_url=final_thumb or existing_p.thumbnail_url,
+          author_avatar_url=final_avatar or existing_p.author_avatar_url,
+        )
+      )
     else:
       save_post(
         SavedPost(
@@ -478,12 +491,15 @@ def _maybe_persist_preview_thumbnail(
           media_kind="reel",
           caption=title,
           author_handle=author or None,
-          thumbnail_url=thumbnail_url,
+          thumbnail_url=final_thumb,
+          author_avatar_url=final_avatar,
           title=title,
         )
       )
+    return final_thumb, final_avatar
   except Exception as exc:
     logger.debug("could not persist preview thumbnail for %s: %s", shortcode, exc)
+    return thumbnail_url, avatar_url
 
 
 _PREVIEW_CACHE: dict[str, tuple[float, LinkPreviewResponse]] = {}
@@ -699,13 +715,14 @@ def get_link_preview(
   # 2. Fast unauthenticated public OpenGraph fetch (<1s)
   og_data = _fetch_instagram_public_og(shortcode)
   if og_data and og_data.get("thumbnail_url"):
-    _maybe_persist_preview_thumbnail(
+    durable_thumb, _ = _maybe_persist_preview_thumbnail(
       shortcode,
       clean_url,
       og_data["title"],
       og_data.get("author"),
       og_data.get("thumbnail_url"),
     )
+    final_thumb = durable_thumb or og_data.get("thumbnail_url")
     resp = LinkPreviewResponse(
       url=clean_url,
       platform="instagram",
@@ -713,7 +730,7 @@ def get_link_preview(
       title=og_data["title"],
       caption=og_data.get("caption", ""),
       author=og_data.get("author"),
-      thumbnail_url=og_data.get("thumbnail_url"),
+      thumbnail_url=final_thumb,
       is_available=True,
       status="available",
     )
@@ -751,13 +768,14 @@ def get_link_preview(
       logger.info("preview answered by source=browserless (unavailable) for shortcode=%s", shortcode)
       return resp
     if browserless_data.get("thumbnail_url"):
-      _maybe_persist_preview_thumbnail(
+      durable_thumb, _ = _maybe_persist_preview_thumbnail(
         shortcode,
         clean_url,
         browserless_data["title"],
         browserless_data.get("author"),
         browserless_data.get("thumbnail_url"),
       )
+      final_thumb = durable_thumb or browserless_data.get("thumbnail_url")
       resp = LinkPreviewResponse(
         url=clean_url,
         platform="instagram",
@@ -765,7 +783,7 @@ def get_link_preview(
         title=browserless_data["title"],
         caption=browserless_data.get("caption", ""),
         author=browserless_data.get("author"),
-        thumbnail_url=browserless_data.get("thumbnail_url"),
+        thumbnail_url=final_thumb,
         is_available=True,
         status="available",
       )
@@ -795,7 +813,15 @@ def get_link_preview(
       else (f"Reel by @{author}" if author else "Instagram Reel")
     )
     if thumbnail_url:
-      _maybe_persist_preview_thumbnail(shortcode, clean_url, snippet, author, thumbnail_url)
+      durable_thumb, _ = _maybe_persist_preview_thumbnail(
+        shortcode,
+        clean_url,
+        snippet,
+        author,
+        thumbnail_url,
+        avatar_url=trimmed.get("author_avatar_url"),
+      )
+      thumbnail_url = durable_thumb or thumbnail_url
     resp = LinkPreviewResponse(
       url=clean_url,
       platform="instagram",

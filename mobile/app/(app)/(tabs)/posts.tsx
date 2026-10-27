@@ -30,6 +30,7 @@ export default function PostsScreen() {
   const [activeTab, setActiveTab] = useState<"reels" | "places">("reels");
   const [query, setQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<string>("all");
+  const [failedPlaceThumbs, setFailedPlaceThumbs] = useState<Record<string, boolean>>({});
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -214,8 +215,13 @@ export default function PostsScreen() {
                     style={styles.placeRow}
                   >
                     <View style={[styles.placeThumb, { backgroundColor: vis.tint }]}>
-                      {thumb ? (
-                        <Image source={{ uri: thumb }} style={styles.placeThumbImg} resizeMode="cover" />
+                      {thumb && !failedPlaceThumbs[place.place_id] ? (
+                        <Image
+                          source={{ uri: thumb }}
+                          style={styles.placeThumbImg}
+                          resizeMode="cover"
+                          onError={() => setFailedPlaceThumbs((prev) => ({ ...prev, [place.place_id]: true }))}
+                        />
                       ) : (
                         <Text style={{ fontSize: 24 }}>{vis.glyph}</Text>
                       )}

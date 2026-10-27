@@ -10,6 +10,7 @@ import { EditPostModal } from "../components/EditPostModal";
 import { useSavePipeline } from "../state/SavePipelineContext";
 import { useToast } from "../state/ToastContext";
 import { deletePost, parsePostId, type SavedPost, type Place } from "../../api";
+import { proxiedMediaUrl } from "../../postDisplayUtils";
 import { CANONICAL_CATEGORIES, getCategoryVisual } from "../categoryVisuals";
 
 interface LibraryPageProps {
@@ -565,13 +566,20 @@ export function LibraryPage({ posts, places = [], loading, onRefresh }: LibraryP
                       alignItems: "center",
                       justifyContent: "center",
                       flexShrink: 0,
+                      position: "relative",
                     }}
                   >
+                    <span style={{ fontSize: "24px" }}>{vis.glyph}</span>
                     {thumb ? (
-                      <img src={thumb} alt={place.display_name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                    ) : (
-                      <span style={{ fontSize: "24px" }}>{vis.glyph}</span>
-                    )}
+                      <img
+                        src={proxiedMediaUrl(thumb) || ""}
+                        alt={place.display_name}
+                        style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+                        onError={(e) => {
+                          e.currentTarget.style.display = "none";
+                        }}
+                      />
+                    ) : null}
                   </div>
 
                   <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "3px" }}>

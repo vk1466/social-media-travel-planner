@@ -72,6 +72,7 @@ class SavedPost:
   video_analysis: str | None = None
   slide_media_urls: tuple[str, ...] = ()
   title: str | None = None
+  author_avatar_url: str | None = None
 
 
 @dataclass(frozen=True)

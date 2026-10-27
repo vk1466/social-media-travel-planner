@@ -565,15 +565,23 @@ export function MapPage({ places, posts, loading }: MapPageProps) {
                     justifyContent: "center",
                   }}
                 >
-                  {thumbnail ? (
+                  <span style={{ fontSize: "24px" }}>{visual.glyph}</span>
+                  {thumbnail && (
                     <img
                       src={thumbnail}
                       alt={p.display_name}
-                      style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                      style={{
+                        position: "absolute",
+                        inset: 0,
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                      }}
                       loading="lazy"
+                      onError={(e) => {
+                        e.currentTarget.style.display = "none";
+                      }}
                     />
-                  ) : (
-                    <span style={{ fontSize: "24px" }}>{visual.glyph}</span>
                   )}
                 </div>
 

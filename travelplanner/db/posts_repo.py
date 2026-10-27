@@ -194,6 +194,7 @@ def post_from_dict(data: dict) -> SavedPost:
     video_analysis=data.get("video_analysis"),
     slide_media_urls=tuple(item for item in data.get("slide_media_urls", []) if isinstance(item, str)),
     title=data.get("title"),
+    author_avatar_url=data.get("author_avatar_url"),
   )
 
 

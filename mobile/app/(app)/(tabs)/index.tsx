@@ -23,6 +23,7 @@ export default function MobileHomeScreen() {
   const insets = useSafeAreaInsets();
   const { posts, places, loading } = useLibrary();
   const [pasteInput, setPasteInput] = useState("");
+  const [failedThumbs, setFailedThumbs] = useState<Record<string, boolean>>({});
 
   const hasSaves = posts.length > 0;
 
@@ -208,11 +209,12 @@ export default function MobileHomeScreen() {
                   style={styles.reelCard}
                 >
                   <View style={styles.reelThumbContainer}>
-                    {thumbUrl ? (
+                    {thumbUrl && !failedThumbs[`post_${post.post_id}`] ? (
                       <Image
                         source={{ uri: thumbUrl }}
                         style={styles.reelThumbImage}
                         resizeMode="cover"
+                        onError={() => setFailedThumbs((prev) => ({ ...prev, [`post_${post.post_id}`]: true }))}
                       />
                     ) : (
                       <View style={[styles.reelThumbImage, styles.thumbFallback]}>
@@ -298,8 +300,13 @@ export default function MobileHomeScreen() {
                       style={styles.cityCard}
                     >
                       <View style={styles.cityThumbWrap}>
-                        {img ? (
-                          <Image source={{ uri: img }} style={styles.cityImage} resizeMode="cover" />
+                        {img && !failedThumbs[`city_${city.name}`] ? (
+                          <Image
+                            source={{ uri: img }}
+                            style={styles.cityImage}
+                            resizeMode="cover"
+                            onError={() => setFailedThumbs((prev) => ({ ...prev, [`city_${city.name}`]: true }))}
+                          />
                         ) : (
                           <View style={[styles.cityImage, styles.cityFallback]}>
                             <Ionicons name="location" size={24} color={colors.accent} />
@@ -343,8 +350,13 @@ export default function MobileHomeScreen() {
                       style={styles.rediscoverCard}
                     >
                       <View style={[styles.rediscoverThumb, { backgroundColor: vis.tint }]}>
-                        {thumb ? (
-                          <Image source={{ uri: thumb }} style={styles.rediscoverImg} resizeMode="cover" />
+                        {thumb && !failedThumbs[`place_${place.place_id}`] ? (
+                          <Image
+                            source={{ uri: thumb }}
+                            style={styles.rediscoverImg}
+                            resizeMode="cover"
+                            onError={() => setFailedThumbs((prev) => ({ ...prev, [`place_${place.place_id}`]: true }))}
+                          />
                         ) : (
                           <Text style={{ fontSize: 24 }}>{vis.glyph}</Text>
                         )}

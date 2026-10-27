@@ -28,6 +28,7 @@ export function LinkSubmitForm({
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewData, setPreviewData] = useState<LinkPreview | null>(null);
+  const [previewImgError, setPreviewImgError] = useState(false);
   const [showValidationError, setShowValidationError] = useState(false);
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const parsed = useMemo(() => parseLinkLines(text), [text]);
@@ -36,11 +37,13 @@ export function LinkSubmitForm({
     if (parsed.valid.length !== 1) {
       setPreviewLoading(false);
       setPreviewData(null);
+      setPreviewImgError(false);
       return;
     }
     const singleUrl = parsed.valid[0];
     let cancelled = false;
     setPreviewLoading(true);
+    setPreviewImgError(false);
     const timer = setTimeout(async () => {
       try {
         const data = await fetchLinkPreview(singleUrl);
@@ -268,10 +271,11 @@ export function LinkSubmitForm({
 
       {!previewLoading && previewData && previewData.is_available && previewData.status !== "unavailable" && (
         <View style={styles.previewCard}>
-          {previewData.thumbnail_url ? (
+          {previewData.thumbnail_url && !previewImgError ? (
             <Image
               source={{ uri: proxiedMediaUrl(previewData.thumbnail_url) ?? previewData.thumbnail_url }}
               style={styles.previewThumb}
+              onError={() => setPreviewImgError(true)}
             />
           ) : (
             <View style={[styles.previewThumb, styles.previewThumbFallback]}>

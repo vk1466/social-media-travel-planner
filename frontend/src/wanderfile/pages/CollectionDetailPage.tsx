@@ -103,18 +103,26 @@ export function CollectionDetailPage({ posts }: CollectionDetailPageProps) {
               <div
                 style={{
                   height: "200px",
-                  background: post.thumbnail_url
-                    ? `url(${proxiedMediaUrl(post.thumbnail_url)}) center/cover no-repeat`
-                    : "var(--wf-surface-2, #E8E6DF)",
+                  background: "var(--wf-surface-2, #E8E6DF)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   color: "var(--wf-text-muted)",
+                  position: "relative",
+                  overflow: "hidden",
                 }}
               >
-                {!post.thumbnail_url && (
-                  <span style={{ fontSize: "28px" }}>📌</span>
-                )}
+                <span style={{ fontSize: "28px" }}>📌</span>
+                {post.thumbnail_url ? (
+                  <img
+                    src={proxiedMediaUrl(post.thumbnail_url) || post.thumbnail_url}
+                    alt={post.caption || "Saved post"}
+                    style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+                    onError={(e) => {
+                      e.currentTarget.style.display = "none";
+                    }}
+                  />
+                ) : null}
               </div>
               <div style={{ padding: "16px" }}>
                 <div style={{ fontSize: "16px", fontWeight: 700, lineHeight: 1.35 }}>

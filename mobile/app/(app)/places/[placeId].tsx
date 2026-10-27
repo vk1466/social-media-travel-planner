@@ -101,6 +101,8 @@ export default function PlaceDetailScreen() {
   const [isVisited, setIsVisited] = useState(false);
   const [visitedSaving, setVisitedSaving] = useState(false);
   const [visitedError, setVisitedError] = useState<string | null>(null);
+  const [heroImgError, setHeroImgError] = useState(false);
+  const [reelImgErrors, setReelImgErrors] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     let cancelled = false;
@@ -244,8 +246,12 @@ export default function PlaceDetailScreen() {
       <View style={styles.main}>
         {/* Place Detail Hero with real proxied thumbnail */}
         <View style={styles.heroCard}>
-          {heroImageUrl ? (
-            <Image source={{ uri: heroImageUrl }} style={styles.heroImage} />
+          {heroImageUrl && !heroImgError ? (
+            <Image
+              source={{ uri: heroImageUrl }}
+              style={styles.heroImage}
+              onError={() => setHeroImgError(true)}
+            />
           ) : (
             <View style={styles.heroImageFallback} />
           )}
@@ -433,10 +439,18 @@ export default function PlaceDetailScreen() {
                       }
                     }}
                   >
-                    {thumb ? (
-                      <Image source={{ uri: thumb }} style={styles.sourceThumb} />
+                    {thumb && !reelImgErrors[post.post_id] ? (
+                      <Image
+                        source={{ uri: thumb }}
+                        style={styles.sourceThumb}
+                        onError={() =>
+                          setReelImgErrors((prev) => ({ ...prev, [post.post_id]: true }))
+                        }
+                      />
                     ) : (
-                      <View style={[styles.sourceThumb, styles.sourceThumbEmpty]} />
+                      <View style={[styles.sourceThumb, styles.sourceThumbEmpty]}>
+                        <Ionicons name="film-outline" size={18} color={colors.muted} />
+                      </View>
                     )}
                     <View style={styles.sourceCopy}>
                       <Text style={styles.sourceTitle} numberOfLines={2}>

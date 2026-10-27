@@ -47,6 +47,7 @@ export default function PostDetailScreen() {
   const [editTitle, setEditTitle] = useState("");
   const [editCategory, setEditCategory] = useState("other");
   const [savingEdit, setSavingEdit] = useState(false);
+  const [heroError, setHeroError] = useState(false);
 
   const handleOpenEdit = () => {
     if (!post) return;
@@ -210,9 +211,14 @@ export default function PostDetailScreen() {
   return (
     <DetailSheetChrome>
       <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
-      {thumb ? (
+      {thumb && !heroError ? (
         <View style={styles.heroWrap}>
-          <Image source={{ uri: thumb }} style={styles.hero} resizeMode="cover" />
+          <Image
+            source={{ uri: thumb }}
+            style={styles.hero}
+            resizeMode="cover"
+            onError={() => setHeroError(true)}
+          />
         </View>
       ) : null}
 

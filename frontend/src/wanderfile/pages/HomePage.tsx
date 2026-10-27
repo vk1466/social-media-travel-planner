@@ -679,13 +679,20 @@ export function HomePage({ posts, places, loading, loadError, onRefresh }: HomeP
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
+                          position: "relative",
                         }}
                       >
+                        <span style={{ fontSize: "22px" }}>{vis.glyph}</span>
                         {thumb ? (
-                          <img src={thumb} alt={place.display_name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                        ) : (
-                          <span style={{ fontSize: "22px" }}>{vis.glyph}</span>
-                        )}
+                          <img
+                            src={thumb}
+                            alt={place.display_name}
+                            style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+                            onError={(e) => {
+                              e.currentTarget.style.display = "none";
+                            }}
+                          />
+                        ) : null}
                       </div>
 
                       <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "3px" }}>

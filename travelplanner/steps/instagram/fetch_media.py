@@ -79,6 +79,7 @@ def fetch_media(ctx: IngestContext) -> IngestContext:
     top_comments=trimmed["top_comments"],
     places=trimmed["places"],
     thumbnail_url=trimmed["thumbnail_url"],
+    author_avatar_url=trimmed.get("author_avatar_url"),
     slide_media_urls=trimmed.get("slide_media_urls", ()),
     fetched_at=datetime.now(tz=UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
   )

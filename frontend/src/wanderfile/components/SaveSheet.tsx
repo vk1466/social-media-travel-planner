@@ -470,28 +470,28 @@ export function SaveSheet() {
                           position: "relative",
                         }}
                       >
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ opacity: 0.6 }}>
+                          <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+                          <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+                          <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+                        </svg>
                         {previewData.thumbnail_url ? (
                           <img
                             src={proxiedMediaUrl(previewData.thumbnail_url) || previewData.thumbnail_url}
                             alt="Preview thumbnail"
                             style={{
+                              position: "absolute",
+                              inset: 0,
                               width: "100%",
                               height: "100%",
                               objectFit: "cover",
                             }}
                             onError={(e) => {
-                              // On error, fall back to Instagram icon
+                              // On error, hide image to reveal fallback SVG
                               e.currentTarget.style.display = "none";
                             }}
                           />
                         ) : null}
-                        {(!previewData.thumbnail_url) && (
-                          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
-                            <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
-                            <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
-                          </svg>
-                        )}
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "4px", minWidth: 0 }}>

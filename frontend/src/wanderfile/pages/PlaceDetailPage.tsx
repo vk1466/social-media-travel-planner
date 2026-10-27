@@ -145,6 +145,7 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
     : "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80";
 
   const displayName = capitalizePlaceName(place.display_name);
+  const placeVisual = getCategoryVisual(place.category);
   const cleanTitle = (displayName || place.display_name || "").trim().toLowerCase();
   const rawTitle = (place.display_name || "").trim().toLowerCase();
   const stripThe = (s: string) => s.trim().toLowerCase().replace(/^the\s+/, "");
@@ -313,11 +314,32 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
         <div
           className="wf-place-hero-image"
           style={{
-            backgroundImage: `url(${heroImageUrl})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
+            position: "relative",
+            background: "var(--wf-surface-2)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            overflow: "hidden",
           }}
-        />
+        >
+          <span style={{ fontSize: "48px" }}>{placeVisual.glyph}</span>
+          {heroImageUrl && (
+            <img
+              src={heroImageUrl}
+              alt={displayName || place.display_name}
+              style={{
+                position: "absolute",
+                inset: 0,
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+              }}
+              onError={(e) => {
+                e.currentTarget.style.display = "none";
+              }}
+            />
+          )}
+        </div>
 
         <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
           <div style={{ minWidth: 0 }}>
@@ -639,36 +661,39 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
                   transition: "background 0.15s ease",
                 }}
               >
-                {rp.thumbnail_url ? (
-                  <img
-                    src={proxiedMediaUrl(rp.thumbnail_url) || ""}
-                    alt=""
-                    style={{
-                      width: "56px",
-                      height: "56px",
-                      borderRadius: "12px",
-                      objectFit: "cover",
-                      flexShrink: 0,
-                      background: "var(--wf-surface-2, #EAE7DF)",
-                    }}
-                  />
-                ) : (
-                  <div
-                    style={{
-                      width: "56px",
-                      height: "56px",
-                      borderRadius: "12px",
-                      background: "var(--wf-surface-2, #E8E6DF)",
-                      color: "var(--wf-text-muted)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      flexShrink: 0,
-                    }}
-                  >
-                    📍
-                  </div>
-                )}
+                <div
+                  style={{
+                    width: "56px",
+                    height: "56px",
+                    borderRadius: "12px",
+                    overflow: "hidden",
+                    position: "relative",
+                    flexShrink: 0,
+                    background: "var(--wf-surface-2, #E8E6DF)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "var(--wf-text-muted)",
+                  }}
+                >
+                  <span style={{ fontSize: "20px" }}>🎬</span>
+                  {rp.thumbnail_url && (
+                    <img
+                      src={proxiedMediaUrl(rp.thumbnail_url) || ""}
+                      alt=""
+                      style={{
+                        position: "absolute",
+                        inset: 0,
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                      }}
+                      onError={(e) => {
+                        e.currentTarget.style.display = "none";
+                      }}
+                    />
+                  )}
+                </div>
                 <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "4px" }}>
                   <div
                     style={{

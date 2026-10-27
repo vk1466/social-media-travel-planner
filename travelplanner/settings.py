@@ -322,6 +322,12 @@ def timeline_imports_bucket() -> str | None:
   return value or None
 
 
+def blob_read_write_token() -> str | None:
+  """Vercel Blob token (unset = fall back to S3 MEDIA_BUCKET)."""
+  value = os.getenv("BLOB_READ_WRITE_TOKEN", "").strip()
+  return value or None
+
+
 def media_bucket() -> str | None:
   """S3 bucket for durable post thumbnails (unset = skip persistence)."""
   value = os.getenv("MEDIA_BUCKET", "").strip()

@@ -79,6 +79,7 @@ export default function TravelScreen() {
   const [fitKey, setFitKey] = useState<number>(0);
   const [updatingVisit, setUpdatingVisit] = useState(false);
   const [measuredHeaderHeight, setMeasuredHeaderHeight] = useState(0);
+  const [failedThumbs, setFailedThumbs] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     void fetchVisitedPlaceIds()
@@ -320,10 +321,11 @@ export default function TravelScreen() {
                   style={styles.browseRow}
                 >
                   <View style={styles.browseThumb}>
-                    {thumb ? (
+                    {thumb && !failedThumbs[`browse_${place.place_id}`] ? (
                       <Image
                         source={{ uri: thumb }}
                         style={styles.browseImage}
+                        onError={() => setFailedThumbs((prev) => ({ ...prev, [`browse_${place.place_id}`]: true }))}
                       />
                     ) : (
                       <View style={styles.browseImageFallback} />
@@ -536,10 +538,11 @@ export default function TravelScreen() {
           {/* Place info */}
           <View style={styles.sheetInfoRow}>
             <View style={styles.sheetPhotoWrap}>
-              {selectedPlace && placeImageMap.get(selectedPlace.place_id) ? (
+              {selectedPlace && placeImageMap.get(selectedPlace.place_id) && !failedThumbs[`sheet_${selectedPlace.place_id}`] ? (
                 <Image
                   source={{ uri: proxiedMediaUrl(placeImageMap.get(selectedPlace.place_id)!) || placeImageMap.get(selectedPlace.place_id)! }}
                   style={styles.sheetPhoto}
+                  onError={() => setFailedThumbs((prev) => ({ ...prev, [`sheet_${selectedPlace.place_id}`]: true }))}
                 />
               ) : (
                 <View style={styles.sheetPhotoFallback} />
@@ -693,8 +696,12 @@ export default function TravelScreen() {
                   ]}
                 >
                   <View style={styles.reelThumbWrap}>
-                    {thumb ? (
-                      <Image source={{ uri: thumb }} style={styles.reelThumb} />
+                    {thumb && !failedThumbs[`reel_${reel.post_id}`] ? (
+                      <Image
+                        source={{ uri: thumb }}
+                        style={styles.reelThumb}
+                        onError={() => setFailedThumbs((prev) => ({ ...prev, [`reel_${reel.post_id}`]: true }))}
+                      />
                     ) : (
                       <View style={styles.reelThumbFallback}>
                         <Ionicons name="film-outline" size={20} color="#FFFFFF" />
