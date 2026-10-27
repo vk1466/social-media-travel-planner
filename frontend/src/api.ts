@@ -432,8 +432,41 @@ export interface LinkPreview {
   error_message?: string;
 }
 
-export async function fetchLinkPreview(url: string): Promise<LinkPreview> {
-  return request<LinkPreview>(`/api/preview?url=${encodeURIComponent(url.trim())}`);
+const previewClientCache = new Map<string, LinkPreview>();
+
+export async function fetchLinkPreview(url: string, timeoutMs = 3500): Promise<LinkPreview> {
+  const trimmed = url.trim();
+  const cached = previewClientCache.get(trimmed);
+  if (cached) {
+    return cached;
+  }
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const data = await request<LinkPreview>(
+      `/api/preview?url=${encodeURIComponent(trimmed)}`,
+      { signal: controller.signal }
+    );
+    clearTimeout(timer);
+    if (data && data.status !== "unavailable") {
+      previewClientCache.set(trimmed, data);
+    }
+    return data;
+  } catch {
+    clearTimeout(timer);
+    const shortcodeMatch = trimmed.match(/(?:reel|p)\/([A-Za-z0-9_-]+)/);
+    const shortcode = shortcodeMatch ? shortcodeMatch[1] : undefined;
+    return {
+      url: trimmed,
+      platform: "instagram",
+      shortcode,
+      title: "Instagram Reel",
+      is_available: true,
+      status: "unknown",
+    };
+  }
 }
 
 export async function startIngest(links: string[], refresh: boolean): Promise<string> {

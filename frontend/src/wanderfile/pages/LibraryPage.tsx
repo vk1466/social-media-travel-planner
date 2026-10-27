@@ -199,7 +199,15 @@ export function LibraryPage({ posts, places = [], loading, onRefresh }: LibraryP
             Library
           </h1>
           <p style={{ margin: "4px 0 0", fontSize: "14px", color: "var(--ink-2, #5E636B)" }}>
-            {activeTab === "reels" ? `${filteredPosts.length} reels saved` : `${filteredPlaces.length} spots saved`}
+            {activeTab === "reels" ? (
+              (activeCategory !== "all" || activeCity !== "all" || searchQuery.trim())
+                ? `Showing ${filteredPosts.length} of ${availablePosts.length} reels${activeCity !== "all" ? ` in ${activeCity}` : ""}`
+                : `${availablePosts.length} reels saved`
+            ) : (
+              (activeCategory !== "all" || activeCity !== "all" || searchQuery.trim())
+                ? `Showing ${filteredPlaces.length} of ${places.length} spots${activeCity !== "all" ? ` in ${activeCity}` : ""}`
+                : `${places.length} spots saved`
+            )}
           </p>
         </div>
 
@@ -228,7 +236,7 @@ export function LibraryPage({ posts, places = [], loading, onRefresh }: LibraryP
               transition: "all 0.15s ease",
             }}
           >
-            Reels ({availablePosts.length})
+            Reels ({(activeCategory !== "all" || activeCity !== "all" || searchQuery.trim()) ? `${filteredPosts.length}/${availablePosts.length}` : availablePosts.length})
           </button>
           <button
             type="button"
@@ -245,7 +253,7 @@ export function LibraryPage({ posts, places = [], loading, onRefresh }: LibraryP
               transition: "all 0.15s ease",
             }}
           >
-            Places ({places.length})
+            Places ({(activeCategory !== "all" || activeCity !== "all" || searchQuery.trim()) ? `${filteredPlaces.length}/${places.length}` : places.length})
           </button>
         </div>
       </div>

@@ -577,8 +577,11 @@ def _fetch_instagram_public_og(shortcode: str) -> dict[str, Any] | None:
   return None
 
 
-def _check_instagram_embed_unavailable(shortcode: str) -> bool:
-  """Fast unauthenticated check via Instagram embed endpoint to detect broken/removed posts (<0.5s)."""
+def _fetch_instagram_embed_preview(shortcode: str) -> dict[str, Any] | None:
+  """Fast unauthenticated check & metadata extraction via Instagram captioned embed (<0.8s).
+  Returns dict with unavailable: True, or rich metadata (thumbnail_url, author, title, caption).
+  """
+  import html as html_module
   import re
   import ssl
   import urllib.request
@@ -592,20 +595,64 @@ def _check_instagram_embed_unavailable(shortcode: str) -> bool:
     headers={"User-Agent": "Mozilla/5.0", "Accept-Language": "en-US,en;q=0.9"},
   )
   try:
-    with urllib.request.urlopen(req, timeout=3.5, context=ssl_ctx) as resp:
+    with urllib.request.urlopen(req, timeout=3.0, context=ssl_ctx) as resp:
       text = resp.read().decode("utf-8", errors="ignore")
       clean = re.sub(r"<(script|style)[^>]*>.*?</\1>", "", text, flags=re.DOTALL)
       stripped = re.sub(r"<[^>]+>", " ", clean).lower()
-      return (
+      if (
         "may be broken, or the post may have been removed" in stripped
         or "the link to this photo or video may be broken" in stripped
-      )
+      ):
+        return {"unavailable": True}
+
+      # Extract thumbnail
+      img_m = re.search(r'<img[^>]+class=[\"\'][^\"\']*EmbeddedMediaImage[^\"\']*[\"\'][^>]+src=[\"\'](.*?)[\"\']', text)
+      if not img_m:
+        img_m = re.search(r'<img[^>]+src=[\"\'](https://[^\"\']+)[\"\']', text)
+      thumb = html_module.unescape(img_m.group(1)) if img_m else None
+
+      # Extract author
+      author = None
+      author_m = re.search(r'class=[\"\']CaptionUsername[\"\'][^>]*>([^<]+)</a>', text)
+      if not author_m:
+        author_m = re.search(r'class=[\"\']UsernameText[\"\'][^>]*>([^<]+)</div>', text)
+      if author_m:
+        author = author_m.group(1).strip()
+
+      # Extract caption
+      caption = ""
+      cap_m = re.search(r'<div[^>]+class=[\"\']Caption[\"\'][^>]*>(.*?)</div>', text, re.DOTALL)
+      if cap_m:
+        raw_cap = re.sub(r'<br\s*/?>', '\n', cap_m.group(1))
+        raw_cap = re.sub(r'<div class="CaptionComments".*?</div>', '', raw_cap, flags=re.DOTALL)
+        clean_cap = re.sub(r'<[^>]+>', '', raw_cap).strip()
+        if author and clean_cap.startswith(author):
+          clean_cap = clean_cap[len(author):].strip()
+        caption = html_module.unescape(clean_cap)
+
+      first_line = caption.split('\n')[0].strip() if caption else ""
+      snippet = first_line or (f"Reel by @{author}" if author else "Instagram Reel")
+
+      if thumb or author or caption:
+        return {
+          "unavailable": False,
+          "thumbnail_url": thumb,
+          "author": author,
+          "caption": caption,
+          "title": snippet,
+        }
   except urllib.error.HTTPError as e:
     if e.code in (404, 410):
-      return True
+      return {"unavailable": True}
   except Exception as exc:
-    logger.debug("embed check failed shortcode=%s: %s", shortcode, exc)
-  return False
+    logger.debug("embed preview failed shortcode=%s: %s", shortcode, exc)
+  return None
+
+
+def _check_instagram_embed_unavailable(shortcode: str) -> bool:
+  """Fast unauthenticated check via Instagram embed endpoint to detect broken/removed posts (<0.5s)."""
+  res = _fetch_instagram_embed_preview(shortcode)
+  return bool(res and res.get("unavailable"))
 
 
 def _fetch_browserless_preview(shortcode: str) -> dict[str, Any] | None:
@@ -761,19 +808,47 @@ def get_link_preview(
     logger.info("preview answered by source=public_og for shortcode=%s", shortcode)
     return resp
 
-  # 3. Fast embed check to detect deleted/broken posts (<0.5s)
-  if _check_instagram_embed_unavailable(shortcode):
-    resp = LinkPreviewResponse(
-      url=clean_url,
-      platform="instagram",
-      shortcode=shortcode,
-      is_available=False,
-      status="unavailable",
-      error_message="Private or deleted post",
-    )
-    _PREVIEW_CACHE[shortcode] = (time.monotonic(), resp)
-    logger.info("preview answered by source=embed_check (unavailable) for shortcode=%s", shortcode)
-    return resp
+  # 3. Fast captioned embed fetch (<0.8s) - provides thumbnail, author, and caption
+  embed_data = _fetch_instagram_embed_preview(shortcode)
+  if embed_data:
+    if embed_data.get("unavailable"):
+      resp = LinkPreviewResponse(
+        url=clean_url,
+        platform="instagram",
+        shortcode=shortcode,
+        is_available=False,
+        status="unavailable",
+        error_message="Private or deleted post",
+      )
+      _PREVIEW_CACHE[shortcode] = (time.monotonic(), resp)
+      logger.info("preview answered by source=embed_check (unavailable) for shortcode=%s", shortcode)
+      return resp
+
+    if embed_data.get("thumbnail_url") or embed_data.get("author"):
+      durable_thumb = None
+      if embed_data.get("thumbnail_url"):
+        durable_thumb, _ = _maybe_persist_preview_thumbnail(
+          shortcode,
+          clean_url,
+          embed_data["title"],
+          embed_data.get("author"),
+          embed_data.get("thumbnail_url"),
+        )
+      final_thumb = durable_thumb or embed_data.get("thumbnail_url")
+      resp = LinkPreviewResponse(
+        url=clean_url,
+        platform="instagram",
+        shortcode=shortcode,
+        title=embed_data["title"],
+        caption=embed_data.get("caption", ""),
+        author=embed_data.get("author"),
+        thumbnail_url=final_thumb,
+        is_available=True,
+        status="available",
+      )
+      _PREVIEW_CACHE[shortcode] = (time.monotonic(), resp)
+      logger.info("preview answered by source=embed_preview for shortcode=%s", shortcode)
+      return resp
 
   # 4. Browserless fallback check (fast headless verification ~2s)
   browserless_data = _fetch_browserless_preview(shortcode)
@@ -814,12 +889,12 @@ def get_link_preview(
       logger.info("preview answered by source=browserless (og_tags) for shortcode=%s", shortcode)
       return resp
 
-  # 4. Mindcase fetch with 6.0s timeout
+  # 5. Mindcase fetch with 2.0s timeout
   try:
     from travelplanner.clients.mindcase import fetch_post
     from travelplanner.steps.instagram.media import trim_post_info
 
-    raw = fetch_post(post_url=clean_url, shortcode=shortcode, timeout_seconds=6.0)
+    raw = fetch_post(post_url=clean_url, shortcode=shortcode, timeout_seconds=2.0)
     trimmed = trim_post_info(raw)
     caption = trimmed.get("caption") or ""
     first_line = caption.split("\n")[0].strip() if caption else ""

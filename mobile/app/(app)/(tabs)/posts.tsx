@@ -76,12 +76,21 @@ export default function PostsScreen() {
     return list;
   }, [places, activeCategory, query]);
 
+  const hasFilter = activeCategory !== "all" || query.trim().length > 0;
+
   return (
     <View style={styles.container}>
       {/* Header & Controls Area */}
       <View style={[styles.headerArea, { paddingTop: Math.max(insets.top + 8, 16) }]}>
         <View style={styles.topRow}>
-          <Text style={styles.screenHeading}>Library</Text>
+          <View>
+            <Text style={styles.screenHeading}>Library</Text>
+            <Text style={styles.subtitle}>
+              {activeTab === "reels"
+                ? (hasFilter ? `Showing ${filteredPosts.length} of ${posts.length} reels` : `${posts.length} reels saved`)
+                : (hasFilter ? `Showing ${filteredPlaces.length} of ${places.length} spots` : `${places.length} spots saved`)}
+            </Text>
+          </View>
 
           {/* Segmented Reels | Places Toggle */}
           <View style={styles.segmentedToggle}>
@@ -98,7 +107,7 @@ export default function PostsScreen() {
                   activeTab === "reels" && styles.segmentTextActive,
                 ]}
               >
-                Reels ({posts.length})
+                Reels ({hasFilter ? `${filteredPosts.length}/${posts.length}` : posts.length})
               </Text>
             </Pressable>
 
@@ -115,7 +124,7 @@ export default function PostsScreen() {
                   activeTab === "places" && styles.segmentTextActive,
                 ]}
               >
-                Places ({places.length})
+                Places ({hasFilter ? `${filteredPlaces.length}/${places.length}` : places.length})
               </Text>
             </Pressable>
           </View>
@@ -280,6 +289,11 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     letterSpacing: -0.5,
     color: colors.ink,
+  },
+  subtitle: {
+    fontSize: 13,
+    color: colors.muted,
+    marginTop: 2,
   },
   segmentedToggle: {
     flexDirection: "row",

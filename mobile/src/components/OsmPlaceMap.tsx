@@ -314,7 +314,7 @@ function buildMapHtml(isDark = false): string {
       font-size: 14px;
       transform: scale(1.2);
     }
-    .marker-cluster, .marker-cluster-small, .marker-cluster-medium, .marker-cluster-large {
+    .marker-cluster-small, .marker-cluster-medium, .marker-cluster-large, .marker-cluster {
       background-color: transparent !important;
     }
     .marker-cluster div, .marker-cluster-small div, .marker-cluster-medium div, .marker-cluster-large div {
@@ -355,7 +355,7 @@ function buildMapHtml(isDark = false): string {
       zoomAnimation: true
     });
     L.control.attribution({ position: "bottomleft", prefix: false }).addTo(map);
-    var openFreeMapStyle = ${JSON.stringify(isDark ? "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json" : "https://tiles.openfreemap.org/styles/positron")};
+    var openFreeMapStyle = ${JSON.stringify(isDark ? "https://tiles.openfreemap.org/styles/dark" : "https://tiles.openfreemap.org/styles/positron")};
     if (typeof L.maplibreGL === "function") {
       L.maplibreGL({
         style: openFreeMapStyle
@@ -419,13 +419,13 @@ function buildMapHtml(isDark = false): string {
         return;
       }
       if (places.length === 1) {
-        map.setView([places[0].lat, places[0].lng], 13, { animate: false });
+        map.setView([places[0].lat, places[0].lng], 14, { animate: false });
         return;
       }
       map.fitBounds(places.map(function (place) { return [place.lat, place.lng]; }), {
         paddingTopLeft: [30, 80],
         paddingBottomRight: [30, 140],
-        maxZoom: 13,
+        maxZoom: 14,
         animate: false
       });
     }

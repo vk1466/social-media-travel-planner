@@ -1,5 +1,5 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -67,6 +67,8 @@ export default function TravelScreen() {
   const { posts, places, loading, error, refresh, refreshToken } = useLibrary();
   const { platforms } = useLibraryPlatform();
   const [pane, setPane] = useState<Pane>("map");
+  const { city: initialCity } = useLocalSearchParams<{ city?: string }>();
+  const [cityFilter, setCityFilter] = useState<string | null>(initialCity || null);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
@@ -80,6 +82,12 @@ export default function TravelScreen() {
   const [updatingVisit, setUpdatingVisit] = useState(false);
   const [measuredHeaderHeight, setMeasuredHeaderHeight] = useState(0);
   const [failedThumbs, setFailedThumbs] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    if (initialCity) {
+      setCityFilter(initialCity);
+    }
+  }, [initialCity]);
 
   useEffect(() => {
     void fetchVisitedPlaceIds()
@@ -117,6 +125,13 @@ export default function TravelScreen() {
 
   const statusPlaces = useMemo(() => {
     let list = platformPlaces;
+    if (cityFilter) {
+      const lowerCity = cityFilter.toLowerCase();
+      list = list.filter((place) => {
+        const rawPlace = placesById.get(place.placeId);
+        return rawPlace?.location?.city?.toLowerCase() === lowerCity;
+      });
+    }
     if (categoryFilter !== "all") {
       list = list.filter((place) => {
         const rawPlace = placesById.get(place.placeId);
@@ -130,7 +145,30 @@ export default function TravelScreen() {
       return list.filter((place) => !place.visited);
     }
     return list;
-  }, [platformPlaces, categoryFilter, statusFilter, placesById]);
+  }, [platformPlaces, cityFilter, categoryFilter, statusFilter, placesById]);
+
+  // Fit bounds to all saved places on load or when city filter changes
+  useEffect(() => {
+    if (places.length === 0) return;
+    if (cityFilter) {
+      const lowerCity = cityFilter.toLowerCase();
+      const cityPids = places
+        .filter((p) => p.location?.city?.toLowerCase() === lowerCity && typeof p.location?.latitude === "number")
+        .map((p) => p.place_id);
+      if (cityPids.length > 0) {
+        setFitPlaceIds(cityPids);
+        setFitKey((k) => k + 1);
+        return;
+      }
+    }
+    const mappable = places
+      .filter((p) => typeof p.location?.latitude === "number" && typeof p.location?.longitude === "number")
+      .map((p) => p.place_id);
+    if (mappable.length > 0) {
+      setFitPlaceIds(mappable);
+      setFitKey((k) => k + 1);
+    }
+  }, [cityFilter, places]);
 
   const searching = searchQuery.trim().length > 0;
 
