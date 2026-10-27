@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -138,9 +138,15 @@ class SavedPostSchema(BaseModel):
   trip_tips: list[str] = Field(default_factory=list)
   image_text: str | None = None
   transcript: str | None = None
+  transcript_is_music: bool = False
+  expected_place_count: int | None = None
+  secondary_categories: list[str] = Field(default_factory=list)
+  extracted_fashion: dict[str, Any] | None = None
+  extracted_hair: dict[str, Any] | None = None
   video_analysis: str | None = None
   slide_media_urls: list[str] = Field(default_factory=list)
   title: str | None = None
+  author_avatar_url: str | None = None
 
 
 class UpdatePostRequest(BaseModel):

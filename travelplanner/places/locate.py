@@ -601,6 +601,16 @@ def locate_mention_debug(
       anchor_lon,
       half_span_degrees=PARENT_VIEWBOX_HALF_SPAN,
     )
+  elif anchor_cache and anchor_cache.get("__post_anchor__"):
+    post_anchor = anchor_cache["__post_anchor__"]
+    if post_anchor is not None:
+      anchor_lat, anchor_lon = post_anchor
+      viewbox = geocoder.viewbox_around(
+        anchor_lat,
+        anchor_lon,
+        half_span_degrees=PARENT_VIEWBOX_HALF_SPAN,
+      )
+      notes.append(f"using post/dominant anchor bias ({anchor_lat:.4f}, {anchor_lon:.4f})")
 
   # Coords present: reverse + forward near the pin, then reconcile.
   if mention.latitude is not None and mention.longitude is not None:

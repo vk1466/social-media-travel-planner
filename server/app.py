@@ -121,7 +121,10 @@ def _dedupe_links(links: list[str]) -> list[str]:
 
 
 def _post_to_schema(post: SavedPost) -> SavedPostSchema:
-  return SavedPostSchema(**post_to_dict(post))
+  data = post_to_dict(post)
+  if post.transcript_is_music:
+    data["transcript"] = None
+  return SavedPostSchema(**data)
 
 
 _SOURCE_REF_REGEX = re.compile(

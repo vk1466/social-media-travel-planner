@@ -213,6 +213,16 @@ export function PostDetailPage({ posts, onRefresh }: PostDetailPageProps) {
                   @{post.author_handle.replace(/^@/, "")}
                 </span>
               )}
+              {post.like_count != null && (
+                <span style={{ fontSize: "13px", color: "var(--wf-text-muted)", fontWeight: 500, display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                  <span>♥</span> {post.like_count.toLocaleString()}
+                </span>
+              )}
+              {post.comment_count != null && (
+                <span style={{ fontSize: "13px", color: "var(--wf-text-muted)", fontWeight: 500, display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                  <span>💬</span> {post.comment_count.toLocaleString()}
+                </span>
+              )}
             </div>
 
             <h1 className="wf-type-h1" style={{ margin: "0 0 12px", color: "var(--wf-text)" }}>
@@ -306,9 +316,26 @@ export function PostDetailPage({ posts, onRefresh }: PostDetailPageProps) {
         }}
       >
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: "16px" }}>
-          <h2 className="wf-type-h2" style={{ margin: 0 }}>
-            Extracted places ({extractedPlaces.length})
-          </h2>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+            <h2 className="wf-type-h2" style={{ margin: 0 }}>
+              Extracted places ({extractedPlaces.length})
+            </h2>
+            {post.expected_place_count && extractedPlaces.length < post.expected_place_count && (
+              <span
+                style={{
+                  fontSize: "12px",
+                  fontWeight: 600,
+                  padding: "2px 8px",
+                  borderRadius: "999px",
+                  background: "rgba(234, 88, 12, 0.15)",
+                  color: "#ea580c",
+                  border: "1px solid rgba(234, 88, 12, 0.3)",
+                }}
+              >
+                {extractedPlaces.length} of {post.expected_place_count} places found
+              </span>
+            )}
+          </div>
           <button
             type="button"
             onClick={() => setShowAddPlace((prev) => !prev)}
@@ -433,6 +460,98 @@ export function PostDetailPage({ posts, onRefresh }: PostDetailPageProps) {
           </div>
         )}
       </section>
+
+      {/* Trip Tips Section */}
+      {post.trip_tips && post.trip_tips.length > 0 && (
+        <section
+          style={{
+            background: "var(--wf-surface)",
+            border: "1px solid var(--wf-border)",
+            borderRadius: "var(--wf-radius-card)",
+            padding: "24px",
+            marginBottom: "24px",
+            boxShadow: "var(--wf-shadow-card)",
+          }}
+        >
+          <h2 className="wf-type-h2" style={{ margin: "0 0 16px" }}>
+            Trip Tips ({post.trip_tips.length})
+          </h2>
+          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+            {post.trip_tips.map((tip, idx) => (
+              <div key={idx} style={{ display: "flex", gap: "10px", alignItems: "baseline" }}>
+                <span style={{ color: "var(--wf-primary)", fontWeight: 700 }}>•</span>
+                <span style={{ fontSize: "15px", lineHeight: "22px", color: "var(--wf-text)" }}>{tip}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Top Comments Section */}
+      {post.top_comments && post.top_comments.length > 0 && (
+        <section
+          style={{
+            background: "var(--wf-surface)",
+            border: "1px solid var(--wf-border)",
+            borderRadius: "var(--wf-radius-card)",
+            padding: "24px",
+            marginBottom: "24px",
+            boxShadow: "var(--wf-shadow-card)",
+          }}
+        >
+          <h2 className="wf-type-h2" style={{ margin: "0 0 16px" }}>
+            Top Comments
+          </h2>
+          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+            {post.top_comments.map((comment, idx) => (
+              <div
+                key={idx}
+                style={{
+                  padding: "10px 14px",
+                  borderRadius: "var(--wf-radius-control)",
+                  background: "var(--wf-surface-2)",
+                  fontSize: "14px",
+                  lineHeight: "20px",
+                  color: "var(--wf-text)",
+                  fontStyle: "italic",
+                }}
+              >
+                "{comment}"
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* On-screen Text (OCR) Section */}
+      {post.image_text && (
+        <section
+          style={{
+            background: "var(--wf-surface)",
+            border: "1px solid var(--wf-border)",
+            borderRadius: "var(--wf-radius-card)",
+            padding: "20px",
+            marginBottom: "24px",
+            boxShadow: "var(--wf-shadow-card)",
+          }}
+        >
+          <h2 className="wf-type-h2" style={{ margin: "0 0 12px", fontSize: "17px" }}>
+            On-screen Text (OCR)
+          </h2>
+          <p
+            style={{
+              margin: 0,
+              fontSize: "13px",
+              lineHeight: "20px",
+              color: "var(--wf-text-muted)",
+              whiteSpace: "pre-wrap",
+              wordBreak: "break-word",
+            }}
+          >
+            {post.image_text}
+          </p>
+        </section>
+      )}
 
       {/* Collapsible Caption Section */}
       {post.caption && (

@@ -191,10 +191,16 @@ def post_from_dict(data: dict) -> SavedPost:
     trip_tips=tuple(item for item in data.get("trip_tips", []) if isinstance(item, str)),
     image_text=data.get("image_text"),
     transcript=data.get("transcript"),
+    transcript_is_music=data.get("transcript_is_music") is True,
+    expected_place_count=data.get("expected_place_count"),
+    secondary_categories=tuple(item for item in data.get("secondary_categories", []) if isinstance(item, str)),
+    extracted_fashion=data.get("extracted_fashion") if isinstance(data.get("extracted_fashion"), dict) else None,
+    extracted_hair=data.get("extracted_hair") if isinstance(data.get("extracted_hair"), dict) else None,
     video_analysis=data.get("video_analysis"),
     slide_media_urls=tuple(item for item in data.get("slide_media_urls", []) if isinstance(item, str)),
     title=data.get("title"),
     author_avatar_url=data.get("author_avatar_url"),
+    tagged_users=tuple(item for item in data.get("tagged_users", []) if isinstance(item, dict)),
   )
 
 

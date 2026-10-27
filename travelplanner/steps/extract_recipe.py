@@ -14,14 +14,25 @@ def extract_recipe(ctx: IngestContext) -> IngestContext:
   """Extract a source-grounded, possibly incomplete recipe from a food post."""
   if not FeatureFlag.get("food_recipes") or ctx.post is None:
     return ctx
-  bundle = ctx.content_bundle or content_bundle_from_post(ctx.post, transcript=ctx.transcript, image_text=ctx.image_text, video_analysis=ctx.video_analysis)
+  effective_transcript = (
+    None if getattr(ctx, "transcript_is_music", False) else ctx.transcript
+  )
+  bundle = ctx.content_bundle or content_bundle_from_post(
+    ctx.post,
+    transcript=effective_transcript,
+    image_text=ctx.image_text,
+    video_analysis=ctx.video_analysis,
+  )
   ctx.content_bundle = bundle
   return replace_context_post(ctx, fetch_recipe_from_snippets(snippets_from_bundle(bundle)))
 
 
 def replace_context_post(ctx: IngestContext, recipe: ExtractedRecipe | None) -> IngestContext:
   if recipe is not None and ctx.post is not None:
-    ctx.post = replace(ctx.post, extracted_recipe=recipe)
+    updates: dict[str, Any] = {"extracted_recipe": recipe}
+    if not ctx.post.title and recipe.title:
+      updates["title"] = recipe.title
+    ctx.post = replace(ctx.post, **updates)
   return ctx
 
 

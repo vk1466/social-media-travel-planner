@@ -65,7 +65,17 @@ def test_close_steps_dispatch_by_category() -> None:
   ]
   assert food_steps == RECIPE_CLOSE_STEPS
 
-  skip_name, skip_steps = close_steps_for_category("fashion")
+  fashion_name, fashion_steps = close_steps_for_category("fashion")
+  assert fashion_name == "instagram_fashion_close"
+  assert len(fashion_steps) == 1
+  assert fashion_steps[0].name == "extract_fashion"
+
+  hair_name, hair_steps = close_steps_for_category("hairstyle")
+  assert hair_name == "instagram_hairstyle_close"
+  assert len(hair_steps) == 1
+  assert hair_steps[0].name == "extract_hairstyle"
+
+  skip_name, skip_steps = close_steps_for_category("other")
   assert skip_name == "instagram_close_skipped"
   assert skip_steps == ()
 

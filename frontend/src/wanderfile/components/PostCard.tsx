@@ -191,12 +191,20 @@ export function PostCard({ post, onEdit, onDelete, onAddToCollection, style }: P
               fontSize: "13px",
               lineHeight: "18px",
               color: "var(--wf-text-muted)",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              gap: "6px",
             }}
           >
-            {captionLine}
+            <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>
+              {captionLine}
+            </span>
+            {post.like_count != null && post.like_count > 0 && (
+              <span style={{ fontSize: "11px", fontWeight: 600, color: "var(--wf-text-muted)", flexShrink: 0 }}>
+                ♥ {post.like_count >= 1000 ? `${(post.like_count / 1000).toFixed(1)}k` : post.like_count}
+              </span>
+            )}
           </div>
         </div>
       </Link>

@@ -227,6 +227,17 @@ export default function PostDetailScreen() {
         <Text style={styles.title}>{getPostTitle(post)}</Text>
         {authorMeta ? <Text style={styles.meta}>{authorMeta}</Text> : null}
 
+        {Boolean(post.like_count != null || post.comment_count != null) && (
+          <View style={styles.statsRow}>
+            {post.like_count != null ? (
+              <Text style={styles.statsChip}>♥ {post.like_count.toLocaleString()}</Text>
+            ) : null}
+            {post.comment_count != null ? (
+              <Text style={styles.statsChip}>💬 {post.comment_count.toLocaleString()}</Text>
+            ) : null}
+          </View>
+        )}
+
         {post.reel_summary ? <Text style={styles.copy}>{post.reel_summary}</Text> : null}
         {post.caption ? <Text style={styles.copy}>{post.caption}</Text> : null}
 
@@ -373,6 +384,16 @@ export default function PostDetailScreen() {
 
         {(post.place_ids.length > 0 || extracted.length > 0) && (
           <View style={styles.placesSection}>
+            {Boolean(
+              post.expected_place_count &&
+                extracted.length < post.expected_place_count
+            ) && (
+              <View style={styles.coverageBadge}>
+                <Text style={styles.coverageBadgeText}>
+                  {extracted.length} of {post.expected_place_count} places found
+                </Text>
+              </View>
+            )}
             {post.place_ids.map((placeId) => (
               <Pressable
                 key={placeId}
@@ -409,6 +430,34 @@ export default function PostDetailScreen() {
               })}
           </View>
         )}
+
+        {post.trip_tips && post.trip_tips.length > 0 ? (
+          <View style={styles.cardSection}>
+            <Text style={styles.sectionHeading}>Trip Tips ({post.trip_tips.length})</Text>
+            {post.trip_tips.map((tip, i) => (
+              <View key={i} style={styles.bulletRow}>
+                <Text style={styles.bulletDot}>•</Text>
+                <Text style={styles.bulletText}>{tip}</Text>
+              </View>
+            ))}
+          </View>
+        ) : null}
+
+        {post.top_comments && post.top_comments.length > 0 ? (
+          <View style={styles.cardSection}>
+            <Text style={styles.sectionHeading}>Top Comments</Text>
+            {post.top_comments.map((comment, i) => (
+              <Text key={i} style={styles.commentText}>"{comment}"</Text>
+            ))}
+          </View>
+        ) : null}
+
+        {post.image_text ? (
+          <View style={styles.cardSection}>
+            <Text style={styles.sectionHeading}>On-screen Text (OCR)</Text>
+            <Text style={styles.ocrText}>{post.image_text}</Text>
+          </View>
+        ) : null}
 
         <View style={styles.actions}>
           <Pressable
@@ -546,8 +595,70 @@ const styles = StyleSheet.create({
     letterSpacing: -0.5,
     lineHeight: 34,
   },
-  meta: { color: colors.muted, fontSize: 12, marginBottom: spacing.md },
+  meta: { color: colors.muted, fontSize: 12, marginBottom: spacing.sm },
+  statsRow: {
+    flexDirection: "row",
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  statsChip: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: colors.muted,
+    backgroundColor: colors.surfaceAlt,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: radius.pill,
+  },
   copy: { color: colors.ink, fontSize: 14, lineHeight: 22, marginBottom: spacing.md },
+  cardSection: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.md,
+    marginBottom: spacing.lg,
+    gap: spacing.xs,
+  },
+  sectionHeading: {
+    color: colors.ink,
+    fontSize: 16,
+    fontWeight: "800",
+    marginBottom: spacing.xs,
+  },
+  bulletRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 8,
+    marginVertical: 2,
+  },
+  bulletDot: {
+    color: colors.brand,
+    fontSize: 14,
+    fontWeight: "800",
+    lineHeight: 20,
+  },
+  bulletText: {
+    flex: 1,
+    color: colors.ink,
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  commentText: {
+    color: colors.ink,
+    fontSize: 13,
+    lineHeight: 19,
+    fontStyle: "italic",
+    backgroundColor: colors.surfaceAlt,
+    padding: 8,
+    borderRadius: radius.sm,
+    marginVertical: 2,
+  },
+  ocrText: {
+    color: colors.muted,
+    fontSize: 13,
+    lineHeight: 19,
+  },
   recipeSection: { marginBottom: spacing.lg },
   recipeSectionLabel: {
     color: colors.brand,
@@ -576,6 +687,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   recipeMeta: { color: colors.muted, fontSize: 13, marginBottom: 8 },
+  recipeNote: { color: colors.muted, fontSize: 12, marginTop: 8, fontStyle: "italic" },
   recipePart: { marginTop: spacing.sm, paddingTop: spacing.sm, borderTopWidth: 1, borderTopColor: colors.border },
   recipeHeading: { color: colors.ink, fontSize: 14, fontWeight: "800", marginBottom: 6 },
   recipeLine: { color: colors.ink, lineHeight: 21, marginBottom: 2, flex: 1 },
@@ -607,8 +719,22 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
     borderRadius: radius.sm,
   },
-  recipeNote: { color: colors.muted, fontSize: 12, lineHeight: 17, marginTop: 12 },
   placesSection: { marginBottom: spacing.lg, gap: spacing.sm },
+  coverageBadge: {
+    alignSelf: "flex-start",
+    backgroundColor: "rgba(234, 88, 12, 0.12)",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: radius.sm,
+    borderWidth: 1,
+    borderColor: "rgba(234, 88, 12, 0.3)",
+    marginBottom: 4,
+  },
+  coverageBadgeText: {
+    color: "#ea580c",
+    fontSize: 12,
+    fontWeight: "700",
+  },
   placeLink: {
     flexDirection: "row",
     alignItems: "center",

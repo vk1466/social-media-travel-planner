@@ -348,6 +348,49 @@ def extract_slide_image_urls(
   return []
 
 
+def extract_tagged_users(raw: dict[str, Any]) -> tuple[dict[str, Any], ...]:
+  """Extract tagged users / accounts with business metadata from payload."""
+  results: list[dict[str, Any]] = []
+  seen: set[str] = set()
+
+  def _add(user_dict: dict[str, Any]) -> None:
+    username = str(user_dict.get("username") or user_dict.get("user_name") or "").strip().lstrip("@")
+    if not username or username.lower() in seen:
+      return
+    seen.add(username.lower())
+    results.append({
+      "username": username,
+      "full_name": user_dict.get("full_name") or user_dict.get("name"),
+      "category": user_dict.get("category_name") or user_dict.get("category"),
+      "address": user_dict.get("address") or user_dict.get("city_name") or user_dict.get("city"),
+      "biography": user_dict.get("biography") or user_dict.get("bio"),
+    })
+
+  edges = raw.get("edge_media_to_tagged_user", {}).get("edges", []) if isinstance(raw.get("edge_media_to_tagged_user"), dict) else []
+  for edge in edges:
+    if isinstance(edge, dict):
+      node = edge.get("node", {})
+      user = node.get("user", {}) if isinstance(node, dict) else {}
+      if isinstance(user, dict):
+        _add(user)
+
+  for key in ("tagged_users", "taggedUsers", "tagged"):
+    tags = raw.get(key)
+    if isinstance(tags, list):
+      for tag in tags:
+        if isinstance(tag, dict):
+          user = tag.get("user") if isinstance(tag.get("user"), dict) else tag
+          _add(user)
+
+  usertags = raw.get("usertags", {}).get("in", []) if isinstance(raw.get("usertags"), dict) else []
+  for tag in usertags:
+    if isinstance(tag, dict):
+      user = tag.get("user") if isinstance(tag.get("user"), dict) else tag
+      _add(user)
+
+  return tuple(results)
+
+
 def trim_post_info(raw: dict[str, Any]) -> dict[str, Any]:
   author_handle = extract_author_handle(raw)
   caption = extract_caption(raw)
@@ -364,6 +407,7 @@ def trim_post_info(raw: dict[str, Any]) -> dict[str, Any]:
     "thumbnail_url": extract_thumbnail_url(raw),
     "author_avatar_url": extract_author_avatar_url(raw),
     "slide_media_urls": tuple(extract_slide_image_urls(raw)),
+    "tagged_users": extract_tagged_users(raw),
   }
 
 

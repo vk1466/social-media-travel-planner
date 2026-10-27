@@ -22,6 +22,8 @@ class IngestContext:
   shortcode: str | None = None
   raw_payload: dict[str, Any] | None = None
   transcript: str | None = None
+  transcript_is_music: bool = False
+  expected_place_count: int | None = None
   image_text: str | None = None
   video_analysis: str | None = None
   content_bundle: ContentBundle | None = None

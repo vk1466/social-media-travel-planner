@@ -13,49 +13,62 @@ from travelplanner.image_text import download_bytes, merge_ocr_lines, ocr_image_
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_FRAME_TIMESTAMPS_SECONDS = (0.5, 2.0, 5.0, 8.0, 12.0, 15.0)
+DEFAULT_FRAME_TIMESTAMPS_SECONDS = tuple(
+  round(t * 1.5, 1) for t in range(1, 21)
+)
+
+_EXPECTED_COUNT_PATTERNS = [
+  re.compile(r"\btop\s*(\d{1,2})\b", re.IGNORECASE),
+  re.compile(
+    r"\b(\d{1,2})\s*(?:best|hidden|must[- ](?:see|visit)|favorite|secret|top|unreal|incredible)\s+"
+    r"(?:places|spots|things|cafes|restaurants|stops|gems|destinations|activities|locations|beaches|hikes|attractions)\b",
+    re.IGNORECASE,
+  ),
+  re.compile(
+    r"\b(\d{1,2})\s+(?:places|spots|things|cafes|restaurants|stops|gems|destinations|beaches|hikes|attractions)\s+"
+    r"(?:to\s+(?:visit|see|do|eat|try)|in|around|near|of)\b",
+    re.IGNORECASE,
+  ),
+  re.compile(r"\b(\d{1,2})\s+of\s+the\s+best\b", re.IGNORECASE),
+]
 
 
-def _download_video(video_url: str, dest: Path) -> bool:
-  data = download_bytes(video_url, timeout=90)
-  if not data:
-    return False
-  dest.write_bytes(data)
-  return dest.exists() and dest.stat().st_size > 0
-
-
-def _ffmpeg_exe() -> str | None:
-  try:
-    import imageio_ffmpeg
-  except ImportError:
-    logger.warning("imageio-ffmpeg not installed; reel frame OCR unavailable")
+def parse_expected_list_count(text: str | None) -> int | None:
+  """Detect expected count from phrases like 'Top 10', '10 best places', '7 things to do'."""
+  if not text or not text.strip():
     return None
-  return imageio_ffmpeg.get_ffmpeg_exe()
-
-
-def _probe_duration_seconds(video_path: Path) -> float | None:
-  ffmpeg = _ffmpeg_exe()
-  if not ffmpeg:
-    return None
-  cmd = [ffmpeg, "-i", str(video_path)]
-  proc = subprocess.run(cmd, capture_output=True, text=True)
-  match = re.search(r"Duration:\s*(\d+):(\d+):(\d+(?:\.\d+)?)", proc.stderr or "")
-  if match:
-    hours = float(match.group(1))
-    minutes = float(match.group(2))
-    seconds = float(match.group(3))
-    return hours * 3600 + minutes * 60 + seconds
+  for pattern in _EXPECTED_COUNT_PATTERNS:
+    match = pattern.search(text)
+    if match:
+      try:
+        count = int(match.group(1))
+        if 2 <= count <= 50:
+          return count
+      except (ValueError, TypeError):
+        pass
   return None
 
 
-def adaptive_frame_timestamps(duration_s: float, max_frames: int = 5) -> tuple[float, ...]:
-  """Generate timestamps spanning video key moments, especially the ending card."""
-  if duration_s <= 3.0:
+def adaptive_frame_timestamps(
+  duration_s: float,
+  max_frames: int = 30,
+  interval_s: float = 1.5,
+) -> tuple[float, ...]:
+  """Generate timestamps across video key moments (adaptive, 1 every ~1.5s, capped)."""
+  if duration_s <= 2.0:
     return (round(max(0.5, duration_s / 2.0), 1),)
-  end_card = max(1.5, duration_s - 1.5)
-  fractions = [1.0, duration_s * 0.3, duration_s * 0.6, end_card]
-  timestamps = sorted({round(max(0.5, min(t, duration_s - 0.2)), 1) for t in fractions})
-  return tuple(timestamps[:max_frames])
+
+  timestamps: list[float] = []
+  t = 0.5
+  while t < duration_s - 0.2 and len(timestamps) < max_frames - 1:
+    timestamps.append(round(t, 1))
+    t += interval_s
+
+  end_card = round(max(0.5, duration_s - 1.0), 1)
+  if end_card not in timestamps and len(timestamps) < max_frames:
+    timestamps.append(end_card)
+
+  return tuple(sorted(set(timestamps))[:max_frames])
 
 
 def _sample_frames(

@@ -730,6 +730,12 @@ export function PostDetail({
             <span className="post-deck-author">@{post.author_handle}</span>
           )}
           {dateLabel && <span className="post-deck-date">· {dateLabel}</span>}
+          {post.like_count != null && (
+            <span className="post-deck-badge" title="Likes">♥ {post.like_count.toLocaleString()}</span>
+          )}
+          {post.comment_count != null && (
+            <span className="post-deck-badge" title="Comments">💬 {post.comment_count.toLocaleString()}</span>
+          )}
           {post.slide_media_urls && post.slide_media_urls.length > 1 && (
             <span className="post-deck-badge">📷 {post.slide_media_urls.length} slides</span>
           )}
@@ -864,11 +870,28 @@ export function PostDetail({
         {/* ── Right Column: Places Directory ───────────────────────────── */}
         <div className="post-deck-right-col">
           <div className="post-deck-places-head">
-            <h3 className="post-deck-places-title">
-              {detailItems.length > 0
-                ? `Places Mentioned (${detailItems.length})`
-                : "Post Details"}
-            </h3>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+              <h3 className="post-deck-places-title">
+                {detailItems.length > 0
+                  ? `Places Mentioned (${detailItems.length})`
+                  : "Post Details"}
+              </h3>
+              {post.expected_place_count && detailItems.length < post.expected_place_count && (
+                <span
+                  style={{
+                    fontSize: "11px",
+                    fontWeight: 600,
+                    padding: "2px 8px",
+                    borderRadius: "999px",
+                    background: "rgba(234, 88, 12, 0.15)",
+                    color: "#ea580c",
+                    border: "1px solid rgba(234, 88, 12, 0.3)",
+                  }}
+                >
+                  {detailItems.length} of {post.expected_place_count} places found
+                </span>
+              )}
+            </div>
             {topAction && (
               topAction.type === "road_trip" ? (
                 <button

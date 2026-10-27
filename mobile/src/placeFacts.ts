@@ -27,6 +27,10 @@ export function stripSourceRef(text: string): string {
 
 export function factsStructuredRows(facts: PlaceFacts): { label: string; value: string }[] {
   const rows: { label: string; value: string }[] = [];
+  if (facts.rating != null) {
+    const reviews = facts.reviews_count ? ` (${facts.reviews_count.toLocaleString()})` : "";
+    rows.push({ label: "Rating", value: `★ ${facts.rating.toFixed(1)}${reviews}` });
+  }
   if (facts.famous_for) rows.push({ label: "Famous for", value: stripSourceRef(facts.famous_for) });
   if (facts.admission_text) rows.push({ label: "Admission", value: stripSourceRef(facts.admission_text) });
   if (facts.opening_hours_text.length > 0) {

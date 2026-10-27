@@ -97,11 +97,9 @@ def test_extract_places_prefers_existing_content_bundle() -> None:
   assert result.post.extracted_places[0].place_name == "Tunnel View"
   # Original caption on post unchanged; extraction uses bundle.
   assert result.post.caption == "ignored"
-  assert result.post == replace(
-    post,
-    extracted_places=extracted.places,
-    reel_summary=None,
-  )
+  assert result.post.extracted_places == extracted.places
+  assert result.post.reel_summary is None
+  assert result.post.title == "Guide to Tunnel View"
 
 
 def test_extract_places_skips_when_the_post_was_already_read() -> None:

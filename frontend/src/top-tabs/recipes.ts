@@ -1,4 +1,5 @@
 import type { ExtractedRecipe, RecipeIngredient, SavedPost } from "../api";
+import { getPostTitle } from "../postDisplayUtils";
 
 export interface SavedRecipe {
   key: string;
@@ -11,7 +12,7 @@ export function recipesFromPosts(posts: SavedPost[]): SavedRecipe[] {
     key: post.post_id,
     post,
     recipe: post.extracted_recipe ?? {
-      title: post.caption.trim().slice(0, 80) || "Food inspiration",
+      title: getPostTitle(post) || "Food inspiration",
       summary: post.caption || null,
       ingredients: [],
       steps: [],

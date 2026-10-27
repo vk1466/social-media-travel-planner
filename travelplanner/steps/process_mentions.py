@@ -24,13 +24,51 @@ def process_mentions(ctx: IngestContext) -> IngestContext:
   ctx.place_library = library
   mentions = mentions_from_post(post)
   anchor_cache: dict[str, tuple[float, float] | None] = {}
+  post_anchor: tuple[float, float] | None = None
+  if post.places:
+    tag = post.places[0]
+    if tag.latitude is not None and tag.longitude is not None:
+      post_anchor = (tag.latitude, tag.longitude)
+    elif tag.place_name:
+      from travelplanner.clients.geocoder import geocode
+
+      try:
+        loc = geocode(tag.place_name)
+        if loc:
+          post_anchor = (loc.latitude, loc.longitude)
+      except Exception:
+        pass
+
+  if post_anchor is None and mentions:
+    from collections import Counter
+
+    city_pairs = [
+      (m.city.strip().title(), (m.country or "").strip().title())
+      for m in mentions
+      if m.city and m.city.strip()
+    ]
+    if city_pairs:
+      (dom_city, dom_country), count = Counter(city_pairs).most_common(1)[0]
+      from travelplanner.clients.geocoder import geocode
+
+      try:
+        loc = geocode(f"{dom_city}, {dom_country}".strip(", "))
+        if loc:
+          post_anchor = (loc.latitude, loc.longitude)
+      except Exception:
+        pass
+
+  if post_anchor is not None:
+    anchor_cache["__post_anchor__"] = post_anchor
+
   place_ids: list[str] = list(ctx.place_ids)
   outcomes: list[LocateOutcome] = list(ctx.place_outcomes)
 
   logger.info(
-    "process_mentions start post_id=%s mentions=%d",
+    "process_mentions start post_id=%s mentions=%d anchor=%s",
     source_post_id,
     len(mentions),
+    post_anchor,
   )
 
   for mention in mentions:

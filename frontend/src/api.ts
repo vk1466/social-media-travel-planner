@@ -208,6 +208,10 @@ export interface SavedPost {
   video_analysis?: string | null;
   slide_media_urls?: string[];
   title?: string | null;
+  expected_place_count?: number | null;
+  secondary_categories?: string[];
+  extracted_fashion?: Record<string, any> | null;
+  extracted_hair?: Record<string, any> | null;
 }
 
 /** Split a global post_id (`platform:native`) for API routes and navigation. */

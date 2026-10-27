@@ -305,3 +305,80 @@ def test_fetch_places_from_reel_parses_structured_response(monkeypatch) -> None:
   assert result.places[0].parent_place_name == "Lake Tahoe"
   assert result.places[0].details == "Scenic overlook on the west shore."
   assert result.places[0].tips == ("Go at sunrise",)
+
+
+def test_truncate_at_word_boundary() -> None:
+  from travelplanner.extract import truncate_at_word_boundary
+
+  assert truncate_at_word_boundary("Short title", 60) == "Short title"
+  long_text = "This is a wonderfully expansive and comprehensive travel itinerary exploring beautiful spots in Italy"
+  truncated = truncate_at_word_boundary(long_text, 50)
+  assert len(truncated) <= 50
+  assert truncated.endswith("…")
+  # Ensure it does not cut mid-word (no partial words before ellipsis)
+  without_ellipsis = truncated[:-1]
+  assert not without_ellipsis.endswith(" ")
+  # The last word should be a complete word from original text
+  last_word = without_ellipsis.split()[-1]
+  assert last_word in long_text
+
+
+def test_generate_clean_title() -> None:
+  from travelplanner.extract import generate_clean_title
+  from travelplanner.place_hints import ExtractedPlace
+
+  places = (
+    ExtractedPlace(place_name="Colosseum", city="Rome", country="Italy"),
+    ExtractedPlace(place_name="Pantheon", city="Rome", country="Italy"),
+  )
+  title = generate_clean_title(
+    caption="📍 Rome highlights #travel #rome",
+    summary="A 3-day itinerary covering the best historic sites in Rome.",
+    places=places,
+  )
+  assert "Rome" in title
+  assert len(title) <= 60
+  assert "#" not in title
+
+
+def test_resolve_handle_to_place_candidate() -> None:
+  from travelplanner.extract import resolve_handle_to_place_candidate
+
+  # With profile data
+  profile = {
+    "full_name": "Osteria Da Fortunata",
+    "category": "Italian Restaurant",
+    "address": "Via del Pellegrino 19, Rome",
+    "biography": "Fresh handmade pasta daily",
+  }
+  res = resolve_handle_to_place_candidate("osteriadafortunata", profile)
+  assert res["place_name"] == "Osteria Da Fortunata"
+  assert res["category"] == "Italian Restaurant"
+  assert "Rome" in res["address"]
+
+  # Without profile data (heuristic fallback)
+  res_heuristic = resolve_handle_to_place_candidate("@trattoria_vecchia_roma")
+  assert res_heuristic["place_name"] == "Trattoria Vecchia Roma"
+  assert res_heuristic["category"] == "venue"
+
+
+def test_snippets_with_tagged_users() -> None:
+  from travelplanner.extract import ContentBundle, snippets_from_bundle
+
+  bundle = ContentBundle(
+    caption="Dinner at @da_enzo_trastevere was unreal! Best cacio e pepe in town.",
+    tagged_users=(
+      {
+        "username": "da_enzo_trastevere",
+        "full_name": "Da Enzo al 29",
+        "category": "Trattoria",
+        "address": "Rome, Italy",
+      },
+    ),
+  )
+  snippets = snippets_from_bundle(bundle)
+  account_snippets = [s for s in snippets if s.source == "mentioned_account"]
+  assert len(account_snippets) == 1
+  assert "Da Enzo al 29" in account_snippets[0].text
+  assert "Trattoria" in account_snippets[0].text
+

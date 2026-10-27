@@ -69,3 +69,23 @@ def test_classify_content_stores_other_when_jev_is_unsure() -> None:
     result = classify_content(ctx)
   assert result.post is not None
   assert result.post.content_category == "other"
+
+
+def test_classify_content_detects_secondary_categories() -> None:
+  post = SavedPost(
+    post_id=make_post_id(Platform.INSTAGRAM, "food_travel"),
+    post_url="https://www.instagram.com/reel/food_travel/",
+    platform=Platform.INSTAGRAM,
+    media_kind="reel",
+    caption="Top 5 places to visit in Rome and my secret carbonara recipe with 3 tbsp pecorino and 2 eggs!",
+  )
+  ctx = IngestContext(post_url=post.post_url, user_id="u1", post=post)
+  with patch(
+    "travelplanner.steps.classify_content.category_from_text",
+    return_value="travel",
+  ):
+    result = classify_content(ctx)
+  assert result.post is not None
+  assert result.post.content_category == "travel"
+  assert "food" in result.post.secondary_categories
+

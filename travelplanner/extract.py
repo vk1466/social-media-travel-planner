@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Sequence
 
@@ -22,6 +23,13 @@ logger = logging.getLogger(__name__)
 PLACE_EXTRACT_SCHEMA: dict[str, Any] = {
   "type": "object",
   "properties": {
+    "title": {
+      "type": ["string", "null"],
+      "description": (
+        "Clean, concise English headline/title for this post (<= 60 chars, no emoji, no hashtags, never cut mid-word). "
+        "Captures the destination, theme, or guide topic (e.g. '10 Best Places to Visit in Tokyo' or 'Hidden Waterfalls in Oregon')."
+      ),
+    },
     "reel_summary": {
       "type": ["string", "null"],
       "description": (
@@ -246,6 +254,9 @@ class ContentSnippet:
   text: str
 
 
+Snippet = ContentSnippet
+
+
 @dataclass(frozen=True)
 class ContentBundle:
   """Named content fields; converted to ContentSnippet list before extract."""
@@ -259,6 +270,7 @@ class ContentBundle:
   video_analysis: str | None = None
   image_text: str | None = None
   author_handle: str | None = None
+  tagged_users: tuple[dict[str, Any], ...] = ()
 
 
 ReelBundle = ContentBundle
@@ -269,6 +281,7 @@ class ContentExtraction:
   places: tuple[ExtractedPlace, ...] = ()
   reel_summary: str | None = None
   trip_tips: tuple[str, ...] = ()
+  title: str | None = None
 
 
 ReelExtraction = ContentExtraction
@@ -283,9 +296,39 @@ _SOURCE_HEADERS: dict[str, str] = {
   "location_tag": "LOCATION TAG",
   "hashtags": "HASHTAGS",
   "top_comments": "TOP COMMENTS",
+  "mentioned_account": "MENTIONED ACCOUNT / TAGGED USER",
 }
 
-_INLINE_SOURCES = frozenset({"author_handle", "location_tag", "hashtags"})
+_INLINE_SOURCES = frozenset({"author_handle", "location_tag", "hashtags", "mentioned_account"})
+
+
+def resolve_handle_to_place_candidate(
+  handle: str,
+  profile_data: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+  """Resolve an @handle into business name, category, and address/bio."""
+  clean_handle = handle.strip().lstrip("@")
+  if profile_data:
+    name = (
+      profile_data.get("full_name")
+      or profile_data.get("name")
+      or clean_handle.replace("_", " ").replace(".", " ").title()
+    )
+    return {
+      "handle": clean_handle,
+      "place_name": name,
+      "category": profile_data.get("category") or profile_data.get("category_name") or "business",
+      "address": profile_data.get("address") or profile_data.get("city") or "",
+      "bio": profile_data.get("biography") or profile_data.get("bio") or "",
+    }
+  human_name = clean_handle.replace("_", " ").replace(".", " ").title()
+  return {
+    "handle": clean_handle,
+    "place_name": human_name,
+    "category": "venue",
+    "address": "",
+    "bio": "",
+  }
 
 
 def snippets_from_bundle(bundle: ContentBundle) -> tuple[ContentSnippet, ...]:
@@ -340,6 +383,36 @@ def snippets_from_bundle(bundle: ContentBundle) -> tuple[ContentSnippet, ...]:
     comment_lines = "\n".join(f"- {comment}" for comment in bundle.top_comments)
     snippets.append(ContentSnippet(source="top_comments", text=comment_lines))
 
+  # Tagged users and caption @mentions
+  tagged_by_handle: dict[str, dict[str, Any]] = {}
+  for tag in bundle.tagged_users:
+    uname = str(tag.get("username") or "").strip().lstrip("@").lower()
+    if uname:
+      tagged_by_handle[uname] = tag
+
+  caption_mentions = re.findall(r"@([A-Za-z0-9._]{1,30})", bundle.caption)
+  author_handle_clean = (bundle.author_handle or "").strip().lstrip("@").lower()
+
+  all_handles: list[str] = list(tagged_by_handle.keys())
+  for m in caption_mentions:
+    m_clean = m.strip().lstrip("@").lower()
+    if m_clean and m_clean not in all_handles and m_clean != author_handle_clean:
+      all_handles.append(m_clean)
+
+  for handle in all_handles:
+    profile = tagged_by_handle.get(handle)
+    resolved = resolve_handle_to_place_candidate(handle, profile)
+    parts: list[str] = [f"@{handle}"]
+    if resolved.get("place_name"):
+      parts.append(f"Name: {resolved['place_name']}")
+    if resolved.get("category"):
+      parts.append(f"Category: {resolved['category']}")
+    if resolved.get("address"):
+      parts.append(f"Address/City: {resolved['address']}")
+    if resolved.get("bio"):
+      parts.append(f"Bio: {resolved['bio']}")
+    snippets.append(ContentSnippet(source="mentioned_account", text=" | ".join(parts)))
+
   return tuple(snippets)
 
 
@@ -361,6 +434,7 @@ def content_bundle_from_post(
     image_text=image_text,
     video_analysis=video_analysis,
     video_summary=post.reel_summary,
+    tagged_users=getattr(post, "tagged_users", ()),
   )
 
 
@@ -466,6 +540,69 @@ def content_extraction_from_payload(data: dict[str, Any] | None) -> ContentExtra
   return _parse_content_extraction(data)
 
 
+def truncate_at_word_boundary(text: str, max_length: int = 60) -> str:
+  text = (text or "").strip()
+  if not text or len(text) <= max_length:
+    return text
+  sub = text[: max_length - 1]
+  last_space = sub.rfind(" ")
+  if last_space > int(max_length * 0.4):
+    return f"{sub[:last_space].rstrip()}…"
+  return f"{sub.rstrip()}…"
+
+
+def generate_clean_title(
+  caption: str | None,
+  summary: str | None = None,
+  places: Sequence[ExtractedPlace] = (),
+  max_length: int = 60,
+) -> str:
+  """Derive a clean, concise English title (<= max_length) without cutting mid-word."""
+  if summary and summary.strip():
+    cleaned_summary = summary.strip()
+    first_sentence = re.split(r"[.!?]\s+", cleaned_summary)[0].strip()
+    if 10 <= len(first_sentence) <= max_length:
+      return first_sentence
+    if len(cleaned_summary) > max_length:
+      return truncate_at_word_boundary(cleaned_summary, max_length)
+    return cleaned_summary
+
+  if places:
+    cities = [p.city for p in places if p.city]
+    if cities:
+      from collections import Counter
+
+      common_city = Counter(cities).most_common(1)[0][0]
+      if len(places) > 1:
+        candidate = f"{len(places)} Best Places in {common_city}"
+        if len(candidate) <= max_length:
+          return candidate
+      else:
+        candidate = f"Visiting {places[0].place_name} in {common_city}"
+        if len(candidate) <= max_length:
+          return candidate
+    elif len(places) == 1:
+      candidate = f"Guide to {places[0].place_name}"
+      if len(candidate) <= max_length:
+        return candidate
+    elif len(places) > 1:
+      candidate = f"Exploring {places[0].place_name} and More"
+      if len(candidate) <= max_length:
+        return candidate
+
+  cap = (caption or "").strip()
+  if not cap:
+    return "Untitled Post"
+
+  first_line = cap.split("\n")[0].strip()
+  cleaned = re.sub(r"[#@][A-Za-z0-9_.]+", "", first_line)
+  cleaned = re.sub(r"^[\d\s.\-•*📍✨👉]+", "", cleaned).strip()
+  if cleaned:
+    return truncate_at_word_boundary(cleaned, max_length)
+
+  return truncate_at_word_boundary(first_line, max_length)
+
+
 def _parse_content_extraction(data: dict[str, Any] | None) -> ContentExtraction:
   if not data:
     return ContentExtraction()
@@ -477,10 +614,13 @@ def _parse_content_extraction(data: dict[str, Any] | None) -> ContentExtraction:
       for tip in (_optional_str(value) for value in raw_tips)
       if tip is not None
     )
+  raw_title = _optional_str(data.get("title"))
+  clean_title = truncate_at_word_boundary(raw_title, 60) if raw_title else None
   return ContentExtraction(
     places=_dedupe_by_name(_parse_extracted_places(data)),
     reel_summary=_optional_str(data.get("reel_summary")),
     trip_tips=trip_tips,
+    title=clean_title,
   )
 
 

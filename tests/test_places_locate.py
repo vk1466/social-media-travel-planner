@@ -318,3 +318,44 @@ def test_capitalize_place_name_ichiran_ramen() -> None:
   assert _extract_display_name(raw_venue, fallback="Ichiran ramen") == "Ichiran Ramen"
 
 
+def test_post_anchor_bias_rejects_distant_candidates() -> None:
+  from travelplanner.places.locate import _rank_candidates
+
+  # Rome coords: ~41.90, 12.50
+  rome_anchor_lat = 41.90
+  rome_anchor_lon = 12.50
+
+  orange_garden_rome = GeocodeResult(
+    display_name="Orange Garden (Giardino degli Aranci)",
+    latitude=41.885,
+    longitude=12.479,
+    category="attraction",
+    city="Rome",
+    country="Italy",
+  )
+  orange_garden_ischia = GeocodeResult(
+    display_name="Orange Garden Ischia",
+    latitude=40.74,
+    longitude=13.94,  # ~180km away from Rome
+    category="attraction",
+    city="Ischia",
+    country="Italy",
+  )
+
+  notes: list[str] = []
+  mention = PlaceMention(place_name="Orange Garden", city="Rome", country="Italy")
+  scored = _rank_candidates(
+    mention,
+    [orange_garden_ischia, orange_garden_rome],
+    anchor_lat=rome_anchor_lat,
+    anchor_lon=rome_anchor_lon,
+    notes=notes,
+  )
+
+  # Only the Rome candidate should survive; Ischia is >80km away
+  assert len(scored) == 1
+  assert scored[0][1].city == "Rome"
+  assert any("far from anchor" in note for note in notes)
+
+
+

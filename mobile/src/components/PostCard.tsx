@@ -60,11 +60,16 @@ export const PostCard = memo(function PostCard({
           </View>
         )}
 
-        {/* Bottom Scrim for Creator */}
+        {/* Bottom Scrim for Creator & Engagement */}
         <View style={styles.creatorScrim}>
           <Text style={styles.creatorText} numberOfLines={1}>
             {authorLine}
           </Text>
+          {post.like_count != null && post.like_count > 0 ? (
+            <Text style={styles.likesText} numberOfLines={1}>
+              ♥ {post.like_count >= 1000 ? `${(post.like_count / 1000).toFixed(1)}k` : post.like_count}
+            </Text>
+          ) : null}
         </View>
       </View>
 
@@ -136,12 +141,22 @@ const styles = StyleSheet.create({
     right: 0,
     paddingHorizontal: 10,
     paddingVertical: 6,
-    backgroundColor: "rgba(0,0,0,0.45)",
+    backgroundColor: "rgba(0,0,0,0.55)",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   creatorText: {
     color: "#FFFFFF",
     fontSize: 12,
     fontWeight: "600",
+    flex: 1,
+  },
+  likesText: {
+    color: "#FFFFFF",
+    fontSize: 11,
+    fontWeight: "600",
+    marginLeft: 6,
   },
   caption: {
     fontSize: 13,

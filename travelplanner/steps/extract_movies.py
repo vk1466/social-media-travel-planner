@@ -28,7 +28,13 @@ def extract_movies(ctx: IngestContext) -> IngestContext:
 
   movies = fetch_movies_from_snippets(snippets_from_bundle(bundle))
   if ctx.post is not None:
-    ctx.post = replace(ctx.post, extracted_movies=movies)
+    updates: dict[str, Any] = {"extracted_movies": movies}
+    if not ctx.post.title and movies:
+      if len(movies) == 1:
+        updates["title"] = f"Watch Guide: {movies[0].title}"
+      else:
+        updates["title"] = f"{len(movies)} Movies & Shows to Watch"
+    ctx.post = replace(ctx.post, **updates)
   logger.info("extract_movies done movies=%d", len(movies))
   return ctx
 

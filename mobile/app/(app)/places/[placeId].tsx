@@ -346,7 +346,7 @@ export default function PlaceDetailScreen() {
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.glanceRow}
             >
-              {factsStructuredRows(place.facts).slice(0, 5).map((row) => (
+              {factsStructuredRows(place.facts).map((row) => (
                 <View key={row.label} style={styles.glanceCard}>
                   <Text style={styles.glanceLabel}>{row.label}</Text>
                   <Text style={styles.glanceValue} numberOfLines={3}>
@@ -360,6 +360,39 @@ export default function PlaceDetailScreen() {
             <Text style={styles.sourceNote}>{factsAttribution(place.facts)}</Text>
           ) : null}
         </SectionBlock>
+
+        {(place.facts?.website_url || place.facts?.phone_number || (place.facts?.opening_hours_text && place.facts.opening_hours_text.length > 0)) ? (
+          <SectionBlock icon="information-circle-outline" title="Visiting information">
+            <View style={[styles.surface, { gap: 10 }]}>
+              {place.facts?.opening_hours_text && place.facts.opening_hours_text.length > 0 ? (
+                <View style={{ gap: 2 }}>
+                  <Text style={{ fontSize: 13, fontWeight: "700", color: colors.ink }}>Opening Hours</Text>
+                  {place.facts.opening_hours_text.map((h, i) => (
+                    <Text key={i} style={{ fontSize: 13, color: colors.muted, lineHeight: 18 }}>{stripSourceRef(h)}</Text>
+                  ))}
+                </View>
+              ) : null}
+              {place.facts?.website_url ? (
+                <Pressable
+                  onPress={() => void Linking.openURL(place.facts!.website_url!)}
+                  style={{ flexDirection: "row", alignItems: "center", gap: 6, paddingTop: 4 }}
+                >
+                  <Ionicons name="globe-outline" size={16} color={colors.brand} />
+                  <Text style={{ color: colors.brand, fontSize: 14, fontWeight: "600" }}>Visit official website ↗</Text>
+                </Pressable>
+              ) : null}
+              {place.facts?.phone_number ? (
+                <Pressable
+                  onPress={() => void Linking.openURL(`tel:${place.facts!.phone_number!.replace(/\s+/g, "")}`)}
+                  style={{ flexDirection: "row", alignItems: "center", gap: 6, paddingTop: 2 }}
+                >
+                  <Ionicons name="call-outline" size={16} color={colors.brand} />
+                  <Text style={{ color: colors.brand, fontSize: 14, fontWeight: "600" }}>{place.facts.phone_number}</Text>
+                </Pressable>
+              ) : null}
+            </View>
+          </SectionBlock>
+        ) : null}
 
         <SectionBlock icon="heart-outline" title="Why go">
           <View style={styles.surface}>

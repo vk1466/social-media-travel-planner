@@ -69,10 +69,16 @@ class SavedPost:
   trip_tips: tuple[str, ...] = ()
   image_text: str | None = None
   transcript: str | None = None
+  transcript_is_music: bool = False
+  expected_place_count: int | None = None
+  secondary_categories: tuple[str, ...] = ()
+  extracted_fashion: dict[str, Any] | None = None
+  extracted_hair: dict[str, Any] | None = None
   video_analysis: str | None = None
   slide_media_urls: tuple[str, ...] = ()
   title: str | None = None
   author_avatar_url: str | None = None
+  tagged_users: tuple[dict[str, Any], ...] = ()
 
 
 @dataclass(frozen=True)

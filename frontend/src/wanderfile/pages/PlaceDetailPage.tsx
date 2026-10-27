@@ -197,17 +197,30 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
 
   // Structured Key Facts (labeled rows)
   const keyFacts: { label: string; value: string }[] = [];
+  if (place.facts?.rating != null) {
+    const reviewsStr = place.facts.reviews_count ? ` (${place.facts.reviews_count.toLocaleString()} reviews)` : "";
+    keyFacts.push({ label: "Rating", value: `★ ${place.facts.rating.toFixed(1)}${reviewsStr}` });
+  }
+  if (place.facts?.price_level != null && place.facts.price_level > 0) {
+    keyFacts.push({ label: "Price level", value: "$".repeat(place.facts.price_level) });
+  }
+  if (place.facts?.opening_hours_text && place.facts.opening_hours_text.length > 0) {
+    keyFacts.push({ label: "Hours", value: place.facts.opening_hours_text.join("; ") });
+  }
+  if (place.facts?.website_url) {
+    keyFacts.push({ label: "Website", value: place.facts.website_url });
+  }
+  if (place.facts?.phone_number) {
+    keyFacts.push({ label: "Phone", value: place.facts.phone_number });
+  }
+  if (place.facts?.admission_text) {
+    keyFacts.push({ label: "Admission", value: place.facts.admission_text });
+  }
   if (place.facts?.famous_for) {
     keyFacts.push({ label: "Famous for", value: place.facts.famous_for });
   }
   if (place.facts?.best_time_to_visit) {
     keyFacts.push({ label: "Best time to visit", value: place.facts.best_time_to_visit });
-  }
-  if (place.facts?.admission_text) {
-    keyFacts.push({ label: "Admission", value: place.facts.admission_text });
-  }
-  if (place.facts?.price_level != null && place.facts.price_level > 0) {
-    keyFacts.push({ label: "Price level", value: "$".repeat(place.facts.price_level) });
   }
   if (place.facts?.recommendations && place.facts.recommendations.length > 0) {
     keyFacts.push({ label: "Recommended", value: place.facts.recommendations.join(" · ") });

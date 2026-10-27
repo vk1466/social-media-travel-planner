@@ -152,10 +152,15 @@ export interface SavedPost {
   fetched_at?: string | null;
   reel_summary?: string | null;
   content_category?: string | null;
+  trip_tips?: string[];
   image_text?: string | null;
   transcript?: string | null;
   video_analysis?: string | null;
   slide_media_urls?: string[];
+  expected_place_count?: number | null;
+  secondary_categories?: string[];
+  extracted_fashion?: Record<string, any> | null;
+  extracted_hair?: Record<string, any> | null;
 }
 
 export function parsePostId(postId: string): { platform: string; nativeId: string } {
@@ -230,6 +235,8 @@ export interface PlaceFacts {
   typical_duration_minutes?: number | null;
   cuisines: string[];
   price_level?: number | null;
+  rating?: number | null;
+  reviews_count?: number | null;
   reservation_required?: boolean | null;
   distance_km?: number | null;
   elevation_gain_m?: number | null;

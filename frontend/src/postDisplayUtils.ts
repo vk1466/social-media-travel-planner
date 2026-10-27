@@ -9,7 +9,21 @@ export function getPostDomain(postUrl: string): string {
   }
 }
 
+export function truncateAtWordBoundary(text: string, maxLength: number): string {
+  const trimmed = text.trim();
+  if (trimmed.length <= maxLength) return trimmed;
+  const sub = trimmed.slice(0, maxLength - 1);
+  const lastSpace = sub.lastIndexOf(" ");
+  if (lastSpace > maxLength * 0.4) {
+    return `${sub.slice(0, lastSpace).trim()}…`;
+  }
+  return `${sub.trim()}…`;
+}
+
 export function getPostTitle(post: SavedPost): string {
+  if (post.title && post.title.trim()) {
+    return post.title.trim();
+  }
   const caption = post.caption?.trim() ?? "";
   if (!caption) {
     return post.author_handle ? `@${post.author_handle}` : "Untitled post";
@@ -18,7 +32,7 @@ export function getPostTitle(post: SavedPost): string {
   if (firstLine.length > 0 && firstLine.length <= 80) {
     return firstLine;
   }
-  return caption.length > 80 ? `${caption.slice(0, 77)}…` : caption;
+  return truncateAtWordBoundary(firstLine || caption, 80);
 }
 
 export function getPostDescription(post: SavedPost): string {

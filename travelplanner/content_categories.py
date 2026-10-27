@@ -28,12 +28,11 @@ CONTENT_CATEGORY_TAB_ORDER: tuple[str, ...] = CONTENT_CATEGORIES
 CLOSE_PIPELINE_PLACE = "place"
 CLOSE_PIPELINE_MOVIE = "movie"
 CLOSE_PIPELINE_RECIPE = "recipe"
+CLOSE_PIPELINE_FASHION = "fashion"
+CLOSE_PIPELINE_HAIRSTYLE = "hairstyle"
 
 # Categories with no close pipeline yet — save the post, skip place/movie work.
-# Food is recipes / kitchen content (no venue). Restaurant recs classify as travel.
-_SKIP_CLOSE_CATEGORIES: frozenset[str] = frozenset(
-  {"fashion", "hairstyle", "other"}
-)
+_SKIP_CLOSE_CATEGORIES: frozenset[str] = frozenset({"other"})
 
 
 def normalize_content_category(value: str | None) -> str | None:
@@ -61,13 +60,20 @@ def close_pipeline_for_category(category: str | None) -> str | None:
 
   ``place`` — extract/locate/upsert places (travel, or unset when classify skipped).
   ``movie`` — extract films and TV series from the content bundle.
-  ``None`` — skip close (fashion / hairstyle / food / other until they have pipelines).
+  ``recipe`` — extract recipes, ingredients, and steps.
+  ``fashion`` — extract outfits, clothing items, and brands.
+  ``hairstyle`` — extract haircut styles, attributes, and products.
+  ``None`` — skip close (other).
   """
   normalized = normalize_content_category(category)
   if normalized == "movies":
     return CLOSE_PIPELINE_MOVIE
   if normalized == "food":
     return CLOSE_PIPELINE_RECIPE
+  if normalized == "fashion":
+    return CLOSE_PIPELINE_FASHION
+  if normalized == "hairstyle":
+    return CLOSE_PIPELINE_HAIRSTYLE
   if normalized in _SKIP_CLOSE_CATEGORIES:
     return None
   return CLOSE_PIPELINE_PLACE

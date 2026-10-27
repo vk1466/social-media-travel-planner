@@ -61,4 +61,4 @@ def test_extract_movies_prefers_existing_content_bundle() -> None:
   snippets = mock_fetch.call_args.args[0]
   assert [s.source for s in snippets] == ["caption", "transcript"]
   assert result.post is not None
-  assert result.post == replace(post, extracted_movies=movies)
+  assert result.post == replace(post, extracted_movies=movies, title="Watch Guide: Interstellar")

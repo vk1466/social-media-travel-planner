@@ -3,6 +3,8 @@ from __future__ import annotations
 import logging
 
 from travelplanner.content_categories import (
+  CLOSE_PIPELINE_FASHION,
+  CLOSE_PIPELINE_HAIRSTYLE,
   CLOSE_PIPELINE_MOVIE,
   CLOSE_PIPELINE_PLACE,
   CLOSE_PIPELINE_RECIPE,
@@ -10,6 +12,8 @@ from travelplanner.content_categories import (
 )
 from travelplanner.flow.context import IngestContext, TimelineContext
 from travelplanner.flow.pipelines.instagram import (
+  FASHION_CLOSE_STEPS,
+  HAIRSTYLE_CLOSE_STEPS,
   INSTAGRAM_HEAD_STEPS,
   INSTAGRAM_TAIL_BY_RESOURCE_TYPE,
   MOVIE_CLOSE_STEPS,
@@ -38,15 +42,15 @@ def close_steps_for_category(category: str | None) -> tuple[str, tuple]:
     return "instagram_place_close", PLACE_CLOSE_STEPS
   if pipeline == CLOSE_PIPELINE_RECIPE:
     return "instagram_recipe_close", RECIPE_CLOSE_STEPS
+  if pipeline == CLOSE_PIPELINE_FASHION:
+    return "instagram_fashion_close", FASHION_CLOSE_STEPS
+  if pipeline == CLOSE_PIPELINE_HAIRSTYLE:
+    return "instagram_hairstyle_close", HAIRSTYLE_CLOSE_STEPS
   return "instagram_close_skipped", ()
 
 
 def run_instagram_pipeline(ctx: IngestContext) -> PipelineResult[IngestContext]:
-  """Instagram ingest: head, transcript or image text, Jev category, then one close.
-
-  Video analysis lives in the place close. Movies, recipes, and the skipped
-  categories do not call it.
-  """
+  """Instagram ingest: head, transcript or image text, Jev category, then close pipelines."""
   try:
     result = run_pipeline(ctx, INSTAGRAM_HEAD_STEPS, pipeline_name="instagram_head")
     ctx = result.context
@@ -75,15 +79,29 @@ def run_instagram_pipeline(ctx: IngestContext) -> PipelineResult[IngestContext]:
     )
     ctx = classify_result.context
     steps_completed += classify_result.steps_completed
+
     category = ctx.post.content_category if ctx.post is not None else None
-    close_name, close_steps = close_steps_for_category(category)
-    if not close_steps:
+    secondaries = list(ctx.post.secondary_categories) if ctx.post is not None else []
+    categories_to_run = [category] + [c for c in secondaries if c and c != category]
+
+    seen_pipelines: set[str] = set()
+    total_close_completed = 0
+    for cat in categories_to_run:
+      if not cat:
+        continue
+      close_name, close_steps = close_steps_for_category(cat)
+      if close_steps and close_name not in seen_pipelines:
+        seen_pipelines.add(close_name)
+        close_result = run_pipeline(ctx, close_steps, pipeline_name=close_name)
+        ctx = close_result.context
+        total_close_completed += close_result.steps_completed
+
+    if not seen_pipelines:
       logger.info("instagram_close skipped category=%s", category)
-      return PipelineResult(context=ctx, steps_completed=steps_completed)
-    close_result = run_pipeline(ctx, close_steps, pipeline_name=close_name)
+
     return PipelineResult(
-      context=close_result.context,
-      steps_completed=steps_completed + close_result.steps_completed,
+      context=ctx,
+      steps_completed=steps_completed + total_close_completed,
     )
   except PipelineStepError as exc:
     ctx.error_stage = exc.step_name
