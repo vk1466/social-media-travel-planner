@@ -212,8 +212,8 @@ function buildMapHtml(isDark = false): string {
     ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
     : "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png";
   const bgColor = isDark ? "#0E0F11" : "#FAFAF9";
-  const inkColor = isDark ? "#1F2226" : "#16181B";
-  const haloColor = isDark ? "rgba(31, 34, 38, 0.45)" : "rgba(22, 24, 27, 0.2)";
+  const inkColor = isDark ? "#23272E" : "#16181B";
+  const haloColor = isDark ? "rgba(255, 255, 255, 0.15)" : "rgba(22, 24, 27, 0.18)";
 
   return `<!DOCTYPE html>
 <html>
@@ -221,6 +221,8 @@ function buildMapHtml(isDark = false): string {
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" />
   <style>
     *, *::before, *::after { box-sizing: border-box; }
@@ -312,20 +314,23 @@ function buildMapHtml(isDark = false): string {
       font-size: 14px;
       transform: scale(1.2);
     }
-    .marker-cluster-small, .marker-cluster-medium, .marker-cluster-large {
+    .marker-cluster, .marker-cluster-small, .marker-cluster-medium, .marker-cluster-large {
       background-color: transparent !important;
     }
-    .marker-cluster-small div, .marker-cluster-medium div, .marker-cluster-large div {
+    .marker-cluster div, .marker-cluster-small div, .marker-cluster-medium div, .marker-cluster-large div {
       background-color: ${inkColor} !important;
       color: #FFFFFF !important;
+      border: 2px solid ${isDark ? "rgba(255, 255, 255, 0.85)" : "#FFFFFF"} !important;
+      box-shadow: 0 0 0 4px ${haloColor} !important;
+      border-radius: 50% !important;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
       font-weight: 700 !important;
-      box-shadow: 0 0 0 6px ${haloColor} !important;
-      border-radius: 50% !important;
+      font-size: 13px !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
     }
   </style>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
 </head>
 <body>
   <div id="map"></div>
@@ -350,14 +355,14 @@ function buildMapHtml(isDark = false): string {
       zoomAnimation: true
     });
     L.control.attribution({ position: "bottomleft", prefix: false }).addTo(map);
-    var openFreeMapStyle = ${JSON.stringify(isDark ? "https://tiles.openfreemap.org/styles/dark" : "https://tiles.openfreemap.org/styles/positron")};
+    var openFreeMapStyle = ${JSON.stringify(isDark ? "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json" : "https://tiles.openfreemap.org/styles/positron")};
     if (typeof L.maplibreGL === "function") {
       L.maplibreGL({
         style: openFreeMapStyle
       }).addTo(map);
     } else {
-      L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://openfreemap.org">OpenFreeMap</a>',
+      L.tileLayer(${JSON.stringify(tileUrl)}, {
+        attribution: isDark ? '&copy; OpenStreetMap contributors &copy; CARTO' : '&copy; OpenStreetMap contributors &copy; OpenFreeMap',
         maxZoom: 19
       }).addTo(map);
     }

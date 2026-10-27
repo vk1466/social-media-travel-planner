@@ -9,6 +9,7 @@ import { FeatureFlags } from "../comingSoon/featureRegistry";
 import { useToast } from "../state/ToastContext";
 import { getPostTitle, proxiedMediaUrl, capitalizePlaceName, getEffectiveAddress } from "../../postDisplayUtils";
 import { getCategoryVisual } from "../categoryVisuals";
+import { cartoMaplibreStyle } from "../../maps";
 import type { Place, SavedPost } from "../../api";
 
 export interface FormattedTextResult {
@@ -19,13 +20,15 @@ export interface FormattedTextResult {
 export function parseFormattedText(raw: string | null | undefined): FormattedTextResult {
   if (!raw) return { text: "", sourceUrls: [] };
   const sourceUrls: string[] = [];
-  const text = raw
-    .replace(/\s*\((?:source_ref|source):\s*(https?:\/\/[^\s)]+)\)/gi, (_, url) => {
-      if (!sourceUrls.includes(url)) {
-        sourceUrls.push(url);
+  let text = raw
+    .replace(/\s*[([,]?(?:source_ref|source):\s*(https?:\/\/[^\s)\]]+)[)\]]?/gi, (_, url) => {
+      const cleanUrl = url.replace(/[),;.]+$/, "");
+      if (!sourceUrls.includes(cleanUrl)) {
+        sourceUrls.push(cleanUrl);
       }
       return "";
     })
+    .replace(/\s*[([,]?(?:source_ref|source):\s*[^)\]]+[)\]]?/gi, "")
     .trim();
   return { text, sourceUrls };
 }
@@ -52,7 +55,7 @@ function MiniLocationMap({ lat, lng, displayName: _displayName, category }: { la
     if (!mapContainerRef.current) return;
     const map = new maplibregl.Map({
       container: mapContainerRef.current,
-      style: isDark ? "https://tiles.openfreemap.org/styles/dark" : "https://tiles.openfreemap.org/styles/positron",
+      style: cartoMaplibreStyle(isDark),
       center: [lng, lat],
       zoom: 14,
       scrollZoom: false,

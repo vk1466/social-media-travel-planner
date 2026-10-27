@@ -20,18 +20,26 @@ export function factsAttribution(facts: PlaceFacts): string {
   return `Facts from ${names.join(", ")}`;
 }
 
+export function stripSourceRef(text: string): string {
+  if (!text) return text;
+  return text
+    .replace(/\s*[([,]?(?:source_ref|source):\s*https?:\/\/[^\s)\]]+[)\]]?/gi, "")
+    .replace(/\s*[([,]?(?:source_ref|source):\s*[^)\]]+[)\]]?/gi, "")
+    .trim();
+}
+
 export function factsStructuredRows(facts: PlaceFacts): { label: string; value: string }[] {
   const rows: { label: string; value: string }[] = [];
-  if (facts.famous_for) rows.push({ label: "Famous for", value: facts.famous_for });
-  if (facts.admission_text) rows.push({ label: "Admission", value: facts.admission_text });
+  if (facts.famous_for) rows.push({ label: "Famous for", value: stripSourceRef(facts.famous_for) });
+  if (facts.admission_text) rows.push({ label: "Admission", value: stripSourceRef(facts.admission_text) });
   if (facts.opening_hours_text.length > 0) {
-    rows.push({ label: "Hours", value: facts.opening_hours_text.join("; ") });
+    rows.push({ label: "Hours", value: facts.opening_hours_text.map(stripSourceRef).join("; ") });
   }
   if (facts.cuisines.length > 0) {
-    rows.push({ label: "Cuisine", value: facts.cuisines.join(", ") });
+    rows.push({ label: "Cuisine", value: facts.cuisines.map(stripSourceRef).join(", ") });
   }
   if (facts.best_time_to_visit) {
-    rows.push({ label: "Best time", value: facts.best_time_to_visit });
+    rows.push({ label: "Best time", value: stripSourceRef(facts.best_time_to_visit) });
   }
   if (facts.typical_duration_minutes != null) {
     rows.push({

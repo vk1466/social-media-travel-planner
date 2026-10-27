@@ -115,15 +115,21 @@ export function MapPage({ places, posts, loading }: MapPageProps) {
         const count = feature.properties.point_count;
         const clusterId = feature.properties.cluster_id;
         const size = count < 10 ? 32 : count < 50 ? 40 : 48;
+        const isDarkNow =
+          typeof document !== "undefined" &&
+          (document.documentElement.getAttribute("data-theme") === "dark" ||
+            window.matchMedia("(prefers-color-scheme: dark)").matches);
 
         const el = document.createElement("div");
         el.className = "wf-cluster-marker";
         el.style.width = `${size}px`;
         el.style.height = `${size}px`;
         el.style.borderRadius = "9999px";
-        el.style.background = "var(--ink, #16181B)";
-        el.style.border = "2px solid #FFFFFF";
-        el.style.boxShadow = "0 0 0 6px rgba(22, 24, 27, 0.2)";
+        el.style.background = isDarkNow ? "#23272E" : "#16181B";
+        el.style.border = isDarkNow ? "2px solid rgba(255, 255, 255, 0.85)" : "2px solid #FFFFFF";
+        el.style.boxShadow = isDarkNow
+          ? "0 4px 12px rgba(0, 0, 0, 0.5), 0 0 0 5px rgba(255, 255, 255, 0.15)"
+          : "0 2px 8px rgba(0, 0, 0, 0.25), 0 0 0 5px rgba(22, 24, 27, 0.18)";
         el.style.display = "flex";
         el.style.alignItems = "center";
         el.style.justifyContent = "center";
@@ -324,11 +330,36 @@ export function MapPage({ places, posts, loading }: MapPageProps) {
       }
     }, 150);
 
+    const handleThemeChange = () => {
+      if (!mapRef.current) return;
+      const nextIsDark =
+        document.documentElement.getAttribute("data-theme") === "dark" ||
+        window.matchMedia("(prefers-color-scheme: dark)").matches;
+      mapRef.current.setStyle(cartoMaplibreStyle(nextIsDark));
+      mapRef.current.once("style.load", () => {
+        updateMapMarkers();
+      });
+    };
+
+    const mo = new MutationObserver((mutations) => {
+      for (const m of mutations) {
+        if (m.type === "attributes" && m.attributeName === "data-theme") {
+          handleThemeChange();
+        }
+      }
+    });
+    mo.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+
+    const mql = window.matchMedia("(prefers-color-scheme: dark)");
+    mql.addEventListener("change", handleThemeChange);
+
     return () => {
       clearTimeout(resizeTimer);
       window.removeEventListener("resize", handleResize);
       window.removeEventListener("orientationchange", handleResize);
       ro.disconnect();
+      mo.disconnect();
+      mql.removeEventListener("change", handleThemeChange);
       map.remove();
       mapRef.current = null;
     };

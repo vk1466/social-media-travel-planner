@@ -13,7 +13,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useLibrary } from "@/src/context/LibraryContext";
 import { appHref } from "@/src/nav";
-import { proxiedMediaUrl } from "@/src/postDisplayUtils";
+import { proxiedMediaUrl, getPlaceBestImageUrl } from "@/src/postDisplayUtils";
 import { colors, radius, shadow } from "@/src/theme";
 import { CANONICAL_CATEGORIES, getCategoryVisual } from "@/src/categoryVisuals";
 
@@ -24,6 +24,92 @@ interface CollectionItem {
   count: number;
   thumbnails: string[];
   route: string;
+}
+
+function MobileCollectionMosaic({ thumbnails, title }: { thumbnails: string[]; title: string }) {
+  const distinct = useMemo(() => {
+    const set = new Set<string>();
+    const res: string[] = [];
+    for (const t of thumbnails) {
+      if (t && !set.has(t)) {
+        set.add(t);
+        res.push(t);
+      }
+    }
+    return res;
+  }, [thumbnails]);
+
+  if (distinct.length === 0) {
+    return (
+      <View style={styles.mosaicEmpty}>
+        <Text style={{ fontSize: 24, opacity: 0.6 }}>📍</Text>
+      </View>
+    );
+  }
+
+  if (distinct.length === 1) {
+    const uri = proxiedMediaUrl(distinct[0]);
+    return (
+      <View style={styles.mosaicWrap}>
+        {uri ? (
+          <Image source={{ uri }} style={styles.mosaicImgFull} resizeMode="cover" />
+        ) : (
+          <View style={styles.mosaicEmpty}><Text style={{ fontSize: 24, opacity: 0.6 }}>📍</Text></View>
+        )}
+      </View>
+    );
+  }
+
+  if (distinct.length === 2) {
+    return (
+      <View style={[styles.mosaicWrap, { flexDirection: "row", gap: 2 }]}>
+        {distinct.slice(0, 2).map((thumb, idx) => {
+          const uri = proxiedMediaUrl(thumb);
+          return (
+            <View key={idx} style={{ flex: 1, height: "100%", overflow: "hidden" }}>
+              {uri ? <Image source={{ uri }} style={styles.mosaicImgFull} resizeMode="cover" /> : null}
+            </View>
+          );
+        })}
+      </View>
+    );
+  }
+
+  if (distinct.length === 3) {
+    return (
+      <View style={[styles.mosaicWrap, { flexDirection: "column", gap: 2 }]}>
+        <View style={{ width: "100%", height: "55%", overflow: "hidden" }}>
+          {proxiedMediaUrl(distinct[0]) ? (
+            <Image source={{ uri: proxiedMediaUrl(distinct[0])! }} style={styles.mosaicImgFull} resizeMode="cover" />
+          ) : null}
+        </View>
+        <View style={{ width: "100%", height: "43%", flexDirection: "row", gap: 2 }}>
+          {distinct.slice(1, 3).map((thumb, idx) => {
+            const uri = proxiedMediaUrl(thumb);
+            return (
+              <View key={idx} style={{ flex: 1, height: "100%", overflow: "hidden" }}>
+                {uri ? <Image source={{ uri }} style={styles.mosaicImgFull} resizeMode="cover" /> : null}
+              </View>
+            );
+          })}
+        </View>
+      </View>
+    );
+  }
+
+  // 4 or more -> 2x2 grid
+  return (
+    <View style={styles.mosaicWrap}>
+      {distinct.slice(0, 4).map((thumb, idx) => {
+        const uri = proxiedMediaUrl(thumb);
+        return (
+          <View key={idx} style={styles.mosaicCell}>
+            {uri ? <Image source={{ uri }} style={styles.mosaicImg} resizeMode="cover" /> : null}
+          </View>
+        );
+      })}
+    </View>
+  );
 }
 
 export default function MobileCollectionsScreen() {
@@ -40,11 +126,25 @@ export default function MobileCollectionsScreen() {
       if (!city) continue;
       const data = map.get(city) || { count: 0, thumbs: [] };
       data.count += 1;
-      const post = posts.find((p) => place.source_post_ids?.includes(p.post_id));
-      if (post?.thumbnail_url && data.thumbs.length < 4 && !data.thumbs.includes(post.thumbnail_url)) {
-        data.thumbs.push(post.thumbnail_url);
+      const img = getPlaceBestImageUrl(place, posts);
+      if (img && data.thumbs.length < 4 && !data.thumbs.includes(img)) {
+        data.thumbs.push(img);
       }
       map.set(city, data);
+    }
+    // Also check posts matching city
+    for (const [city, data] of map.entries()) {
+      if (data.thumbs.length < 4) {
+        for (const post of posts) {
+          if (data.thumbs.length >= 4) break;
+          const matches = post.place_ids?.some(
+            (pid) => places.find((pl) => pl.place_id === pid)?.location?.city === city
+          );
+          if (matches && post.thumbnail_url && !data.thumbs.includes(post.thumbnail_url)) {
+            data.thumbs.push(post.thumbnail_url);
+          }
+        }
+      }
     }
     return Array.from(map.entries())
       .map(([city, data]) => ({
@@ -66,9 +166,9 @@ export default function MobileCollectionsScreen() {
       const thumbs: string[] = [];
       for (const p of catPlaces) {
         if (thumbs.length >= 4) break;
-        const post = posts.find((item) => p.source_post_ids?.includes(item.post_id));
-        if (post?.thumbnail_url && !thumbs.includes(post.thumbnail_url)) {
-          thumbs.push(post.thumbnail_url);
+        const img = getPlaceBestImageUrl(p, posts);
+        if (img && !thumbs.includes(img)) {
+          thumbs.push(img);
         }
       }
       return {
@@ -165,7 +265,7 @@ export default function MobileCollectionsScreen() {
         })}
       </ScrollView>
 
-      {/* 2-Column Grid of 2x2 Mosaics */}
+      {/* 2-Column Grid of Adaptive Mosaics */}
       <View style={styles.grid}>
         {displayedCollections.map((col) => (
           <Pressable
@@ -173,22 +273,7 @@ export default function MobileCollectionsScreen() {
             onPress={() => router.push(appHref(col.route as any))}
             style={styles.card}
           >
-            {/* 2x2 Mosaic Container */}
-            <View style={styles.mosaicWrap}>
-              {[0, 1, 2, 3].map((idx) => {
-                const raw = col.thumbnails[idx];
-                const uri = raw ? proxiedMediaUrl(raw) : null;
-                return (
-                  <View key={idx} style={styles.mosaicCell}>
-                    {uri ? (
-                      <Image source={{ uri }} style={styles.mosaicImg} resizeMode="cover" />
-                    ) : (
-                      <Text style={{ fontSize: 16, opacity: 0.35 }}>📍</Text>
-                    )}
-                  </View>
-                );
-              })}
-            </View>
+            <MobileCollectionMosaic thumbnails={col.thumbnails} title={col.title} />
 
             {/* Info */}
             <View style={styles.cardInfo}>
@@ -285,6 +370,18 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     gap: 2,
     backgroundColor: colors.surface2,
+  },
+  mosaicEmpty: {
+    width: "100%",
+    aspectRatio: 1,
+    borderRadius: radius.md,
+    backgroundColor: colors.surface2,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  mosaicImgFull: {
+    width: "100%",
+    height: "100%",
   },
   mosaicCell: {
     width: "49%",

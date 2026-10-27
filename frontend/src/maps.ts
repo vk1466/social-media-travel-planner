@@ -69,10 +69,10 @@ export function osmStandardTileUrl(): string {
   return "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
 }
 
-/** OpenFreeMap Positron (light) & Dark vector style URLs for MapLibre. */
+/** Minimal, keyless basemap style for MapLibre: OpenFreeMap Positron (light) and CARTO Dark Matter (dark). */
 export function openFreeMapStyleUrl(isDark = false): string {
   return isDark
-    ? "https://tiles.openfreemap.org/styles/dark"
+    ? "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json"
     : "https://tiles.openfreemap.org/styles/positron";
 }
 
@@ -91,10 +91,10 @@ export function cartoLightNoLabelsTileUrl(): string {
 }
 
 export function cartoDarkTileUrl(): string {
-  return osmStandardTileUrl();
+  return "https://a.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}@2x.png";
 }
 
-/** MapLibre style definition for OpenFreeMap Positron / Dark basemaps (zero watermark). */
+/** MapLibre style definition for OpenFreeMap Positron / CARTO Dark Matter basemaps (zero watermark). */
 export function cartoMaplibreStyle(isDark = false): string {
   return openFreeMapStyleUrl(isDark);
 }
