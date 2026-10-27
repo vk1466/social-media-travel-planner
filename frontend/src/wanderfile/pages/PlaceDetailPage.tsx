@@ -575,6 +575,7 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
                 borderRadius: "24px",
                 padding: "24px",
                 minWidth: 0,
+                overflow: "hidden",
                 boxSizing: "border-box",
               }}
             >
@@ -584,6 +585,7 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
                   display: "grid",
                   gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
                   gap: "16px",
+                  minWidth: 0,
                 }}
               >
                 {keyFacts.map((fact, idx) => {
