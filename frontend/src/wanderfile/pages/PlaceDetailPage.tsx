@@ -1,24 +1,72 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useParams, Link, useLocation, useNavigate } from "react-router-dom";
-import { MapContainer, TileLayer, Marker, Tooltip } from "react-leaflet";
 import { Share2, Navigation, Compass } from "lucide-react";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
+import * as maplibregl from "maplibre-gl";
+import "maplibre-gl/dist/maplibre-gl.css";
 import { EmptyState } from "../components/EmptyState";
 import { ComingSoonButton } from "../comingSoon/ComingSoonControl";
 import { FeatureFlags } from "../comingSoon/featureRegistry";
 import { useToast } from "../state/ToastContext";
 import { getPostTitle, proxiedMediaUrl, capitalizePlaceName, getEffectiveAddress } from "../../postDisplayUtils";
-import { CARTO_BASEMAP_ATTR, cartoPositronTileUrl } from "../../maps";
 import { getCategoryVisual } from "../categoryVisuals";
 import type { Place, SavedPost } from "../../api";
 
-function MiniLocationMap({ lat, lng, displayName, category }: { lat: number; lng: number; displayName: string; category?: string | null }) {
+interface FormattedBullet {
+  text: string;
+  sourceUrl?: string;
+}
+
+function parseBullet(raw: string): FormattedBullet {
+  const match = raw.match(/\s*\((?:source_ref|source):\s*(https?:\/\/[^\s)]+)\)\s*$/i);
+  if (match) {
+    const text = raw.slice(0, match.index).trim();
+    return { text, sourceUrl: match[1] };
+  }
+  return { text: raw.trim() };
+}
+
+function MiniLocationMap({ lat, lng, displayName: _displayName, category }: { lat: number; lng: number; displayName: string; category?: string | null }) {
+  const mapContainerRef = useRef<HTMLDivElement>(null);
   const visual = getCategoryVisual(category);
   const isDark =
     typeof document !== "undefined" &&
     (document.documentElement.getAttribute("data-theme") === "dark" ||
       window.matchMedia("(prefers-color-scheme: dark)").matches);
+
+  useEffect(() => {
+    if (!mapContainerRef.current) return;
+    const map = new maplibregl.Map({
+      container: mapContainerRef.current,
+      style: isDark ? "https://tiles.openfreemap.org/styles/dark" : "https://tiles.openfreemap.org/styles/positron",
+      center: [lng, lat],
+      zoom: 14,
+      scrollZoom: false,
+    });
+
+    const el = document.createElement("div");
+    el.className = "wf-place-marker";
+    el.innerHTML = `<div style="
+      width: 32px;
+      height: 32px;
+      border-radius: 999px;
+      background: ${visual.hue};
+      border: 2px solid #FFFFFF;
+      box-shadow: 0 4px 12px rgba(16,24,40,0.18);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #FFFFFF;
+      font-size: 14px;
+    ">${visual.glyph}</div>`;
+
+    new maplibregl.Marker({ element: el })
+      .setLngLat([lng, lat])
+      .addTo(map);
+
+    return () => {
+      map.remove();
+    };
+  }, [lat, lng, isDark, visual.hue, visual.glyph]);
 
   return (
     <div
@@ -31,46 +79,7 @@ function MiniLocationMap({ lat, lng, displayName, category }: { lat: number; lng
         border: "1px solid var(--line, #E7E6E3)",
       }}
     >
-      <MapContainer
-        center={[lat, lng]}
-        zoom={14}
-        scrollWheelZoom={false}
-        zoomControl={false}
-        attributionControl={true}
-        style={{ width: "100%", height: "100%", zIndex: 1 }}
-      >
-        <TileLayer
-          url={cartoPositronTileUrl(isDark)}
-          attribution={CARTO_BASEMAP_ATTR}
-          subdomains="abcd"
-          maxZoom={19}
-        />
-        <Marker
-          position={[lat, lng]}
-          icon={L.divIcon({
-            className: "wf-place-marker",
-            html: `<div style="
-              width: 32px;
-              height: 32px;
-              border-radius: 999px;
-              background: ${visual.hue};
-              border: 2px solid #FFFFFF;
-              box-shadow: 0 4px 12px rgba(16,24,40,0.18);
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              color: #FFFFFF;
-              font-size: 14px;
-            ">${visual.glyph}</div>`,
-            iconSize: [32, 32],
-            iconAnchor: [16, 16],
-          })}
-        >
-          <Tooltip direction="top" offset={[0, -16]}>
-            {displayName}
-          </Tooltip>
-        </Marker>
-      </MapContainer>
+      <div ref={mapContainerRef} style={{ width: "100%", height: "100%" }} />
     </div>
   );
 }
@@ -129,8 +138,8 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
           primaryActionLabel="Back to Map"
           onPrimaryAction={() => navigate("/map")}
           iconPath="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"
-          tint="#E3F0F4"
-          ink="#1B5E78"
+          tint="var(--wf-surface-2, #E3F0F4)"
+          ink="var(--wf-text, #1B5E78)"
         />
       </main>
     );
@@ -171,54 +180,31 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
     );
   });
 
-  // Assemble facts, creator tips, and caption highlights for About & Tips
-  const factsList: string[] = [];
+  // Structured Key Facts (labeled rows)
+  const keyFacts: { label: string; value: string }[] = [];
   if (place.facts?.famous_for) {
-    factsList.push(`Famous for: ${place.facts.famous_for}`);
+    keyFacts.push({ label: "Famous for", value: place.facts.famous_for });
   }
   if (place.facts?.best_time_to_visit) {
-    factsList.push(`Best time to visit: ${place.facts.best_time_to_visit}`);
+    keyFacts.push({ label: "Best time to visit", value: place.facts.best_time_to_visit });
   }
   if (place.facts?.admission_text) {
-    factsList.push(`Admission: ${place.facts.admission_text}`);
+    keyFacts.push({ label: "Admission", value: place.facts.admission_text });
   }
   if (place.facts?.price_level != null && place.facts.price_level > 0) {
-    factsList.push(`Price: ${"$".repeat(place.facts.price_level)}`);
-  }
-  if (place.facts?.highlights && place.facts.highlights.length > 0) {
-    for (const h of place.facts.highlights) {
-      if (!factsList.includes(h)) factsList.push(h);
-    }
+    keyFacts.push({ label: "Price level", value: "$".repeat(place.facts.price_level) });
   }
   if (place.facts?.recommendations && place.facts.recommendations.length > 0) {
-    for (const r of place.facts.recommendations) {
-      if (!factsList.includes(r)) factsList.push(r);
-    }
+    keyFacts.push({ label: "Recommended", value: place.facts.recommendations.join(" · ") });
   }
 
+  // Pure tips from creator & place notes only (no reel summaries or raw captions pasted into tips)
   const postTips = relatedPosts.flatMap((p) => p.trip_tips || []);
   const allTips = Array.from(new Set([...(place.tips || []), ...postTips].filter(Boolean)));
-  const captionHighlights: string[] = [];
-  for (const p of relatedPosts) {
-    if (p.reel_summary && p.reel_summary !== place.summary && !factsList.includes(p.reel_summary)) {
-      captionHighlights.push(p.reel_summary);
-    }
-    if (allTips.length === 0 && p.caption) {
-      const sentences = p.caption
-        .split(/(?<=[.!?])\s+/)
-        .map((s) => s.trim())
-        .filter((s) => s.length > 15 && s.length < 200 && !s.includes("#") && !s.includes("http"));
-      if (sentences.length > 0 && !captionHighlights.includes(sentences[0])) {
-        captionHighlights.push(sentences[0]);
-      }
-    }
-  }
-
-  const distinctTips = Array.from(new Set([
-    ...allTips,
-    ...factsList,
-    ...captionHighlights,
-  ].filter(Boolean)));
+  const distinctTips = allTips.filter((t) => {
+    const lower = t.toLowerCase();
+    return !lower.startsWith("famous for:") && !lower.startsWith("best time to visit:");
+  });
 
   const aboutText = distinctDetails.length > 0
     ? distinctDetails.join(" ")
@@ -347,14 +333,18 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
               <span
                 style={{
                   fontSize: "12px",
-                  fontWeight: 800,
+                  fontWeight: 700,
                   padding: "4px 10px",
                   borderRadius: "999px",
-                  background: "var(--wf-surface-2, #E3F0F4)",
-                  color: "var(--wf-text, #1B5E78)",
+                  background: placeVisual.tint,
+                  color: placeVisual.hue,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
                 }}
               >
-                {place.category || "Place"}
+                <span>{placeVisual.glyph}</span>
+                <span>{placeVisual.name}</span>
               </span>
               <span style={{ fontSize: "14px", color: "var(--wf-text-muted, var(--ink-2, #5E636B))" }}>
                 {[place.location?.city, place.location?.state_province, place.location?.country].filter(Boolean).join(", ")}
@@ -412,15 +402,19 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
               onClick={() => setVisited((v) => !v)}
               style={{
                 height: "44px",
-                padding: "0 20px",
+                padding: "0 22px",
                 borderRadius: "var(--wf-radius-pill)",
                 border: 0,
-                background: visited ? "var(--wf-success)" : "var(--wf-text)",
-                color: "var(--wf-bg)",
+                background: visited ? "var(--wf-success, #1F9D6B)" : "var(--wf-text, #16181B)",
+                color: "#FFFFFF",
                 fontFamily: "inherit",
                 fontSize: "14px",
                 fontWeight: 600,
                 cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "8px",
+                boxShadow: "var(--shadow-sm)",
               }}
             >
               {visited ? "Visited ✓" : "Mark visited"}
@@ -522,47 +516,105 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
         </div>
       </section>
 
-      {/* Top Balanced Grid: About & Tips + Location */}
+      {/* Balanced 2-Column Grid: Left (Key Facts + About & Tips) + Right (Sticky Location Card) */}
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: hasAboutOrTips ? "repeat(auto-fit, minmax(min(100%, 340px), 1fr))" : "1fr",
+          gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 340px), 1fr))",
           gap: "24px",
           alignItems: "start",
-          marginBottom: "24px",
+          marginBottom: "32px",
           minWidth: 0,
           boxSizing: "border-box",
         }}
       >
-        {hasAboutOrTips && (
-          <section
-            style={{
-              background: "var(--wf-surface, #FFFFFF)",
-              border: "1px solid var(--wf-border, #E6E3DC)",
-              borderRadius: "24px",
-              padding: "24px",
-              minWidth: 0,
-              boxSizing: "border-box",
-              wordBreak: "break-word",
-            }}
-          >
-            <h2 style={{ margin: "0 0 12px", fontSize: "18px", fontWeight: 800, color: "var(--wf-text, #1B1D1F)" }}>About & Tips</h2>
-            {aboutText && (
-              <p style={{ margin: "0 0 14px", fontSize: "15px", lineHeight: 1.5, color: "var(--wf-text-muted, #5E636B)", wordBreak: "break-word" }}>
-                {aboutText}
-              </p>
-            )}
-            {distinctTips.length > 0 && (
-              <ul style={{ margin: 0, paddingLeft: "20px", color: "var(--wf-text, #1B1D1F)", fontSize: "14px", lineHeight: 1.6, wordBreak: "break-word" }}>
-                {distinctTips.map((t, idx) => (
-                  <li key={idx} style={{ marginBottom: "6px" }}>{t}</li>
+        <div style={{ display: "flex", flexDirection: "column", gap: "24px", minWidth: 0 }}>
+          {/* Labeled Key Facts Rows */}
+          {keyFacts.length > 0 && (
+            <section
+              style={{
+                background: "var(--wf-surface, #FFFFFF)",
+                border: "1px solid var(--wf-border, #E6E3DC)",
+                borderRadius: "24px",
+                padding: "24px",
+                minWidth: 0,
+                boxSizing: "border-box",
+              }}
+            >
+              <h2 style={{ margin: "0 0 16px", fontSize: "18px", fontWeight: 800, color: "var(--wf-text, #1B1D1F)" }}>Key Facts</h2>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+                  gap: "16px",
+                }}
+              >
+                {keyFacts.map((fact, idx) => (
+                  <div key={idx} style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                    <span style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--wf-text-muted, #5E636B)" }}>
+                      {fact.label}
+                    </span>
+                    <span style={{ fontSize: "14px", fontWeight: 600, color: "var(--wf-text, #1B1D1F)", lineHeight: 1.4 }}>
+                      {fact.value}
+                    </span>
+                  </div>
                 ))}
-              </ul>
-            )}
-          </section>
-        )}
+              </div>
+            </section>
+          )}
 
-        {/* Location Card */}
+          {/* About & Tips Section */}
+          {hasAboutOrTips && (
+            <section
+              style={{
+                background: "var(--wf-surface, #FFFFFF)",
+                border: "1px solid var(--wf-border, #E6E3DC)",
+                borderRadius: "24px",
+                padding: "24px",
+                minWidth: 0,
+                boxSizing: "border-box",
+                wordBreak: "break-word",
+              }}
+            >
+              <h2 style={{ margin: "0 0 14px", fontSize: "18px", fontWeight: 800, color: "var(--wf-text, #1B1D1F)" }}>About & Tips</h2>
+              {aboutText && (
+                <p style={{ margin: "0 0 16px", fontSize: "15px", lineHeight: 1.6, color: "var(--wf-text-muted, #5E636B)", wordBreak: "break-word" }}>
+                  {aboutText}
+                </p>
+              )}
+              {distinctTips.length > 0 && (
+                <ul style={{ margin: 0, paddingLeft: "20px", color: "var(--wf-text, #1B1D1F)", fontSize: "14px", lineHeight: 1.6, wordBreak: "break-word" }}>
+                  {distinctTips.map((raw, idx) => {
+                    const parsed = parseBullet(raw);
+                    return (
+                      <li key={idx} style={{ marginBottom: "8px" }}>
+                        <span>{parsed.text}</span>
+                        {parsed.sourceUrl && (
+                          <a
+                            href={parsed.sourceUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                              marginLeft: "8px",
+                              fontSize: "12px",
+                              color: "var(--wf-primary, #FF5A4E)",
+                              textDecoration: "none",
+                              fontWeight: 600,
+                            }}
+                          >
+                            source ↗
+                          </a>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </section>
+          )}
+        </div>
+
+        {/* Sticky Location Card */}
         <section
           style={{
             background: "var(--wf-surface, #FFFFFF)",
@@ -572,6 +624,8 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
             minWidth: 0,
             boxSizing: "border-box",
             wordBreak: "break-word",
+            position: "sticky",
+            top: "24px",
           }}
         >
           <h2 style={{ margin: "0 0 12px", fontSize: "18px", fontWeight: 800, color: "var(--wf-text, #1B1D1F)" }}>Location</h2>

@@ -556,9 +556,9 @@ export function SettingsPage({ posts, places, isAdmin = false, onRefresh }: Sett
               <span>Version</span>
               <span style={{ fontWeight: 600, color: "var(--wf-text)" }}>1.0.0</span>
             </div>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
               <span>Map data</span>
-              <span style={{ fontWeight: 600, color: "var(--wf-text)" }}>CARTO Positron · OpenStreetMap</span>
+              <span style={{ fontWeight: 600, color: "var(--wf-text)", textAlign: "right" }}>OpenFreeMap · OpenStreetMap</span>
             </div>
           </div>
         </section>

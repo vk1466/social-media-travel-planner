@@ -106,7 +106,7 @@ export function DesktopSidebar({ isAdmin }: DesktopSidebarProps) {
               width: "32px",
               height: "32px",
               borderRadius: "10px",
-              background: "var(--accent)",
+              background: "var(--accent, #FF5A4E)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -131,8 +131,8 @@ export function DesktopSidebar({ isAdmin }: DesktopSidebarProps) {
             width: "100%",
             borderRadius: "var(--radius-pill)",
             border: 0,
-            background: "var(--accent)",
-            color: "var(--accent-ink)",
+            background: "var(--accent, #FF5A4E)",
+            color: "var(--accent-ink, #FFFFFF)",
             fontFamily: "inherit",
             fontSize: "14px",
             fontWeight: 600,
@@ -242,7 +242,7 @@ export function DesktopSidebar({ isAdmin }: DesktopSidebarProps) {
               borderRadius: "var(--radius-sm)",
               textDecoration: "none",
               fontSize: "13px",
-              color: "var(--accent)",
+              color: "var(--accent, #FF5A4E)",
               fontWeight: 500,
             }}
           >

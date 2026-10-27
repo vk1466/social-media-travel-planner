@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import * as maplibregl from "maplibre-gl";
 import Supercluster, { type PointFeature } from "supercluster";
-import { Search, X } from "lucide-react";
+import { Search, X, ArrowRight } from "lucide-react";
 import { EmptyState } from "../components/EmptyState";
 import { useSavePipeline } from "../state/SavePipelineContext";
 import type { Place, SavedPost } from "../../api";
@@ -243,9 +243,9 @@ export function MapPage({ places, posts, loading }: MapPageProps) {
     const isDesktop = typeof window !== "undefined" && window.innerWidth >= 1024;
     targetMap.fitBounds(b, {
       padding: isDesktop
-        ? { top: 48, bottom: 48, left: 400 + 48, right: 48 }
+        ? { top: 48, bottom: 48, left: 48, right: 48 }
         : { top: 70, bottom: 120, left: 24, right: 24 },
-      maxZoom: 13,
+      maxZoom: 14,
       duration: immediate ? 0 : 400,
     });
   }, [mappablePlaces]);
@@ -277,7 +277,7 @@ export function MapPage({ places, posts, loading }: MapPageProps) {
 
     const map = new maplibregl.Map({
       container: mapContainerRef.current,
-      style: cartoMaplibreStyle(isDark) as maplibregl.StyleSpecification,
+      style: cartoMaplibreStyle(isDark),
       center: initialCenter,
       zoom: mappablePlaces.length > 0 ? 11 : 4,
       minZoom: 2,
@@ -382,15 +382,7 @@ export function MapPage({ places, posts, loading }: MapPageProps) {
     });
   }, [selectedPlace]);
 
-  if (loading && places.length === 0) {
-    return (
-      <main style={{ maxWidth: "1280px", margin: "0 auto", padding: "40px 16px", width: "100%" }}>
-        <div className="wf-skeleton" style={{ width: "100%", height: "600px", borderRadius: "24px" }} />
-      </main>
-    );
-  }
-
-  if (mappablePlaces.length === 0) {
+  if (!loading && mappablePlaces.length === 0) {
     return (
       <main style={{ maxWidth: "1280px", margin: "0 auto", padding: "60px 16px", width: "100%" }}>
         <EmptyState
@@ -525,7 +517,10 @@ export function MapPage({ places, posts, loading }: MapPageProps) {
             const isSelected = selectedPlaceId === p.place_id;
             const visual = getCategoryVisual(p.category);
             const post = postsByPlaceId.get(p.place_id);
-            const rawThumb = post?.thumbnail_url || (post?.slide_media_urls && post.slide_media_urls[0]);
+            // Deduplicate multi-stop reel thumbnail so sibling places don't look like duplicates
+            const isMultiStop = (post?.place_ids?.length || 0) > 1;
+            const isFirstStop = post?.place_ids?.[0] === p.place_id;
+            const rawThumb = p.image_url || (!isMultiStop || isFirstStop ? (post?.thumbnail_url || (post?.slide_media_urls && post.slide_media_urls[0])) : null);
             const thumbnail = rawThumb ? proxiedMediaUrl(rawThumb) : null;
             const tip = p.tips?.[0];
 
@@ -696,72 +691,155 @@ export function MapPage({ places, posts, loading }: MapPageProps) {
             className="wf-map-selected-card"
             style={{
               position: "absolute",
-              background: "var(--wf-surface)",
-              borderRadius: "var(--wf-radius-card)",
-              border: "1px solid var(--wf-border)",
-              boxShadow: "var(--wf-shadow-elevated)",
-              padding: "16px",
+              bottom: "24px",
+              left: "24px",
+              width: "min(360px, calc(100% - 48px))",
+              background: "var(--surface, #FFFFFF)",
+              borderRadius: "20px",
+              border: "1px solid var(--line, #E7E6E3)",
+              boxShadow: "0 12px 32px rgba(0,0,0,0.18)",
+              overflow: "hidden",
+              zIndex: 40,
               display: "flex",
               flexDirection: "column",
-              gap: "8px",
-              zIndex: 30,
             }}
           >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px" }}>
-              <div>
-                <h3 className="wf-type-h2" style={{ margin: 0, fontSize: "18px" }}>
-                  {selectedPlace.display_name}
-                </h3>
-                <p style={{ margin: "4px 0 0", fontSize: "13px", color: "var(--wf-text-muted)" }}>
-                  {[selectedPlace.location?.city, selectedPlace.location?.country].filter(Boolean).join(", ")}
-                </p>
-              </div>
+            {(() => {
+              const visual = getCategoryVisual(selectedPlace.category);
+              const post = postsByPlaceId.get(selectedPlace.place_id);
+              const rawThumb = selectedPlace.image_url || post?.thumbnail_url;
+              const thumb = rawThumb ? proxiedMediaUrl(rawThumb) : null;
+              return (
+                <>
+                  <div
+                    style={{
+                      height: "140px",
+                      width: "100%",
+                      background: visual.tint,
+                      position: "relative",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      overflow: "hidden",
+                    }}
+                  >
+                    <span style={{ fontSize: "40px" }}>{visual.glyph}</span>
+                    {thumb && (
+                      <img
+                        src={thumb}
+                        alt={selectedPlace.display_name}
+                        style={{
+                          position: "absolute",
+                          inset: 0,
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
+                        }}
+                        onError={(e) => {
+                          e.currentTarget.style.display = "none";
+                        }}
+                      />
+                    )}
+                    <button
+                      type="button"
+                      aria-label="Close"
+                      onClick={() => {
+                        setSelectedPlaceId(null);
+                        setSearchParams({});
+                      }}
+                      style={{
+                        position: "absolute",
+                        top: "12px",
+                        right: "12px",
+                        width: "32px",
+                        height: "32px",
+                        borderRadius: "50%",
+                        border: "none",
+                        background: "rgba(0,0,0,0.45)",
+                        backdropFilter: "blur(8px)",
+                        color: "#FFFFFF",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        cursor: "pointer",
+                        zIndex: 2,
+                      }}
+                    >
+                      <X size={16} strokeWidth={2.5} />
+                    </button>
+                    <div
+                      style={{
+                        position: "absolute",
+                        bottom: "10px",
+                        left: "12px",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px",
+                        background: "rgba(0,0,0,0.65)",
+                        backdropFilter: "blur(6px)",
+                        borderRadius: "999px",
+                        padding: "3px 10px",
+                        color: "#FFFFFF",
+                        fontSize: "12px",
+                        fontWeight: 600,
+                        zIndex: 2,
+                      }}
+                    >
+                      <span>{visual.glyph}</span>
+                      <span>{visual.name}</span>
+                    </div>
+                  </div>
 
-              <button
-                type="button"
-                aria-label="Close"
-                onClick={() => {
-                  setSelectedPlaceId(null);
-                  setSearchParams({});
-                }}
-                style={{
-                  width: "36px",
-                  height: "36px",
-                  borderRadius: "50%",
-                  border: "none",
-                  background: "var(--wf-surface-2)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  cursor: "pointer",
-                  color: "var(--wf-text-muted)",
-                }}
-              >
-                <X size={18} strokeWidth={2} />
-              </button>
-            </div>
+                  <div style={{ padding: "16px", display: "flex", flexDirection: "column", gap: "12px" }}>
+                    <div>
+                      <h3
+                        style={{
+                          margin: 0,
+                          fontSize: "18px",
+                          fontWeight: 700,
+                          letterSpacing: "-0.015em",
+                          color: "var(--ink, #16181B)",
+                        }}
+                      >
+                        {selectedPlace.display_name}
+                      </h3>
+                      <p
+                        style={{
+                          margin: "4px 0 0",
+                          fontSize: "13px",
+                          color: "var(--ink-2, #5E636B)",
+                        }}
+                      >
+                        {[selectedPlace.location?.city, selectedPlace.location?.country].filter(Boolean).join(", ") || "Location saved"}
+                      </p>
+                    </div>
 
-            <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
-              <Link
-                to={`/place/${selectedPlace.place_id}`}
-                state={{ from: "/map" }}
-                style={{
-                  height: "38px",
-                  padding: "0 16px",
-                  borderRadius: "var(--wf-radius-pill)",
-                  background: "var(--wf-primary)",
-                  color: "var(--wf-on-primary)",
-                  fontSize: "13px",
-                  fontWeight: 600,
-                  textDecoration: "none",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                View place details
-              </Link>
-            </div>
+                    <Link
+                      to={`/place/${selectedPlace.place_id}`}
+                      state={{ from: "/map" }}
+                      style={{
+                        height: "40px",
+                        width: "100%",
+                        borderRadius: "var(--radius-pill, 999px)",
+                        background: "var(--accent, #FF5A4E)",
+                        color: "#FFFFFF",
+                        fontSize: "14px",
+                        fontWeight: 600,
+                        textDecoration: "none",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: "6px",
+                        boxShadow: "0 2px 8px rgba(255, 90, 78, 0.25)",
+                      }}
+                    >
+                      <span>View place</span>
+                      <ArrowRight size={16} strokeWidth={2} />
+                    </Link>
+                  </div>
+                </>
+              );
+            })()}
           </div>
         )}
 

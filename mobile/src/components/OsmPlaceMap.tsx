@@ -36,7 +36,7 @@ export function OsmPlaceMap({
   );
   const html = useMemo(() => buildMapHtml(isDark), [isDark]);
   const source = useMemo(
-    () => ({ html, baseUrl: "https://cartocdn.com" }),
+    () => ({ html, baseUrl: "https://openfreemap.org" }),
     [html],
   );
   const webViewRef = useRef<WebView>(null);
@@ -221,6 +221,7 @@ function buildMapHtml(isDark = false): string {
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" />
   <style>
     *, *::before, *::after { box-sizing: border-box; }
     html, body {
@@ -330,6 +331,8 @@ function buildMapHtml(isDark = false): string {
   <div id="map"></div>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+  <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+  <script src="https://unpkg.com/@maplibre/maplibre-gl-leaflet@0.0.21/leaflet-maplibre-gl.js"></script>
   <script>
     function esc(value) {
       return String(value == null ? "" : value).replace(/[&<>"']/g, function (ch) {
@@ -347,14 +350,17 @@ function buildMapHtml(isDark = false): string {
       zoomAnimation: true
     });
     L.control.attribution({ position: "bottomleft", prefix: false }).addTo(map);
-    L.tileLayer(${JSON.stringify(tileUrl)}, {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-      subdomains: 'abcd',
-      maxZoom: 19,
-      updateWhenIdle: true,
-      updateWhenZooming: false,
-      keepBuffer: 3
-    }).addTo(map);
+    var openFreeMapStyle = ${JSON.stringify(isDark ? "https://tiles.openfreemap.org/styles/dark" : "https://tiles.openfreemap.org/styles/positron")};
+    if (typeof L.maplibreGL === "function") {
+      L.maplibreGL({
+        style: openFreeMapStyle
+      }).addTo(map);
+    } else {
+      L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://openfreemap.org">OpenFreeMap</a>',
+        maxZoom: 19
+      }).addTo(map);
+    }
 
     const markersGroup = (typeof L.markerClusterGroup === 'function')
       ? L.markerClusterGroup({

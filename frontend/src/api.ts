@@ -320,6 +320,7 @@ export interface Place {
   facts?: PlaceFacts | null;
   google_maps_url?: string | null;
   summary?: string | null;
+  image_url?: string | null;
 }
 
 export interface PlaceDetail {

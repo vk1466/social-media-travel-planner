@@ -24,9 +24,9 @@
   --forest-soft: var(--wf-soft);
   --forest-ring: rgb(var(--wf-forest-rgb) / 0.18);
 
-  --accent: var(--wf-coral);
-  --accent-hover: var(--wf-coral-deep);
-  --accent-soft: var(--wf-coral-soft);
+  --accent: var(--wf-coral, #FF5A4E);
+  --accent-hover: var(--wf-coral-deep, #E0483C);
+  --accent-soft: var(--wf-coral-soft, rgba(255, 90, 78, 0.12));
   --accent-ring: rgb(var(--wf-coral-rgb) / 0.18);
 
   --sage-accent: var(--wf-sage);

@@ -262,7 +262,7 @@ export default function SettingsScreen() {
         </View>
         <View style={{ flexDirection: "row", justifyContent: "space-between", paddingTop: spacing.xs }}>
           <Text style={{ fontSize: 13, color: colors.muted }}>Map data</Text>
-          <Text style={{ fontSize: 13, fontWeight: "600", color: colors.ink }}>CARTO Positron · OSM</Text>
+          <Text style={{ fontSize: 13, fontWeight: "600", color: colors.ink }}>OpenFreeMap · OpenStreetMap</Text>
         </View>
       </View>
     </ScrollView>

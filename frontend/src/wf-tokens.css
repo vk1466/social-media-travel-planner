@@ -10,11 +10,15 @@
   --ink: #16181B;
   --ink-2: #5E636B;
   --line: #E7E6E3;
-  --accent: #FF5A4E;
-  --accent-ink: #FFFFFF;
+  --accent: #FF5A4E !important;
+  --accent-ink: #FFFFFF !important;
   --success: #1F9D6B;
   --warn: #E59A1A;
   --danger: #D93A3A;
+  --wf-coral: #FF5A4E;
+  --wf-coral-deep: #E0483C;
+  --wf-coral-soft: rgba(255, 90, 78, 0.12);
+  --wf-coral-rgb: 255 90 78;
 
   /* Category hues */
   --cat-food: #F2994A;

@@ -21,8 +21,8 @@ export function EmptyState({
   description,
   icon,
   iconPath,
-  tint = "#ECECEA",
-  ink = "#4A4E52",
+  tint = "var(--wf-surface-2, #ECECEA)",
+  ink = "var(--wf-text, #4A4E52)",
   primaryActionLabel,
   onPrimaryAction,
   secondaryActionLabel,
@@ -32,8 +32,8 @@ export function EmptyState({
   return (
     <section
       style={{
-        background: "#FFFFFF",
-        border: "1px solid #E6E3DC",
+        background: "var(--wf-surface, #FFFFFF)",
+        border: "1px solid var(--wf-border, #E6E3DC)",
         borderRadius: "24px",
         padding: "36px 24px",
         display: "flex",
@@ -43,6 +43,7 @@ export function EmptyState({
         gap: "12px",
         minHeight: "280px",
         boxSizing: "border-box",
+        color: "var(--wf-text, #16181B)",
         ...style,
       }}
     >
@@ -55,7 +56,7 @@ export function EmptyState({
             fontWeight: 700,
             letterSpacing: "0.08em",
             textTransform: "uppercase",
-            color: "#8A8E92",
+            color: "var(--wf-text-muted, #8A8E92)",
           }}
         >
           {screenLabel}
@@ -104,7 +105,7 @@ export function EmptyState({
           fontSize: "20px",
           letterSpacing: "-0.02em",
           fontWeight: 800,
-          color: "#1B1D1F",
+          color: "var(--wf-text, #1B1D1F)",
         }}
       >
         {headline}
@@ -115,7 +116,7 @@ export function EmptyState({
           margin: 0,
           fontSize: "14px",
           lineHeight: 1.5,
-          color: "#6B6F73",
+          color: "var(--wf-text-muted, #6B6F73)",
           maxWidth: "320px",
         }}
       >
@@ -141,7 +142,7 @@ export function EmptyState({
               padding: "0 22px",
               borderRadius: "999px",
               border: 0,
-              background: "#1B1D1F",
+              background: "var(--wf-primary, #FF5A4E)",
               fontFamily: "inherit",
               fontSize: "14px",
               fontWeight: 700,
@@ -161,12 +162,12 @@ export function EmptyState({
               height: "44px",
               padding: "0 22px",
               borderRadius: "999px",
-              border: "1px solid #D9D5CB",
-              background: "#FFFFFF",
+              border: "1px solid var(--wf-border, #D9D5CB)",
+              background: "var(--wf-surface-2, #FFFFFF)",
               fontFamily: "inherit",
               fontSize: "14px",
               fontWeight: 700,
-              color: "#1B1D1F",
+              color: "var(--wf-text, #1B1D1F)",
               cursor: "pointer",
             }}
           >
