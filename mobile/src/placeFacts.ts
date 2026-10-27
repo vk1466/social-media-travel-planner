@@ -20,18 +20,23 @@ export function factsAttribution(facts: PlaceFacts): string {
   return `Facts from ${names.join(", ")}`;
 }
 
+export function stripSourceRef(text: string): string {
+  if (!text) return text;
+  return text.replace(/\s*\((?:source_ref|source):\s*https?:\/\/[^\s)]+\)/gi, "").trim();
+}
+
 export function factsStructuredRows(facts: PlaceFacts): { label: string; value: string }[] {
   const rows: { label: string; value: string }[] = [];
-  if (facts.famous_for) rows.push({ label: "Famous for", value: facts.famous_for });
-  if (facts.admission_text) rows.push({ label: "Admission", value: facts.admission_text });
+  if (facts.famous_for) rows.push({ label: "Famous for", value: stripSourceRef(facts.famous_for) });
+  if (facts.admission_text) rows.push({ label: "Admission", value: stripSourceRef(facts.admission_text) });
   if (facts.opening_hours_text.length > 0) {
-    rows.push({ label: "Hours", value: facts.opening_hours_text.join("; ") });
+    rows.push({ label: "Hours", value: facts.opening_hours_text.map(stripSourceRef).join("; ") });
   }
   if (facts.cuisines.length > 0) {
-    rows.push({ label: "Cuisine", value: facts.cuisines.join(", ") });
+    rows.push({ label: "Cuisine", value: facts.cuisines.map(stripSourceRef).join(", ") });
   }
   if (facts.best_time_to_visit) {
-    rows.push({ label: "Best time", value: facts.best_time_to_visit });
+    rows.push({ label: "Best time", value: stripSourceRef(facts.best_time_to_visit) });
   }
   if (facts.typical_duration_minutes != null) {
     rows.push({
@@ -48,28 +53,28 @@ export function factsStructuredRows(facts: PlaceFacts): { label: string; value: 
       value: facts.reservation_required ? "Required" : "Not required",
     });
   }
-  if (facts.website_url) rows.push({ label: "Website", value: facts.website_url });
-  if (facts.phone_number) rows.push({ label: "Phone", value: facts.phone_number });
+  if (facts.website_url) rows.push({ label: "Website", value: stripSourceRef(facts.website_url) });
+  if (facts.phone_number) rows.push({ label: "Phone", value: stripSourceRef(facts.phone_number) });
   if (facts.distance_km != null) {
     rows.push({ label: "Distance", value: `${facts.distance_km} km` });
   }
   if (facts.elevation_gain_m != null) {
     rows.push({ label: "Elevation gain", value: `${facts.elevation_gain_m} m` });
   }
-  if (facts.difficulty) rows.push({ label: "Difficulty", value: facts.difficulty });
+  if (facts.difficulty) rows.push({ label: "Difficulty", value: stripSourceRef(facts.difficulty) });
   return rows;
 }
 
 export function factsRows(facts: PlaceFacts): { label: string; value: string }[] {
   const rows = factsStructuredRows(facts);
   if (facts.highlights && facts.highlights.length > 0) {
-    rows.push({ label: "Highlights", value: facts.highlights.join("; ") });
+    rows.push({ label: "Highlights", value: facts.highlights.map(stripSourceRef).join("; ") });
   }
   if (facts.caveats && facts.caveats.length > 0) {
-    rows.push({ label: "Watch out", value: facts.caveats.join("; ") });
+    rows.push({ label: "Watch out", value: facts.caveats.map(stripSourceRef).join("; ") });
   }
   if (facts.recommendations && facts.recommendations.length > 0) {
-    rows.push({ label: "Recommendations", value: facts.recommendations.join("; ") });
+    rows.push({ label: "Recommendations", value: facts.recommendations.map(stripSourceRef).join("; ") });
   }
   return rows;
 }

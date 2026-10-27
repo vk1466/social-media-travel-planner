@@ -4,6 +4,7 @@ from fastapi import BackgroundTasks, FastAPI, HTTPException, Query, Response
 from fastapi.middleware.cors import CORSMiddleware
 import httpx
 import logging
+import re
 
 from travelplanner.logging_config import configure_logging
 from travelplanner import settings
@@ -123,12 +124,31 @@ def _post_to_schema(post: SavedPost) -> SavedPostSchema:
   return SavedPostSchema(**post_to_dict(post))
 
 
+_SOURCE_REF_REGEX = re.compile(
+  r"\s*\((?:source_ref|source):\s*https?://[^\s)]+\)",
+  re.IGNORECASE,
+)
+
+
+def _clean_source_ref_text(val: Any) -> Any:
+  if isinstance(val, str):
+    return _SOURCE_REF_REGEX.sub("", val).strip()
+  if isinstance(val, list):
+    return [_clean_source_ref_text(item) for item in val]
+  if isinstance(val, tuple):
+    return tuple(_clean_source_ref_text(item) for item in val)
+  if isinstance(val, dict):
+    return {k: _clean_source_ref_text(v) for k, v in val.items()}
+  return val
+
+
 def _place_to_schema(place: Place) -> PlaceSchema:
   data = place_to_dict(place)
   data["details"] = list(
     compact_mention_details(place.details, place_name=place.display_name)
   )
-  return PlaceSchema(**data)
+  cleaned_data = _clean_source_ref_text(data)
+  return PlaceSchema(**cleaned_data)
 
 
 def _visit_to_schema(visit: Visit) -> VisitSchema:
@@ -1405,7 +1425,12 @@ def refresh_place_facts(place_id: str, user_id: AdminUserId) -> PlaceFactsRefres
   if place is None:
     raise HTTPException(status_code=404, detail="Place not found")
   result = enrich_place_facts(place, force=True)
-  facts_schema = PlaceFactsSchema(**asdict(result.facts)) if result.facts else None
+  raw_facts = asdict(result.facts) if result.facts else None
+  facts_schema = (
+    PlaceFactsSchema(**_clean_source_ref_text(raw_facts))
+    if raw_facts
+    else None
+  )
   return PlaceFactsRefreshSchema(
     place_id=place_id,
     status=result.status,

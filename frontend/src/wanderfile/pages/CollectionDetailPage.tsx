@@ -52,7 +52,7 @@ export function CollectionDetailPage({ posts }: CollectionDetailPageProps) {
             padding: "0 20px",
             borderRadius: "999px",
             border: 0,
-            background: "#1B1D1F",
+            background: "var(--accent, #FF5A4E)",
             color: "#FFFFFF",
             fontFamily: "inherit",
             fontSize: "14px",

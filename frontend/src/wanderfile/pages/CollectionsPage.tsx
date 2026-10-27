@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import type { SavedPost, Place } from "../../api";
 import { CANONICAL_CATEGORIES, getCategoryVisual } from "../categoryVisuals";
-import { proxiedMediaUrl } from "../../postDisplayUtils";
+import { proxiedMediaUrl, getPlaceBestImageUrl } from "../../postDisplayUtils";
 
 interface CollectionsPageProps {
   posts: SavedPost[];
@@ -19,6 +19,173 @@ interface CollectionItem {
   link: string;
 }
 
+function CollectionMosaic({ thumbnails, title }: { thumbnails: string[]; title: string }) {
+  const distinct = useMemo(() => {
+    const set = new Set<string>();
+    const res: string[] = [];
+    for (const t of thumbnails) {
+      if (t && !set.has(t)) {
+        set.add(t);
+        res.push(t);
+      }
+    }
+    return res;
+  }, [thumbnails]);
+
+  if (distinct.length === 0) {
+    return (
+      <div
+        style={{
+          width: "100%",
+          aspectRatio: "1 / 1",
+          borderRadius: "14px",
+          overflow: "hidden",
+          background: "var(--surface-2, #F3F3F1)",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: "8px",
+          color: "var(--ink-2, #5E636B)",
+        }}
+      >
+        <span style={{ fontSize: "28px", opacity: 0.7 }}>📍</span>
+        <span style={{ fontSize: "12px", fontWeight: 600 }}>{title}</span>
+      </div>
+    );
+  }
+
+  if (distinct.length === 1) {
+    return (
+      <div
+        style={{
+          width: "100%",
+          aspectRatio: "1 / 1",
+          borderRadius: "14px",
+          overflow: "hidden",
+          position: "relative",
+          background: "var(--surface-2, #F3F3F1)",
+        }}
+      >
+        <img
+          src={proxiedMediaUrl(distinct[0]) ?? undefined}
+          alt=""
+          loading="lazy"
+          style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+          onError={(e) => {
+            e.currentTarget.style.display = "none";
+          }}
+        />
+      </div>
+    );
+  }
+
+  if (distinct.length === 2) {
+    return (
+      <div
+        style={{
+          width: "100%",
+          aspectRatio: "1 / 1",
+          borderRadius: "14px",
+          overflow: "hidden",
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: "3px",
+          background: "var(--surface-2, #F3F3F1)",
+        }}
+      >
+        {distinct.slice(0, 2).map((thumb, idx) => (
+          <div key={idx} style={{ position: "relative", width: "100%", height: "100%", overflow: "hidden" }}>
+            <img
+              src={proxiedMediaUrl(thumb) ?? undefined}
+              alt=""
+              loading="lazy"
+              style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+              onError={(e) => {
+                e.currentTarget.style.display = "none";
+              }}
+            />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (distinct.length === 3) {
+    return (
+      <div
+        style={{
+          width: "100%",
+          aspectRatio: "1 / 1",
+          borderRadius: "14px",
+          overflow: "hidden",
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gridTemplateRows: "1.2fr 1fr",
+          gap: "3px",
+          background: "var(--surface-2, #F3F3F1)",
+        }}
+      >
+        <div style={{ gridColumn: "1 / -1", position: "relative", width: "100%", height: "100%", overflow: "hidden" }}>
+          <img
+            src={proxiedMediaUrl(distinct[0]) ?? undefined}
+            alt=""
+            loading="lazy"
+            style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+            onError={(e) => {
+              e.currentTarget.style.display = "none";
+            }}
+          />
+        </div>
+        {distinct.slice(1, 3).map((thumb, idx) => (
+          <div key={idx} style={{ position: "relative", width: "100%", height: "100%", overflow: "hidden" }}>
+            <img
+              src={proxiedMediaUrl(thumb) ?? undefined}
+              alt=""
+              loading="lazy"
+              style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+              onError={(e) => {
+                e.currentTarget.style.display = "none";
+              }}
+            />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  // 4 or more distinct images -> 2x2 grid
+  return (
+    <div
+      style={{
+        width: "100%",
+        aspectRatio: "1 / 1",
+        borderRadius: "14px",
+        overflow: "hidden",
+        display: "grid",
+        gridTemplateColumns: "1fr 1fr",
+        gridTemplateRows: "1fr 1fr",
+        gap: "3px",
+        background: "var(--surface-2, #F3F3F1)",
+      }}
+    >
+      {distinct.slice(0, 4).map((thumb, idx) => (
+        <div key={idx} style={{ position: "relative", width: "100%", height: "100%", overflow: "hidden" }}>
+          <img
+            src={proxiedMediaUrl(thumb) ?? undefined}
+            alt=""
+            loading="lazy"
+            style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+            onError={(e) => {
+              e.currentTarget.style.display = "none";
+            }}
+          />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function CollectionsPage({ posts, places }: CollectionsPageProps) {
   const [activeFilter, setActiveFilter] = useState<"all" | "city" | "category" | "creator">("all");
 
@@ -30,11 +197,25 @@ export function CollectionsPage({ posts, places }: CollectionsPageProps) {
       if (!city) continue;
       const data = map.get(city) || { count: 0, thumbs: [] };
       data.count += 1;
-      const post = posts.find((p) => place.source_post_ids?.includes(p.post_id));
-      if (post?.thumbnail_url && data.thumbs.length < 4 && !data.thumbs.includes(post.thumbnail_url)) {
-        data.thumbs.push(post.thumbnail_url);
+      const img = getPlaceBestImageUrl(place, posts);
+      if (img && data.thumbs.length < 4 && !data.thumbs.includes(img)) {
+        data.thumbs.push(img);
       }
       map.set(city, data);
+    }
+    // If fewer than 4 thumbs, also search posts that mention this city
+    for (const [city, data] of map.entries()) {
+      if (data.thumbs.length < 4) {
+        for (const post of posts) {
+          if (data.thumbs.length >= 4) break;
+          const matches = post.place_ids?.some(
+            (pid) => places.find((pl) => pl.place_id === pid)?.location?.city === city
+          );
+          if (matches && post.thumbnail_url && !data.thumbs.includes(post.thumbnail_url)) {
+            data.thumbs.push(post.thumbnail_url);
+          }
+        }
+      }
     }
     return Array.from(map.entries())
       .map(([city, data]) => ({
@@ -57,9 +238,9 @@ export function CollectionsPage({ posts, places }: CollectionsPageProps) {
       const thumbs: string[] = [];
       for (const p of catPlaces) {
         if (thumbs.length >= 4) break;
-        const post = posts.find((item) => p.source_post_ids?.includes(item.post_id));
-        if (post?.thumbnail_url && !thumbs.includes(post.thumbnail_url)) {
-          thumbs.push(post.thumbnail_url);
+        const img = getPlaceBestImageUrl(p, posts);
+        if (img && !thumbs.includes(img)) {
+          thumbs.push(img);
         }
       }
       return {
@@ -85,6 +266,17 @@ export function CollectionsPage({ posts, places }: CollectionsPageProps) {
       if (post.thumbnail_url && data.thumbs.length < 4 && !data.thumbs.includes(post.thumbnail_url)) {
         data.thumbs.push(post.thumbnail_url);
       }
+      // Also check places from this post
+      for (const pid of post.place_ids || []) {
+        if (data.thumbs.length >= 4) break;
+        const pl = places.find((p) => p.place_id === pid);
+        if (pl) {
+          const img = getPlaceBestImageUrl(pl, posts);
+          if (img && !data.thumbs.includes(img)) {
+            data.thumbs.push(img);
+          }
+        }
+      }
       map.set(creator, data);
     }
     return Array.from(map.entries())
@@ -99,7 +291,7 @@ export function CollectionsPage({ posts, places }: CollectionsPageProps) {
       }))
       .filter((c) => c.count > 1)
       .sort((a, b) => b.count - a.count);
-  }, [posts]);
+  }, [places, posts]);
 
   const allAutoCollections = useMemo(() => {
     if (activeFilter === "city") return cityCollections;
@@ -162,7 +354,7 @@ export function CollectionsPage({ posts, places }: CollectionsPageProps) {
         </div>
       </div>
 
-      {/* 2x2 Thumbnail Mosaic Cards Grid */}
+      {/* Adaptive Thumbnail Mosaic Cards Grid */}
       <div
         style={{
           display: "grid",
@@ -189,53 +381,8 @@ export function CollectionsPage({ posts, places }: CollectionsPageProps) {
             }}
             className="wf-card-hover"
           >
-            {/* 2x2 Thumbnail Mosaic */}
-            <div
-              style={{
-                width: "100%",
-                aspectRatio: "1 / 1",
-                borderRadius: "14px",
-                overflow: "hidden",
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gridTemplateRows: "1fr 1fr",
-                gap: "3px",
-                background: "var(--surface-2, #F3F3F1)",
-              }}
-            >
-              {[0, 1, 2, 3].map((idx) => {
-                const rawThumb = col.thumbnails[idx];
-                const thumb = rawThumb ? proxiedMediaUrl(rawThumb) : null;
-                return (
-                  <div
-                    key={idx}
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      background: "var(--surface-2, #F3F3F1)",
-                      overflow: "hidden",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      position: "relative",
-                    }}
-                  >
-                    <span style={{ fontSize: "18px", opacity: 0.35 }}>📍</span>
-                    {thumb ? (
-                      <img
-                        src={thumb}
-                        alt=""
-                        loading="lazy"
-                        style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
-                        onError={(e) => {
-                          e.currentTarget.style.display = "none";
-                        }}
-                      />
-                    ) : null}
-                  </div>
-                );
-              })}
-            </div>
+            {/* Adaptive Thumbnail Mosaic */}
+            <CollectionMosaic thumbnails={col.thumbnails} title={col.title} />
 
             {/* Collection Metadata */}
             <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>

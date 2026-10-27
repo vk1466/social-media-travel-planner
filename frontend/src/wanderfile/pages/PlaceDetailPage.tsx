@@ -11,18 +11,33 @@ import { getPostTitle, proxiedMediaUrl, capitalizePlaceName, getEffectiveAddress
 import { getCategoryVisual } from "../categoryVisuals";
 import type { Place, SavedPost } from "../../api";
 
+export interface FormattedTextResult {
+  text: string;
+  sourceUrls: string[];
+}
+
+export function parseFormattedText(raw: string | null | undefined): FormattedTextResult {
+  if (!raw) return { text: "", sourceUrls: [] };
+  const sourceUrls: string[] = [];
+  const text = raw
+    .replace(/\s*\((?:source_ref|source):\s*(https?:\/\/[^\s)]+)\)/gi, (_, url) => {
+      if (!sourceUrls.includes(url)) {
+        sourceUrls.push(url);
+      }
+      return "";
+    })
+    .trim();
+  return { text, sourceUrls };
+}
+
 interface FormattedBullet {
   text: string;
   sourceUrl?: string;
 }
 
 function parseBullet(raw: string): FormattedBullet {
-  const match = raw.match(/\s*\((?:source_ref|source):\s*(https?:\/\/[^\s)]+)\)\s*$/i);
-  if (match) {
-    const text = raw.slice(0, match.index).trim();
-    return { text, sourceUrl: match[1] };
-  }
-  return { text: raw.trim() };
+  const { text, sourceUrls } = parseFormattedText(raw);
+  return { text, sourceUrl: sourceUrls[0] };
 }
 
 function MiniLocationMap({ lat, lng, displayName: _displayName, category }: { lat: number; lng: number; displayName: string; category?: string | null }) {
@@ -380,20 +395,24 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
               </div>
             )}
 
-            {heroBlurb && (
-              <p
-                style={{
-                  margin: 0,
-                  fontSize: "15px",
-                  lineHeight: 1.5,
-                  color: "var(--wf-text-muted, #5E636B)",
-                  minWidth: 0,
-                  wordBreak: "break-word",
-                }}
-              >
-                {heroBlurb}
-              </p>
-            )}
+            {heroBlurb && (() => {
+              const { text } = parseFormattedText(heroBlurb);
+              return (
+                <p
+                  style={{
+                    margin: 0,
+                    fontSize: "15px",
+                    lineHeight: 1.5,
+                    color: "var(--wf-text-muted, #5E636B)",
+                    minWidth: 0,
+                    overflowWrap: "anywhere",
+                    wordBreak: "break-word",
+                  }}
+                >
+                  {text}
+                </p>
+              );
+            })()}
           </div>
 
           <div style={{ display: "flex", gap: "10px", marginTop: "24px", flexWrap: "wrap", alignItems: "center" }}>
@@ -406,7 +425,7 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
                 padding: "0 20px",
                 borderRadius: "var(--wf-radius-pill)",
                 border: 0,
-                background: visited ? "var(--wf-success, #1F9D6B)" : "var(--wf-text, #16181B)",
+                background: visited ? "var(--wf-success, #1F9D6B)" : "var(--accent, #FF5A4E)",
                 color: "#FFFFFF",
                 fontFamily: "inherit",
                 fontSize: "14px",
@@ -551,16 +570,64 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
                   gap: "16px",
                 }}
               >
-                {keyFacts.map((fact, idx) => (
-                  <div key={idx} style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                    <span style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--wf-text-muted, #5E636B)" }}>
-                      {fact.label}
-                    </span>
-                    <span style={{ fontSize: "14px", fontWeight: 600, color: "var(--wf-text, #1B1D1F)", lineHeight: 1.4 }}>
-                      {fact.value}
-                    </span>
-                  </div>
-                ))}
+                {keyFacts.map((fact, idx) => {
+                  const { text, sourceUrls } = parseFormattedText(fact.value);
+                  return (
+                    <div
+                      key={idx}
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "4px",
+                        minWidth: 0,
+                        overflowWrap: "anywhere",
+                        wordBreak: "break-word",
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontSize: "11px",
+                          fontWeight: 700,
+                          textTransform: "uppercase",
+                          letterSpacing: "0.06em",
+                          color: "var(--wf-text-muted, #5E636B)",
+                        }}
+                      >
+                        {fact.label}
+                      </span>
+                      <span
+                        style={{
+                          fontSize: "14px",
+                          fontWeight: 600,
+                          color: "var(--wf-text, #1B1D1F)",
+                          lineHeight: 1.4,
+                          overflowWrap: "anywhere",
+                          wordBreak: "break-word",
+                        }}
+                      >
+                        {text}
+                        {sourceUrls.map((url, sIdx) => (
+                          <a
+                            key={sIdx}
+                            href={url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                              marginLeft: "6px",
+                              fontSize: "12px",
+                              color: "var(--wf-primary, #FF5A4E)",
+                              textDecoration: "none",
+                              fontWeight: 600,
+                              display: "inline-block",
+                            }}
+                          >
+                            source ↗
+                          </a>
+                        ))}
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
             </section>
           )}
@@ -575,15 +642,46 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
                 padding: "24px",
                 minWidth: 0,
                 boxSizing: "border-box",
+                overflowWrap: "anywhere",
                 wordBreak: "break-word",
               }}
             >
               <h2 style={{ margin: "0 0 14px", fontSize: "18px", fontWeight: 800, color: "var(--wf-text, #1B1D1F)" }}>About & Tips</h2>
-              {aboutText && (
-                <p style={{ margin: "0 0 16px", fontSize: "15px", lineHeight: 1.6, color: "var(--wf-text-muted, #5E636B)", wordBreak: "break-word" }}>
-                  {aboutText}
-                </p>
-              )}
+              {aboutText && (() => {
+                const { text, sourceUrls } = parseFormattedText(aboutText);
+                return (
+                  <p
+                    style={{
+                      margin: "0 0 16px",
+                      fontSize: "15px",
+                      lineHeight: 1.6,
+                      color: "var(--wf-text-muted, #5E636B)",
+                      overflowWrap: "anywhere",
+                      wordBreak: "break-word",
+                    }}
+                  >
+                    {text}
+                    {sourceUrls.map((url, sIdx) => (
+                      <a
+                        key={sIdx}
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          marginLeft: "6px",
+                          fontSize: "12px",
+                          color: "var(--wf-primary, #FF5A4E)",
+                          textDecoration: "none",
+                          fontWeight: 600,
+                          display: "inline-block",
+                        }}
+                      >
+                        source ↗
+                      </a>
+                    ))}
+                  </p>
+                );
+              })()}
               {distinctTips.length > 0 && (
                 <ul style={{ margin: 0, paddingLeft: "20px", color: "var(--wf-text, #1B1D1F)", fontSize: "14px", lineHeight: 1.6, wordBreak: "break-word" }}>
                   {distinctTips.map((raw, idx) => {

@@ -26,7 +26,7 @@ import { ErrorBanner, TagChip } from "@/src/components/ui";
 import { useLibrary } from "@/src/context/LibraryContext";
 import { googleMapsUrl } from "@/src/maps";
 import { compactMentionDetails } from "@/src/mentionDetails";
-import { factsAttribution, factsStructuredRows } from "@/src/placeFacts";
+import { factsAttribution, factsStructuredRows, stripSourceRef } from "@/src/placeFacts";
 import { capitalizePlaceName, getPlatformLabel, getPostTitle, proxiedMediaUrl } from "@/src/postDisplayUtils";
 import { FeatureFlags } from "@/src/featureRegistry";
 import { appHref } from "@/src/nav";
@@ -268,7 +268,7 @@ export default function PlaceDetailScreen() {
               <Text style={styles.aliases}>Also known as {distinctAliases.join(", ")}</Text>
             ) : null}
             {heroBlurb ? (
-              <Text style={styles.summaryText}>{heroBlurb}</Text>
+              <Text style={styles.summaryText}>{stripSourceRef(heroBlurb)}</Text>
             ) : null}
             <View style={styles.headerActions}>
               <Pressable
@@ -366,7 +366,7 @@ export default function PlaceDetailScreen() {
             {whyGoDetails.length > 0 ? whyGoDetails.map((item) => (
               <View key={item} style={styles.bulletRow}>
                 <Ionicons name="ellipse" size={5} color={colors.brand} style={styles.bulletDot} />
-                <Text style={styles.bullet}>{item}</Text>
+                <Text style={styles.bullet}>{stripSourceRef(item)}</Text>
               </View>
             )) : null}
             {whyGoDetails.length === 0 && !(place.facts?.highlights && place.facts.highlights.length > 0) ? (
@@ -375,7 +375,7 @@ export default function PlaceDetailScreen() {
             {place.facts?.highlights?.map((highlight) => (
               <View key={highlight} style={styles.highlightCard}>
                 <Ionicons name="sparkles-outline" size={16} color={colors.brand} />
-                <Text style={styles.highlightText}>{highlight}</Text>
+                <Text style={styles.highlightText}>{stripSourceRef(highlight)}</Text>
               </View>
             ))}
             {place.facts && factsAttribution(place.facts) ? <Text style={styles.sourceNote}>{factsAttribution(place.facts)}</Text> : null}
@@ -389,13 +389,13 @@ export default function PlaceDetailScreen() {
               {place.facts?.recommendations?.map((recommendation) => (
                 <View key={recommendation} style={styles.insightRow}>
                   <Text style={styles.insightLabel}>Recommendation</Text>
-                  <Text style={styles.factValue}>{recommendation}</Text>
+                  <Text style={styles.factValue}>{stripSourceRef(recommendation)}</Text>
                 </View>
               ))}
               {place.facts?.caveats?.map((caveat) => (
                 <View key={caveat} style={[styles.insightRow, styles.caveatRow]}>
                   <Text style={styles.caveatLabel}>Caveat</Text>
-                  <Text style={styles.factValue}>{caveat}</Text>
+                  <Text style={styles.factValue}>{stripSourceRef(caveat)}</Text>
                 </View>
               ))}
               {place.facts && factsAttribution(place.facts) ? (
