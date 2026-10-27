@@ -95,6 +95,7 @@ def test_map_components_and_mobile_osm_fixes() -> None:
   osm_native = osm_native_path.read_text(encoding="utf-8")
   assert 'userAgent="Mozilla/5.0' in osm_native
   # Confirm closing brace for selected-marker-dot is present before marker-cluster
-  assert ".selected-marker-dot {\n      width: 28px;\n      height: 28px;\n      border-radius: 14px;\n      background: #1F6F8B;\n      border: 4px solid #FFFFFF;\n      box-shadow: 0 3px 10px rgba(0,0,0,0.3);\n    }\n    .marker-cluster-small" in osm_native
+  assert ".selected-marker-dot {" in osm_native
+  assert "}\n    .marker-cluster-small" in osm_native
 
 

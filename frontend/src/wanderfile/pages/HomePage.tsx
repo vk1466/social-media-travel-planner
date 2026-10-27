@@ -1,19 +1,14 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { ErrorBanner } from "../components/ErrorBanner";
 import { SkeletonGrid } from "../components/SkeletonCard";
-import { ComingSoonButton } from "../comingSoon/ComingSoonControl";
-import { FeatureFlags } from "../comingSoon/featureRegistry";
-import { PostCard } from "../components/PostCard";
+import { ReelCard } from "../components/ReelCard";
 import { EditPostModal } from "../components/EditPostModal";
-import { useSavePipeline, toFriendlyErrorMessage } from "../state/SavePipelineContext";
+import { useSavePipeline } from "../state/SavePipelineContext";
 import { useToast } from "../state/ToastContext";
 import { deletePost, parsePostId, type SavedPost, type Place } from "../../api";
 import { proxiedMediaUrl } from "../../postDisplayUtils";
-
-function pluralize(count: number, singular: string, plural: string = `${singular}s`): string {
-  return `${count} ${count === 1 ? singular : plural}`;
-}
+import { getCategoryVisual } from "../categoryVisuals";
 
 interface HomePageProps {
   posts: SavedPost[];
@@ -24,15 +19,12 @@ interface HomePageProps {
 }
 
 export function HomePage({ posts, places, loading, loadError, onRefresh }: HomePageProps) {
-  const { inboxFailures, retryAllFailed, retryFailedLink, removeFailedLink, dismissAllFailed, openSaveSheet, saveUrl } = useSavePipeline();
+  const { inboxFailures, retryAllFailed, dismissAllFailed, openSaveSheet, saveUrl } = useSavePipeline();
   const { showToast } = useToast();
   const [editingPost, setEditingPost] = useState<SavedPost | null>(null);
-  const [inboxExpanded, setInboxExpanded] = useState(false);
   const [removedPostIds, setRemovedPostIds] = useState<Set<string>>(new Set());
   const [pasteInput, setPasteInput] = useState("");
   const [clipboardUrl, setClipboardUrl] = useState<string | null>(null);
-  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
-  const [requestingLocation, setRequestingLocation] = useState(false);
 
   // Auto-read clipboard for instagram.com link on mount
   useEffect(() => {
@@ -58,25 +50,6 @@ export function HomePage({ posts, places, loading, loadError, onRefresh }: HomeP
       active = false;
     };
   }, []);
-
-  const requestLocation = () => {
-    if (!navigator.geolocation) {
-      showToast({ message: "Geolocation not supported" });
-      return;
-    }
-    setRequestingLocation(true);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-        setRequestingLocation(false);
-        showToast({ message: "Location enabled" });
-      },
-      () => {
-        setRequestingLocation(false);
-        showToast({ message: "Location permission denied" });
-      }
-    );
-  };
 
   const handleDeletePost = (postToDelete: SavedPost) => {
     const id = postToDelete.post_id;
@@ -116,15 +89,54 @@ export function HomePage({ posts, places, loading, loadError, onRefresh }: HomeP
     }, 5000);
   };
 
-  const [dateStr] = useState(() => {
-    return new Date().toLocaleDateString("en-US", {
-      weekday: "long",
-      month: "long",
-      day: "numeric",
-    });
-  });
+  const greeting = useMemo(() => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Good morning";
+    if (hour < 18) return "Good afternoon";
+    return "Good evening";
+  }, []);
 
-  if (loading && posts.length === 0) {
+  const visiblePosts = posts.filter((p) => !removedPostIds.has(p.post_id));
+  const hasSaves = visiblePosts.length > 0;
+
+  // Stats
+  const placesCount = places.length;
+  const cities = useMemo(() => {
+    return Array.from(new Set(places.map((p) => p.location?.city).filter(Boolean))) as string[];
+  }, [places]);
+  const countries = useMemo(() => {
+    return Array.from(new Set(places.map((p) => p.location?.country).filter(Boolean))) as string[];
+  }, [places]);
+
+  // Top cities aggregation with photo
+  const topCities = useMemo(() => {
+    const cityMap = new Map<string, { count: number; image: string | null }>();
+    for (const place of places) {
+      const c = place.location?.city;
+      if (!c) continue;
+      const existing = cityMap.get(c) || { count: 0, image: null };
+      existing.count += 1;
+      if (!existing.image) {
+        const matchingPost = visiblePosts.find((p) => place.source_post_ids?.includes(p.post_id));
+        if (matchingPost?.thumbnail_url) {
+          existing.image = matchingPost.thumbnail_url;
+        }
+      }
+      cityMap.set(c, existing);
+    }
+    return Array.from(cityMap.entries())
+      .map(([name, data]) => ({ name, ...data }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 6);
+  }, [places, visiblePosts]);
+
+  // Rediscover: 3 serendipitous places
+  const rediscoverPlaces = useMemo(() => {
+    if (places.length <= 3) return places;
+    return places.slice(1, 4);
+  }, [places]);
+
+  if (loading && visiblePosts.length === 0) {
     return (
       <main style={{ maxWidth: "1280px", margin: "0 auto", padding: "40px 24px 80px", width: "100%", boxSizing: "border-box" }}>
         <SkeletonGrid count={6} />
@@ -132,48 +144,64 @@ export function HomePage({ posts, places, loading, loadError, onRefresh }: HomeP
     );
   }
 
-  const visiblePosts = posts.filter((p) => !removedPostIds.has(p.post_id));
-  const hasSaves = visiblePosts.length > 0;
-  const placesCount = places.length;
-  const recipesCount = visiblePosts.filter((p) => p.content_category === "food").length;
-  const titlesCount = visiblePosts.filter((p) => p.content_category === "movies").length;
-
   return (
     <main
       style={{
         maxWidth: "1280px",
         margin: "0 auto",
-        padding: "clamp(20px, 4vw, 40px) clamp(16px, 4vw, 24px) 80px",
+        padding: "clamp(20px, 4vw, 36px) clamp(16px, 4vw, 32px) 80px",
         display: "flex",
         flexDirection: "column",
         gap: "36px",
         width: "100%",
         boxSizing: "border-box",
-        fontFamily: "'Figtree', system-ui, sans-serif",
         overflowX: "hidden",
       }}
     >
-      {loadError && (
-        <ErrorBanner
-          message={loadError}
-          onRetry={onRefresh}
-        />
-      )}
+      {loadError && <ErrorBanner message={loadError} onRetry={onRefresh} />}
 
-      {/* Top Paste a reel link bar */}
+      {/* Greeting & Header */}
+      <section style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+        <h1
+          style={{
+            margin: 0,
+            fontSize: "clamp(28px, 4vw, 36px)",
+            fontWeight: 700,
+            letterSpacing: "-0.02em",
+            color: "var(--ink, #16181B)",
+            lineHeight: 1.2,
+          }}
+        >
+          {hasSaves ? `${greeting}.` : "Save your first reel."}
+        </h1>
+        <p
+          style={{
+            margin: 0,
+            fontSize: "15px",
+            color: "var(--ink-2, #5E636B)",
+          }}
+        >
+          {hasSaves
+            ? "Your saved spots, organized and ready to explore."
+            : "Paste an Instagram reel to turn recommendations into a map."}
+        </p>
+      </section>
+
+      {/* Paste Bar */}
       <section
         style={{
           display: "flex",
           flexDirection: "column",
           gap: "8px",
-          padding: "16px 20px",
-          background: "var(--wf-surface)",
-          border: "1px solid var(--wf-border-hairline)",
-          borderRadius: "var(--wf-radius-card, 16px)",
-          boxShadow: "var(--wf-shadow-sm)",
+          padding: "8px 8px 8px 18px",
+          background: "var(--surface, #FFFFFF)",
+          border: "1px solid var(--line, #E7E6E3)",
+          borderRadius: "999px",
+          boxShadow: "var(--shadow-sm, 0 1px 2px rgba(16,24,40,.06))",
         }}
       >
-        <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+        <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+          <span style={{ fontSize: "16px", color: "var(--ink-2, #5E636B)" }}>🔗</span>
           <input
             type="text"
             placeholder="Paste an Instagram reel link..."
@@ -188,13 +216,13 @@ export function HomePage({ posts, places, loading, loadError, onRefresh }: HomeP
             }}
             style={{
               flex: 1,
-              height: "44px",
-              padding: "0 14px",
-              borderRadius: "var(--wf-radius-pill, 9999px)",
-              border: "1px solid var(--wf-border-hairline)",
-              background: "var(--wf-surface-2)",
-              color: "var(--wf-text)",
-              fontSize: "14px",
+              height: "40px",
+              border: 0,
+              outline: "none",
+              background: "transparent",
+              color: "var(--ink, #16181B)",
+              fontSize: "15px",
+              fontFamily: "inherit",
             }}
           />
           <button
@@ -209,16 +237,17 @@ export function HomePage({ posts, places, loading, loadError, onRefresh }: HomeP
               }
             }}
             style={{
-              height: "44px",
+              height: "40px",
               padding: "0 22px",
-              borderRadius: "var(--wf-radius-pill, 9999px)",
+              borderRadius: "999px",
               border: 0,
-              background: "var(--wf-text)",
-              color: "var(--wf-bg)",
-              fontWeight: 700,
+              background: "var(--accent, #FF5A4E)",
+              color: "#FFFFFF",
+              fontWeight: 600,
               fontSize: "14px",
               cursor: "pointer",
               flexShrink: 0,
+              transition: "opacity 0.15s ease",
             }}
           >
             Save
@@ -226,7 +255,7 @@ export function HomePage({ posts, places, loading, loadError, onRefresh }: HomeP
         </div>
 
         {clipboardUrl && (
-          <div style={{ display: "flex", alignItems: "center", gap: "8px", paddingTop: "4px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "4px 8px 4px 0" }}>
             <button
               type="button"
               onClick={async () => {
@@ -238,14 +267,14 @@ export function HomePage({ posts, places, loading, loadError, onRefresh }: HomeP
                 display: "inline-flex",
                 alignItems: "center",
                 gap: "8px",
-                minHeight: "44px",
+                height: "32px",
                 padding: "0 14px",
-                borderRadius: "var(--wf-radius-pill, 9999px)",
-                background: "var(--wf-surface-2)",
-                border: "1px solid var(--wf-border)",
-                color: "var(--wf-text)",
-                fontSize: "13px",
-                fontWeight: 700,
+                borderRadius: "999px",
+                background: "var(--surface-2, #F3F3F1)",
+                border: "1px solid var(--line, #E7E6E3)",
+                color: "var(--ink, #16181B)",
+                fontSize: "12px",
+                fontWeight: 600,
                 cursor: "pointer",
               }}
             >
@@ -255,1194 +284,438 @@ export function HomePage({ posts, places, loading, loadError, onRefresh }: HomeP
         )}
       </section>
 
-      {/* Compact, collapsible notice for failed links */}
+      {/* Inbox Attention Banner (if failed links) */}
       {inboxFailures.length > 0 && (
         <section
           style={{
             display: "flex",
-            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "space-between",
+            flexWrap: "wrap",
             gap: "12px",
             padding: "14px 20px",
-            background: "#FFFFFF",
-            border: "1px solid #E6E3DC",
-            borderRadius: "18px",
-            boxShadow: "0 2px 8px rgba(0,0,0,0.03)",
+            background: "var(--surface, #FFFFFF)",
+            border: "1px solid var(--warn, #E59A1A)",
+            borderRadius: "16px",
           }}
         >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "12px",
-              justifyContent: "space-between",
-              flexWrap: "wrap",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: 0 }}>
-              <span
-                aria-hidden="true"
-                style={{
-                  width: "32px",
-                  height: "32px",
-                  borderRadius: "10px",
-                  background: "#FBEBDD",
-                  color: "#9A4513",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  flexShrink: 0,
-                }}
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="9" />
-                  <path d="M12 8v5M12 16.5v.01" />
-                </svg>
-              </span>
-              <div style={{ minWidth: 0 }}>
-                <span style={{ fontWeight: 700, fontSize: "15px", color: "var(--wf-text)" }}>
-                  {inboxFailures.length} {inboxFailures.length === 1 ? "link couldn't be read" : "links couldn't be read"}
-                </span>
-                <span style={{ fontSize: "13px", color: "var(--wf-text-muted)", marginLeft: "8px" }}>
-                  Waiting in your inbox
-                </span>
-              </div>
-            </div>
-
-            <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-              <button
-                type="button"
-                onClick={() => setInboxExpanded((prev) => !prev)}
-                style={{
-                  height: "34px",
-                  padding: "0 14px",
-                  borderRadius: "999px",
-                  border: "1px solid var(--wf-border)",
-                  background: "var(--wf-surface)",
-                  fontFamily: "inherit",
-                  fontSize: "12px",
-                  fontWeight: 700,
-                  color: "var(--wf-text)",
-                  cursor: "pointer",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "6px",
-                }}
-              >
-                {inboxExpanded ? "Hide details ▲" : "View details ▼"}
-              </button>
-              <button
-                type="button"
-                onClick={retryAllFailed}
-                style={{
-                  height: "34px",
-                  padding: "0 14px",
-                  borderRadius: "999px",
-                  border: "1px solid var(--wf-border)",
-                  background: "var(--wf-surface)",
-                  fontFamily: "inherit",
-                  fontSize: "12px",
-                  fontWeight: 700,
-                  color: "var(--wf-text)",
-                  cursor: "pointer",
-                }}
-              >
-                Retry all
-              </button>
-              <button
-                type="button"
-                onClick={dismissAllFailed}
-                style={{
-                  height: "34px",
-                  padding: "0 12px",
-                  borderRadius: "999px",
-                  border: 0,
-                  background: "#ECECEA",
-                  fontFamily: "inherit",
-                  fontSize: "12px",
-                  fontWeight: 700,
-                  color: "#4A4E52",
-                  cursor: "pointer",
-                }}
-              >
-                Dismiss all
-              </button>
-            </div>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <span style={{ fontSize: "16px" }}>⚠️</span>
+            <span style={{ fontSize: "14px", fontWeight: 600, color: "var(--ink, #16181B)" }}>
+              {inboxFailures.length} {inboxFailures.length === 1 ? "link needs attention" : "links need attention"}
+            </span>
           </div>
-
-          {/* Individual items (Collapsible) */}
-          {inboxExpanded && (
-            <div
+          <div style={{ display: "flex", gap: "8px" }}>
+            <button
+              type="button"
+              onClick={() => retryAllFailed()}
               style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: "8px",
-                paddingTop: "12px",
-                borderTop: "1px solid #EFEDE7",
+                height: "32px",
+                padding: "0 14px",
+                borderRadius: "999px",
+                background: "var(--surface-2, #F3F3F1)",
+                border: "1px solid var(--line, #E7E6E3)",
+                fontSize: "13px",
+                fontWeight: 600,
+                cursor: "pointer",
               }}
             >
-              {inboxFailures.map((item) => (
-                <div
-                  key={item.url}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    gap: "12px",
-                    padding: "10px 14px",
-                    background: "#FBFAF7",
-                    border: "1px solid #EFECE6",
-                    borderRadius: "14px",
-                    flexWrap: "wrap",
-                  }}
-                >
-                  <div style={{ flex: 1, minWidth: "140px", display: "flex", flexDirection: "column", gap: "3px" }}>
-                    <div
-                      style={{
-                        fontSize: "14px",
-                        fontWeight: 600,
-                        color: "#1B1D1F",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                        maxWidth: "540px",
-                      }}
-                      title={item.url}
-                    >
-                      {item.url}
-                    </div>
-                    <div style={{ fontSize: "13px", color: "#C53B27", display: "flex", alignItems: "center", gap: "6px" }}>
-                      <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#C53B27", flexShrink: 0 }} />
-                      {toFriendlyErrorMessage(item.errorMessage, item.url)}
-                    </div>
-                  </div>
-
-                  <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-                    <button
-                      type="button"
-                      onClick={() => retryFailedLink(item.url)}
-                      style={{
-                        height: "32px",
-                        padding: "0 14px",
-                        borderRadius: "999px",
-                        border: "1px solid #D9D5CB",
-                        background: "#FFFFFF",
-                        fontFamily: "inherit",
-                        fontSize: "13px",
-                        fontWeight: 700,
-                        color: "#1B1D1F",
-                        cursor: "pointer",
-                      }}
-                    >
-                      Retry
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => removeFailedLink(item.url)}
-                      style={{
-                        height: "32px",
-                        padding: "0 12px",
-                        borderRadius: "999px",
-                        border: 0,
-                        background: "#ECECEA",
-                        fontFamily: "inherit",
-                        fontSize: "13px",
-                        fontWeight: 700,
-                        color: "#4A4E52",
-                        cursor: "pointer",
-                      }}
-                    >
-                      Dismiss
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+              Retry all
+            </button>
+            <button
+              type="button"
+              onClick={() => dismissAllFailed()}
+              style={{
+                height: "32px",
+                padding: "0 14px",
+                borderRadius: "999px",
+                background: "transparent",
+                border: 0,
+                color: "var(--ink-2, #5E636B)",
+                fontSize: "13px",
+                cursor: "pointer",
+              }}
+            >
+              Dismiss
+            </button>
+          </div>
         </section>
       )}
 
-      {/* Header section */}
-      <section
-        style={{
-          display: "flex",
-          alignItems: "flex-end",
-          justifyContent: "space-between",
-          gap: "24px",
-          flexWrap: "wrap",
-        }}
-      >
-        <div>
-          <div
-            style={{
-              fontSize: "13px",
-              fontWeight: 700,
-              letterSpacing: "0.08em",
-              textTransform: "uppercase",
-              color: "#6B6F73",
-            }}
-          >
-            {dateStr}
-          </div>
-          <h1
-            style={{
-              margin: "8px 0 0",
-              fontSize: "clamp(26px, 7vw, 44px)",
-              lineHeight: 1.1,
-              letterSpacing: "-0.03em",
-              fontWeight: 800,
-              color: "#1B1D1F",
-              maxWidth: "100%",
-              wordBreak: "break-word",
-            }}
-          >
-            {hasSaves ? "Pick something to do next." : "Nothing saved yet"}
-          </h1>
-        </div>
-        {hasSaves && (
-          <div style={{ fontSize: "15px", color: "#6B6F73" }}>
-            {pluralize(posts.length, "save")} · {pluralize(placesCount, "place")} · {pluralize(recipesCount, "recipe")} · {titlesCount} to watch
-          </div>
-        )}
-      </section>
-
       {!hasSaves ? (
-        /* Empty Home matching Empty-States & Mobile-Empty-Home */
-        <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-          <p style={{ margin: 0, fontSize: "16px", color: "#4A4E52" }}>
-            Paste a link and it will show up here, already filed.
-          </p>
-
-          <section
-            style={{
-              background: "#FFFFFF",
-              border: "1px solid #E6E3DC",
-              borderRadius: "24px",
-              padding: "28px",
-              maxWidth: "600px",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
-              <h2 style={{ margin: 0, fontSize: "20px", letterSpacing: "-0.02em", fontWeight: 800 }}>
-                Get started
-              </h2>
-              <span style={{ fontSize: "13px", fontWeight: 700, color: "#6B6F73" }}>0 of 3</span>
-            </div>
+        /* Empty State */
+        <section
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "24px",
+            padding: "40px 24px",
+            background: "var(--surface, #FFFFFF)",
+            borderRadius: "24px",
+            border: "1px solid var(--line, #E7E6E3)",
+            maxWidth: "600px",
+            margin: "0 auto",
+            width: "100%",
+            boxSizing: "border-box",
+          }}
+        >
+          <div style={{ textAlign: "center", display: "flex", flexDirection: "column", gap: "8px", alignItems: "center" }}>
             <div
               style={{
+                width: "64px",
+                height: "64px",
+                borderRadius: "20px",
+                background: "var(--surface-2, #F3F3F1)",
                 display: "flex",
-                height: "6px",
-                borderRadius: "999px",
-                background: "#ECECEA",
-                margin: "14px 0 10px",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "30px",
               }}
             >
-              <div style={{ width: "4%", background: "#1B1D1F", borderRadius: "999px" }} />
+              🗺️
             </div>
+            <h2 style={{ margin: 0, fontSize: "20px", fontWeight: 700, color: "var(--ink, #16181B)" }}>
+              Save your first reel
+            </h2>
+            <p style={{ margin: 0, fontSize: "14px", color: "var(--ink-2, #5E636B)" }}>
+              Copy a reel from Instagram and paste it above to see your travel map come to life.
+            </p>
+          </div>
 
-            <div style={{ display: "flex", flexDirection: "column" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "16px", paddingTop: "8px" }}>
+            <div style={{ display: "flex", gap: "14px", alignItems: "flex-start" }}>
               <div
                 style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "12px",
-                  padding: "14px 0",
-                  borderBottom: "1px solid #EFEDE7",
-                  fontSize: "15px",
-                  fontWeight: 600,
-                }}
-              >
-                <span
-                  style={{
-                    flex: "none",
-                    width: "28px",
-                    height: "28px",
-                    borderRadius: "50%",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: "13px",
-                    fontWeight: 800,
-                    background: "#1B1D1F",
-                    color: "#FFFFFF",
-                  }}
-                >
-                  1
-                </span>
-                Save a link
-              </div>
-
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "12px",
-                  padding: "14px 0",
-                  borderBottom: "1px solid #EFEDE7",
-                  fontSize: "15px",
-                  fontWeight: 600,
-                  color: "#6B6F73",
-                }}
-              >
-                <span
-                  style={{
-                    flex: "none",
-                    width: "28px",
-                    height: "28px",
-                    borderRadius: "50%",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: "13px",
-                    fontWeight: 800,
-                    background: "#ECECEA",
-                    color: "#6B6F73",
-                  }}
-                >
-                  2
-                </span>
-                Look at your library
-              </div>
-
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "12px",
-                  padding: "14px 0",
-                  fontSize: "15px",
-                  fontWeight: 600,
-                  color: "#6B6F73",
-                }}
-              >
-                <span
-                  style={{
-                    flex: "none",
-                    width: "28px",
-                    height: "28px",
-                    borderRadius: "50%",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: "13px",
-                    fontWeight: 800,
-                    background: "#ECECEA",
-                    color: "#6B6F73",
-                  }}
-                >
-                  3
-                </span>
-                Make a collection
-              </div>
-            </div>
-
-            <div style={{ marginTop: "20px" }}>
-              <button
-                type="button"
-                onClick={() => openSaveSheet()}
-                style={{
-                  height: "46px",
-                  padding: "0 24px",
-                  borderRadius: "999px",
-                  border: 0,
-                  background: "#1B1D1F",
+                  width: "28px",
+                  height: "28px",
+                  borderRadius: "50%",
+                  background: "var(--ink, #16181B)",
                   color: "#FFFFFF",
-                  fontFamily: "inherit",
-                  fontSize: "15px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
                   fontWeight: 700,
-                  cursor: "pointer",
+                  fontSize: "13px",
+                  flexShrink: 0,
                 }}
               >
-                Paste a link
-              </button>
-            </div>
-          </section>
-
-          <section
-            style={{
-              border: "2px dashed #C9C5BA",
-              background: "#FBFAF7",
-              borderRadius: "20px",
-              padding: "20px 24px",
-              maxWidth: "600px",
-            }}
-          >
-            <div style={{ fontSize: "16px", fontWeight: 700 }}>Collections group your saves</div>
-            <div style={{ marginTop: "4px", fontSize: "14px", lineHeight: 1.5, color: "#6B6F73" }}>
-              We'll suggest one when you save a few similar posts.
-            </div>
-          </section>
-        </div>
-      ) : (
-        /* Populated Home matching Main.dc.html */
-        <>
-          {/* Smart views */}
-          <section style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap", maxWidth: "100%", boxSizing: "border-box" }}>
-            <span
-              style={{
-                fontSize: "13px",
-                fontWeight: 700,
-                letterSpacing: "0.08em",
-                textTransform: "uppercase",
-                color: "#6B6F73",
-                marginRight: "6px",
-              }}
-            >
-              Smart views
-            </span>
-            <Link
-              to="/library?tag=weekend"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                height: "38px",
-                padding: "0 16px",
-                borderRadius: "999px",
-                background: "var(--wf-surface)",
-                border: "1px solid var(--wf-border)",
-                fontSize: "14px",
-                fontWeight: 600,
-                textDecoration: "none",
-                color: "var(--wf-text)",
-              }}
-            >
-              Weekend ideas
-            </Link>
-            <Link
-              to="/library?category=food"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                height: "38px",
-                padding: "0 16px",
-                borderRadius: "999px",
-                background: "var(--wf-surface)",
-                border: "1px solid var(--wf-border)",
-                fontSize: "14px",
-                fontWeight: 600,
-                textDecoration: "none",
-                color: "var(--wf-text)",
-              }}
-            >
-              Quick to cook
-            </Link>
-            <Link
-              to="/library?status=unvisited"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                height: "38px",
-                padding: "0 16px",
-                borderRadius: "999px",
-                background: "var(--wf-surface)",
-                border: "1px solid var(--wf-border)",
-                fontSize: "14px",
-                fontWeight: 600,
-                textDecoration: "none",
-                color: "var(--wf-text)",
-              }}
-            >
-              Not tried yet
-            </Link>
-            <Link
-              to="/library?category=movies"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                height: "38px",
-                padding: "0 16px",
-                borderRadius: "999px",
-                background: "var(--wf-surface)",
-                border: "1px solid var(--wf-border)",
-                fontSize: "14px",
-                fontWeight: 600,
-                textDecoration: "none",
-                color: "var(--wf-text)",
-              }}
-            >
-              Tonight's watch
-            </Link>
-          </section>
-
-          <section style={{ display: "flex", gap: "24px", flexWrap: "wrap", width: "100%", maxWidth: "100%", boxSizing: "border-box" }}>
-            {places.length > 0 ? (() => {
-              const heroPlace = places[0];
-              const heroPost = posts.find(
-                (p) =>
-                  heroPlace.source_post_ids?.includes(p.post_id) ||
-                  p.place_ids?.includes(heroPlace.place_id),
-              );
-              const heroRawImage = heroPost?.thumbnail_url;
-              const heroImageUrl = heroRawImage
-                ? proxiedMediaUrl(heroRawImage)
-                : "https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=1200&q=80";
-
-              return (
-                <div
-                  style={{
-                    flex: "2 1 320px",
-                    width: "100%",
-                    maxWidth: "100%",
-                    minWidth: 0,
-                    minHeight: "360px",
-                    borderRadius: "28px",
-                    position: "relative",
-                    overflow: "hidden",
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "flex-end",
-                    padding: "clamp(20px, 5vw, 32px)",
-                    boxSizing: "border-box",
-                    background: "var(--wf-surface-2, #20242A)",
-                    color: "#FFFFFF",
-                  }}
-                >
-                  {heroImageUrl ? (
-                    <>
-                      <img
-                        src={heroImageUrl}
-                        alt={heroPlace.display_name}
-                        style={{
-                          position: "absolute",
-                          top: 0,
-                          left: 0,
-                          width: "100%",
-                          height: "100%",
-                          objectFit: "cover",
-                          zIndex: 0,
-                        }}
-                      />
-                      <div
-                        style={{
-                          position: "absolute",
-                          top: 0,
-                          left: 0,
-                          right: 0,
-                          bottom: 0,
-                          background: "rgba(0, 0, 0, 0.45)",
-                          zIndex: 1,
-                        }}
-                      />
-                    </>
-                  ) : null}
-                  <div style={{ position: "relative", zIndex: 2, display: "flex", flexDirection: "column" }}>
-                    <span
-                      style={{
-                        alignSelf: "flex-start",
-                        fontSize: "13px",
-                        fontWeight: 700,
-                        padding: "6px 12px",
-                        borderRadius: "999px",
-                        background: "rgba(255,255,255,0.2)",
-                        backdropFilter: "blur(8px)",
-                      }}
-                    >
-                      Next up · Want to go
-                    </span>
-                    <h2
-                      style={{
-                        margin: "14px 0 4px",
-                        fontSize: "56px",
-                        lineHeight: 1,
-                        letterSpacing: "-0.03em",
-                        fontWeight: 800,
-                      }}
-                    >
-                      {heroPlace.display_name}
-                    </h2>
-                    <div style={{ fontSize: "16px", color: "rgba(255,255,255,0.88)" }}>
-                      {[heroPlace.location?.city, heroPlace.location?.state_province, heroPlace.location?.country].filter(Boolean).join(", ")}
-                    </div>
-                    <div style={{ display: "flex", gap: "12px", marginTop: "20px" }}>
-                      <Link
-                        to={`/map?place=${heroPlace.place_id}`}
-                        style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: "8px",
-                          height: "46px",
-                          padding: "0 22px",
-                          borderRadius: "999px",
-                          background: "#FFFFFF",
-                          color: "#1B1D1F",
-                          fontSize: "15px",
-                          fontWeight: 700,
-                          textDecoration: "none",
-                        }}
-                      >
-                        Open on map
-                      </Link>
-                      <Link
-                        to={`/place/${heroPlace.place_id}`}
-                        state={{ from: "/" }}
-                        style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          height: "46px",
-                          padding: "0 22px",
-                          borderRadius: "999px",
-                          border: "1px solid rgba(255,255,255,0.5)",
-                          background: "rgba(255,255,255,0.12)",
-                          color: "#FFFFFF",
-                          fontSize: "15px",
-                          fontWeight: 700,
-                          textDecoration: "none",
-                        }}
-                      >
-                        Details
-                      </Link>
-                    </div>
-                  </div>
-                </div>
-              );
-            })() : (() => {
-              const latestPost = posts[0];
-              const latestImageUrl = latestPost?.thumbnail_url ? proxiedMediaUrl(latestPost.thumbnail_url) : null;
-              return (
-                <div
-                  style={{
-                    flex: "2 1 320px",
-                    width: "100%",
-                    maxWidth: "100%",
-                    minWidth: 0,
-                    minHeight: "360px",
-                    borderRadius: "28px",
-                    position: "relative",
-                    overflow: "hidden",
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "flex-end",
-                    padding: "clamp(20px, 5vw, 32px)",
-                    boxSizing: "border-box",
-                    background: "var(--wf-surface-2, #20242A)",
-                    color: "#FFFFFF",
-                  }}
-                >
-                  {latestImageUrl ? (
-                    <>
-                      <img
-                        src={latestImageUrl}
-                        alt=""
-                        style={{
-                          position: "absolute",
-                          top: 0,
-                          left: 0,
-                          width: "100%",
-                          height: "100%",
-                          objectFit: "cover",
-                          zIndex: 0,
-                        }}
-                      />
-                      <div
-                        style={{
-                          position: "absolute",
-                          top: 0,
-                          left: 0,
-                          right: 0,
-                          bottom: 0,
-                          background: "rgba(0, 0, 0, 0.45)",
-                          zIndex: 1,
-                        }}
-                      />
-                    </>
-                  ) : null}
-                  <div style={{ position: "relative", zIndex: 2, display: "flex", flexDirection: "column" }}>
-                    <span
-                      style={{
-                        alignSelf: "flex-start",
-                        fontSize: "13px",
-                        fontWeight: 700,
-                        padding: "6px 12px",
-                        borderRadius: "999px",
-                        background: "rgba(255,255,255,0.2)",
-                        backdropFilter: "blur(8px)",
-                      }}
-                    >
-                      Latest save
-                    </span>
-                    <h2 style={{ margin: "14px 0 4px", fontSize: "40px", lineHeight: 1.1, fontWeight: 800 }}>
-                      {posts[0]?.caption?.slice(0, 50) || "Saved Reel"}
-                    </h2>
-                    <div style={{ display: "flex", gap: "12px", marginTop: "20px" }}>
-                      <Link
-                        to={`/post/${posts[0]?.post_id}`}
-                        style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          height: "46px",
-                          padding: "0 22px",
-                          borderRadius: "999px",
-                          background: "#FFFFFF",
-                          color: "#1B1D1F",
-                          fontSize: "15px",
-                          fontWeight: 700,
-                          textDecoration: "none",
-                        }}
-                      >
-                        View details
-                      </Link>
-                    </div>
-                  </div>
-                </div>
-              );
-            })()}
-
-            {/* Collections panel */}
-            <div
-              style={{
-                flex: "1 1 300px",
-                width: "100%",
-                maxWidth: "100%",
-                minWidth: 0,
-                background: "#FFFFFF",
-                border: "1px solid #E6E3DC",
-                borderRadius: "28px",
-                padding: "20px 12px 12px",
-                display: "flex",
-                flexDirection: "column",
-                gap: "2px",
-                boxSizing: "border-box",
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", padding: "0 14px 8px" }}>
-                <span style={{ fontSize: "13px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#6B6F73" }}>
-                  Collections
-                </span>
-                <Link to="/collections" style={{ fontSize: "14px", fontWeight: 700, textDecoration: "none", color: "#1B1D1F" }}>
-                  All
-                </Link>
+                1
               </div>
-
-              <Link
-                to="/map"
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "14px",
-                  padding: "12px 14px",
-                  borderRadius: "18px",
-                  textDecoration: "none",
-                  color: "#1B1D1F",
-                }}
-              >
-                <span
-                  aria-hidden="true"
-                  style={{
-                    width: "42px",
-                    height: "42px",
-                    borderRadius: "13px",
-                    background: "#E3F0F4",
-                    color: "#1B5E78",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z" />
-                    <circle cx="12" cy="10" r="2.5" />
-                  </svg>
-                </span>
-                <span style={{ flex: 1 }}>
-                  <span style={{ display: "block", fontSize: "17px", fontWeight: 700 }}>Map</span>
-                  <span style={{ display: "block", fontSize: "13px", color: "#6B6F73" }}>Everything with a location</span>
-                </span>
-                <span style={{ fontSize: "22px", fontWeight: 800 }}>{placesCount}</span>
-              </Link>
-
-              <Link
-                to="/collections/recipes"
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "14px",
-                  padding: "12px 14px",
-                  borderRadius: "18px",
-                  textDecoration: "none",
-                  color: "#1B1D1F",
-                }}
-              >
-                <span
-                  aria-hidden="true"
-                  style={{
-                    width: "42px",
-                    height: "42px",
-                    borderRadius: "13px",
-                    background: "#FBEBDD",
-                    color: "#9A4513",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10" />
-                    <path d="M17 21V3c-2.5 1.5-3 5-3 8h3" />
-                  </svg>
-                </span>
-                <span style={{ flex: 1 }}>
-                  <span style={{ display: "block", fontSize: "17px", fontWeight: 700 }}>Recipes</span>
-                  <span style={{ display: "block", fontSize: "13px", color: "#6B6F73" }}>Recipe kit</span>
-                </span>
-                <span style={{ fontSize: "22px", fontWeight: 800 }}>{recipesCount}</span>
-              </Link>
-
-              <Link
-                to="/collections/watch"
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "14px",
-                  padding: "12px 14px",
-                  borderRadius: "18px",
-                  textDecoration: "none",
-                  color: "#1B1D1F",
-                }}
-              >
-                <span
-                  aria-hidden="true"
-                  style={{
-                    width: "42px",
-                    height: "42px",
-                    borderRadius: "13px",
-                    background: "#ECE8F7",
-                    color: "#4B3C8C",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <rect x="3" y="5" width="18" height="14" rx="2.5" />
-                    <path d="m10 9.5 5 2.5-5 2.5z" />
-                  </svg>
-                </span>
-                <span style={{ flex: 1 }}>
-                  <span style={{ display: "block", fontSize: "17px", fontWeight: 700 }}>Watch</span>
-                  <span style={{ display: "block", fontSize: "13px", color: "#6B6F73" }}>Watch kit</span>
-                </span>
-                <span style={{ fontSize: "22px", fontWeight: 800 }}>{titlesCount}</span>
-              </Link>
-
-              {/* Dashed suggestion */}
-              {FeatureFlags.isEnabled("new-kits") && (
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "14px",
-                    marginTop: "6px",
-                    padding: "14px",
-                    borderRadius: "18px",
-                    border: "2px dashed #C9C5BA",
-                  }}
-                >
-                  <span
-                    aria-hidden="true"
-                    style={{
-                      width: "42px",
-                      height: "42px",
-                      borderRadius: "13px",
-                      background: "#E4F2E7",
-                      color: "#25623A",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M12 5v14M5 12h14" />
-                    </svg>
-                  </span>
-                  <span style={{ flex: 1 }}>
-                    <span style={{ display: "block", fontSize: "16px", fontWeight: 700 }}>Workouts?</span>
-                    <span style={{ display: "block", fontSize: "13px", color: "#6B6F73" }}>A few saves look alike. Routine kit.</span>
-                  </span>
-                  <ComingSoonButton
-                    featureId="new-kits"
-                    style={{
-                      height: "36px",
-                      padding: "0 14px",
-                      borderRadius: "999px",
-                      border: 0,
-                      background: "#1B1D1F",
-                      fontFamily: "inherit",
-                      fontSize: "13px",
-                      fontWeight: 700,
-                      color: "#FFFFFF",
-                      cursor: "pointer",
-                    }}
-                  >
-                    Create
-                  </ComingSoonButton>
-                </div>
-              )}
-            </div>
-          </section>
-
-          {/* Trip idea section */}
-          {FeatureFlags.isEnabled("trips") && (
-            <section
-              style={{
-                display: "flex",
-                gap: "32px",
-                flexWrap: "wrap",
-                alignItems: "center",
-                padding: "28px 32px",
-                background: "#FFFFFF",
-                border: "1px solid #E6E3DC",
-                borderRadius: "28px",
-              }}
-            >
-              <div style={{ flex: "1 1 320px" }}>
-                <div style={{ fontSize: "13px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#1B5E78" }}>
-                  Trip idea
-                </div>
-                <h2 style={{ margin: "8px 0 6px", fontSize: "28px", lineHeight: 1.15, letterSpacing: "-0.02em", fontWeight: 800 }}>
-                  A weekend itinerary
-                </h2>
-                <p style={{ margin: 0, fontSize: "15px", lineHeight: 1.5, color: "#6B6F73" }}>
-                  Several places you saved sit in the same area. Turn them into a day-by-day plan in one click.
+              <div>
+                <strong style={{ fontSize: "14px", color: "var(--ink, #16181B)" }}>Find a reel on Instagram</strong>
+                <p style={{ margin: "2px 0 0", fontSize: "13px", color: "var(--ink-2, #5E636B)" }}>
+                  Tap the share button on any travel or food reel and choose "Copy link".
                 </p>
               </div>
-              <div style={{ flex: "2 1 480px", display: "flex", flexWrap: "wrap", gap: "10px" }}>
-                {places.slice(0, 5).map((place) => (
-                  <span
-                    key={place.place_id}
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: "8px",
-                      height: "40px",
-                      padding: "0 16px",
-                      borderRadius: "999px",
-                      background: "#F6F5F1",
-                      border: "1px solid #E6E3DC",
-                      fontSize: "15px",
-                      fontWeight: 600,
-                    }}
-                  >
-                    <span aria-hidden="true" style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#1F6F8B" }} />
-                    {place.display_name}
-                  </span>
-                ))}
-              </div>
-              <ComingSoonButton
-                featureId="trips"
+            </div>
+
+            <div style={{ display: "flex", gap: "14px", alignItems: "flex-start" }}>
+              <div
                 style={{
-                  height: "48px",
-                  padding: "0 24px",
-                  borderRadius: "999px",
-                  border: 0,
-                  background: "#1B1D1F",
-                  fontFamily: "inherit",
-                  fontSize: "15px",
-                  fontWeight: 700,
+                  width: "28px",
+                  height: "28px",
+                  borderRadius: "50%",
+                  background: "var(--accent, #FF5A4E)",
                   color: "#FFFFFF",
-                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontWeight: 700,
+                  fontSize: "13px",
+                  flexShrink: 0,
                 }}
               >
-                Build itinerary
-              </ComingSoonButton>
-            </section>
-          )}
+                2
+              </div>
+              <div>
+                <strong style={{ fontSize: "14px", color: "var(--ink, #16181B)" }}>Paste & let AI organize</strong>
+                <p style={{ margin: "2px 0 0", fontSize: "13px", color: "var(--ink-2, #5E636B)" }}>
+                  We extract the exact spots, tips, and categories automatically.
+                </p>
+              </div>
+            </div>
 
-          {/* Recently saved section (5 cards) */}
-          <section>
-            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: "18px" }}>
-              <h2 style={{ margin: 0, fontSize: "24px", letterSpacing: "-0.02em", fontWeight: 800 }}>
+            <div style={{ display: "flex", gap: "14px", alignItems: "flex-start" }}>
+              <div
+                style={{
+                  width: "28px",
+                  height: "28px",
+                  borderRadius: "50%",
+                  background: "var(--ink, #16181B)",
+                  color: "#FFFFFF",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontWeight: 700,
+                  fontSize: "13px",
+                  flexShrink: 0,
+                }}
+              >
+                3
+              </div>
+              <div>
+                <strong style={{ fontSize: "14px", color: "var(--ink, #16181B)" }}>Explore your clean map</strong>
+                <p style={{ margin: "2px 0 0", fontSize: "13px", color: "var(--ink-2, #5E636B)" }}>
+                  Zero POI clutter. Clean pins in 8 category hues ready for your next trip.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+      ) : (
+        /* Populated Home */
+        <div style={{ display: "flex", flexDirection: "column", gap: "40px" }}>
+          {/* Recently Saved Rail */}
+          <section style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <h2 style={{ margin: 0, fontSize: "20px", fontWeight: 700, letterSpacing: "-0.01em", color: "var(--ink, #16181B)" }}>
                 Recently saved
               </h2>
-              <Link to="/library" style={{ fontSize: "15px", fontWeight: 700, textDecoration: "none", color: "var(--wf-accent)" }}>
-                See all {visiblePosts.length}
+              <Link
+                to="/library"
+                style={{ fontSize: "14px", fontWeight: 600, color: "var(--accent, #FF5A4E)", textDecoration: "none" }}
+              >
+                View all reels →
               </Link>
             </div>
-            <div className="wf-responsive-grid">
-              {visiblePosts.slice(0, 5).map((post) => (
-                <PostCard
-                  key={post.post_id}
-                  post={post}
-                  onEdit={(p) => setEditingPost(p)}
-                  onDelete={handleDeletePost}
-                />
+
+            <div
+              style={{
+                display: "grid",
+                gridAutoFlow: "column",
+                gridAutoColumns: "clamp(160px, 22vw, 210px)",
+                gap: "16px",
+                overflowX: "auto",
+                paddingBottom: "8px",
+              }}
+            >
+              {visiblePosts.slice(0, 10).map((post) => (
+                <ReelCard key={post.post_id} post={post} onDelete={handleDeletePost} />
               ))}
             </div>
           </section>
 
-          {/* Near you row (Location requested only here) */}
-          <section>
-            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: "18px" }}>
-              <h2 style={{ margin: 0, fontSize: "24px", letterSpacing: "-0.02em", fontWeight: 800 }}>
-                Near you
-              </h2>
-              <Link to="/map" style={{ fontSize: "15px", fontWeight: 700, textDecoration: "none", color: "var(--wf-accent)" }}>
-                Open map
-              </Link>
-            </div>
-
-            {!userLocation ? (
+          {/* Desktop 12-Column Split: Stats + Top Cities (8 cols) & Rediscover / Mini map (4 cols) */}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+              gap: "32px",
+              alignItems: "start",
+            }}
+          >
+            {/* Left Column: Stat Strip + Top Cities Rail */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "32px" }}>
+              {/* Stat Strip */}
               <div
                 style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
+                  display: "grid",
+                  gridTemplateColumns: "repeat(3, 1fr)",
                   gap: "16px",
-                  padding: "20px 24px",
-                  background: "var(--wf-surface)",
-                  border: "1px solid var(--wf-border-hairline)",
-                  borderRadius: "var(--wf-radius-card, 16px)",
-                  flexWrap: "wrap",
+                  padding: "20px",
+                  background: "var(--surface, #FFFFFF)",
+                  border: "1px solid var(--line, #E7E6E3)",
+                  borderRadius: "20px",
+                  boxShadow: "var(--shadow-sm, 0 1px 2px rgba(16,24,40,.06))",
+                  textAlign: "center",
                 }}
               >
-                <div>
-                  <div style={{ fontSize: "16px", fontWeight: 700, color: "var(--wf-text)" }}>
-                    Find saved spots around you
-                  </div>
-                  <div style={{ fontSize: "14px", color: "var(--wf-text-muted)", marginTop: "4px" }}>
-                    We only check your location when you tap this button to show nearby places.
-                  </div>
+                <Link to="/map" style={{ textDecoration: "none", color: "inherit", display: "flex", flexDirection: "column", gap: "4px" }}>
+                  <span style={{ fontSize: "28px", fontWeight: 700, color: "var(--ink, #16181B)", lineHeight: 1 }}>
+                    {placesCount}
+                  </span>
+                  <span style={{ fontSize: "13px", color: "var(--ink-2, #5E636B)" }}>Places saved</span>
+                </Link>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: "4px", borderLeft: "1px solid var(--line, #E7E6E3)", borderRight: "1px solid var(--line, #E7E6E3)" }}>
+                  <span style={{ fontSize: "28px", fontWeight: 700, color: "var(--ink, #16181B)", lineHeight: 1 }}>
+                    {cities.length}
+                  </span>
+                  <span style={{ fontSize: "13px", color: "var(--ink-2, #5E636B)" }}>Cities</span>
                 </div>
-                <button
-                  type="button"
-                  onClick={requestLocation}
-                  disabled={requestingLocation}
-                  style={{
-                    height: "44px",
-                    minHeight: "44px",
-                    padding: "0 20px",
-                    borderRadius: "var(--wf-radius-pill, 9999px)",
-                    background: "var(--wf-accent)",
-                    color: "var(--wf-surface)",
-                    fontSize: "14px",
-                    fontWeight: 700,
-                    border: 0,
-                    cursor: "pointer",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "8px",
-                  }}
-                >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <circle cx="12" cy="12" r="3" />
-                    <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
-                  </svg>
-                  {requestingLocation ? "Finding location..." : "Share location"}
-                </button>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                  <span style={{ fontSize: "28px", fontWeight: 700, color: "var(--ink, #16181B)", lineHeight: 1 }}>
+                    {countries.length}
+                  </span>
+                  <span style={{ fontSize: "13px", color: "var(--ink-2, #5E636B)" }}>Countries</span>
+                </div>
               </div>
-            ) : (
-              <div className="wf-responsive-grid">
-                {places.slice(0, 5).map((place) => (
-                  <Link
-                    key={place.place_id}
-                    to={`/place/${place.place_id}`}
+
+              {/* Top Cities Rail */}
+              {topCities.length > 0 && (
+                <section style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <h2 style={{ margin: 0, fontSize: "20px", fontWeight: 700, letterSpacing: "-0.01em", color: "var(--ink, #16181B)" }}>
+                      Top cities
+                    </h2>
+                    <Link
+                      to="/map"
+                      style={{ fontSize: "14px", fontWeight: 600, color: "var(--accent, #FF5A4E)", textDecoration: "none" }}
+                    >
+                      Explore map →
+                    </Link>
+                  </div>
+
+                  <div
                     style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      padding: "16px",
-                      background: "var(--wf-surface)",
-                      border: "1px solid var(--wf-border-hairline)",
-                      borderRadius: "var(--wf-radius-card, 16px)",
-                      textDecoration: "none",
-                      color: "var(--wf-text)",
-                      gap: "8px",
+                      display: "grid",
+                      gridAutoFlow: "column",
+                      gridAutoColumns: "clamp(140px, 18vw, 180px)",
+                      gap: "14px",
+                      overflowX: "auto",
+                      paddingBottom: "8px",
                     }}
                   >
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                      <span
+                    {topCities.map((city) => {
+                      const img = proxiedMediaUrl(city.image);
+                      return (
+                        <Link
+                          key={city.name}
+                          to={`/map`}
+                          style={{
+                            textDecoration: "none",
+                            color: "inherit",
+                            borderRadius: "16px",
+                            overflow: "hidden",
+                            height: "110px",
+                            position: "relative",
+                            display: "block",
+                            background: "var(--surface-2, #F3F3F1)",
+                            boxShadow: "var(--shadow-sm, 0 1px 2px rgba(16,24,40,.06))",
+                          }}
+                          className="wf-card-hover"
+                        >
+                          {img ? (
+                            <img
+                              src={img}
+                              alt={city.name}
+                              loading="lazy"
+                              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                            />
+                          ) : (
+                            <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "24px" }}>
+                              🏛️
+                            </div>
+                          )}
+                          <div
+                            style={{
+                              position: "absolute",
+                              inset: 0,
+                              background: "linear-gradient(to top, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.15) 60%, transparent 100%)",
+                            }}
+                          />
+                          <div style={{ position: "absolute", bottom: "10px", left: "12px", right: "12px", color: "#FFFFFF" }}>
+                            <div style={{ fontSize: "15px", fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                              {city.name}
+                            </div>
+                            <div style={{ fontSize: "11px", opacity: 0.85 }}>
+                              {city.count} {city.count === 1 ? "place" : "places"}
+                            </div>
+                          </div>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </section>
+              )}
+            </div>
+
+            {/* Right Column: Rediscover (Serendipity) */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <h2 style={{ margin: 0, fontSize: "20px", fontWeight: 700, letterSpacing: "-0.01em", color: "var(--ink, #16181B)" }}>
+                    Rediscover
+                  </h2>
+                  <span
+                    style={{
+                      fontSize: "11px",
+                      fontWeight: 600,
+                      color: "var(--accent, #FF5A4E)",
+                      background: "rgba(255, 90, 78, 0.12)",
+                      padding: "2px 8px",
+                      borderRadius: "999px",
+                    }}
+                  >
+                    ✨ Serendipity
+                  </span>
+                </div>
+              </div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                {rediscoverPlaces.map((place) => {
+                  const vis = getCategoryVisual(place.category);
+                  const matchingPost = visiblePosts.find((p) => place.source_post_ids?.includes(p.post_id));
+                  const thumb = matchingPost?.thumbnail_url ? proxiedMediaUrl(matchingPost.thumbnail_url) : null;
+
+                  return (
+                    <Link
+                      key={place.place_id}
+                      to={`/place/${place.place_id}`}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "12px",
+                        padding: "12px",
+                        background: "var(--surface, #FFFFFF)",
+                        borderRadius: "16px",
+                        border: "1px solid var(--line, #E7E6E3)",
+                        boxShadow: "var(--shadow-sm, 0 1px 2px rgba(16,24,40,.06))",
+                        textDecoration: "none",
+                        color: "inherit",
+                        transition: "all 0.15s ease",
+                      }}
+                      className="wf-card-hover"
+                    >
+                      <div
                         style={{
-                          width: "32px",
-                          height: "32px",
-                          borderRadius: "10px",
-                          background: "var(--wf-surface-2)",
+                          width: "52px",
+                          height: "52px",
+                          borderRadius: "12px",
+                          overflow: "hidden",
+                          flexShrink: 0,
+                          background: vis.tint,
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
-                          color: "var(--wf-accent)",
                         }}
                       >
-                        📍
-                      </span>
-                      <div style={{ fontWeight: 700, fontSize: "15px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        {place.display_name}
+                        {thumb ? (
+                          <img src={thumb} alt={place.display_name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                        ) : (
+                          <span style={{ fontSize: "22px" }}>{vis.glyph}</span>
+                        )}
                       </div>
-                    </div>
-                    <div style={{ fontSize: "13px", color: "var(--wf-text-muted)" }}>
-                      {[place.location?.city, place.location?.state_province].filter(Boolean).join(", ") || "Saved location"}
-                    </div>
-                  </Link>
-                ))}
+
+                      <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "3px" }}>
+                        <span
+                          style={{
+                            fontSize: "15px",
+                            fontWeight: 600,
+                            color: "var(--ink, #16181B)",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {place.display_name}
+                        </span>
+                        <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", color: "var(--ink-2, #5E636B)" }}>
+                          <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: vis.hue }} />
+                          <span>{vis.name}</span>
+                          {place.location?.city && <span>· {place.location.city}</span>}
+                        </div>
+                      </div>
+
+                      <span style={{ fontSize: "14px", color: "var(--ink-2, #5E636B)" }}>→</span>
+                    </Link>
+                  );
+                })}
               </div>
-            )}
-          </section>
-
-          {/* Your trips row */}
-          <section>
-            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: "18px" }}>
-              <h2 style={{ margin: 0, fontSize: "24px", letterSpacing: "-0.02em", fontWeight: 800 }}>
-                Your trips
-              </h2>
-              <Link to="/collections" style={{ fontSize: "15px", fontWeight: 700, textDecoration: "none", color: "var(--wf-accent)" }}>
-                All collections
-              </Link>
             </div>
-            <div className="wf-responsive-grid">
-              <Link
-                to="/collections"
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "space-between",
-                  minHeight: "140px",
-                  padding: "20px",
-                  background: "var(--wf-surface)",
-                  border: "1px solid var(--wf-border-hairline)",
-                  borderRadius: "var(--wf-radius-card, 16px)",
-                  textDecoration: "none",
-                  color: "var(--wf-text)",
-                }}
-              >
-                <div>
-                  <span style={{ fontSize: "12px", fontWeight: 700, textTransform: "uppercase", color: "var(--wf-accent)", letterSpacing: "0.05em" }}>
-                    Collection
-                  </span>
-                  <div style={{ fontSize: "18px", fontWeight: 800, marginTop: "6px" }}>
-                    Weekend Getaway
-                  </div>
-                </div>
-                <div style={{ fontSize: "13px", color: "var(--wf-text-muted)" }}>
-                  {places.length} places saved
-                </div>
-              </Link>
-
-              <Link
-                to="/map"
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "space-between",
-                  minHeight: "140px",
-                  padding: "20px",
-                  background: "var(--wf-surface)",
-                  border: "1px solid var(--wf-border-hairline)",
-                  borderRadius: "var(--wf-radius-card, 16px)",
-                  textDecoration: "none",
-                  color: "var(--wf-text)",
-                }}
-              >
-                <div>
-                  <span style={{ fontSize: "12px", fontWeight: 700, textTransform: "uppercase", color: "var(--wf-accent)", letterSpacing: "0.05em" }}>
-                    Map Trip
-                  </span>
-                  <div style={{ fontSize: "18px", fontWeight: 800, marginTop: "6px" }}>
-                    Road Trip Stops
-                  </div>
-                </div>
-                <div style={{ fontSize: "13px", color: "var(--wf-text-muted)" }}>
-                  View route on map →
-                </div>
-              </Link>
-            </div>
-          </section>
-        </>
+          </div>
+        </div>
       )}
 
       <EditPostModal

@@ -268,7 +268,7 @@ export function SaveSheet() {
             <h2 style={{ margin: "0 0 16px", fontSize: "28px", letterSpacing: "-0.03em", fontWeight: 800 }}>
               Save a link
             </h2>
-            <p style={{ margin: "0 0 20px", fontSize: "15px", color: "#6B6F73", lineHeight: 1.5 }}>
+            <p style={{ margin: "0 0 20px", fontSize: "15px", color: "var(--wf-text-muted)", lineHeight: 1.5 }}>
               Paste an Instagram reel. We'll read and categorize it automatically.
             </p>
 
@@ -284,11 +284,11 @@ export function SaveSheet() {
                 height: "100px",
                 padding: "16px",
                 borderRadius: "18px",
-                border: showValidationError && validation.isError ? "1.5px solid #D93829" : "1px solid #D9D5CB",
-                background: "#F6F5F1",
+                border: showValidationError && validation.isError ? "1.5px solid var(--accent, #D93829)" : "1px solid var(--wf-border)",
+                background: "var(--wf-surface-2)",
                 fontFamily: "inherit",
                 fontSize: "15px",
-                color: "#1B1D1F",
+                color: "var(--wf-text)",
                 resize: "none",
                 outline: "none",
                 boxSizing: "border-box",
@@ -297,7 +297,7 @@ export function SaveSheet() {
 
             <div style={{ marginTop: "14px", fontSize: "14px" }}>
               {showValidationError && validation.isError ? (
-                <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "#C53B27", fontWeight: 600 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "var(--accent, #C53B27)", fontWeight: 600 }}>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                     <circle cx="12" cy="12" r="10" />
                     <line x1="12" y1="8" x2="12" y2="12" />
@@ -308,15 +308,15 @@ export function SaveSheet() {
               ) : validation.isValid ? (
                 <div>
                   {previewLoading && (
-                    <div style={{ display: "flex", alignItems: "center", gap: "10px", color: "#6B6F73", fontWeight: 600 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px", color: "var(--wf-text-muted)", fontWeight: 600 }}>
                       <span
                         aria-hidden="true"
                         style={{
                           width: "22px",
                           height: "22px",
                           borderRadius: "50%",
-                          background: "#EFEDE7",
-                          color: "#6B6F73",
+                          background: "var(--wf-surface-2)",
+                          color: "var(--wf-text-muted)",
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
@@ -354,15 +354,15 @@ export function SaveSheet() {
                   )}
 
                   {!previewLoading && previewData && previewData.status === "unknown" && (
-                    <div style={{ display: "flex", alignItems: "center", gap: "10px", color: "#4A4E52", fontWeight: 600 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px", color: "var(--wf-text-muted)", fontWeight: 600 }}>
                       <span
                         aria-hidden="true"
                         style={{
                           width: "22px",
                           height: "22px",
                           borderRadius: "50%",
-                          background: "#EFEDE7",
-                          color: "#4A4E52",
+                          background: "var(--wf-surface-2)",
+                          color: "var(--wf-text-muted)",
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
@@ -385,8 +385,8 @@ export function SaveSheet() {
                         marginTop: "12px",
                         padding: "12px 14px",
                         borderRadius: "16px",
-                        border: "1px solid #E6E3DC",
-                        background: "#FAFAF9",
+                        border: "1px solid var(--wf-border)",
+                        background: "var(--wf-surface)",
                         display: "flex",
                         gap: "12px",
                         alignItems: "center",
@@ -397,13 +397,13 @@ export function SaveSheet() {
                           width: "72px",
                           height: "96px",
                           borderRadius: "12px",
-                          background: "#E6E3DC",
+                          background: "var(--wf-surface-2)",
                           flexShrink: 0,
                         }}
                       />
                       <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "8px" }}>
-                        <div style={{ height: "14px", width: "40%", background: "#E6E3DC", borderRadius: "4px" }} />
-                        <div style={{ height: "12px", width: "75%", background: "#EBE8E1", borderRadius: "4px" }} />
+                        <div style={{ height: "14px", width: "40%", background: "var(--wf-surface-2)", borderRadius: "4px" }} />
+                        <div style={{ height: "12px", width: "75%", background: "var(--wf-border)", borderRadius: "4px" }} />
                       </div>
                     </div>
                   )}
@@ -415,12 +415,12 @@ export function SaveSheet() {
                         marginTop: "12px",
                         padding: "12px 16px",
                         borderRadius: "16px",
-                        border: "1.5px solid #F8D7DA",
-                        background: "#FFF5F5",
+                        border: "1.5px solid var(--accent, #F8D7DA)",
+                        background: "var(--wf-surface-2)",
                         display: "flex",
                         gap: "12px",
                         alignItems: "center",
-                        color: "#C53B27",
+                        color: "var(--accent, #C53B27)",
                       }}
                     >
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ flexShrink: 0 }}>
@@ -432,7 +432,7 @@ export function SaveSheet() {
                         <div style={{ fontWeight: 700, fontSize: "14px" }}>
                           {previewData.error_message || "Private or deleted post"}
                         </div>
-                        <div style={{ fontSize: "12px", color: "#6B6F73", marginTop: "2px" }}>
+                        <div style={{ fontSize: "12px", color: "var(--wf-text-muted)", marginTop: "2px" }}>
                           This post cannot be viewed or saved because it is private or has been removed.
                         </div>
                       </div>
@@ -446,9 +446,9 @@ export function SaveSheet() {
                         marginTop: "12px",
                         padding: "12px 14px",
                         borderRadius: "16px",
-                        border: "1px solid #E6E3DC",
-                        background: "#FFFFFF",
-                        boxShadow: "0 2px 8px rgba(0, 0, 0, 0.04)",
+                        border: "1px solid var(--wf-border)",
+                        background: "var(--wf-surface)",
+                        boxShadow: "var(--wf-shadow-card)",
                         display: "flex",
                         gap: "12px",
                         alignItems: "center",
@@ -460,15 +460,13 @@ export function SaveSheet() {
                           height: "96px",
                           borderRadius: "12px",
                           overflow: "hidden",
-                          background: previewData.thumbnail_url
-                            ? "var(--wf-surface-2)"
-                            : "var(--wf-surface-2)",
+                          background: "var(--wf-surface-2)",
                           border: "1px solid var(--wf-border)",
                           flexShrink: 0,
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
-                          color: "#FFFFFF",
+                          color: "var(--wf-text)",
                           position: "relative",
                         }}
                       >
@@ -504,7 +502,7 @@ export function SaveSheet() {
                               letterSpacing: "0.06em",
                               textTransform: "uppercase",
                               color: "#C13584",
-                              background: "#FDF0F5",
+                              background: "rgba(193, 53, 132, 0.12)",
                               padding: "2px 8px",
                               borderRadius: "999px",
                               whiteSpace: "nowrap",
@@ -518,7 +516,7 @@ export function SaveSheet() {
                               style={{
                                 fontSize: "13px",
                                 fontWeight: 700,
-                                color: "#1B1D1F",
+                                color: "var(--wf-text)",
                                 overflow: "hidden",
                                 textOverflow: "ellipsis",
                                 whiteSpace: "nowrap",
@@ -532,7 +530,7 @@ export function SaveSheet() {
                         <div
                           style={{
                             fontSize: "14px",
-                            color: "#1B1D1F",
+                            color: "var(--wf-text)",
                             fontWeight: 500,
                             lineHeight: 1.35,
                             whiteSpace: "nowrap",
@@ -547,7 +545,7 @@ export function SaveSheet() {
                   )}
                 </div>
               ) : (
-                <div style={{ color: "#6B6F73" }}>
+                <div style={{ color: "var(--wf-text-muted)" }}>
                   Instagram reels are supported across food, travel, culture, and more
                 </div>
               )}
@@ -663,7 +661,7 @@ export function SaveSheet() {
                   {activeSave?.title || "Reading your post"}
                 </h2>
                 {activeSave?.author && (
-                  <div style={{ margin: "4px 0 0", fontSize: "14px", color: "#6B6F73", fontWeight: 600 }}>
+                  <div style={{ margin: "4px 0 0", fontSize: "14px", color: "var(--wf-text-muted)", fontWeight: 600 }}>
                     {activeSave.author} · Instagram reel
                   </div>
                 )}
@@ -671,7 +669,7 @@ export function SaveSheet() {
                   style={{
                     height: "8px",
                     borderRadius: "999px",
-                    background: "#ECEAE4",
+                    background: "var(--wf-surface-2)",
                     margin: "16px 0 20px",
                     overflow: "hidden",
                   }}
@@ -681,7 +679,7 @@ export function SaveSheet() {
                       width: `${activeSave?.progressPercent || 30}%`,
                       height: "100%",
                       borderRadius: "999px",
-                      background: "#1B1D1F",
+                      background: "var(--wf-text)",
                       transition: "width 0.4s ease",
                     }}
                   />
@@ -695,8 +693,8 @@ export function SaveSheet() {
                         width: "22px",
                         height: "22px",
                         borderRadius: "50%",
-                        background: (activeSave?.progressPercent || 0) >= 25 ? "#E3F4EA" : "#ECECEA",
-                        color: (activeSave?.progressPercent || 0) >= 25 ? "#1F7A4D" : "#6B6F73",
+                        background: (activeSave?.progressPercent || 0) >= 25 ? "#E3F4EA" : "var(--wf-surface-2)",
+                        color: (activeSave?.progressPercent || 0) >= 25 ? "#1F7A4D" : "var(--wf-text-muted)",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
@@ -707,7 +705,7 @@ export function SaveSheet() {
                           <path d="m5 12.5 4.5 4.5L19 7.5" />
                         </svg>
                       ) : (
-                        <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#6B6F73" }} />
+                        <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "var(--wf-text-muted)" }} />
                       )}
                     </span>
                     Connecting to link
@@ -720,8 +718,8 @@ export function SaveSheet() {
                         width: "22px",
                         height: "22px",
                         borderRadius: "50%",
-                        background: (activeSave?.progressPercent || 0) >= 60 ? "#E3F4EA" : "#ECECEA",
-                        color: (activeSave?.progressPercent || 0) >= 60 ? "#1F7A4D" : "#6B6F73",
+                        background: (activeSave?.progressPercent || 0) >= 60 ? "#E3F4EA" : "var(--wf-surface-2)",
+                        color: (activeSave?.progressPercent || 0) >= 60 ? "#1F7A4D" : "var(--wf-text-muted)",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
@@ -732,7 +730,7 @@ export function SaveSheet() {
                           <path d="m5 12.5 4.5 4.5L19 7.5" />
                         </svg>
                       ) : (
-                        <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#6B6F73" }} />
+                        <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "var(--wf-text-muted)" }} />
                       )}
                     </span>
                     Reading post content & caption
@@ -745,8 +743,8 @@ export function SaveSheet() {
                         width: "22px",
                         height: "22px",
                         borderRadius: "50%",
-                        border: "3px solid #D9D5CB",
-                        borderTopColor: "#1B1D1F",
+                        border: "3px solid var(--wf-border)",
+                        borderTopColor: "var(--wf-text)",
                         animation: "wf-skeleton-pulse 1s linear infinite",
                       }}
                     />
@@ -756,7 +754,7 @@ export function SaveSheet() {
               </div>
             </div>
 
-            <p style={{ margin: "24px 0 0", fontSize: "14px", color: "#6B6F73" }}>
+            <p style={{ margin: "24px 0 0", fontSize: "14px", color: "var(--wf-text-muted)" }}>
               You can close this. We'll keep going in the background and tell you if a link needs help.
             </p>
           </div>
@@ -771,8 +769,8 @@ export function SaveSheet() {
                   width: "40px",
                   height: "40px",
                   borderRadius: "50%",
-                  background: activeSave?.isDuplicate ? "#EBF1F5" : "#E3F4EA",
-                  color: activeSave?.isDuplicate ? "#1B5E78" : "#1F7A4D",
+                  background: activeSave?.isDuplicate ? "var(--wf-surface-2)" : "#E3F4EA",
+                  color: activeSave?.isDuplicate ? "var(--wf-text)" : "#1F7A4D",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -787,14 +785,14 @@ export function SaveSheet() {
                   {activeSave?.isDuplicate ? "Already saved" : "Saved to your library"}
                 </h2>
                 {activeSave?.isDuplicate && (
-                  <p style={{ margin: "4px 0 0", fontSize: "14px", color: "#6B6F73" }}>
+                  <p style={{ margin: "4px 0 0", fontSize: "14px", color: "var(--wf-text-muted)" }}>
                     This post is already in your library.
                   </p>
                 )}
               </div>
             </div>
 
-            <div style={{ display: "flex", gap: "20px", marginTop: "24px", padding: "16px", borderRadius: "22px", background: "#F6F5F1" }}>
+            <div style={{ display: "flex", gap: "20px", marginTop: "24px", padding: "16px", borderRadius: "22px", background: "var(--wf-surface-2)" }}>
               <div
                 style={{
                   flex: "none",
@@ -802,7 +800,7 @@ export function SaveSheet() {
                   height: "140px",
                   borderRadius: "16px",
                   overflow: "hidden",
-                  background: "var(--wf-surface-2, #E8E6DF)",
+                  background: "var(--wf-surface-2)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -823,12 +821,12 @@ export function SaveSheet() {
                 <div style={{ fontSize: "17px", lineHeight: 1.3, fontWeight: 700 }}>
                   {activeSave?.title || "Saved link"}
                 </div>
-                <div style={{ fontSize: "14px", color: "#6B6F73", marginTop: "4px" }}>
+                <div style={{ fontSize: "14px", color: "var(--wf-text-muted)", marginTop: "4px" }}>
                   {[activeSave?.author, "Instagram reel"].filter(Boolean).join(" · ")}
                 </div>
                 {!activeSave?.isDuplicate && (
                   <>
-                    <div style={{ fontSize: "12px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#6B6F73", margin: "14px 0 8px" }}>
+                    <div style={{ fontSize: "12px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--wf-text-muted)", margin: "14px 0 8px" }}>
                       Filed as
                     </div>
                     <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
@@ -847,9 +845,9 @@ export function SaveSheet() {
                               fontSize: "13px",
                               fontWeight: 700,
                               cursor: "pointer",
-                              border: isSelected ? "0" : "1px solid #D9D5CB",
-                              background: isSelected ? "#1B1D1F" : "#FFFFFF",
-                              color: isSelected ? "#FFFFFF" : "#1B1D1F",
+                              border: isSelected ? "0" : "1px solid var(--wf-border)",
+                              background: isSelected ? "var(--wf-primary, var(--wf-text))" : "var(--wf-surface)",
+                              color: isSelected ? "var(--wf-on-primary, var(--wf-bg))" : "var(--wf-text)",
                             }}
                           >
                             {c.label}

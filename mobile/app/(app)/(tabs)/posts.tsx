@@ -1,12 +1,11 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { useFocusEffect, useRouter } from "expo-router";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useRouter } from "expo-router";
+import { useMemo, useState } from "react";
 import {
-  ActivityIndicator,
+  Image,
   Pressable,
   RefreshControl,
   ScrollView,
-  SectionList,
   StyleSheet,
   Text,
   TextInput,
@@ -14,532 +13,408 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { fetchActiveJob, fetchJobs, nativePostId, type Job, type SavedPost } from "@/src/api";
-import { categoryLabel } from "@/src/categoryLabels";
-import { QuietSaveStatusCard } from "@/src/components/QuietSaveStatusCard";
+import { nativePostId } from "@/src/api";
 import { PostCard, postKey } from "@/src/components/PostCard";
-import { EmptyState, ErrorBanner } from "@/src/components/ui";
-import { effectiveContentCategory } from "@/src/contentCategory";
+import { EmptyState } from "@/src/components/ui";
 import { useLibrary } from "@/src/context/LibraryContext";
-import { usePendingShare } from "@/src/context/PendingShareContext";
-import { postTitle } from "@/src/display";
-import { postsForPlatforms, useLibraryPlatform } from "@/src/libraryPlatform";
 import { appHref } from "@/src/nav";
-import { FeatureFlags } from "@/src/featureRegistry";
+import { proxiedMediaUrl } from "@/src/postDisplayUtils";
 import { colors, radius, shadow } from "@/src/theme";
-
-type DateMode = "saved" | "posted";
-type PostGridRow = { key: string; posts: SavedPost[] };
-
-const GRID_GAP = 12;
-
-function chunkPostRows(posts: SavedPost[]): PostGridRow[] {
-  const rows: PostGridRow[] = [];
-  for (let index = 0; index < posts.length; index += 2) {
-    rows.push({
-      key: `${postKey(posts[index])}-${posts[index + 1] ? postKey(posts[index + 1]) : "solo"}`,
-      posts: posts.slice(index, index + 2),
-    });
-  }
-  return rows;
-}
-
-function postDateRaw(post: SavedPost, dateMode: DateMode): string | null {
-  return dateMode === "posted" ? post.posted_at ?? null : post.fetched_at ?? post.posted_at ?? null;
-}
-
-function monthKey(post: SavedPost, dateMode: DateMode): string {
-  const raw = postDateRaw(post, dateMode);
-  const date = raw ? new Date(raw) : null;
-  if (!date || Number.isNaN(date.getTime())) return "undated";
-  return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}`;
-}
-
-function monthLabel(key: string): string {
-  if (key === "undated") return "Undated";
-  const [year, month] = key.split("-");
-  return new Date(Date.UTC(Number(year), Number(month) - 1, 1)).toLocaleDateString(undefined, {
-    month: "long",
-    year: "numeric",
-    timeZone: "UTC",
-  });
-}
+import { CANONICAL_CATEGORIES, getCategoryVisual } from "@/src/categoryVisuals";
 
 export default function PostsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { posts, places, loading, error, refresh, bumpRefresh } = useLibrary();
-  const { platforms, setPlatforms } = useLibraryPlatform();
-  const { pendingUrls } = usePendingShare();
-  const [activeJob, setActiveJob] = useState<Job | null>(null);
-  const [attentionJob, setAttentionJob] = useState<Job | null>(null);
+  const { posts, places, loading, refresh } = useLibrary();
   const [refreshing, setRefreshing] = useState(false);
+  const [activeTab, setActiveTab] = useState<"reels" | "places">("reels");
   const [query, setQuery] = useState("");
-  const [collectionFilter, setCollectionFilter] = useState<"all" | "recipes" | "location">("all");
-  const [dateMode, setDateMode] = useState<DateMode>("saved");
-  const [facetKeys, setFacetKeys] = useState<string[]>([]);
-  const refreshedCompletedJobs = useRef(new Set<string>());
+  const [activeCategory, setActiveCategory] = useState<string>("all");
 
-  useFocusEffect(useCallback(() => {
-    let focused = true;
-    let timer: ReturnType<typeof setTimeout>;
-    const refreshJobs = async () => {
-      let isRunning = false;
-      try {
-        const [active, history] = await Promise.all([fetchActiveJob("link_ingest"), fetchJobs()]);
-        if (!focused) return;
-        isRunning = active?.status === "running";
-        setActiveJob(isRunning ? active : null);
-        const recentCutoff = Date.now() - 24 * 60 * 60 * 1000;
-        const newlyCompletedJobs = history.filter((job) => {
-          if (job.kind !== "link_ingest" || job.status !== "done" || !job.created_at) return false;
-          const createdAt = new Date(job.created_at).getTime();
-          if (!Number.isFinite(createdAt) || createdAt < recentCutoff) return false;
-          if (refreshedCompletedJobs.current.has(job.job_id)) return false;
-          refreshedCompletedJobs.current.add(job.job_id);
-          return true;
-        });
-        if (newlyCompletedJobs.length > 0) bumpRefresh();
-        setAttentionJob(history.find((job) => {
-          if (job.kind !== "link_ingest" || job.status !== "done" || !job.created_at) return false;
-          const createdAt = new Date(job.created_at).getTime();
-          return Number.isFinite(createdAt) && createdAt >= recentCutoff;
-        }) ?? null);
-      } catch {
-        // Keep status visible during transient network failures
-      }
-      const isIngesting = isRunning || pendingUrls.length > 0;
-      if (focused) timer = setTimeout(refreshJobs, isIngesting ? 4000 : 15000);
-    };
-    void refreshJobs();
-    return () => { focused = false; clearTimeout(timer); };
-  }, [bumpRefresh, pendingUrls.length]));
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await refresh();
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
-  const placesById = useMemo(
-    () => Object.fromEntries(places.map((place) => [place.place_id, place])),
-    [places],
-  );
-
-  const filtered = useMemo(() => {
+  // Filtered reels
+  const filteredPosts = useMemo(() => {
     let list = posts;
-    if (collectionFilter === "recipes") {
-      list = list.filter((p) => p.content_category === "food");
-    } else if (collectionFilter === "location") {
-      list = list.filter((p) => (p.place_ids && p.place_ids.length > 0) || (p.extracted_places && p.extracted_places.length > 0));
-    }
-
-    list = postsForPlatforms(list, platforms);
-    if (facetKeys.length > 0) {
-      list = list.filter((post) =>
-        postFacetKeys(post, collectionFilter, placesById).some((key) => facetKeys.includes(key)),
-      );
-    }
-    const needle = query.trim().toLowerCase();
-    if (needle) {
-      const names = Object.fromEntries(places.map((place) => [place.place_id, place.display_name]));
+    if (activeCategory !== "all") {
       list = list.filter((post) => {
-        const haystack = [
-          postTitle(post),
-          post.caption,
-          post.reel_summary,
-          post.author_handle,
-          ...(post.hashtags ?? []),
-          ...post.place_ids.map((placeId) => names[placeId]),
-          ...post.extracted_places.map((place) => place.place_name),
-        ]
-          .filter(Boolean)
-          .join(" ")
-          .toLowerCase();
-        return haystack.includes(needle);
+        const postPlaces = places.filter((p) => post.place_ids?.includes(p.place_id));
+        return postPlaces.some((p) => getCategoryVisual(p.category).name === activeCategory);
       });
     }
-    return [...list].sort(
-      (left, right) => timestamp(right, dateMode) - timestamp(left, dateMode),
-    );
-  }, [posts, collectionFilter, platforms, facetKeys, placesById, query, places, dateMode]);
-
-  const sections = useMemo(() => {
-    const groups = new Map<string, SavedPost[]>();
-    for (const post of filtered) {
-      const key = monthKey(post, dateMode);
-      const existing = groups.get(key) ?? [];
-      existing.push(post);
-      groups.set(key, existing);
+    const q = query.trim().toLowerCase();
+    if (q) {
+      list = list.filter((p) => {
+        const str = `${p.caption || ""} ${p.author_handle || ""}`.toLowerCase();
+        return str.includes(q);
+      });
     }
-    return Array.from(groups.entries())
-      .sort(([left], [right]) => {
-        if (left === "undated") return 1;
-        if (right === "undated") return -1;
-        return right.localeCompare(left);
-      })
-      .map(([key, data]) => ({
-        title: monthLabel(key),
-        count: data.length,
-        data: chunkPostRows(data),
-      }));
-  }, [filtered, dateMode]);
+    return list;
+  }, [posts, places, activeCategory, query]);
 
-  const onRefresh = useCallback(async () => {
-    setRefreshing(true);
-    await refresh();
-    setRefreshing(false);
-  }, [refresh]);
-
-  if (loading && posts.length === 0 && pendingUrls.length === 0) {
-    return (
-      <View style={styles.centered}>
-        <ActivityIndicator color={colors.ink} />
-      </View>
-    );
-  }
+  // Filtered places
+  const filteredPlaces = useMemo(() => {
+    let list = places;
+    if (activeCategory !== "all") {
+      list = list.filter((p) => getCategoryVisual(p.category).name === activeCategory);
+    }
+    const q = query.trim().toLowerCase();
+    if (q) {
+      list = list.filter((p) => {
+        const str = `${p.display_name} ${p.location?.city || ""} ${p.location?.country || ""}`.toLowerCase();
+        return str.includes(q);
+      });
+    }
+    return list;
+  }, [places, activeCategory, query]);
 
   return (
-    <View style={styles.screen}>
-      {error ? <ErrorBanner message={error} /> : null}
+    <View style={styles.container}>
+      {/* Header & Controls Area */}
+      <View style={[styles.headerArea, { paddingTop: Math.max(insets.top + 8, 16) }]}>
+        <View style={styles.topRow}>
+          <Text style={styles.screenHeading}>Library</Text>
 
-      {/* Chrome header with exact insets and design elements */}
-      <View style={[styles.chrome, { paddingTop: insets.top + 12 }]}>
-        <QuietSaveStatusCard
-          pendingUrls={pendingUrls}
-          activeJob={activeJob}
-          attentionJob={attentionJob}
-          onDismissAttention={() => setAttentionJob(null)}
-        />
+          {/* Segmented Reels | Places Toggle */}
+          <View style={styles.segmentedToggle}>
+            <Pressable
+              onPress={() => setActiveTab("reels")}
+              style={[
+                styles.segmentBtn,
+                activeTab === "reels" && styles.segmentBtnActive,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.segmentText,
+                  activeTab === "reels" && styles.segmentTextActive,
+                ]}
+              >
+                Reels ({posts.length})
+              </Text>
+            </Pressable>
 
-        {/* L2: Title row: "Library 274" + "Select" text button */}
-        <View style={styles.headerRow}>
-          <Text style={styles.headerTitle}>
-            Library{" "}
-            <Text style={styles.headerCount}>{filtered.length}</Text>
-          </Text>
-          <Pressable hitSlop={8} style={styles.selectBtn}>
-            <Text style={styles.selectBtnText}>Select</Text>
-          </Pressable>
-        </View>
-
-        {/* L3: Search row with input pill + 2 round 48px buttons */}
-        <View style={styles.searchRow}>
-          <View style={styles.searchPill}>
-            <Ionicons name="search" size={18} color={colors.muted} />
-            <TextInput
-              placeholder="Search title, place or tag"
-              placeholderTextColor={colors.muted}
-              value={query}
-              onChangeText={setQuery}
-              style={styles.searchInput}
-              returnKeyType="search"
-            />
+            <Pressable
+              onPress={() => setActiveTab("places")}
+              style={[
+                styles.segmentBtn,
+                activeTab === "places" && styles.segmentBtnActive,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.segmentText,
+                  activeTab === "places" && styles.segmentTextActive,
+                ]}
+              >
+                Places ({places.length})
+              </Text>
+            </Pressable>
           </View>
-
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Filter by source"
-            onPress={() => {
-              // Toggle platform filter
-              setPlatforms(platforms.length > 0 ? [] : ["instagram"]);
-            }}
-            style={[styles.roundBtn, platforms.length > 0 && styles.roundBtnActive]}
-          >
-            <Ionicons name="albums-outline" size={20} color={colors.ink} />
-          </Pressable>
-
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Filters"
-            onPress={() => {
-              setDateMode((mode) => (mode === "saved" ? "posted" : "saved"));
-            }}
-            style={[styles.roundBtn, dateMode === "posted" && styles.roundBtnActive]}
-          >
-            <Ionicons name="options-outline" size={20} color={colors.ink} />
-          </Pressable>
         </View>
 
-        {/* L4: Horizontally scrolling collection chips */}
+        {/* Search Bar */}
+        <View style={styles.searchBar}>
+          <Ionicons name="search" size={18} color={colors.muted} />
+          <TextInput
+            placeholder={activeTab === "reels" ? "Search captions, creators..." : "Search places, cities..."}
+            placeholderTextColor={colors.muted}
+            value={query}
+            onChangeText={setQuery}
+            style={styles.searchInput}
+            clearButtonMode="while-editing"
+          />
+        </View>
+
+        {/* Horizontal Category Chips */}
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.chipsScroll}
-          style={styles.chipsContainer}
         >
           <Pressable
-            onPress={() => setCollectionFilter("all")}
-            style={[styles.chip, collectionFilter === "all" && styles.chipActive]}
+            onPress={() => setActiveCategory("all")}
+            style={[styles.chip, activeCategory === "all" && styles.chipActive]}
           >
-            <Text
-              style={[styles.chipText, collectionFilter === "all" && styles.chipTextActive]}
-            >
+            <Text style={[styles.chipText, activeCategory === "all" && styles.chipTextActive]}>
               All
             </Text>
           </Pressable>
 
-          <Pressable
-            onPress={() => setCollectionFilter((c) => (c === "recipes" ? "all" : "recipes"))}
-            style={[styles.chip, collectionFilter === "recipes" && styles.chipActive]}
-          >
-            <Text
-              style={[styles.chipText, collectionFilter === "recipes" && styles.chipTextActive]}
-            >
-              Recipes
-            </Text>
-          </Pressable>
-
-          <Pressable
-            onPress={() => setCollectionFilter((c) => (c === "location" ? "all" : "location"))}
-            style={[styles.chip, collectionFilter === "location" && styles.chipActive]}
-          >
-            <Text
-              style={[styles.chipText, collectionFilter === "location" && styles.chipTextActive]}
-            >
-              Has location
-            </Text>
-          </Pressable>
+          {CANONICAL_CATEGORIES.map((cat) => {
+            const vis = getCategoryVisual(cat);
+            const isSelected = activeCategory === cat;
+            return (
+              <Pressable
+                key={cat}
+                onPress={() => setActiveCategory(isSelected ? "all" : cat)}
+                style={[styles.chip, isSelected && styles.chipActive]}
+              >
+                <Text style={styles.chipGlyph}>{vis.glyph}</Text>
+                <Text style={[styles.chipText, isSelected && styles.chipTextActive]}>
+                  {cat}
+                </Text>
+              </Pressable>
+            );
+          })}
         </ScrollView>
       </View>
 
-      <SectionList
-        sections={sections}
-        keyExtractor={(item) => item.key}
+      {/* Main List */}
+      <ScrollView
         contentContainerStyle={[
-          styles.list,
+          styles.content,
           { paddingBottom: 84 + insets.bottom + 24 },
         ]}
-        stickySectionHeadersEnabled={false}
-        initialNumToRender={8}
-        maxToRenderPerBatch={6}
-        windowSize={5}
-        removeClippedSubviews
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void onRefresh()} />}
-        ListEmptyComponent={
-          posts.length === 0 ? (
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      >
+        {activeTab === "reels" ? (
+          filteredPosts.length === 0 ? (
             <EmptyState
-              title="Your library starts with one link"
-              body="Tap the + button to save Instagram reels."
+              title="Nothing here yet"
+              body="Save reels to start building your library."
             />
           ) : (
-            <EmptyState
-              title="No saves match these filters"
-              body="Clear search or collection filters to see your saved items."
-            />
+            <View style={styles.twoColumnGrid}>
+              {filteredPosts.map((post) => (
+                <View key={postKey(post)} style={styles.columnItem}>
+                  <PostCard
+                    post={post}
+                    height={190}
+                    onPress={() => router.push(`/posts/${post.platform}/${nativePostId(post)}`)}
+                  />
+                </View>
+              ))}
+            </View>
           )
-        }
-        /* L5: Month heading: "October 2026" at 18px weight 800 + "28 saves" in muted 14px */
-        renderSectionHeader={({ section }) => (
-          <View style={styles.monthHeader}>
-            <Text style={styles.monthTitle}>{section.title}</Text>
-            <Text style={styles.monthCount}>{section.count} saves</Text>
-          </View>
+        ) : (
+          filteredPlaces.length === 0 ? (
+            <EmptyState
+              title="No places match"
+              body="Places from your saved reels will appear here."
+            />
+          ) : (
+            <View style={styles.placesList}>
+              {filteredPlaces.map((place) => {
+                const vis = getCategoryVisual(place.category);
+                const matchingPost = posts.find((p) => place.source_post_ids?.includes(p.post_id));
+                const thumb = matchingPost?.thumbnail_url ? proxiedMediaUrl(matchingPost.thumbnail_url) : null;
+
+                return (
+                  <Pressable
+                    key={place.place_id}
+                    onPress={() => router.push(appHref(`/(app)/places/${place.place_id}`))}
+                    style={styles.placeRow}
+                  >
+                    <View style={[styles.placeThumb, { backgroundColor: vis.tint }]}>
+                      {thumb ? (
+                        <Image source={{ uri: thumb }} style={styles.placeThumbImg} resizeMode="cover" />
+                      ) : (
+                        <Text style={{ fontSize: 24 }}>{vis.glyph}</Text>
+                      )}
+                    </View>
+
+                    <View style={styles.placeInfo}>
+                      <Text style={styles.placeTitle} numberOfLines={1}>
+                        {place.display_name}
+                      </Text>
+                      <View style={styles.placeMetaRow}>
+                        <View style={[styles.catDot, { backgroundColor: vis.hue }]} />
+                        <Text style={[styles.catName, { color: vis.hue }]}>{vis.name}</Text>
+                        {place.location?.city && (
+                          <Text style={styles.placeCity}>· {place.location.city}</Text>
+                        )}
+                      </View>
+                      {place.tips?.[0] && (
+                        <Text style={styles.placeTip} numberOfLines={1}>
+                          "{place.tips[0]}"
+                        </Text>
+                      )}
+                    </View>
+
+                    <Ionicons name="chevron-forward" size={18} color={colors.muted} />
+                  </Pressable>
+                );
+              })}
+            </View>
+          )
         )}
-        renderItem={({ item }) => (
-          <View style={styles.gridRow}>
-            {item.posts.map((post, idx) => (
-              <View key={postKey(post)} style={styles.gridCell}>
-                <PostCard
-                  post={post}
-                  dateMode={dateMode}
-                  height={idx % 2 === 0 ? 170 : 195}
-                  onPress={() => router.push(`/posts/${post.platform}/${nativePostId(post)}`)}
-                />
-              </View>
-            ))}
-            {item.posts.length === 1 ? <View style={styles.gridCell} /> : null}
-          </View>
-        )}
-      />
+      </ScrollView>
     </View>
   );
 }
 
-function timestamp(post: SavedPost, dateMode: DateMode): number {
-  const raw = postDateRaw(post, dateMode);
-  if (!raw) return 0;
-  const time = new Date(raw).getTime();
-  return Number.isNaN(time) ? 0 : time;
-}
-
-function postFacetKeys(
-  post: SavedPost,
-  contentCategory: string,
-  placesById: Record<string, { category?: string | null }>,
-): string[] {
-  const keys: string[] = [];
-  if (contentCategory === "travel") {
-    for (const placeId of post.place_ids) {
-      const place = placesById[placeId];
-      if (place?.category) keys.push(place.category);
-    }
-  } else if (post.author_handle) {
-    keys.push(post.author_handle);
-  }
-  return keys;
-}
-
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.bg },
-  centered: {
+  container: {
     flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
     backgroundColor: colors.bg,
   },
-  chrome: {
+  headerArea: {
     paddingHorizontal: 20,
     backgroundColor: colors.bg,
+    gap: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderSubtle,
+    paddingBottom: 12,
   },
-  headerRow: {
+  topRow: {
     flexDirection: "row",
-    alignItems: "baseline",
+    alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 14,
   },
-  headerTitle: {
-    fontSize: 30,
-    fontWeight: "800",
+  screenHeading: {
+    fontSize: 28,
+    fontWeight: "700",
     letterSpacing: -0.5,
     color: colors.ink,
   },
-  headerCount: {
-    fontSize: 15,
+  segmentedToggle: {
+    flexDirection: "row",
+    backgroundColor: colors.surface2,
+    borderRadius: radius.pill,
+    padding: 2,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  segmentBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: radius.pill,
+  },
+  segmentBtnActive: {
+    backgroundColor: colors.ink,
+  },
+  segmentText: {
+    fontSize: 12,
     fontWeight: "600",
     color: colors.muted,
-    letterSpacing: 0,
   },
-  selectBtn: {
-    paddingVertical: 4,
-    paddingHorizontal: 6,
+  segmentTextActive: {
+    color: colors.bg,
   },
-  selectBtnText: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: colors.ink,
-  },
-  searchRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 14,
-  },
-  searchPill: {
-    flex: 1,
-    minWidth: 0,
-    height: 48,
+  searchBar: {
+    height: 40,
     borderRadius: radius.pill,
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 16,
-    gap: 10,
+    paddingHorizontal: 14,
+    gap: 8,
   },
   searchInput: {
     flex: 1,
-    fontSize: 15,
+    fontSize: 14,
     color: colors.ink,
     padding: 0,
   },
-  roundBtn: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  roundBtnActive: {
-    backgroundColor: colors.brandSoft,
-    borderColor: colors.ink,
-  },
-  chipsContainer: {
-    marginHorizontal: -20,
-    marginBottom: 10,
-  },
   chipsScroll: {
-    paddingHorizontal: 20,
-    flexDirection: "row",
     gap: 8,
-    alignItems: "center",
+    paddingVertical: 2,
   },
   chip: {
-    height: 38,
-    paddingHorizontal: 16,
+    height: 32,
+    paddingHorizontal: 12,
     borderRadius: radius.pill,
+    backgroundColor: colors.surface2,
     borderWidth: 1,
-    borderColor: "#D9D5CB",
-    backgroundColor: colors.surface,
-    justifyContent: "center",
+    borderColor: colors.border,
+    flexDirection: "row",
     alignItems: "center",
+    gap: 6,
   },
   chipActive: {
     backgroundColor: colors.ink,
     borderColor: colors.ink,
   },
+  chipGlyph: {
+    fontSize: 12,
+  },
   chipText: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: "600",
-    color: colors.ink,
+    color: colors.ink2,
   },
   chipTextActive: {
-    color: "#FFFFFF",
-    fontWeight: "700",
+    color: colors.bg,
   },
-  chipDashed: {
-    height: 38,
-    paddingHorizontal: 14,
-    borderRadius: radius.pill,
-    borderWidth: 2,
-    borderStyle: "dashed",
-    borderColor: colors.borderDashed,
-    backgroundColor: "transparent",
+  content: {
+    paddingHorizontal: 20,
+    paddingTop: 16,
+  },
+  twoColumnGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+  },
+  columnItem: {
+    width: "48%",
+  },
+  placesList: {
+    gap: 12,
+  },
+  placeRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: 12,
+    gap: 12,
+    ...shadow.sm,
+  },
+  placeThumb: {
+    width: 64,
+    height: 64,
+    borderRadius: radius.md,
+    overflow: "hidden",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  placeThumbImg: {
+    width: "100%",
+    height: "100%",
+  },
+  placeInfo: {
+    flex: 1,
+    gap: 2,
+  },
+  placeTitle: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: colors.ink,
+  },
+  placeMetaRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
   },
-  chipDashedText: {
-    fontSize: 14,
+  catDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  catName: {
+    fontSize: 12,
     fontWeight: "600",
-    color: colors.routineInk,
   },
-  soonBadge: {
-    backgroundColor: colors.brandSoft,
-    paddingHorizontal: 5,
-    paddingVertical: 1,
-    borderRadius: 4,
-  },
-  soonBadgeText: {
-    fontSize: 10,
-    fontWeight: "700",
+  placeCity: {
+    fontSize: 12,
     color: colors.muted,
   },
-  monthHeader: {
-    flexDirection: "row",
-    alignItems: "baseline",
-    gap: 10,
-    marginTop: 18,
-    marginBottom: 12,
-    paddingHorizontal: 20,
-  },
-  monthTitle: {
-    fontSize: 18,
-    fontWeight: "800",
-    letterSpacing: -0.3,
-    color: colors.ink,
-  },
-  monthCount: {
-    fontSize: 14,
+  placeTip: {
+    fontSize: 12,
     color: colors.muted,
-  },
-  list: {
-    paddingHorizontal: 20,
-  },
-  gridRow: {
-    flexDirection: "row",
-    gap: GRID_GAP,
-  },
-  gridCell: {
-    flex: 1,
-    minWidth: 0,
+    fontStyle: "italic",
+    marginTop: 2,
   },
 });

@@ -8,11 +8,11 @@ import {
   Monitor,
   Download,
   Trash2,
-  Bell,
   Sliders,
   Shield,
   ArrowLeft,
   Check,
+  Info,
 } from "lucide-react";
 import { getStoredTheme, setStoredTheme, type ThemeMode } from "../theme";
 import { useToast } from "../state/ToastContext";
@@ -32,14 +32,6 @@ export function SettingsPage({ posts, places, isAdmin = false, onRefresh }: Sett
   const { showToast } = useToast();
 
   const [theme, setTheme] = useState<ThemeMode>(getStoredTheme);
-  const [defaultCat, setDefaultCat] = useState<string>(() => {
-    try {
-      return localStorage.getItem("wf_default_category") || "all";
-    } catch {
-      return "all";
-    }
-  });
-  const [notifications, setNotifications] = useState(true);
   const [cleaning, setCleaning] = useState(false);
   const [reprocessing, setReprocessing] = useState(false);
 
@@ -47,16 +39,6 @@ export function SettingsPage({ posts, places, isAdmin = false, onRefresh }: Sett
     setTheme(mode);
     setStoredTheme(mode);
     showToast(`Appearance set to ${mode}`);
-  };
-
-  const handleDefaultCatChange = (cat: string) => {
-    setDefaultCat(cat);
-    try {
-      localStorage.setItem("wf_default_category", cat);
-    } catch {
-      // ignore
-    }
-    showToast("Default category updated");
   };
 
   // Data export to JSON
@@ -296,7 +278,7 @@ export function SettingsPage({ posts, places, isAdmin = false, onRefresh }: Sett
           </div>
         </section>
 
-        {/* 3. Default Category Preference */}
+        {/* 3. Map Units Preference */}
         <section
           style={{
             background: "var(--wf-surface)",
@@ -309,92 +291,59 @@ export function SettingsPage({ posts, places, isAdmin = false, onRefresh }: Sett
           <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
             <Sliders size={18} strokeWidth={1.75} color="var(--wf-primary)" />
             <h2 className="wf-type-h2" style={{ margin: 0, fontSize: "18px" }}>
-              Default Category
+              Map Units
             </h2>
           </div>
           <p style={{ margin: "0 0 16px", fontSize: "14px", color: "var(--wf-text-muted)" }}>
-            The primary collection view when opening your library.
+            Choose preferred unit of distance for places and trips.
           </p>
 
-          <select
-            value={defaultCat}
-            onChange={(e) => handleDefaultCatChange(e.target.value)}
-            style={{
-              width: "100%",
-              height: "44px",
-              padding: "0 14px",
-              borderRadius: "var(--wf-radius-control)",
-              border: "1px solid var(--wf-border)",
-              background: "var(--wf-surface-2)",
-              color: "var(--wf-text)",
-              fontSize: "15px",
-              fontFamily: "inherit",
-              cursor: "pointer",
-            }}
-          >
-            <option value="all">All Saves (Default)</option>
-            <option value="travel">Places & Travel</option>
-            <option value="food">Recipes & Food</option>
-            <option value="movies">Watch & Movies</option>
-          </select>
-        </section>
-
-        {/* 4. Notifications Preference */}
-        <section
-          style={{
-            background: "var(--wf-surface)",
-            border: "1px solid var(--wf-border)",
-            borderRadius: "var(--wf-radius-card)",
-            padding: "24px",
-            boxShadow: "var(--wf-shadow-card)",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <div>
-              <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
-                <Bell size={18} strokeWidth={1.75} color="var(--wf-primary)" />
-                <h2 className="wf-type-h2" style={{ margin: 0, fontSize: "18px" }}>
-                  Save Completion Notifications
-                </h2>
-              </div>
-              <p style={{ margin: 0, fontSize: "14px", color: "var(--wf-text-muted)" }}>
-                Show in-app toast when reel places finish extracting.
-              </p>
-            </div>
-
-            <button
-              type="button"
-              role="switch"
-              aria-checked={notifications}
-              onClick={() => {
-                setNotifications((n) => !n);
-                showToast(notifications ? "Notifications disabled" : "Notifications enabled");
-              }}
-              style={{
-                width: "50px",
-                height: "30px",
-                borderRadius: "9999px",
-                background: notifications ? "var(--wf-primary)" : "var(--wf-surface-2)",
-                border: "1px solid var(--wf-border)",
-                position: "relative",
-                cursor: "pointer",
-                padding: "2px",
-                transition: "background-color 0.2s ease",
-              }}
-            >
-              <span
-                style={{
-                  display: "block",
-                  width: "24px",
-                  height: "24px",
-                  borderRadius: "50%",
-                  background: "#FFFFFF",
-                  transform: notifications ? "translateX(20px)" : "translateX(0)",
-                  transition: "transform 0.2s ease",
-                  boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
-                }}
-              />
-            </button>
+          <div style={{ display: "flex", gap: "12px" }}>
+            {[
+              { id: "km", label: "Kilometers (km)" },
+              { id: "mi", label: "Miles (mi)" },
+            ].map(({ id, label }) => {
+              const currentUnits = (() => {
+                try {
+                  return localStorage.getItem("wf_map_units") || "km";
+                } catch {
+                  return "km";
+                }
+              })();
+              const isSelected = currentUnits === id;
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => {
+                    try {
+                      localStorage.setItem("wf_map_units", id);
+                    } catch {
+                      // ignore
+                    }
+                    showToast(`Map units set to ${label}`);
+                  }}
+                  style={{
+                    flex: 1,
+                    height: "44px",
+                    borderRadius: "var(--wf-radius-control)",
+                    border: isSelected ? "2px solid var(--wf-primary)" : "1px solid var(--wf-border)",
+                    background: isSelected ? "var(--wf-surface-2)" : "var(--wf-surface)",
+                    color: "var(--wf-text)",
+                    fontSize: "14px",
+                    fontWeight: isSelected ? 700 : 500,
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "8px",
+                  }}
+                >
+                  <span>{label}</span>
+                  {isSelected && <Check size={16} strokeWidth={2.5} color="var(--wf-primary)" />}
+                </button>
+              );
+            })}
           </div>
         </section>
 
@@ -571,6 +520,47 @@ export function SettingsPage({ posts, places, isAdmin = false, onRefresh }: Sett
             <Trash2 size={16} strokeWidth={2} />
             <span>{cleaning ? "Deleting everything…" : "Delete all my data"}</span>
           </button>
+        </section>
+
+        {/* 8. About Wanderfile */}
+        <section
+          style={{
+            background: "var(--wf-surface)",
+            border: "1px solid var(--wf-border)",
+            borderRadius: "var(--wf-radius-card)",
+            padding: "24px",
+            boxShadow: "var(--wf-shadow-card)",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
+            <Info size={18} strokeWidth={1.75} color="var(--wf-primary)" />
+            <h2 className="wf-type-h2" style={{ margin: 0, fontSize: "18px" }}>
+              About Wanderfile
+            </h2>
+          </div>
+          <p style={{ margin: "0 0 16px", fontSize: "14px", color: "var(--wf-text-muted)" }}>
+            Turn saved travel reels into your personal map you'll actually use.
+          </p>
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "8px",
+              fontSize: "13px",
+              color: "var(--wf-text-muted)",
+              borderTop: "1px solid var(--wf-border)",
+              paddingTop: "12px",
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <span>Version</span>
+              <span style={{ fontWeight: 600, color: "var(--wf-text)" }}>1.0.0</span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <span>Map data</span>
+              <span style={{ fontWeight: 600, color: "var(--wf-text)" }}>CARTO Positron · OpenStreetMap</span>
+            </div>
+          </div>
         </section>
       </div>
     </main>

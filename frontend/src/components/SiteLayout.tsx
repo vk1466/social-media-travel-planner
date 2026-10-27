@@ -5,7 +5,6 @@ import { readBrandMode } from "../themeColor";
 import "../site-chrome.css";
 import { SiteFooter } from "./SiteFooter";
 import { SiteHeader } from "./SiteHeader";
-import { BentoMotionPicker } from "./BentoMotionPicker";
 import { ThemeColorPicker } from "./ThemeColorPicker";
 
 export interface SiteLayoutProps {
@@ -41,7 +40,6 @@ export function SiteLayout({
       {hideFooter ? null : (
         <SiteFooter isAdmin={isAdmin} postCount={postCount} placeCount={placeCount} />
       )}
-      <BentoMotionPicker />
       <ThemeColorPicker />
     </div>
   );

@@ -3,16 +3,32 @@ import L from "leaflet";
 import { MapContainer, Marker, TileLayer, useMap } from "react-leaflet";
 
 import type { Place } from "../api";
-import { CARTO_BASEMAP_ATTR, cartoVoyagerTileUrl, googleMapsDirectionsUrl, googleMapsUrl } from "../maps";
+import { CARTO_BASEMAP_ATTR, cartoPositronTileUrl, googleMapsDirectionsUrl, googleMapsUrl } from "../maps";
 import { mappablePlaces } from "../placeMapUtils";
 
 import "leaflet/dist/leaflet.css";
 
 function numberedPin(index: number, selected: boolean): L.DivIcon {
-  const size = selected ? 28 : 22;
+  const size = selected ? 32 : 26;
   return L.divIcon({
-    className: selected ? "post-card-map-pin is-light-map is-active" : "post-card-map-pin is-light-map",
-    html: `<span>${index + 1}</span>`,
+    className: "post-card-map-pin",
+    html: `<div style="
+      width: ${size}px;
+      height: ${size}px;
+      border-radius: 50%;
+      background: ${selected ? "var(--accent, #FF5A4E)" : "var(--ink, #16181B)"};
+      border: 2px solid #FFFFFF;
+      box-shadow: ${selected ? "0 4px 14px rgba(255, 90, 78, 0.45)" : "0 2px 6px rgba(16, 24, 40, 0.2)"};
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #FFFFFF;
+      font-weight: 700;
+      font-size: ${selected ? "13px" : "11px"};
+      font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+      transform: ${selected ? "scale(1.15)" : "scale(1)"};
+      transition: transform 0.15s ease;
+    ">${index + 1}</div>`,
     iconSize: [size, size],
     iconAnchor: [size / 2, size / 2],
   });
@@ -109,7 +125,7 @@ export function PostPlacesMap({
         zoomControl={false}
         attributionControl
       >
-        <TileLayer url={cartoVoyagerTileUrl()} attribution={CARTO_BASEMAP_ATTR} subdomains="abcd" />
+        <TileLayer url={cartoPositronTileUrl()} attribution={CARTO_BASEMAP_ATTR} subdomains="abcd" />
         <InvalidateSize />
         <Recenter places={mapped} activePlaceId={active.place_id} />
         {mapped.map((place, index) => {

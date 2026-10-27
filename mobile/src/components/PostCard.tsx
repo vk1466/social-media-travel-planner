@@ -1,10 +1,9 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { memo, useState } from "react";
+import { memo } from "react";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 
 import type { SavedPost } from "../api";
 import { nativePostId } from "../api";
-import { formatDate, postTitle } from "../display";
 import { proxiedMediaUrl } from "../postDisplayUtils";
 import { colors, radius, shadow } from "../theme";
 
@@ -15,76 +14,56 @@ interface PostCardProps {
   height?: number;
 }
 
-const CATEGORY_STYLES: Record<string, { label: string; bg: string; ink: string }> = {
-  travel: { label: "Travel", bg: "#E3F0F4", ink: "#1B5E78" },
-  food: { label: "Food", bg: "#FBEBDD", ink: "#9A4513" },
-  movies: { label: "Movies", bg: "#ECE8F7", ink: "#4B3C8C" },
-  fashion: { label: "Fashion", bg: "#ECECEA", ink: "#4A4E52" },
-  hairstyle: { label: "Hairstyle", bg: "#ECECEA", ink: "#4A4E52" },
-  routine: { label: "Other", bg: "#E4F2E7", ink: "#25623A" },
-  other: { label: "Other", bg: "#ECECEA", ink: "#4A4E52" },
-};
-
 export const PostCard = memo(function PostCard({
   post,
   onPress,
-  dateMode = "saved",
   height = 180,
 }: PostCardProps) {
-  const [bookmarked, setBookmarked] = useState(false);
-  const handle = post.author_handle?.trim();
-  const dateRaw = dateMode === "posted" ? post.posted_at : post.fetched_at ?? post.posted_at;
-  const dateStr = formatDate(dateRaw) ?? "Recently";
-  const authorLine = handle ? (handle.startsWith("@") ? handle : `@${handle}`) : "";
-  const metaLine = [authorLine, dateStr].filter(Boolean).join(" · ");
-
-  const category = (post.content_category || "other").toLowerCase();
-  const catStyle = CATEGORY_STYLES[category] || CATEGORY_STYLES.other;
+  const handle = post.author_handle || "instagram";
+  const authorLine = handle.startsWith("@") ? handle : `@${handle}`;
+  const spotCount = (post.place_ids?.length || 0) + (post.extracted_places?.length || 0);
   const imageUrl = proxiedMediaUrl(post.thumbnail_url);
 
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`Open post ${postTitle(post)}`}
+      accessibilityLabel={`Open reel by ${authorLine}`}
       style={({ pressed }) => [styles.tileContainer, pressed && styles.pressed]}
     >
       <View style={[styles.imageWrap, { height }]}>
         {imageUrl ? (
           <Image source={{ uri: imageUrl }} style={styles.image} resizeMode="cover" />
         ) : (
-          <View style={[styles.image, styles.imageFallback]} />
+          <View style={[styles.image, styles.imageFallback]}>
+            <Ionicons name="film-outline" size={28} color={colors.muted} />
+          </View>
         )}
 
-        {/* Category tag chip */}
-        <View style={[styles.tagPill, { backgroundColor: catStyle.bg }]}>
-          <Text style={[styles.tagText, { color: catStyle.ink }]}>{catStyle.label}</Text>
+        {/* IG Glyph Badge */}
+        <View style={styles.igBadge}>
+          <Ionicons name="logo-instagram" size={13} color="#FFFFFF" />
         </View>
 
-        {/* 32px Bookmark circle */}
-        <Pressable
-          onPress={(e) => {
-            e.stopPropagation();
-            setBookmarked((prev) => !prev);
-          }}
-          hitSlop={8}
-          accessibilityRole="button"
-          accessibilityLabel={bookmarked ? "Remove favorite" : "Favorite"}
-          style={[styles.bookmarkButton, shadow(1)]}
-        >
-          <Ionicons
-            name={bookmarked ? "bookmark" : "bookmark-outline"}
-            size={16}
-            color={colors.ink}
-          />
-        </Pressable>
+        {/* Spot Count Badge */}
+        {spotCount > 0 && (
+          <View style={styles.spotCountBadge}>
+            <Text style={styles.spotCountText}>
+              {spotCount} {spotCount === 1 ? "place" : "places"}
+            </Text>
+          </View>
+        )}
+
+        {/* Bottom Scrim for Creator */}
+        <View style={styles.creatorScrim}>
+          <Text style={styles.creatorText} numberOfLines={1}>
+            {authorLine}
+          </Text>
+        </View>
       </View>
 
-      <Text style={styles.title} numberOfLines={2}>
-        {postTitle(post)}
-      </Text>
-      <Text style={styles.meta} numberOfLines={1}>
-        {metaLine}
+      <Text style={styles.caption} numberOfLines={2}>
+        {post.caption || post.title || "Saved reel"}
       </Text>
     </Pressable>
   );
@@ -97,57 +76,71 @@ export function postKey(post: SavedPost): string {
 const styles = StyleSheet.create({
   tileContainer: {
     width: "100%",
+    gap: 8,
     marginBottom: 16,
   },
   pressed: {
-    opacity: 0.9,
+    transform: [{ scale: 0.98 }],
   },
   imageWrap: {
     width: "100%",
-    borderRadius: 18,
+    borderRadius: radius.lg,
     overflow: "hidden",
     position: "relative",
-    backgroundColor: "#ECECEA",
+    backgroundColor: colors.surface2,
+    ...shadow.sm,
   },
   image: {
-    ...StyleSheet.absoluteFill,
+    width: "100%",
+    height: "100%",
   },
   imageFallback: {
-    backgroundColor: "#8CC3D6",
-  },
-  tagPill: {
-    position: "absolute",
-    left: 8,
-    top: 8,
-    paddingHorizontal: 9,
-    paddingVertical: 3,
-    borderRadius: radius.pill,
-  },
-  tagText: {
-    fontSize: 11,
-    fontWeight: "700",
-  },
-  bookmarkButton: {
-    position: "absolute",
-    right: 8,
-    top: 8,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: "#FFFFFF",
     alignItems: "center",
     justifyContent: "center",
   },
-  title: {
-    marginTop: 8,
+  igBadge: {
+    position: "absolute",
+    top: 8,
+    left: 8,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: "rgba(0,0,0,0.55)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  spotCountBadge: {
+    position: "absolute",
+    top: 8,
+    right: 8,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: radius.pill,
+  },
+  spotCountText: {
+    color: "#FFFFFF",
+    fontSize: 11,
+    fontWeight: "600",
+  },
+  creatorScrim: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    backgroundColor: "rgba(0,0,0,0.45)",
+  },
+  creatorText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  caption: {
     fontSize: 13,
     lineHeight: 18,
-    fontWeight: "600",
     color: colors.ink,
-  },
-  meta: {
-    marginTop: 3,
-    fontSize: 12,
-    color: colors.muted,
+    paddingHorizontal: 2,
   },
 });

@@ -6,38 +6,15 @@ import { Search, X } from "lucide-react";
 import { EmptyState } from "../components/EmptyState";
 import { useSavePipeline } from "../state/SavePipelineContext";
 import type { Place, SavedPost } from "../../api";
-import { visualForCategory } from "../../placeCategoryVisuals";
-import { categoryTone } from "../../categoryLabels";
+import { getCategoryVisual, CANONICAL_CATEGORIES } from "../categoryVisuals";
+import { cartoMaplibreStyle } from "../../maps";
+import { proxiedMediaUrl } from "../../postDisplayUtils";
 import "maplibre-gl/dist/maplibre-gl.css";
 
 interface MapPageProps {
   places: Place[];
   posts?: SavedPost[];
   loading: boolean;
-}
-
-function CategoryIcon({ icon, fallback = "📍" }: { icon?: string | null; fallback?: string }) {
-  if (icon && icon.startsWith("<svg")) {
-    return (
-      <span
-        style={{ width: "14px", height: "14px", display: "inline-flex", alignItems: "center", justifyContent: "center" }}
-        dangerouslySetInnerHTML={{ __html: icon }}
-      />
-    );
-  }
-  return <span style={{ fontSize: "12px" }}>{icon || fallback}</span>;
-}
-
-function isFoodPlace(place: Place, postsByPlaceId?: Map<string, SavedPost>): boolean {
-  if (categoryTone(place.category) === "food") return true;
-  const cat = (place.category || "").toLowerCase();
-  if (["food", "restaurant", "cafe", "bar", "bakery", "dinner", "lunch", "breakfast", "dessert", "cocktail"].includes(cat)) {
-    return true;
-  }
-  if (postsByPlaceId && postsByPlaceId.get(place.place_id)?.content_category === "food") {
-    return true;
-  }
-  return false;
 }
 
 export function MapPage({ places, posts, loading }: MapPageProps) {
@@ -48,6 +25,7 @@ export function MapPage({ places, posts, loading }: MapPageProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const markersRef = useRef<maplibregl.Marker[]>([]);
+  const hasFittedInitialBoundsRef = useRef<boolean>(false);
 
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(
     placeId || searchParams.get("selected") || null
@@ -80,14 +58,8 @@ export function MapPage({ places, posts, loading }: MapPageProps) {
 
   const filteredPlaces = useMemo(() => {
     if (activeCategory === "all") return mappablePlaces;
-    if (activeCategory === "food") {
-      return mappablePlaces.filter((p) => isFoodPlace(p, postsByPlaceId));
-    }
-    if (activeCategory === "travel") {
-      return mappablePlaces.filter((p) => !isFoodPlace(p, postsByPlaceId));
-    }
-    return mappablePlaces.filter((p) => (p.category || "other") === activeCategory);
-  }, [mappablePlaces, activeCategory, postsByPlaceId]);
+    return mappablePlaces.filter((p) => getCategoryVisual(p.category).name === activeCategory);
+  }, [mappablePlaces, activeCategory]);
 
   const selectedPlace = useMemo(() => {
     return mappablePlaces.find((p) => p.place_id === selectedPlaceId) || null;
@@ -155,16 +127,16 @@ export function MapPage({ places, posts, loading }: MapPageProps) {
       if (isCluster) {
         const count = feature.properties.point_count;
         const clusterId = feature.properties.cluster_id;
-        const size = count < 10 ? 38 : count < 50 ? 44 : 50;
+        const size = count < 10 ? 32 : count < 50 ? 40 : 48;
 
         const el = document.createElement("div");
         el.className = "wf-cluster-marker";
         el.style.width = `${size}px`;
         el.style.height = `${size}px`;
         el.style.borderRadius = "9999px";
-        el.style.background = "var(--wf-primary)";
+        el.style.background = "var(--ink, #16181B)";
         el.style.border = "2px solid #FFFFFF";
-        el.style.boxShadow = "0 4px 12px rgba(0,0,0,0.3)";
+        el.style.boxShadow = "0 0 0 6px rgba(22, 24, 27, 0.2)";
         el.style.display = "flex";
         el.style.alignItems = "center";
         el.style.justifyContent = "center";
@@ -186,8 +158,8 @@ export function MapPage({ places, posts, loading }: MapPageProps) {
         const place: Place = feature.properties.place;
         const isSelected = selectedPlaceId === place.place_id;
         const isHovered = hoveredPlaceId === place.place_id;
-        const visual = visualForCategory(place.category);
-        const pinColor = visual.color || "var(--wf-primary)";
+        const visual = getCategoryVisual(place.category);
+        const pinColor = visual.hue;
 
         // Outer 44px tap target container
         const el = document.createElement("div");
@@ -199,36 +171,24 @@ export function MapPage({ places, posts, loading }: MapPageProps) {
         el.style.justifyContent = "center";
         el.style.cursor = "pointer";
 
-        // Inner visual dot/icon
+        // Inner visual 32px circle
         const dot = document.createElement("div");
-        dot.style.width = isSelected ? "34px" : isHovered ? "30px" : "24px";
-        dot.style.height = isSelected ? "34px" : isHovered ? "30px" : "24px";
+        dot.style.width = "32px";
+        dot.style.height = "32px";
         dot.style.borderRadius = "50%";
-        dot.style.background = isSelected ? "var(--wf-text)" : pinColor;
-        dot.style.border = "2px solid #FFFFFF";
+        dot.style.background = pinColor;
+        dot.style.border = isSelected ? "2px solid var(--accent, #FF5A4E)" : "2px solid #FFFFFF";
         dot.style.boxShadow = isSelected
-          ? "0 4px 14px rgba(0,0,0,0.4)"
-          : "0 2px 8px rgba(0,0,0,0.25)";
+          ? "0 4px 14px rgba(255, 90, 78, 0.45)"
+          : "0 2px 8px rgba(16, 24, 40, 0.15)";
+        dot.style.transform = isSelected ? "scale(1.2)" : isHovered ? "scale(1.1)" : "scale(1)";
         dot.style.display = "flex";
         dot.style.alignItems = "center";
         dot.style.justifyContent = "center";
         dot.style.color = "#FFFFFF";
-        dot.style.fontSize = "12px";
-        dot.style.transition = "all 0.15s ease";
-
-        if (visual.icon && visual.icon.startsWith("<svg")) {
-          dot.innerHTML = visual.icon;
-          const svgEl = dot.querySelector("svg");
-          if (svgEl) {
-            svgEl.style.width = isSelected ? "18px" : isHovered ? "16px" : "14px";
-            svgEl.style.height = isSelected ? "18px" : isHovered ? "16px" : "14px";
-            svgEl.style.display = "block";
-            svgEl.style.fill = "none";
-            svgEl.style.stroke = "currentColor";
-          }
-        } else {
-          dot.innerText = visual.icon || "📍";
-        }
+        dot.style.fontSize = "14px";
+        dot.style.transition = "transform 0.18s cubic-bezier(0.2, 0.8, 0.2, 1)";
+        dot.innerText = visual.glyph || "📍";
 
         el.appendChild(dot);
 
@@ -251,6 +211,45 @@ export function MapPage({ places, posts, loading }: MapPageProps) {
     }
   }, [superclusterIndex, selectedPlaceId, hoveredPlaceId, setSearchParams]);
 
+  const fitToMappablePlaces = useCallback((mapInstance?: maplibregl.Map | null, immediate = false) => {
+    const targetMap = mapInstance || mapRef.current;
+    if (!targetMap || mappablePlaces.length === 0) return;
+
+    const container = mapContainerRef.current;
+    if (!container || container.clientWidth === 0 || container.clientHeight === 0) {
+      // Narrow viewport / mobile container not measured yet; defer to next frame
+      requestAnimationFrame(() => {
+        if (mapRef.current) fitToMappablePlaces(mapRef.current, immediate);
+      });
+      return;
+    }
+
+    targetMap.resize();
+
+    if (mappablePlaces.length === 1) {
+      const p = mappablePlaces[0];
+      targetMap.flyTo({
+        center: [p.location.longitude!, p.location.latitude!],
+        zoom: 13,
+        duration: immediate ? 0 : 400,
+      });
+      return;
+    }
+
+    const b = new maplibregl.LngLatBounds();
+    for (const p of mappablePlaces) {
+      b.extend([p.location.longitude!, p.location.latitude!]);
+    }
+    const isDesktop = typeof window !== "undefined" && window.innerWidth >= 1024;
+    targetMap.fitBounds(b, {
+      padding: isDesktop
+        ? { top: 48, bottom: 48, left: 400 + 48, right: 48 }
+        : { top: 70, bottom: 120, left: 24, right: 24 },
+      maxZoom: 13,
+      duration: immediate ? 0 : 400,
+    });
+  }, [mappablePlaces]);
+
   // Initialize MapLibre GL
   useEffect(() => {
     if (!mapContainerRef.current) return;
@@ -267,47 +266,33 @@ export function MapPage({ places, posts, loading }: MapPageProps) {
     const allBounds = calculateBounds();
     const initialCenter: [number, number] = allBounds
       ? [allBounds.getCenter().lng, allBounds.getCenter().lat]
-      : [0, 20];
+      : mappablePlaces[0]?.location?.longitude != null && mappablePlaces[0]?.location?.latitude != null
+      ? [mappablePlaces[0].location.longitude, mappablePlaces[0].location.latitude]
+      : [12.4964, 41.9028];
+
+    const isDark =
+      typeof document !== "undefined" &&
+      (document.documentElement.getAttribute("data-theme") === "dark" ||
+        window.matchMedia("(prefers-color-scheme: dark)").matches);
 
     const map = new maplibregl.Map({
       container: mapContainerRef.current,
-      style: "https://tiles.openfreemap.org/styles/liberty",
+      style: cartoMaplibreStyle(isDark) as maplibregl.StyleSpecification,
       center: initialCenter,
-      zoom: 3,
+      zoom: mappablePlaces.length > 0 ? 11 : 4,
       minZoom: 2,
-      maxZoom: 19,
+      maxZoom: 22,
     });
 
     mapRef.current = map;
 
-    const fitToMappablePlaces = (mapInstance: maplibregl.Map) => {
-      if (mappablePlaces.length === 0) return;
-      mapInstance.resize();
-      if (mappablePlaces.length === 1) {
-        const p = mappablePlaces[0];
-        mapInstance.flyTo({
-          center: [p.location.longitude!, p.location.latitude!],
-          zoom: 13,
-          duration: 0,
-        });
-        return;
-      }
-      const b = new maplibregl.LngLatBounds();
-      for (const p of mappablePlaces) {
-        b.extend([p.location.longitude!, p.location.latitude!]);
-      }
-      const isDesktop = typeof window !== "undefined" && window.innerWidth >= 1024;
-      mapInstance.fitBounds(b, {
-        padding: isDesktop
-          ? { top: 60, bottom: 60, left: 380 + 40, right: 60 }
-          : { top: 70, bottom: 140, left: 40, right: 40 },
-        maxZoom: 13,
-        duration: 0,
-      });
-    };
-
     map.on("load", () => {
-      fitToMappablePlaces(map);
+      // InvalidateSize / map resize handled automatically on viewport changes
+      map.resize();
+      if (mappablePlaces.length > 0) {
+        hasFittedInitialBoundsRef.current = true;
+        fitToMappablePlaces(map, true);
+      }
       updateMapMarkers();
     });
 
@@ -319,28 +304,73 @@ export function MapPage({ places, posts, loading }: MapPageProps) {
       updateMapMarkers();
     });
 
-    // InvalidateSize / map resize handled automatically on viewport changes
+    // Handle container resize & orientation changes without layout flash
+    const handleResize = () => {
+      if (mapRef.current) {
+        mapRef.current.resize();
+      }
+    };
+    window.addEventListener("resize", handleResize);
+    window.addEventListener("orientationchange", handleResize);
+
+    const ro = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.contentRect.width > 0 && entry.contentRect.height > 0 && mapRef.current) {
+          mapRef.current.resize();
+          if (!hasFittedInitialBoundsRef.current && mappablePlaces.length > 0) {
+            hasFittedInitialBoundsRef.current = true;
+            fitToMappablePlaces(mapRef.current, true);
+          }
+        }
+      }
+    });
+    ro.observe(mapContainerRef.current);
+
     map.resize();
     const resizeTimer = setTimeout(() => {
       if (mapRef.current) {
         mapRef.current.resize();
-        fitToMappablePlaces(mapRef.current);
+        if (mappablePlaces.length > 0 && !hasFittedInitialBoundsRef.current) {
+          hasFittedInitialBoundsRef.current = true;
+          fitToMappablePlaces(mapRef.current, true);
+        }
       }
     }, 150);
 
     return () => {
       clearTimeout(resizeTimer);
+      window.removeEventListener("resize", handleResize);
+      window.removeEventListener("orientationchange", handleResize);
+      ro.disconnect();
       map.remove();
       mapRef.current = null;
     };
-  }, [mappablePlaces]);
+  }, []);
 
-  // Update markers when supercluster index or selections change
+  // Update markers and fit bounds when mappable places become available
   useEffect(() => {
-    if (mapRef.current?.loaded()) {
-      updateMapMarkers();
+    if (!mapRef.current) return;
+    if (mappablePlaces.length > 0 && !hasFittedInitialBoundsRef.current) {
+      hasFittedInitialBoundsRef.current = true;
+      fitToMappablePlaces(mapRef.current, true);
     }
-  }, [updateMapMarkers]);
+    updateMapMarkers();
+  }, [mappablePlaces, fitToMappablePlaces, updateMapMarkers]);
+
+  // When switching mobile view between map and list
+  useEffect(() => {
+    if (mobileView === "map" && mapRef.current) {
+      requestAnimationFrame(() => {
+        if (mapRef.current) {
+          mapRef.current.resize();
+          if (!hasFittedInitialBoundsRef.current && mappablePlaces.length > 0) {
+            hasFittedInitialBoundsRef.current = true;
+            fitToMappablePlaces(mapRef.current, true);
+          }
+        }
+      });
+    }
+  }, [mobileView, mappablePlaces, fitToMappablePlaces]);
 
   // When selected place changes externally, center map
   useEffect(() => {
@@ -351,14 +381,6 @@ export function MapPage({ places, posts, loading }: MapPageProps) {
       duration: 600,
     });
   }, [selectedPlace]);
-
-  const foodCount = useMemo(() => {
-    return mappablePlaces.filter((p) => isFoodPlace(p, postsByPlaceId)).length;
-  }, [mappablePlaces, postsByPlaceId]);
-
-  const travelCount = useMemo(() => {
-    return mappablePlaces.filter((p) => !isFoodPlace(p, postsByPlaceId)).length;
-  }, [mappablePlaces, postsByPlaceId]);
 
   if (loading && places.length === 0) {
     return (
@@ -385,18 +407,26 @@ export function MapPage({ places, posts, loading }: MapPageProps) {
     );
   }
 
-  const categoryChips = [
-    { key: "all", label: "All places", count: mappablePlaces.length },
-    { key: "travel", label: "Places", count: travelCount },
-    { key: "food", label: "Food & Drinks", count: foodCount },
-  ];
+  const categoryChips = useMemo(() => {
+    const list = [
+      { key: "all", label: "All places", glyph: "🗺️", count: mappablePlaces.length },
+    ];
+    for (const cat of CANONICAL_CATEGORIES) {
+      const vis = getCategoryVisual(cat);
+      const count = mappablePlaces.filter((p) => getCategoryVisual(p.category).name === cat).length;
+      if (count > 0) {
+        list.push({ key: cat, label: cat, glyph: vis.glyph, count });
+      }
+    }
+    return list;
+  }, [mappablePlaces]);
 
   return (
     <main className="wf-map-main" data-mobile-view={mobileView} style={{ position: "relative", width: "100%", height: "100%" }}>
-      {/* Desktop 380px Left List Panel */}
+      {/* Desktop 400px Left List Panel */}
       <aside className="wf-map-sidebar">
         {/* Header & Category Filter */}
-        <div style={{ padding: "16px", borderBottom: "1px solid var(--wf-border)", display: "flex", flexDirection: "column", gap: "10px" }}>
+        <div style={{ padding: "16px", borderBottom: "1px solid var(--wf-border, var(--line))", display: "flex", flexDirection: "column", gap: "10px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "8px" }}>
             <h2 className="wf-type-h2" style={{ margin: 0 }}>
               Places
@@ -408,7 +438,7 @@ export function MapPage({ places, posts, loading }: MapPageProps) {
                 background: "var(--wf-surface)",
                 borderRadius: "var(--wf-radius-pill)",
                 padding: "2px",
-                border: "1px solid var(--wf-border)",
+                border: "1px solid var(--wf-border, var(--line))",
                 display: "flex",
                 gap: "2px",
               }}
@@ -453,33 +483,39 @@ export function MapPage({ places, posts, loading }: MapPageProps) {
             </span>
           </div>
 
-          <div style={{ display: "flex", gap: "6px", overflowX: "auto" }}>
-            {categoryChips.map((c) => (
-              <button
-                key={c.key}
-                type="button"
-                onClick={() => setActiveCategory(c.key)}
-                style={{
-                  height: "36px",
-                  padding: "0 12px",
-                  borderRadius: "var(--wf-radius-pill)",
-                  border: activeCategory === c.key ? "1px solid var(--wf-text)" : "1px solid var(--wf-border)",
-                  background: activeCategory === c.key ? "var(--wf-text)" : "var(--wf-surface)",
-                  color: activeCategory === c.key ? "var(--wf-bg)" : "var(--wf-text)",
-                  fontFamily: "inherit",
-                  fontSize: "13px",
-                  fontWeight: 600,
-                  cursor: "pointer",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "6px",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                <span>{c.label}</span>
-                <span style={{ opacity: 0.6, fontSize: "11px" }}>{c.count}</span>
-              </button>
-            ))}
+          <div style={{ display: "flex", gap: "6px", overflowX: "auto", paddingBottom: "2px" }}>
+            {categoryChips.map((c) => {
+              const isSelected = activeCategory === c.key;
+              return (
+                <button
+                  key={c.key}
+                  type="button"
+                  onClick={() => setActiveCategory(c.key)}
+                  style={{
+                    height: "32px",
+                    padding: "0 12px",
+                    borderRadius: "999px",
+                    border: isSelected ? "1px solid var(--ink, #16181B)" : "1px solid var(--line, #E7E6E3)",
+                    background: isSelected ? "var(--ink, #16181B)" : "var(--surface-2, #F3F3F1)",
+                    color: isSelected ? "var(--bg, #FAFAF9)" : "var(--ink-2, #5E636B)",
+                    fontFamily: "inherit",
+                    fontSize: "12px",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    whiteSpace: "nowrap",
+                    flexShrink: 0,
+                    transition: "all 0.15s ease",
+                  }}
+                >
+                  <span>{c.glyph}</span>
+                  <span>{c.label}</span>
+                  <span style={{ opacity: 0.7, fontSize: "11px" }}>{c.count}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -487,7 +523,11 @@ export function MapPage({ places, posts, loading }: MapPageProps) {
         <div className="wf-map-sidebar-list">
           {filteredPlaces.map((p) => {
             const isSelected = selectedPlaceId === p.place_id;
-            const visual = visualForCategory(p.category);
+            const visual = getCategoryVisual(p.category);
+            const post = postsByPlaceId.get(p.place_id);
+            const rawThumb = post?.thumbnail_url || (post?.slide_media_urls && post.slide_media_urls[0]);
+            const thumbnail = rawThumb ? proxiedMediaUrl(rawThumb) : null;
+            const tip = p.tips?.[0];
 
             return (
               <div
@@ -500,75 +540,104 @@ export function MapPage({ places, posts, loading }: MapPageProps) {
                   setSearchParams({ selected: p.place_id });
                 }}
                 style={{
-                  padding: "12px",
-                  borderRadius: "var(--wf-radius-control)",
-                  border: isSelected ? "2px solid var(--wf-primary)" : "1px solid var(--wf-border)",
-                  background: isSelected ? "var(--wf-surface-2)" : "var(--wf-surface)",
+                  padding: "10px",
+                  borderRadius: "14px",
+                  border: isSelected ? "2px solid var(--accent, #FF5A4E)" : "1px solid var(--line, #E7E6E3)",
+                  background: isSelected ? "var(--surface-2, #F3F3F1)" : "var(--surface, #FFFFFF)",
                   cursor: "pointer",
                   display: "flex",
-                  flexDirection: "column",
-                  gap: "6px",
+                  gap: "12px",
+                  alignItems: "flex-start",
                   transition: "all 0.15s ease",
                 }}
               >
-                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                  <span
-                    style={{
-                      width: "24px",
-                      height: "24px",
-                      borderRadius: "50%",
-                      background: visual.color || "var(--wf-primary)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      color: "#FFFFFF",
-                      flexShrink: 0,
-                    }}
-                  >
-                    <CategoryIcon icon={visual.icon} fallback="📍" />
-                  </span>
-                  <span
-                    style={{
-                      fontSize: "15px",
-                      fontWeight: 600,
-                      color: "var(--wf-text)",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                      flex: 1,
-                    }}
-                  >
-                    {p.display_name}
-                  </span>
+                {/* 64px Thumbnail (radius 14) */}
+                <div
+                  style={{
+                    width: "64px",
+                    height: "64px",
+                    borderRadius: "14px",
+                    overflow: "hidden",
+                    flexShrink: 0,
+                    background: visual.tint,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  {thumbnail ? (
+                    <img
+                      src={thumbnail}
+                      alt={p.display_name}
+                      style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                      loading="lazy"
+                    />
+                  ) : (
+                    <span style={{ fontSize: "24px" }}>{visual.glyph}</span>
+                  )}
                 </div>
 
-                <div style={{ fontSize: "13px", color: "var(--wf-text-muted)" }}>
-                  {[p.location?.city, p.location?.country].filter(Boolean).join(", ")}
-                </div>
-
-                {isSelected && (
-                  <div style={{ display: "flex", gap: "8px", marginTop: "4px" }}>
-                    <Link
-                      to={`/place/${p.place_id}`}
-                      state={{ from: "/map" }}
+                <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "3px" }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "6px" }}>
+                    <span
                       style={{
-                        padding: "4px 10px",
-                        borderRadius: "var(--wf-radius-pill)",
-                        background: "var(--wf-text)",
-                        color: "var(--wf-bg)",
-                        fontSize: "12px",
+                        fontSize: "15px",
                         fontWeight: 600,
-                        textDecoration: "none",
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: "4px",
+                        color: "var(--ink, #16181B)",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
                       }}
-                      onClick={(e) => e.stopPropagation()}
                     >
-                      View details
-                    </Link>
+                      {p.display_name}
+                    </span>
                   </div>
-                )}
+
+                  <div style={{ fontSize: "12px", color: "var(--ink-2, #5E636B)", display: "flex", alignItems: "center", gap: "6px" }}>
+                    <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: visual.hue, display: "inline-block" }} />
+                    <span>{visual.name}</span>
+                    {p.location?.city && <span>· {p.location.city}</span>}
+                  </div>
+
+                  {tip && (
+                    <div
+                      style={{
+                        fontSize: "12px",
+                        color: "var(--ink-2, #5E636B)",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                        fontStyle: "italic",
+                      }}
+                    >
+                      "{tip}"
+                    </div>
+                  )}
+
+                  {isSelected && (
+                    <div style={{ display: "flex", gap: "8px", marginTop: "6px" }}>
+                      <Link
+                        to={`/place/${p.place_id}`}
+                        state={{ from: "/map" }}
+                        style={{
+                          padding: "4px 10px",
+                          borderRadius: "999px",
+                          background: "var(--ink, #16181B)",
+                          color: "var(--bg, #FAFAF9)",
+                          fontSize: "11px",
+                          fontWeight: 600,
+                          textDecoration: "none",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "4px",
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        View details
+                      </Link>
+                    </div>
+                  )}
+                </div>
               </div>
             );
           })}

@@ -78,9 +78,7 @@ export default function SettingsScreen() {
   const router = useRouter();
   const { posts, places, bumpRefresh, isAdmin } = useLibrary();
   const [themeMode, setThemeMode] = useState<"light" | "dark" | "system">("system");
-  const [defaultCategory, setDefaultCategory] = useState("travel");
-  const [notifyIngest, setNotifyIngest] = useState(true);
-  const [notifyDigest, setNotifyDigest] = useState(false);
+  const [mapUnits, setMapUnits] = useState<"km" | "mi">("km");
   const [reprocessing, setReprocessing] = useState(false);
   const [cleaning, setCleaning] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -174,52 +172,25 @@ export default function SettingsScreen() {
         </View>
       </View>
 
-      {/* Default Category */}
+      {/* Map Units */}
       <View style={styles.card}>
         <View style={styles.labelRow}>
-          <Ionicons name="folder-outline" size={15} color={colors.brand} />
-          <Text style={styles.label}>Default Category</Text>
+          <Ionicons name="navigate-outline" size={15} color={colors.brand} />
+          <Text style={styles.label}>Map Units</Text>
         </View>
-        <Text style={styles.copy}>Preselected category when saving new links.</Text>
-        <View style={styles.chipsWrap}>
-          {[
-            { id: "travel", label: "Travel" },
-            { id: "food", label: "Recipes" },
-            { id: "movies", label: "Watch" },
-            { id: "fashion", label: "Fashion" },
-            { id: "routine", label: "Routines" },
-          ].map((cat) => (
-            <Button
-              key={cat.id}
-              label={cat.label}
-              variant={defaultCategory === cat.id ? "primary" : "secondary"}
-              onPress={() => setDefaultCategory(cat.id)}
-              style={styles.chipBtn}
-            />
-          ))}
-        </View>
-      </View>
-
-      {/* Notifications */}
-      <View style={styles.card}>
-        <View style={styles.labelRow}>
-          <Ionicons name="notifications-outline" size={15} color={colors.brand} />
-          <Text style={styles.label}>Notifications</Text>
-        </View>
-        <View style={styles.settingToggleRow}>
-          <Text style={styles.toggleText}>When saving finishes</Text>
+        <Text style={styles.copy}>Preferred unit of distance for places and itineraries.</Text>
+        <View style={styles.optionRow}>
           <Button
-            label={notifyIngest ? "On" : "Off"}
-            variant={notifyIngest ? "primary" : "secondary"}
-            onPress={() => setNotifyIngest(!notifyIngest)}
+            label="Kilometers (km)"
+            variant={mapUnits === "km" ? "primary" : "secondary"}
+            onPress={() => setMapUnits("km")}
+            style={styles.flexBtn}
           />
-        </View>
-        <View style={[styles.settingToggleRow, { marginTop: spacing.sm }]}>
-          <Text style={styles.toggleText}>Weekly library digest</Text>
           <Button
-            label={notifyDigest ? "On" : "Off"}
-            variant={notifyDigest ? "primary" : "secondary"}
-            onPress={() => setNotifyDigest(!notifyDigest)}
+            label="Miles (mi)"
+            variant={mapUnits === "mi" ? "primary" : "secondary"}
+            onPress={() => setMapUnits("mi")}
+            style={styles.flexBtn}
           />
         </View>
       </View>
@@ -276,6 +247,23 @@ export default function SettingsScreen() {
           disabled={cleaning}
           onPress={() => void handleReprocess()}
         />
+      </View>
+
+      {/* About */}
+      <View style={styles.card}>
+        <View style={styles.labelRow}>
+          <Ionicons name="information-circle-outline" size={15} color={colors.brand} />
+          <Text style={styles.label}>About Wanderfile</Text>
+        </View>
+        <Text style={styles.copy}>Turn saved travel reels into your personal map you'll actually use.</Text>
+        <View style={{ flexDirection: "row", justifyContent: "space-between", paddingTop: spacing.xs, borderTopWidth: 1, borderColor: colors.border }}>
+          <Text style={{ fontSize: 13, color: colors.muted }}>Version</Text>
+          <Text style={{ fontSize: 13, fontWeight: "600", color: colors.ink }}>1.0.0</Text>
+        </View>
+        <View style={{ flexDirection: "row", justifyContent: "space-between", paddingTop: spacing.xs }}>
+          <Text style={{ fontSize: 13, color: colors.muted }}>Map data</Text>
+          <Text style={{ fontSize: 13, fontWeight: "600", color: colors.ink }}>CARTO Positron · OSM</Text>
+        </View>
       </View>
     </ScrollView>
   );

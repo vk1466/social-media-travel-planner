@@ -78,7 +78,7 @@ export function WanderfileApp({
               >
                 <Routes>
                   <Route path="/" element={<HomePage posts={posts} places={places} loading={loading} loadError={loadError} onRefresh={onRefresh} />} />
-                  <Route path="/library" element={<LibraryPage posts={posts} loading={loading} onRefresh={onRefresh} />} />
+                  <Route path="/library" element={<LibraryPage posts={posts} places={places} loading={loading} onRefresh={onRefresh} />} />
                   <Route path="/map" element={<MapPage places={places} posts={posts} loading={loading} />} />
                   <Route path="/map/:placeId" element={<MapPage places={places} posts={posts} loading={loading} />} />
                   <Route path="/places" element={<Navigate to="/map" replace />} />

@@ -1,98 +1,133 @@
 /**
- * Wanderfile Native Design Tokens — matching docs/ux_spec.md
+ * Wanderfile Native Design Tokens — matching docs/ui_modernization.md
  */
 import { Appearance, Platform, type TextStyle, type ViewStyle } from "react-native";
 
 export const lightColors = {
-  bg: "#FAFAF7",
+  bg: "#FAFAF9",
   surface: "#FFFFFF",
-  surface2: "#F2F2EE",
-  surfaceAlt: "#F2F2EE",
-  text: "#14161A",
-  ink: "#14161A",
-  muted: "#5B616B",
-  textMuted: "#5B616B",
-  faint: "#8A8E92",
-  bodyTinted: "#4A4E52",
-  border: "#E4E4DF",
-  borderSubtle: "#EFEDE7",
-  borderDashed: "#D1D1CB",
-  primary: "#0F766E",
-  onPrimary: "#FFFFFF",
+  surface2: "#F3F3F1",
+  surfaceAlt: "#F3F3F1",
+  ink: "#16181B",
+  ink2: "#5E636B",
+  text: "#16181B",
+  muted: "#5E636B",
+  textMuted: "#5E636B",
+  faint: "#A2A7AE",
+  bodyTinted: "#5E636B",
+  line: "#E7E6E3",
+  border: "#E7E6E3",
+  borderSubtle: "#E7E6E3",
+  borderDashed: "#E7E6E3",
+  accent: "#FF5A4E",
+  accentInk: "#FFFFFF",
   onFill: "#FFFFFF",
-  brand: "#0F766E",
-  brandSoft: "#E3F0F4",
-  accent: "#0F766E",
-  accentSoft: "#E3F0F4",
-  danger: "#B42318",
-  dangerSoft: "#FBE6EE",
-  success: "#067647",
-  successSoft: "#E4F2E7",
-  running: "#D97706",
+  onPrimary: "#FFFFFF",
+  brand: "#FF5A4E",
+  primary: "#FF5A4E",
+  brandSoft: "rgba(255, 90, 78, 0.12)",
+  accentSoft: "rgba(255, 90, 78, 0.12)",
+  success: "#1F9D6B",
+  successSoft: "rgba(31, 157, 107, 0.12)",
+  warn: "#E59A1A",
+  danger: "#D93A3A",
+  dangerSoft: "rgba(217, 58, 58, 0.12)",
+  running: "#E59A1A",
 
-  // Category accents (used on chip dots & pins)
-  catPlace: "#0F766E",
-  catFood: "#C2410C",
-  catWatch: "#6D28D9",
-  catFashion: "#BE185D",
-  catHair: "#A16207",
+  // Category hues (8 canonical categories per spec)
+  catFood: "#F2994A",
+  catCafe: "#A0703E",
+  catSight: "#2F80ED",
+  catNature: "#27AE60",
+  catStay: "#9B51E0",
+  catNightlife: "#EB5757",
+  catShopping: "#D6A100",
+  catOther: "#6B7280",
 
-  // Category tints & inks
-  travelTint: "#E3F0F4",
-  travelInk: "#1B5E78",
-  foodTint: "#FBEBDD",
-  foodInk: "#9A4513",
-  movieTint: "#ECE8F7",
-  movieInk: "#4B3C8C",
-  routineTint: "#E4F2E7",
-  routineInk: "#25623A",
-  otherTint: "#F2F2EE",
-  otherInk: "#5B616B",
+  // 12% category tints
+  catFoodTint: "rgba(242, 153, 74, 0.12)",
+  catCafeTint: "rgba(160, 112, 62, 0.12)",
+  catSightTint: "rgba(47, 128, 237, 0.12)",
+  catNatureTint: "rgba(39, 174, 96, 0.12)",
+  catStayTint: "rgba(155, 81, 224, 0.12)",
+  catNightlifeTint: "rgba(235, 87, 87, 0.12)",
+  catShoppingTint: "rgba(214, 161, 0, 0.12)",
+  catOtherTint: "rgba(107, 114, 128, 0.12)",
+
+  // Legacy aliases
+  catPlace: "#2F80ED",
+  travelTint: "rgba(47, 128, 237, 0.12)",
+  travelInk: "#2F80ED",
+  foodTint: "rgba(242, 153, 74, 0.12)",
+  foodInk: "#F2994A",
+  movieTint: "rgba(155, 81, 224, 0.12)",
+  movieInk: "#9B51E0",
+  routineTint: "rgba(39, 174, 96, 0.12)",
+  routineInk: "#27AE60",
+  otherTint: "rgba(107, 114, 128, 0.12)",
+  otherInk: "#6B7280",
 };
 
 export const darkColors = {
   bg: "#0E0F11",
   surface: "#17191C",
-  surface2: "#202328",
-  surfaceAlt: "#202328",
-  text: "#F2F2F0",
+  surface2: "#1F2226",
+  surfaceAlt: "#1F2226",
   ink: "#F2F2F0",
-  muted: "#A3A9B3",
-  textMuted: "#A3A9B3",
-  faint: "#717680",
-  bodyTinted: "#C9CED6",
-  border: "#2A2E34",
-  borderSubtle: "#202328",
-  borderDashed: "#363B43",
-  primary: "#2DD4BF",
-  onPrimary: "#04201D",
-  onFill: "#FFFFFF",
-  brand: "#2DD4BF",
-  brandSoft: "rgba(45, 212, 191, 0.15)",
-  accent: "#2DD4BF",
-  accentSoft: "rgba(45, 212, 191, 0.15)",
-  danger: "#F97066",
-  dangerSoft: "rgba(249, 112, 102, 0.15)",
-  success: "#47CD89",
-  successSoft: "rgba(71, 205, 137, 0.15)",
-  running: "#FBBF24",
+  ink2: "#A2A7AE",
+  text: "#F2F2F0",
+  muted: "#A2A7AE",
+  textMuted: "#A2A7AE",
+  faint: "#5E636B",
+  bodyTinted: "#A2A7AE",
+  line: "#2A2D32",
+  border: "#2A2D32",
+  borderSubtle: "#2A2D32",
+  borderDashed: "#2A2D32",
+  accent: "#FF6B5F",
+  accentInk: "#16181B",
+  onFill: "#16181B",
+  onPrimary: "#16181B",
+  brand: "#FF6B5F",
+  primary: "#FF6B5F",
+  brandSoft: "rgba(255, 107, 95, 0.15)",
+  accentSoft: "rgba(255, 107, 95, 0.15)",
+  success: "#34C38A",
+  successSoft: "rgba(52, 195, 138, 0.15)",
+  warn: "#F2B544",
+  danger: "#F0605D",
+  dangerSoft: "rgba(240, 96, 93, 0.15)",
+  running: "#F2B544",
 
-  catPlace: "#2DD4BF",
-  catFood: "#FB923C",
-  catWatch: "#A78BFA",
-  catFashion: "#F472B6",
-  catHair: "#FACC15",
+  catFood: "#F2994A",
+  catCafe: "#A0703E",
+  catSight: "#2F80ED",
+  catNature: "#27AE60",
+  catStay: "#9B51E0",
+  catNightlife: "#EB5757",
+  catShopping: "#D6A100",
+  catOther: "#6B7280",
 
-  travelTint: "rgba(45, 212, 191, 0.15)",
-  travelInk: "#2DD4BF",
-  foodTint: "rgba(251, 146, 60, 0.15)",
-  foodInk: "#FB923C",
-  movieTint: "rgba(167, 139, 250, 0.15)",
-  movieInk: "#A78BFA",
-  routineTint: "rgba(71, 205, 137, 0.15)",
-  routineInk: "#47CD89",
-  otherTint: "#202328",
-  otherInk: "#A3A9B3",
+  catFoodTint: "rgba(242, 153, 74, 0.15)",
+  catCafeTint: "rgba(160, 112, 62, 0.15)",
+  catSightTint: "rgba(47, 128, 237, 0.15)",
+  catNatureTint: "rgba(39, 174, 96, 0.15)",
+  catStayTint: "rgba(155, 81, 224, 0.15)",
+  catNightlifeTint: "rgba(235, 87, 87, 0.15)",
+  catShoppingTint: "rgba(214, 161, 0, 0.15)",
+  catOtherTint: "rgba(107, 114, 128, 0.15)",
+
+  catPlace: "#2F80ED",
+  travelTint: "rgba(47, 128, 237, 0.15)",
+  travelInk: "#2F80ED",
+  foodTint: "rgba(242, 153, 74, 0.15)",
+  foodInk: "#F2994A",
+  movieTint: "rgba(155, 81, 224, 0.15)",
+  movieInk: "#9B51E0",
+  routineTint: "rgba(52, 195, 138, 0.15)",
+  routineInk: "#34C38A",
+  otherTint: "rgba(107, 114, 128, 0.15)",
+  otherInk: "#A2A7AE",
 };
 
 // Dynamic export adapts to active Appearance color scheme
@@ -107,61 +142,99 @@ export const colors: typeof lightColors = new Proxy(lightColors, {
 export const spacing = {
   xs: 4,
   sm: 8,
-  md: 16,
-  lg: 24,
-  xl: 32,
-  xxl: 48,
+  md: 12,
+  base: 16,
+  lg: 20,
+  xl: 24,
+  xxl: 32,
+  gutter: 16,
+  desktopGutter: 32,
 };
 
 export const radius = {
-  sm: 8,
-  md: 12, // inputs and buttons = 12 per spec
-  card: 16, // cards = 16 per spec
-  lg: 16,
-  sheet: 24, // sheets and modals = 24 per spec
-  xl: 24,
-  pill: 9999, // chips = full pill per spec
+  xs: 6,
+  sm: 10,
+  md: 14,
+  card: 20,
+  lg: 20,
+  xl: 28,
+  sheet: 28,
+  pill: 999,
 };
 
 /** Cross-platform elevation helper */
-export function shadow(level: 1 | 2 | 3 = 1): ViewStyle {
-  const config = {
-    1: { height: 2, radius: 4, opacity: 0.06, elevation: 2 },
-    2: { height: 6, radius: 12, opacity: 0.08, elevation: 4 },
-    3: { height: 12, radius: 24, opacity: 0.12, elevation: 8 },
-  }[level];
-  return Platform.select({
-    ios: {
-      shadowColor: "#000000",
-      shadowOffset: { width: 0, height: config.height },
-      shadowOpacity: config.opacity,
-      shadowRadius: config.radius,
+export const shadow: {
+  (level?: 1 | 2 | 3): ViewStyle;
+  sm: ViewStyle;
+  card: ViewStyle;
+  md: ViewStyle;
+  lg: ViewStyle;
+} = Object.assign(
+  function shadow(level: 1 | 2 | 3 = 1): ViewStyle {
+    const isDark = Appearance.getColorScheme() === "dark";
+    if (isDark) {
+      return {
+        borderWidth: 1,
+        borderColor: darkColors.line,
+      };
+    }
+
+    const config = {
+      1: { height: 1, radius: 2, opacity: 0.06, elevation: 1 },
+      2: { height: 4, radius: 12, opacity: 0.08, elevation: 3 },
+      3: { height: 16, radius: 40, opacity: 0.14, elevation: 6 },
+    }[level];
+
+    return Platform.select({
+      ios: {
+        shadowColor: "#101828",
+        shadowOffset: { width: 0, height: config.height },
+        shadowOpacity: config.opacity,
+        shadowRadius: config.radius,
+      },
+      android: { elevation: config.elevation },
+      default: {},
+    }) as ViewStyle;
+  },
+  {
+    get sm() {
+      return shadow(1);
     },
-    android: { elevation: config.elevation },
-    default: {},
-  }) as ViewStyle;
-}
+    get card() {
+      return shadow(1);
+    },
+    get md() {
+      return shadow(2);
+    },
+    get lg() {
+      return shadow(3);
+    },
+  }
+);
 
 export const typography = {
-  display: { fontSize: 32, lineHeight: 38, fontWeight: "600", color: colors.ink } as TextStyle,
-  h1: { fontSize: 24, lineHeight: 30, fontWeight: "600", color: colors.ink } as TextStyle,
-  h2: { fontSize: 20, lineHeight: 26, fontWeight: "600", color: colors.ink } as TextStyle,
-  body: { fontSize: 16, lineHeight: 24, color: colors.bodyTinted } as TextStyle, // never < 16 on mobile
-  callout: { fontSize: 14, lineHeight: 20, color: colors.bodyTinted } as TextStyle,
-  caption: { fontSize: 12, lineHeight: 16, fontWeight: "500", color: colors.muted } as TextStyle,
+  display: { fontSize: 32, lineHeight: 38, fontWeight: "700", letterSpacing: -0.64 } as TextStyle,
+  title1: { fontSize: 24, lineHeight: 30, fontWeight: "700" } as TextStyle,
+  title2: { fontSize: 20, lineHeight: 26, fontWeight: "600" } as TextStyle,
+  headline: { fontSize: 17, lineHeight: 22, fontWeight: "600" } as TextStyle,
+  body: { fontSize: 15, lineHeight: 22, fontWeight: "400" } as TextStyle,
+  callout: { fontSize: 14, lineHeight: 20, fontWeight: "500" } as TextStyle,
+  caption: { fontSize: 12, lineHeight: 16, fontWeight: "500", letterSpacing: 0.12 } as TextStyle,
+  overline: {
+    fontSize: 11,
+    lineHeight: 14,
+    fontWeight: "600",
+    textTransform: "uppercase",
+    letterSpacing: 0.66,
+  } as TextStyle,
 
   // Backwards compatible aliases
-  screenTitle: { fontSize: 32, lineHeight: 38, fontWeight: "600", color: colors.ink } as TextStyle,
-  sectionTitle: { fontSize: 20, lineHeight: 26, fontWeight: "600", color: colors.ink } as TextStyle,
-  cardTitle: { fontSize: 16, lineHeight: 22, fontWeight: "600", color: colors.ink } as TextStyle,
-  meta: { fontSize: 14, lineHeight: 20, color: colors.muted } as TextStyle,
-  overline: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: colors.muted,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-  } as TextStyle,
+  h1: { fontSize: 24, lineHeight: 30, fontWeight: "700" } as TextStyle,
+  h2: { fontSize: 20, lineHeight: 26, fontWeight: "600" } as TextStyle,
+  screenTitle: { fontSize: 32, lineHeight: 38, fontWeight: "700", letterSpacing: -0.64 } as TextStyle,
+  sectionTitle: { fontSize: 20, lineHeight: 26, fontWeight: "600" } as TextStyle,
+  cardTitle: { fontSize: 17, lineHeight: 22, fontWeight: "600" } as TextStyle,
+  meta: { fontSize: 14, lineHeight: 20 } as TextStyle,
 };
 
 export const fonts = {

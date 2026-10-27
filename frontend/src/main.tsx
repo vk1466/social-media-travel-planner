@@ -17,12 +17,6 @@ import { setAuthTokenGetter } from "./api";
 import { clerkPublishableKey, useLocalDevAuth } from "./authMode";
 import { wanderfileClerkAppearance } from "./clerkAppearance";
 import { SignedOutGate } from "./components/SignedOutGate";
-import { FlipCollapsedVariations } from "./components/FlipCollapsedVariations";
-import { FlipDetailCardDemos } from "./components/FlipDetailCardDemos";
-import { TravelViewToggleDemos } from "./components/TravelViewToggleDemos";
-import { TravelFilterDesignDemos } from "./components/TravelFilterDesignDemos";
-import { MobileLibraryDesignDemos } from "./components/MobileLibraryDesignDemos";
-import { MobileSaveDesignDemos } from "./components/MobileSaveDesignDemos";
 import { useBrandVersion } from "./hooks/useBrandVersion";
 import {
   applyBrandLab,
@@ -140,12 +134,6 @@ function Root() {
       <AuthTokenBridge>
         <BrowserRouter>
           <Routes>
-            <Route path="/dev/flip-cards/collapsed" element={<FlipCollapsedVariations />} />
-            <Route path="/dev/flip-cards" element={<FlipDetailCardDemos />} />
-            <Route path="/dev/travel-view-toggle" element={<TravelViewToggleDemos />} />
-            <Route path="/dev/travel-filter-designs" element={<TravelFilterDesignDemos />} />
-            <Route path="/dev/mobile-library-designs" element={<MobileLibraryDesignDemos />} />
-            <Route path="/dev/mobile-save-designs" element={<MobileSaveDesignDemos />} />
             <Route
               path="*"
               element={

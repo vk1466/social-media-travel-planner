@@ -526,7 +526,7 @@ export function Header({
             fontWeight: 800,
             fontSize: "20px",
             letterSpacing: "-0.03em",
-            color: "#1B1D1F",
+            color: "var(--ink, #16181B)",
             flexShrink: 0,
           }}
         >
@@ -536,8 +536,8 @@ export function Header({
               width: "30px",
               height: "30px",
               borderRadius: "10px",
-              background: "#1B1D1F",
-              color: "#FFFFFF",
+              background: "var(--ink, #16181B)",
+              color: "var(--bg, #FFFFFF)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",

@@ -226,13 +226,16 @@ export default function PlaceDetailScreen() {
   })();
 
   const placeTitle = capitalizePlaceName(place.display_name);
-  const cleanTitle = placeTitle.trim().toLowerCase();
   const rawTitle = (place.display_name || "").trim().toLowerCase();
+  const cleanTitle = placeTitle.trim().toLowerCase();
+  const stripThe = (s: string) => s.trim().toLowerCase().replace(/^the\s+/, "");
+  const normalizedTitle = stripThe(place.display_name || "");
   const distinctAliases = (place.aliases || [])
     .map((a) => capitalizePlaceName(a))
     .filter((a) => {
       const lower = a.trim().toLowerCase();
-      return lower !== cleanTitle && lower !== rawTitle;
+      const stripped = stripThe(a);
+      return lower !== cleanTitle && lower !== rawTitle && stripped !== normalizedTitle;
     });
 
   return (
@@ -314,8 +317,7 @@ export default function PlaceDetailScreen() {
               <PlaceMap places={[place]} selectedPlaceId={place.place_id} height={180} />
             </View>
           ) : null}
-          <View style={[styles.surface, { flexDirection: "row", alignItems: "flex-start", gap: spacing.sm }]}>
-            <Ionicons name="location" size={18} color={colors.brand} style={{ marginTop: 2 }} />
+          <View style={[styles.surface, { flexDirection: "row", alignItems: "flex-start" }]}>
             <Text style={{ flex: 1, fontSize: 14, color: colors.text, lineHeight: 20 }}>
               {cleanAddressLine}
             </Text>

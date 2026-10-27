@@ -11,12 +11,6 @@ import {
   type Place,
   type SavedPost,
 } from "./api";
-import { FlipCollapsedVariations } from "./components/FlipCollapsedVariations";
-import { FlipDetailCardDemos } from "./components/FlipDetailCardDemos";
-import { TravelViewToggleDemos } from "./components/TravelViewToggleDemos";
-import { TravelFilterDesignDemos } from "./components/TravelFilterDesignDemos";
-import { MobileLibraryDesignDemos } from "./components/MobileLibraryDesignDemos";
-import { MobileSaveDesignDemos } from "./components/MobileSaveDesignDemos";
 import { clerkEnabled } from "./authMode";
 import { WanderfileApp } from "./wanderfile/WanderfileApp";
 
@@ -169,12 +163,6 @@ function AppRoutes({ authReady }: { authReady: boolean }) {
     <Routes>
       <Route path="/travel" element={<Navigate to="/map" replace />} />
       <Route path="/travel/:placeId" element={<Navigate to="/map" replace />} />
-      <Route path="/dev/flip-cards/collapsed" element={<FlipCollapsedVariations />} />
-      <Route path="/dev/flip-cards" element={<FlipDetailCardDemos />} />
-      <Route path="/dev/travel-view-toggle" element={<TravelViewToggleDemos />} />
-      <Route path="/dev/travel-filter-designs" element={<TravelFilterDesignDemos />} />
-      <Route path="/dev/mobile-library-designs" element={<MobileLibraryDesignDemos />} />
-      <Route path="/dev/mobile-save-designs" element={<MobileSaveDesignDemos />} />
       <Route
         path="/*"
         element={

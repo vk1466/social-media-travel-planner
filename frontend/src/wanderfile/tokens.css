@@ -1,171 +1,5 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import "../wf-tokens.css";
 
-:root,
-[data-theme="light"] {
-  /* Colors from Wanderfile UX Spec */
-  --wf-bg: #FAFAF7;
-  --wf-surface: #FFFFFF;
-  --wf-surface-2: #F2F2EE;
-  --wf-text: #14161A;
-  --wf-ink: #14161A;
-  --wf-text-muted: #5B616B;
-  --wf-muted: #5B616B;
-  --wf-body-tinted: #4A4E52;
-  --wf-border: #E4E4DF;
-  --wf-border-subtle: #EFEDE7;
-  --wf-border-control: #E4E4DF;
-  --wf-border-dashed: #D1D1CB;
-  --wf-bg-dashed: #F8F8F5;
-  --wf-accent: #14161A;
-  --wf-border-hairline: #E4E4DF;
-
-  --wf-primary: #0F766E;
-  --wf-on-primary: #FFFFFF;
-  --wf-danger: #B42318;
-  --wf-success: #067647;
-
-  /* Category accents (used only on chip dots & pins) */
-  --wf-cat-place: #0F766E;
-  --wf-cat-food: #C2410C;
-  --wf-cat-watch: #6D28D9;
-  --wf-cat-fashion: #BE185D;
-  --wf-cat-hair: #A16207;
-
-  /* Category tints */
-  --wf-place-tint: #E3F0F4;
-  --wf-place-ink: #1B5E78;
-  --wf-recipe-tint: #FBEBDD;
-  --wf-recipe-ink: #9A4513;
-  --wf-movie-tint: #ECE8F7;
-  --wf-movie-ink: #4B3C8C;
-  --wf-routine-tint: #E4F2E7;
-  --wf-routine-ink: #25623A;
-  --wf-other-tint: #F2F2EE;
-  --wf-other-ink: #5B616B;
-  --wf-alert-tint: #FBE6EE;
-  --wf-alert-ink: #B42318;
-
-  /* Typography */
-  --wf-font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-
-  /* Spacing base (4pt) */
-  --wf-space-1: 4px;
-  --wf-space-2: 8px;
-  --wf-space-3: 12px;
-  --wf-space-4: 16px;
-  --wf-space-6: 24px;
-  --wf-space-8: 32px;
-  --wf-space-12: 48px;
-
-  /* Radius */
-  --wf-radius-pill: 9999px;
-  --wf-radius-control: 12px;
-  --wf-radius-card: 16px;
-  --wf-radius-modal: 24px;
-  --wf-radius-card-desktop: 16px;
-  --wf-radius-card-mobile: 16px;
-
-  /* Shadows */
-  --wf-shadow-card: 0 1px 2px rgba(0, 0, 0, 0.06), 0 4px 12px rgba(0, 0, 0, 0.06);
-  --wf-shadow-sheet: 0 -8px 24px rgba(0, 0, 0, 0.12);
-  --wf-shadow-elevated: 0 12px 32px rgba(0, 0, 0, 0.12);
-}
-
-[data-theme="dark"] {
-  --wf-bg: #0E0F11 !important;
-  --wf-surface: #17191C !important;
-  --wf-surface-2: #202328 !important;
-  --wf-text: #F2F2F0 !important;
-  --wf-ink: #F2F2F0 !important;
-  --wf-text-muted: #A3A9B3 !important;
-  --wf-muted: #A3A9B3 !important;
-  --wf-body-tinted: #C9CED6 !important;
-  --wf-border: #2A2E34 !important;
-  --wf-border-subtle: #202328 !important;
-  --wf-border-control: #2A2E34 !important;
-  --wf-border-dashed: #363B43 !important;
-  --wf-bg-dashed: #17191C !important;
-  --wf-accent: #F2F2F0 !important;
-  --wf-border-hairline: #2A2E34 !important;
-
-  --wf-primary: #2DD4BF !important;
-  --wf-on-primary: #04201D !important;
-  --wf-danger: #F97066 !important;
-  --wf-success: #47CD89 !important;
-
-  /* Category accents */
-  --wf-cat-place: #2DD4BF !important;
-  --wf-cat-food: #FB923C !important;
-  --wf-cat-watch: #A78BFA !important;
-  --wf-cat-fashion: #F472B6 !important;
-  --wf-cat-hair: #FACC15 !important;
-
-  --wf-place-tint: rgba(45, 212, 191, 0.15) !important;
-  --wf-place-ink: #2DD4BF !important;
-  --wf-recipe-tint: rgba(251, 146, 60, 0.15) !important;
-  --wf-recipe-ink: #FB923C !important;
-  --wf-movie-tint: rgba(167, 139, 250, 0.15) !important;
-  --wf-movie-ink: #A78BFA !important;
-  --wf-routine-tint: rgba(71, 205, 137, 0.15) !important;
-  --wf-routine-ink: #47CD89 !important;
-  --wf-other-tint: #202328 !important;
-  --wf-other-ink: #A3A9B3 !important;
-  --wf-alert-tint: rgba(249, 112, 102, 0.15) !important;
-  --wf-alert-ink: #F97066 !important;
-
-  /* In dark mode, depth with lighter surface instead of shadow */
-  --wf-shadow-card: 0 0 0 1px #2A2E34 !important;
-  --wf-shadow-sheet: 0 -8px 24px rgba(0, 0, 0, 0.5), 0 0 0 1px #2A2E34 !important;
-  --wf-shadow-elevated: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px #2A2E34 !important;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --wf-bg: #0E0F11 !important;
-    --wf-surface: #17191C !important;
-    --wf-surface-2: #202328 !important;
-    --wf-text: #F2F2F0 !important;
-    --wf-ink: #F2F2F0 !important;
-    --wf-text-muted: #A3A9B3 !important;
-    --wf-muted: #A3A9B3 !important;
-    --wf-body-tinted: #C9CED6 !important;
-    --wf-border: #2A2E34 !important;
-    --wf-border-subtle: #202328 !important;
-    --wf-border-control: #2A2E34 !important;
-    --wf-border-dashed: #363B43 !important;
-    --wf-bg-dashed: #17191C !important;
-    --wf-accent: #F2F2F0 !important;
-    --wf-border-hairline: #2A2E34 !important;
-
-    --wf-primary: #2DD4BF !important;
-    --wf-on-primary: #04201D !important;
-    --wf-danger: #F97066 !important;
-    --wf-success: #47CD89 !important;
-
-    --wf-cat-place: #2DD4BF !important;
-    --wf-cat-food: #FB923C !important;
-    --wf-cat-watch: #A78BFA !important;
-    --wf-cat-fashion: #F472B6 !important;
-    --wf-cat-hair: #FACC15 !important;
-
-    --wf-place-tint: rgba(45, 212, 191, 0.15) !important;
-    --wf-place-ink: #2DD4BF !important;
-    --wf-recipe-tint: rgba(251, 146, 60, 0.15) !important;
-    --wf-recipe-ink: #FB923C !important;
-    --wf-movie-tint: rgba(167, 139, 250, 0.15) !important;
-    --wf-movie-ink: #A78BFA !important;
-    --wf-routine-tint: rgba(71, 205, 137, 0.15) !important;
-    --wf-routine-ink: #47CD89 !important;
-    --wf-other-tint: #202328 !important;
-    --wf-other-ink: #A3A9B3 !important;
-    --wf-alert-tint: rgba(249, 112, 102, 0.15) !important;
-    --wf-alert-ink: #F97066 !important;
-
-    --wf-shadow-card: 0 0 0 1px #2A2E34 !important;
-    --wf-shadow-sheet: 0 -8px 24px rgba(0, 0, 0, 0.5), 0 0 0 1px #2A2E34 !important;
-    --wf-shadow-elevated: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px #2A2E34 !important;
-  }
-}
 
 /* Global Reset & Base Styles */
 *,
@@ -307,6 +141,8 @@ textarea,
 
 @media (max-width: 1023px) {
   .wf-desktop-only,
+  .wf-desktop-sidebar,
+  .wf-desktop-topbar,
   .wf-header-nav {
     display: none !important;
   }
@@ -517,9 +353,9 @@ body:has(.wf-map-main) {
 }
 
 .wf-map-sidebar {
-  width: 380px !important;
-  min-width: 380px !important;
-  max-width: 380px !important;
+  width: 400px !important;
+  min-width: 400px !important;
+  max-width: 400px !important;
   height: 100% !important;
   max-height: 100% !important;
   min-height: 0 !important;
@@ -582,6 +418,10 @@ body:has(.wf-map-main) {
     display: flex !important;
     width: 100% !important;
     flex: 1 1 0% !important;
+  }
+  /* Keep attribution strip above the floating Map/Places toggle pill to prevent overlap */
+  .wf-map-pane .maplibregl-ctrl-bottom-right {
+    bottom: 68px !important;
   }
   .wf-map-main[data-mobile-view="list"] .wf-map-sidebar {
     display: flex !important;

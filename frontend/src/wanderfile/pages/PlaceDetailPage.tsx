@@ -9,19 +9,26 @@ import { ComingSoonButton } from "../comingSoon/ComingSoonControl";
 import { FeatureFlags } from "../comingSoon/featureRegistry";
 import { useToast } from "../state/ToastContext";
 import { getPostTitle, proxiedMediaUrl, capitalizePlaceName, getEffectiveAddress } from "../../postDisplayUtils";
-import { CARTO_BASEMAP_ATTR, cartoVoyagerTileUrl } from "../../maps";
+import { CARTO_BASEMAP_ATTR, cartoPositronTileUrl } from "../../maps";
+import { getCategoryVisual } from "../categoryVisuals";
 import type { Place, SavedPost } from "../../api";
 
-function MiniLocationMap({ lat, lng, displayName }: { lat: number; lng: number; displayName: string }) {
+function MiniLocationMap({ lat, lng, displayName, category }: { lat: number; lng: number; displayName: string; category?: string | null }) {
+  const visual = getCategoryVisual(category);
+  const isDark =
+    typeof document !== "undefined" &&
+    (document.documentElement.getAttribute("data-theme") === "dark" ||
+      window.matchMedia("(prefers-color-scheme: dark)").matches);
+
   return (
     <div
       style={{
-        height: "180px",
+        height: "200px",
         borderRadius: "16px",
         overflow: "hidden",
         position: "relative",
         marginBottom: "16px",
-        border: "1px solid #E6E3DC",
+        border: "1px solid var(--line, #E7E6E3)",
       }}
     >
       <MapContainer
@@ -29,11 +36,11 @@ function MiniLocationMap({ lat, lng, displayName }: { lat: number; lng: number; 
         zoom={14}
         scrollWheelZoom={false}
         zoomControl={false}
-        attributionControl={false}
+        attributionControl={true}
         style={{ width: "100%", height: "100%", zIndex: 1 }}
       >
         <TileLayer
-          url={cartoVoyagerTileUrl()}
+          url={cartoPositronTileUrl(isDark)}
           attribution={CARTO_BASEMAP_ATTR}
           subdomains="abcd"
           maxZoom={19}
@@ -43,20 +50,20 @@ function MiniLocationMap({ lat, lng, displayName }: { lat: number; lng: number; 
           icon={L.divIcon({
             className: "wf-place-marker",
             html: `<div style="
-              width: 30px;
-              height: 30px;
+              width: 32px;
+              height: 32px;
               border-radius: 999px;
-              background: #1F6F8B;
-              border: 3px solid #FFFFFF;
-              box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+              background: ${visual.hue};
+              border: 2px solid #FFFFFF;
+              box-shadow: 0 4px 12px rgba(16,24,40,0.18);
               display: flex;
               align-items: center;
               justify-content: center;
               color: #FFFFFF;
               font-size: 14px;
-            ">📍</div>`,
-            iconSize: [30, 30],
-            iconAnchor: [15, 15],
+            ">${visual.glyph}</div>`,
+            iconSize: [32, 32],
+            iconAnchor: [16, 16],
           })}
         >
           <Tooltip direction="top" offset={[0, -16]}>
@@ -140,11 +147,14 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
   const displayName = capitalizePlaceName(place.display_name);
   const cleanTitle = (displayName || place.display_name || "").trim().toLowerCase();
   const rawTitle = (place.display_name || "").trim().toLowerCase();
+  const stripThe = (s: string) => s.trim().toLowerCase().replace(/^the\s+/, "");
+  const normalizedTitle = stripThe(place.display_name || "");
   const distinctAliases = (place.aliases || [])
     .map((a) => capitalizePlaceName(a))
     .filter((a) => {
       const lower = a.trim().toLowerCase();
-      return lower !== cleanTitle && lower !== rawTitle;
+      const stripped = stripThe(a);
+      return lower !== cleanTitle && lower !== rawTitle && stripped !== normalizedTitle;
     });
 
   const summaryLower = (place.summary || "").trim().toLowerCase();
@@ -160,24 +170,60 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
     );
   });
 
+  // Assemble facts, creator tips, and caption highlights for About & Tips
+  const factsList: string[] = [];
+  if (place.facts?.famous_for) {
+    factsList.push(`Famous for: ${place.facts.famous_for}`);
+  }
+  if (place.facts?.best_time_to_visit) {
+    factsList.push(`Best time to visit: ${place.facts.best_time_to_visit}`);
+  }
+  if (place.facts?.admission_text) {
+    factsList.push(`Admission: ${place.facts.admission_text}`);
+  }
+  if (place.facts?.price_level != null && place.facts.price_level > 0) {
+    factsList.push(`Price: ${"$".repeat(place.facts.price_level)}`);
+  }
+  if (place.facts?.highlights && place.facts.highlights.length > 0) {
+    for (const h of place.facts.highlights) {
+      if (!factsList.includes(h)) factsList.push(h);
+    }
+  }
+  if (place.facts?.recommendations && place.facts.recommendations.length > 0) {
+    for (const r of place.facts.recommendations) {
+      if (!factsList.includes(r)) factsList.push(r);
+    }
+  }
+
   const postTips = relatedPosts.flatMap((p) => p.trip_tips || []);
   const allTips = Array.from(new Set([...(place.tips || []), ...postTips].filter(Boolean)));
-
-  // Filter tips that don't duplicate the summary or details
-  const distinctTips = allTips.filter((tip) => {
-    if (!summaryLower) return true;
-    const tipLower = tip.trim().toLowerCase();
-    if (tipLower === summaryLower || summaryLower.includes(tipLower) || tipLower.includes(summaryLower)) {
-      return false;
+  const captionHighlights: string[] = [];
+  for (const p of relatedPosts) {
+    if (p.reel_summary && p.reel_summary !== place.summary && !factsList.includes(p.reel_summary)) {
+      captionHighlights.push(p.reel_summary);
     }
-    return !distinctDetails.some((d) => {
-      const dLower = d.trim().toLowerCase();
-      return tipLower === dLower || dLower.includes(tipLower) || tipLower.includes(dLower);
-    });
-  });
+    if (allTips.length === 0 && p.caption) {
+      const sentences = p.caption
+        .split(/(?<=[.!?])\s+/)
+        .map((s) => s.trim())
+        .filter((s) => s.length > 15 && s.length < 200 && !s.includes("#") && !s.includes("http"));
+      if (sentences.length > 0 && !captionHighlights.includes(sentences[0])) {
+        captionHighlights.push(sentences[0]);
+      }
+    }
+  }
 
-  const hasDetails = distinctDetails.length > 0;
-  const hasTips = distinctTips.length > 0;
+  const distinctTips = Array.from(new Set([
+    ...allTips,
+    ...factsList,
+    ...captionHighlights,
+  ].filter(Boolean)));
+
+  const aboutText = distinctDetails.length > 0
+    ? distinctDetails.join(" ")
+    : (place.summary || null);
+
+  const hasAboutOrTips = Boolean(aboutText) || distinctTips.length > 0;
 
   const lat = place.location?.latitude;
   const lng = place.location?.longitude;
@@ -247,7 +293,7 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
             gap: "8px",
             fontSize: "14px",
             fontWeight: 700,
-            color: "#6B6F73",
+            color: "var(--wf-text-muted, var(--ink-2, #5E636B))",
             background: "transparent",
             border: 0,
             padding: 0,
@@ -282,13 +328,13 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
                   fontWeight: 800,
                   padding: "4px 10px",
                   borderRadius: "999px",
-                  background: "#E3F0F4",
-                  color: "#1B5E78",
+                  background: "var(--wf-surface-2, #E3F0F4)",
+                  color: "var(--wf-text, #1B5E78)",
                 }}
               >
                 {place.category || "Place"}
               </span>
-              <span style={{ fontSize: "14px", color: "#6B6F73" }}>
+              <span style={{ fontSize: "14px", color: "var(--wf-text-muted, var(--ink-2, #5E636B))" }}>
                 {[place.location?.city, place.location?.state_province, place.location?.country].filter(Boolean).join(", ")}
               </span>
             </div>
@@ -328,7 +374,7 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
                   margin: 0,
                   fontSize: "15px",
                   lineHeight: 1.5,
-                  color: "#4A4E52",
+                  color: "var(--wf-text-muted, #5E636B)",
                   minWidth: 0,
                   wordBreak: "break-word",
                 }}
@@ -458,7 +504,7 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: (hasDetails || hasTips) ? "repeat(auto-fit, minmax(min(100%, 340px), 1fr))" : "1fr",
+          gridTemplateColumns: hasAboutOrTips ? "repeat(auto-fit, minmax(min(100%, 340px), 1fr))" : "1fr",
           gap: "24px",
           alignItems: "start",
           marginBottom: "24px",
@@ -466,11 +512,11 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
           boxSizing: "border-box",
         }}
       >
-        {(hasDetails || hasTips) && (
+        {hasAboutOrTips && (
           <section
             style={{
-              background: "#FFFFFF",
-              border: "1px solid #E6E3DC",
+              background: "var(--wf-surface, #FFFFFF)",
+              border: "1px solid var(--wf-border, #E6E3DC)",
               borderRadius: "24px",
               padding: "24px",
               minWidth: 0,
@@ -478,14 +524,14 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
               wordBreak: "break-word",
             }}
           >
-            <h2 style={{ margin: "0 0 12px", fontSize: "18px", fontWeight: 800 }}>About & Tips</h2>
-            {hasDetails && (
-              <p style={{ margin: "0 0 14px", fontSize: "15px", lineHeight: 1.5, color: "#4A4E52", wordBreak: "break-word" }}>
-                {distinctDetails.join(" ")}
+            <h2 style={{ margin: "0 0 12px", fontSize: "18px", fontWeight: 800, color: "var(--wf-text, #1B1D1F)" }}>About & Tips</h2>
+            {aboutText && (
+              <p style={{ margin: "0 0 14px", fontSize: "15px", lineHeight: 1.5, color: "var(--wf-text-muted, #5E636B)", wordBreak: "break-word" }}>
+                {aboutText}
               </p>
             )}
-            {hasTips && (
-              <ul style={{ margin: 0, paddingLeft: "20px", color: "#4A4E52", fontSize: "14px", lineHeight: 1.6, wordBreak: "break-word" }}>
+            {distinctTips.length > 0 && (
+              <ul style={{ margin: 0, paddingLeft: "20px", color: "var(--wf-text, #1B1D1F)", fontSize: "14px", lineHeight: 1.6, wordBreak: "break-word" }}>
                 {distinctTips.map((t, idx) => (
                   <li key={idx} style={{ marginBottom: "6px" }}>{t}</li>
                 ))}
@@ -497,8 +543,8 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
         {/* Location Card */}
         <section
           style={{
-            background: "#FFFFFF",
-            border: "1px solid #E6E3DC",
+            background: "var(--wf-surface, #FFFFFF)",
+            border: "1px solid var(--wf-border, #E6E3DC)",
             borderRadius: "24px",
             padding: "24px",
             minWidth: 0,
@@ -506,15 +552,15 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
             wordBreak: "break-word",
           }}
         >
-          <h2 style={{ margin: "0 0 12px", fontSize: "18px", fontWeight: 800 }}>Location</h2>
+          <h2 style={{ margin: "0 0 12px", fontSize: "18px", fontWeight: 800, color: "var(--wf-text, #1B1D1F)" }}>Location</h2>
           {hasCoords ? (
-            <MiniLocationMap lat={lat!} lng={lng!} displayName={place.display_name} />
+            <MiniLocationMap lat={lat!} lng={lng!} displayName={place.display_name} category={place.category} />
           ) : (
             <div
               style={{
                 height: "140px",
                 borderRadius: "16px",
-                background: "#EAE7DF",
+                background: "var(--wf-surface-2, #EAE7DF)",
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
@@ -523,7 +569,7 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
                 gap: "8px",
               }}
             >
-              <div style={{ textAlign: "center", color: "#1B5E78" }}>
+              <div style={{ textAlign: "center", color: "var(--wf-accent, #1B5E78)" }}>
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z" />
                   <circle cx="12" cy="10" r="2.5" />
@@ -534,21 +580,18 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
               </div>
             </div>
           )}
-          {/* Collapsed single clean address line, no duplicate Google/Apple maps buttons */}
+          {/* Single clean address line without duplicate pin icon */}
           <div
             style={{
-              display: "flex",
-              alignItems: "flex-start",
-              gap: "10px",
               fontSize: "14px",
-              color: "#4A4E52",
+              color: "var(--wf-text, #1B1D1F)",
               lineHeight: 1.5,
               minWidth: 0,
               wordBreak: "break-word",
+              fontWeight: 500,
             }}
           >
-            <span style={{ fontSize: "16px", flexShrink: 0, marginTop: "1px" }}>📍</span>
-            <span style={{ fontWeight: 500, color: "#1B1D1F" }}>{cleanAddressLine}</span>
+            {cleanAddressLine}
           </div>
         </section>
       </div>
@@ -556,8 +599,8 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
       {/* Full-width Mentioned in reels across bottom */}
       <section
         style={{
-          background: "#FFFFFF",
-          border: "1px solid #E6E3DC",
+          background: "var(--wf-surface, #FFFFFF)",
+          border: "1px solid var(--wf-border, #E6E3DC)",
           borderRadius: "24px",
           padding: "24px",
           minWidth: 0,
@@ -565,14 +608,14 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
           wordBreak: "break-word",
         }}
       >
-        <h2 style={{ margin: "0 0 16px", fontSize: "18px", fontWeight: 800 }}>
+        <h2 style={{ margin: "0 0 16px", fontSize: "18px", fontWeight: 800, color: "var(--wf-text, #1B1D1F)" }}>
           Mentioned in {relatedPosts.length} {relatedPosts.length === 1 ? "reel" : "reels"}
         </h2>
         {relatedPosts.length > 0 ? (
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 300px), 1fr))",
+              gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 340px), 1fr))",
               gap: "16px",
               minWidth: 0,
             }}
@@ -587,11 +630,11 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
                   alignItems: "center",
                   gap: "14px",
                   textDecoration: "none",
-                  color: "#1B1D1F",
+                  color: "var(--wf-text, #1B1D1F)",
                   padding: "12px",
                   borderRadius: "16px",
-                  background: "#F9F8F5",
-                  border: "1px solid #EFECE6",
+                  background: "var(--wf-surface-2, #F9F8F5)",
+                  border: "1px solid var(--wf-border, #EFECE6)",
                   minWidth: 0,
                   transition: "background 0.15s ease",
                 }}
@@ -606,7 +649,7 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
                       borderRadius: "12px",
                       objectFit: "cover",
                       flexShrink: 0,
-                      background: "#EAE7DF",
+                      background: "var(--wf-surface-2, #EAE7DF)",
                     }}
                   />
                 ) : (
@@ -626,12 +669,12 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
                     📍
                   </div>
                 )}
-                <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "4px" }}>
                   <div
                     style={{
                       fontSize: "15px",
                       fontWeight: 700,
-                      color: "#1B1D1F",
+                      color: "var(--wf-text, #1B1D1F)",
                       whiteSpace: "nowrap",
                       overflow: "hidden",
                       textOverflow: "ellipsis",
@@ -642,22 +685,26 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
                   <div
                     style={{
                       fontSize: "13px",
-                      color: "#6B6F73",
-                      marginTop: "4px",
+                      color: "var(--wf-text-muted, #5E636B)",
                       display: "flex",
                       alignItems: "center",
-                      gap: "8px",
+                      justifyContent: "space-between",
+                      gap: "10px",
                     }}
                   >
-                    {rp.author_handle && <span>@{rp.author_handle}</span>}
-                    <span style={{ color: "#1B5E78", fontWeight: 600 }}>Instagram reel ↗</span>
+                    <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      {rp.author_handle ? `@${rp.author_handle}` : ""}
+                    </span>
+                    <span style={{ color: "var(--accent, #FF5A4E)", fontWeight: 600, whiteSpace: "nowrap", flexShrink: 0 }}>
+                      Instagram reel ↗
+                    </span>
                   </div>
                 </div>
               </Link>
             ))}
           </div>
         ) : (
-          <div style={{ fontSize: "14px", color: "#6B6F73" }}>No linked reels found.</div>
+          <div style={{ fontSize: "14px", color: "var(--wf-text-muted, #6B6F73)" }}>No linked reels found.</div>
         )}
       </section>
     </main>

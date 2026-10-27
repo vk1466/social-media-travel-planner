@@ -47,6 +47,7 @@ import {
 import { FeatureFlags } from "@/src/featureRegistry";
 import { capitalizePlaceName, getPlatformLabel, getPostTitle, proxiedMediaUrl } from "@/src/postDisplayUtils";
 import { colors, fonts, radius, shadow } from "@/src/theme";
+import { CANONICAL_CATEGORIES, getCategoryVisual } from "@/src/categoryVisuals";
 
 type Pane = "map" | "browse";
 type StatusFilter = "all" | "visited" | "inspiration";
@@ -68,6 +69,7 @@ export default function TravelScreen() {
   const [pane, setPane] = useState<Pane>("map");
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [visitedPlaceIds, setVisitedPlaceIds] = useState<Set<string>>(new Set());
   const [refreshing, setRefreshing] = useState(false);
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
@@ -113,14 +115,21 @@ export default function TravelScreen() {
   );
 
   const statusPlaces = useMemo(() => {
+    let list = platformPlaces;
+    if (categoryFilter !== "all") {
+      list = list.filter((place) => {
+        const rawPlace = placesById.get(place.placeId);
+        return rawPlace ? getCategoryVisual(rawPlace.category).name === categoryFilter : true;
+      });
+    }
     if (statusFilter === "visited") {
-      return platformPlaces.filter((place) => place.visited);
+      return list.filter((place) => place.visited);
     }
     if (statusFilter === "inspiration") {
-      return platformPlaces.filter((place) => !place.visited);
+      return list.filter((place) => !place.visited);
     }
-    return platformPlaces;
-  }, [platformPlaces, statusFilter]);
+    return list;
+  }, [platformPlaces, categoryFilter, statusFilter, placesById]);
 
   const searching = searchQuery.trim().length > 0;
 
@@ -392,57 +401,54 @@ export default function TravelScreen() {
             </Pressable>
           </View>
 
-          {/* M3: Status chips: All, Want to go, Been */}
-          <View style={styles.statusChipsRow}>
+          {/* Floating Category Chips */}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.statusChipsRow}
+          >
             <Pressable
-              onPress={() => setStatusFilter("all")}
+              onPress={() => setCategoryFilter("all")}
               style={[
                 styles.statusChip,
-                statusFilter === "all" ? styles.statusChipActive : styles.statusChipInactive,
+                categoryFilter === "all" ? styles.statusChipActive : styles.statusChipInactive,
               ]}
             >
               <Text
                 style={[
                   styles.statusChipText,
-                  statusFilter === "all" ? styles.statusChipTextActive : styles.statusChipTextInactive,
+                  categoryFilter === "all" ? styles.statusChipTextActive : styles.statusChipTextInactive,
                 ]}
               >
                 All
               </Text>
             </Pressable>
-            <Pressable
-              onPress={() => setStatusFilter("inspiration")}
-              style={[
-                styles.statusChip,
-                statusFilter === "inspiration" ? styles.statusChipActive : styles.statusChipInactive,
-              ]}
-            >
-              <Text
-                style={[
-                  styles.statusChipText,
-                  statusFilter === "inspiration" ? styles.statusChipTextActive : styles.statusChipTextInactive,
-                ]}
-              >
-                Want to go
-              </Text>
-            </Pressable>
-            <Pressable
-              onPress={() => setStatusFilter("visited")}
-              style={[
-                styles.statusChip,
-                statusFilter === "visited" ? styles.statusChipActive : styles.statusChipInactive,
-              ]}
-            >
-              <Text
-                style={[
-                  styles.statusChipText,
-                  statusFilter === "visited" ? styles.statusChipTextActive : styles.statusChipTextInactive,
-                ]}
-              >
-                Been
-              </Text>
-            </Pressable>
-          </View>
+
+            {CANONICAL_CATEGORIES.map((cat) => {
+              const vis = getCategoryVisual(cat);
+              const isSelected = categoryFilter === cat;
+              return (
+                <Pressable
+                  key={cat}
+                  onPress={() => setCategoryFilter(isSelected ? "all" : cat)}
+                  style={[
+                    styles.statusChip,
+                    isSelected ? styles.statusChipActive : styles.statusChipInactive,
+                  ]}
+                >
+                  <Text style={{ fontSize: 12 }}>{vis.glyph}</Text>
+                  <Text
+                    style={[
+                      styles.statusChipText,
+                      isSelected ? styles.statusChipTextActive : styles.statusChipTextInactive,
+                    ]}
+                  >
+                    {cat}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
         </View>
       </View>
 

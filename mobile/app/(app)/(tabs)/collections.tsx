@@ -1,6 +1,6 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Image,
   Pressable,
@@ -13,71 +13,107 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useLibrary } from "@/src/context/LibraryContext";
 import { appHref } from "@/src/nav";
-import { FeatureFlags } from "@/src/featureRegistry";
 import { proxiedMediaUrl } from "@/src/postDisplayUtils";
-import { colors, fonts } from "@/src/theme";
+import { colors, radius, shadow } from "@/src/theme";
+import { CANONICAL_CATEGORIES, getCategoryVisual } from "@/src/categoryVisuals";
 
 interface CollectionItem {
   id: string;
-  name: string;
-  meta: string;
-  kit: string;
-  kitBg: string;
-  kitInk: string;
+  title: string;
+  subtitle: string;
+  count: number;
+  thumbnails: string[];
   route: string;
-  fallbackColors: [string, string, string];
-  images: (string | null)[];
 }
 
 export default function MobileCollectionsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { posts, places } = useLibrary();
+  const [activeFilter, setActiveFilter] = useState<"all" | "city" | "category" | "creator">("all");
 
-  const placesCount = places.length;
-  const foodPosts = posts.filter((p) => p.content_category === "food");
-  const moviePosts = posts.filter((p) => p.content_category === "movies");
-  const travelPosts = posts.filter((p) => p.content_category === "travel" || p.places?.length);
+  // Auto-collections by City
+  const cityCollections = useMemo<CollectionItem[]>(() => {
+    const map = new Map<string, { count: number; thumbs: string[] }>();
+    for (const place of places) {
+      const city = place.location?.city;
+      if (!city) continue;
+      const data = map.get(city) || { count: 0, thumbs: [] };
+      data.count += 1;
+      const post = posts.find((p) => place.source_post_ids?.includes(p.post_id));
+      if (post?.thumbnail_url && data.thumbs.length < 4 && !data.thumbs.includes(post.thumbnail_url)) {
+        data.thumbs.push(post.thumbnail_url);
+      }
+      map.set(city, data);
+    }
+    return Array.from(map.entries())
+      .map(([city, data]) => ({
+        id: `city-${city}`,
+        title: city,
+        subtitle: "City collection",
+        count: data.count,
+        thumbnails: data.thumbs,
+        route: "/(app)/(tabs)/travel",
+      }))
+      .sort((a, b) => b.count - a.count);
+  }, [places, posts]);
 
-  const foodThumbs = foodPosts.map((p) => proxiedMediaUrl(p.thumbnail_url)).filter(Boolean).slice(0, 3);
-  const movieThumbs = moviePosts.map((p) => proxiedMediaUrl(p.thumbnail_url)).filter(Boolean).slice(0, 3);
-  const travelThumbs = travelPosts.map((p) => proxiedMediaUrl(p.thumbnail_url)).filter(Boolean).slice(0, 3);
+  // Auto-collections by Category
+  const categoryCollections = useMemo<CollectionItem[]>(() => {
+    return CANONICAL_CATEGORIES.map((cat) => {
+      const vis = getCategoryVisual(cat);
+      const catPlaces = places.filter((p) => getCategoryVisual(p.category).name === cat);
+      const thumbs: string[] = [];
+      for (const p of catPlaces) {
+        if (thumbs.length >= 4) break;
+        const post = posts.find((item) => p.source_post_ids?.includes(item.post_id));
+        if (post?.thumbnail_url && !thumbs.includes(post.thumbnail_url)) {
+          thumbs.push(post.thumbnail_url);
+        }
+      }
+      return {
+        id: `cat-${cat}`,
+        title: `${vis.glyph} ${cat}`,
+        subtitle: "Category collection",
+        count: catPlaces.length,
+        thumbnails: thumbs,
+        route: "/(app)/(tabs)/travel",
+      };
+    }).filter((c) => c.count > 0);
+  }, [places, posts]);
 
-  const collections: CollectionItem[] = [
-    {
-      id: "pnw",
-      name: "Pacific Northwest",
-      meta: "Fills itself",
-      kit: "Place kit",
-      kitBg: "#E3F0F4",
-      kitInk: "#1B5E78",
-      route: "/(app)/(tabs)/travel",
-      fallbackColors: ["#8CC3D6", "#8DB48A", "#C98A5B"],
-      images: travelThumbs,
-    },
-    {
-      id: "vietnam",
-      name: "Vietnam",
-      meta: `${placesCount > 0 ? placesCount : 12} places`,
-      kit: "Place kit",
-      kitBg: "#E3F0F4",
-      kitInk: "#1B5E78",
-      route: "/(app)/(tabs)/travel",
-      fallbackColors: ["#D9B26A", "#C96A3C", "#7FB06A"],
-      images: travelThumbs.slice().reverse(),
-    },
-    {
-      id: "recipes",
-      name: "Recipes",
-      meta: `${foodPosts.length} saves`,
-      kit: "Recipe kit",
-      kitBg: "#FBEBDD",
-      kitInk: "#9A4513",
-      route: "/(app)/(tabs)/food",
-      fallbackColors: ["#E4B25B", "#C78A55", "#8DB06A"],
-      images: foodThumbs,
-    },
-  ];
+  // Auto-collections by Creator
+  const creatorCollections = useMemo<CollectionItem[]>(() => {
+    const map = new Map<string, { count: number; thumbs: string[] }>();
+    for (const post of posts) {
+      const creator = post.author_handle;
+      if (!creator) continue;
+      const data = map.get(creator) || { count: 0, thumbs: [] };
+      data.count += (post.place_ids?.length || 1);
+      if (post.thumbnail_url && data.thumbs.length < 4 && !data.thumbs.includes(post.thumbnail_url)) {
+        data.thumbs.push(post.thumbnail_url);
+      }
+      map.set(creator, data);
+    }
+    return Array.from(map.entries())
+      .map(([creator, data]) => ({
+        id: `creator-${creator}`,
+        title: `@${creator}`,
+        subtitle: "Creator guides",
+        count: data.count,
+        thumbnails: data.thumbs,
+        route: "/(app)/(tabs)/posts",
+      }))
+      .filter((c) => c.count > 1)
+      .sort((a, b) => b.count - a.count);
+  }, [posts]);
+
+  const displayedCollections = useMemo(() => {
+    if (activeFilter === "city") return cityCollections;
+    if (activeFilter === "category") return categoryCollections;
+    if (activeFilter === "creator") return creatorCollections;
+    return [...cityCollections.slice(0, 4), ...categoryCollections.slice(0, 4), ...creatorCollections.slice(0, 4)];
+  }, [activeFilter, cityCollections, categoryCollections, creatorCollections]);
 
   return (
     <ScrollView
@@ -85,81 +121,83 @@ export default function MobileCollectionsScreen() {
       contentContainerStyle={[
         styles.content,
         {
-          paddingTop: Math.max(insets.top, 20),
+          paddingTop: Math.max(insets.top + 12, 20),
           paddingBottom: 84 + insets.bottom + 24,
         },
       ]}
     >
-      {/* C1: Title "Collections" with 44px round ink "+" button and subtitle */}
+      {/* Title */}
       <View style={styles.headerRow}>
         <Text style={styles.screenHeading}>Collections</Text>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="New collection"
-          onPress={() => router.push(appHref("/(app)/coming-soon"))}
-          style={styles.plusButton}
-        >
-          <Ionicons name="add" size={24} color="#FFFFFF" />
-        </Pressable>
       </View>
-      <Text style={styles.subtitle}>Groups that build themselves as you save.</Text>
+      <Text style={styles.subtitle}>
+        Auto-organized from your saved reels by city, category, and creator.
+      </Text>
 
-      {/* C3: "Your collections" two-column grid */}
-      <Text style={styles.sectionHeading}>Your collections</Text>
-      <View style={styles.grid}>
-        {collections.map((c) => (
-          <Pressable
-            key={c.id}
-            onPress={() => router.push(appHref(c.route as any))}
-            style={styles.collectionCard}
-          >
-            {/* 92px collage cover: 1 large on left, 2 small stacked on right */}
-            <View style={styles.collageCover}>
-              <View
+      {/* Filter Chips */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.filterRail}
+      >
+        {(["all", "city", "category", "creator"] as const).map((key) => {
+          const isSelected = activeFilter === key;
+          const label = key === "all" ? "All" : key === "city" ? "Cities" : key === "category" ? "Categories" : "Creators";
+          return (
+            <Pressable
+              key={key}
+              onPress={() => setActiveFilter(key)}
+              style={[
+                styles.filterChip,
+                isSelected ? styles.filterChipActive : styles.filterChipInactive,
+              ]}
+            >
+              <Text
                 style={[
-                  styles.collageLarge,
-                  { backgroundColor: c.fallbackColors[0] },
+                  styles.filterChipText,
+                  isSelected ? styles.filterChipTextActive : styles.filterChipTextInactive,
                 ]}
               >
-                {c.images[0] ? (
-                  <Image source={{ uri: c.images[0] }} style={styles.coverImage} />
-                ) : null}
-              </View>
-              <View style={styles.collageSmallStack}>
-                <View
-                  style={[
-                    styles.collageSmall,
-                    { backgroundColor: c.fallbackColors[1] },
-                  ]}
-                >
-                  {c.images[1] ? (
-                    <Image source={{ uri: c.images[1] }} style={styles.coverImage} />
-                  ) : null}
-                </View>
-                <View
-                  style={[
-                    styles.collageSmall,
-                    { backgroundColor: c.fallbackColors[2] },
-                  ]}
-                >
-                  {c.images[2] ? (
-                    <Image source={{ uri: c.images[2] }} style={styles.coverImage} />
-                  ) : null}
-                </View>
-              </View>
+                {label}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
+
+      {/* 2-Column Grid of 2x2 Mosaics */}
+      <View style={styles.grid}>
+        {displayedCollections.map((col) => (
+          <Pressable
+            key={col.id}
+            onPress={() => router.push(appHref(col.route as any))}
+            style={styles.card}
+          >
+            {/* 2x2 Mosaic Container */}
+            <View style={styles.mosaicWrap}>
+              {[0, 1, 2, 3].map((idx) => {
+                const raw = col.thumbnails[idx];
+                const uri = raw ? proxiedMediaUrl(raw) : null;
+                return (
+                  <View key={idx} style={styles.mosaicCell}>
+                    {uri ? (
+                      <Image source={{ uri }} style={styles.mosaicImg} resizeMode="cover" />
+                    ) : (
+                      <Text style={{ fontSize: 16, opacity: 0.35 }}>📍</Text>
+                    )}
+                  </View>
+                );
+              })}
             </View>
 
-            {/* Collection info */}
+            {/* Info */}
             <View style={styles.cardInfo}>
-              <Text style={styles.cardName} numberOfLines={1}>
-                {c.name}
+              <Text style={styles.cardTitle} numberOfLines={1}>
+                {col.title}
               </Text>
-              <Text style={styles.cardMeta} numberOfLines={1}>
-                {c.meta}
+              <Text style={styles.cardCount}>
+                {col.count} {col.count === 1 ? "place" : "places"}
               </Text>
-              <View style={[styles.kitBadge, { backgroundColor: c.kitBg }]}>
-                <Text style={[styles.kitText, { color: c.kitInk }]}>{c.kit}</Text>
-              </View>
             </View>
           </Pressable>
         ))}
@@ -171,10 +209,11 @@ export default function MobileCollectionsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F6F5F1",
+    backgroundColor: colors.bg,
   },
   content: {
     paddingHorizontal: 20,
+    gap: 16,
   },
   headerRow: {
     flexDirection: "row",
@@ -182,192 +221,93 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   screenHeading: {
-    fontSize: 30,
-    fontWeight: "800",
-    color: "#1B1D1F",
-    letterSpacing: -0.8,
-    fontFamily: fonts.heavy,
-  },
-  plusButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: "#1B1D1F",
-    alignItems: "center",
-    justifyContent: "center",
+    fontSize: 28,
+    fontWeight: "700",
+    letterSpacing: -0.5,
+    color: colors.ink,
   },
   subtitle: {
     fontSize: 14,
+    color: colors.muted,
     lineHeight: 20,
-    color: "#6B6F73",
-    marginTop: 6,
-    fontFamily: fonts.body,
   },
-  suggestedCard: {
-    marginTop: 18,
-    padding: 16,
-    borderRadius: 20,
-    borderWidth: 2,
-    borderColor: "#C9C5BA",
-    borderStyle: "dashed",
-    backgroundColor: "#FBFAF7",
-  },
-  suggestedTopRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  suggestedIconWrap: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    backgroundColor: "#E9D8CC",
-  },
-  suggestedBadge: {
-    fontSize: 12,
-    fontWeight: "700",
-    letterSpacing: 0.9,
-    textTransform: "uppercase",
-    color: "#25623A",
-    fontFamily: fonts.bold,
-  },
-  suggestedTitle: {
-    fontSize: 18,
-    fontWeight: "800",
-    letterSpacing: -0.3,
-    color: "#1B1D1F",
-    fontFamily: fonts.heavy,
-  },
-  suggestedDesc: {
-    marginTop: 10,
-    fontSize: 14,
-    lineHeight: 20,
-    color: "#6B6F73",
-    fontFamily: fonts.body,
-  },
-  suggestedButtonsRow: {
-    flexDirection: "row",
+  filterRail: {
     gap: 8,
-    marginTop: 12,
-    alignItems: "center",
+    paddingVertical: 4,
   },
-  createButton: {
-    flex: 1,
-    height: 42,
-    borderRadius: 999,
-    backgroundColor: "#1B1D1F",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-  },
-  createButtonText: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#FFFFFF",
-    fontFamily: fonts.bold,
-  },
-  soonPill: {
-    backgroundColor: "rgba(255,255,255,0.25)",
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 999,
-  },
-  soonPillText: {
-    fontSize: 10,
-    fontWeight: "800",
-    color: "#FFFFFF",
-    textTransform: "uppercase",
-  },
-  notNowButton: {
-    height: 42,
-    paddingHorizontal: 16,
-    borderRadius: 999,
+  filterChip: {
+    height: 32,
+    paddingHorizontal: 14,
+    borderRadius: radius.pill,
     alignItems: "center",
     justifyContent: "center",
   },
-  notNowButtonText: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#4A4E52",
-    fontFamily: fonts.bold,
+  filterChipActive: {
+    backgroundColor: colors.ink,
   },
-  sectionHeading: {
-    marginTop: 24,
-    marginBottom: 12,
-    fontSize: 18,
-    fontWeight: "800",
-    letterSpacing: -0.3,
-    color: "#1B1D1F",
-    fontFamily: fonts.heavy,
+  filterChipInactive: {
+    backgroundColor: colors.surface2,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  filterChipText: {
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  filterChipTextActive: {
+    color: colors.bg,
+  },
+  filterChipTextInactive: {
+    color: colors.ink2,
   },
   grid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 12,
+    gap: 16,
+    marginTop: 8,
   },
-  collectionCard: {
-    width: "48%",
-    flexGrow: 1,
-    backgroundColor: "#FFFFFF",
+  card: {
+    width: "47%",
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: "#E6E3DC",
-    borderRadius: 20,
-    padding: 8,
+    borderColor: colors.border,
+    padding: 10,
+    gap: 10,
+    ...shadow.sm,
   },
-  collageCover: {
-    height: 92,
+  mosaicWrap: {
+    width: "100%",
+    aspectRatio: 1,
+    borderRadius: radius.md,
+    overflow: "hidden",
     flexDirection: "row",
-    gap: 4,
+    flexWrap: "wrap",
+    gap: 2,
+    backgroundColor: colors.surface2,
   },
-  collageLarge: {
-    flex: 2,
-    borderRadius: 12,
+  mosaicCell: {
+    width: "49%",
+    height: "49%",
+    backgroundColor: colors.surface2,
+    alignItems: "center",
+    justifyContent: "center",
     overflow: "hidden",
   },
-  collageSmallStack: {
-    flex: 1,
-    flexDirection: "column",
-    gap: 4,
-  },
-  collageSmall: {
-    flex: 1,
-    borderRadius: 12,
-    overflow: "hidden",
-  },
-  coverImage: {
+  mosaicImg: {
     width: "100%",
     height: "100%",
-    resizeMode: "cover",
   },
   cardInfo: {
-    paddingTop: 10,
-    paddingHorizontal: 6,
-    paddingBottom: 4,
+    gap: 2,
   },
-  cardName: {
-    fontSize: 16,
-    fontWeight: "800",
-    letterSpacing: -0.3,
-    color: "#1B1D1F",
-    fontFamily: fonts.heavy,
-  },
-  cardMeta: {
-    marginTop: 2,
-    fontSize: 12,
-    color: "#6B6F73",
-    fontFamily: fonts.body,
-  },
-  kitBadge: {
-    alignSelf: "flex-start",
-    marginTop: 8,
-    paddingHorizontal: 9,
-    paddingVertical: 3,
-    borderRadius: 999,
-  },
-  kitText: {
-    fontSize: 11,
+  cardTitle: {
+    fontSize: 15,
     fontWeight: "700",
-    fontFamily: fonts.bold,
+    color: colors.ink,
+  },
+  cardCount: {
+    fontSize: 12,
+    color: colors.muted,
   },
 });

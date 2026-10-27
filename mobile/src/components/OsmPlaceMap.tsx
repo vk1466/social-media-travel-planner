@@ -4,7 +4,7 @@ import { WebView } from "react-native-webview";
 
 import type { Place } from "../api";
 import { categoryLabel } from "../categoryLabels";
-import { visualForCategory } from "../placeCategoryVisuals";
+import { getCategoryVisual } from "../categoryVisuals";
 
 interface OsmPlaceMapProps {
   places: Place[];
@@ -15,9 +15,10 @@ interface OsmPlaceMapProps {
   highlightedPlaceIds?: string[];
   fitPlaceIds?: string[] | null;
   fitKey?: number;
+  isDark?: boolean;
 }
 
-/** Leaflet + CARTO Voyager canvas styled for Wanderfile mobile design. */
+/** Leaflet + CARTO Positron canvas styled for Wanderfile mobile design. */
 export function OsmPlaceMap({
   places,
   visitedPlaceIds,
@@ -27,12 +28,13 @@ export function OsmPlaceMap({
   highlightedPlaceIds,
   fitPlaceIds,
   fitKey,
+  isDark = false,
 }: OsmPlaceMapProps) {
   const payload = useMemo(
     () => markerPayload(places, visitedPlaceIds),
     [places, visitedPlaceIds],
   );
-  const html = useMemo(() => buildMapHtml(), []);
+  const html = useMemo(() => buildMapHtml(isDark), [isDark]);
   const source = useMemo(
     () => ({ html, baseUrl: "https://cartocdn.com" }),
     [html],
@@ -175,7 +177,7 @@ const styles = StyleSheet.create({
     alignSelf: "stretch",
     minHeight: 0,
     overflow: "hidden",
-    backgroundColor: "#E6EFF2",
+    backgroundColor: "#FAFAF9",
   },
 });
 
@@ -186,7 +188,7 @@ function locationLine(place: Place): string {
 
 function markerPayload(places: Place[], visitedPlaceIds: ReadonlySet<string>): string {
   const markers = places.map((place) => {
-    const visual = visualForCategory(place.category);
+    const visual = getCategoryVisual(place.category);
     const visited = visitedPlaceIds.has(place.place_id);
     return {
       id: place.place_id,
@@ -194,19 +196,24 @@ function markerPayload(places: Place[], visitedPlaceIds: ReadonlySet<string>): s
       lat: place.location.latitude!,
       lng: place.location.longitude!,
       visited,
-      categoryLabel: categoryLabel(place.category),
+      categoryLabel: visual.name,
       location: locationLine(place),
-      tags: [categoryLabel(place.category), ...(place.attributes ?? [])].filter(Boolean).join(" · "),
+      tags: [visual.name, ...(place.attributes ?? [])].filter(Boolean).join(" · "),
       blurb: place.tips[0] ?? place.details[0] ?? "",
-      color: visual.color,
-      icon: visual.icon,
+      color: visual.hue,
+      icon: visual.glyph,
     };
   });
   return JSON.stringify(markers).replace(/</g, "\\u003c");
 }
 
-function buildMapHtml(): string {
-  const tileUrl = "https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png";
+function buildMapHtml(isDark = false): string {
+  const tileUrl = isDark
+    ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+    : "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png";
+  const bgColor = isDark ? "#0E0F11" : "#FAFAF9";
+  const inkColor = isDark ? "#1F2226" : "#16181B";
+  const haloColor = isDark ? "rgba(31, 34, 38, 0.45)" : "rgba(22, 24, 27, 0.2)";
 
   return `<!DOCTYPE html>
 <html>
@@ -214,7 +221,6 @@ function buildMapHtml(): string {
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@600;700;800&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; }
     html, body {
@@ -224,8 +230,8 @@ function buildMapHtml(): string {
       height: 100%;
       margin: 0;
       overflow: hidden;
-      background: #E6EFF2;
-      font-family: 'Figtree', system-ui, sans-serif;
+      background: ${bgColor};
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     }
     #map {
       position: absolute;
@@ -233,11 +239,11 @@ function buildMapHtml(): string {
       width: 100%;
       height: 100%;
     }
-    .leaflet-container { width: 100%; height: 100%; background: #E6EFF2; }
+    .leaflet-container { width: 100%; height: 100%; background: ${bgColor}; }
     .leaflet-control-attribution {
       font-size: 9px !important;
-      color: #6B6F73 !important;
-      background: rgba(255, 255, 255, 0.75) !important;
+      color: ${isDark ? "#A2A7AE" : "#5E636B"} !important;
+      background: ${isDark ? "rgba(23, 25, 28, 0.75)" : "rgba(255, 255, 255, 0.75)"} !important;
       padding: 2px 6px !important;
       border-radius: 4px;
       margin: 4px !important;
@@ -250,38 +256,28 @@ function buildMapHtml(): string {
       width: 44px;
       height: 44px;
       cursor: pointer;
-      transition: transform 0.2s ease, opacity 0.2s ease;
     }
-    .saved-map-marker > i {
+    .wf-pin-circle {
       box-sizing: border-box;
-      width: 20px;
-      height: 20px;
-      border: 3px solid white;
+      width: 32px;
+      height: 32px;
+      border: 2px solid #FFFFFF;
       border-radius: 999px;
-      background: #1F6F8B;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.25);
-    }
-    .saved-map-marker.is-dimmed {
-      opacity: 0.4;
-    }
-    .saved-map-marker.is-highlighted {
-      width: 44px;
-      height: 44px;
-    }
-    .saved-map-marker.is-highlighted > i {
-      width: 30px;
-      height: 30px;
-      border: 3px solid white;
-      border-radius: 999px;
-      background: #E06D53;
-      box-shadow: 0 4px 12px rgba(224, 109, 83, 0.45);
+      box-shadow: 0 2px 8px rgba(16, 24, 40, 0.15);
       display: flex;
       align-items: center;
       justify-content: center;
-      color: white;
-      font-size: 13px;
-      font-weight: 800;
-      font-style: normal;
+      font-size: 14px;
+      color: #FFFFFF;
+      transition: transform 0.18s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+    .saved-map-marker.is-dimmed {
+      opacity: 0.35;
+    }
+    .saved-map-marker.is-selected .wf-pin-circle {
+      transform: scale(1.2);
+      border: 2px solid #FF5A4E;
+      box-shadow: 0 4px 14px rgba(255, 90, 78, 0.4);
     }
     .selected-marker-wrap {
       display: flex;
@@ -292,33 +288,39 @@ function buildMapHtml(): string {
       cursor: pointer;
     }
     .selected-marker-pill {
-      background: #FFFFFF;
-      border-radius: 15px;
-      padding: 5px 14px;
-      box-shadow: 0 3px 12px rgba(0,0,0,0.2);
+      background: ${isDark ? "#17191C" : "#FFFFFF"};
+      border-radius: 999px;
+      padding: 4px 12px;
+      box-shadow: 0 4px 14px rgba(16, 24, 40, 0.18);
       margin-bottom: 6px;
       white-space: nowrap;
-      font-family: 'Figtree', system-ui, sans-serif;
-      font-size: 13px;
-      font-weight: 700;
-      color: #1B1D1F;
+      font-size: 12px;
+      font-weight: 600;
+      color: ${isDark ? "#F2F2F0" : "#16181B"};
+      border: 1px solid ${isDark ? "#2A2D32" : "#E7E6E3"};
     }
     .selected-marker-dot {
-      width: 28px;
-      height: 28px;
-      border-radius: 14px;
-      background: #1F6F8B;
-      border: 4px solid #FFFFFF;
-      box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 2px solid #FF5A4E;
+      box-shadow: 0 4px 14px rgba(255, 90, 78, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      transform: scale(1.2);
     }
     .marker-cluster-small, .marker-cluster-medium, .marker-cluster-large {
-      background-color: rgba(31, 111, 139, 0.35);
+      background-color: transparent !important;
     }
     .marker-cluster-small div, .marker-cluster-medium div, .marker-cluster-large div {
-      background-color: #1F6F8B;
-      color: #FFFFFF;
-      font-family: 'Figtree', system-ui, sans-serif;
-      font-weight: 800;
+      background-color: ${inkColor} !important;
+      color: #FFFFFF !important;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+      font-weight: 700 !important;
+      box-shadow: 0 0 0 6px ${haloColor} !important;
+      border-radius: 50% !important;
     }
   </style>
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
@@ -347,6 +349,7 @@ function buildMapHtml(): string {
     L.control.attribution({ position: "bottomleft", prefix: false }).addTo(map);
     L.tileLayer(${JSON.stringify(tileUrl)}, {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+      subdomains: 'abcd',
       maxZoom: 19,
       updateWhenIdle: true,
       updateWhenZooming: false,
@@ -358,7 +361,16 @@ function buildMapHtml(): string {
           showCoverageOnHover: false,
           maxClusterRadius: 40,
           spiderfyOnMaxZoom: true,
-          zoomToBoundsOnClick: true
+          zoomToBoundsOnClick: true,
+          iconCreateFunction: function(cluster) {
+            var count = cluster.getChildCount();
+            var size = count < 10 ? 32 : count < 50 ? 40 : 48;
+            return L.divIcon({
+              html: '<div style="width:' + size + 'px;height:' + size + 'px;line-height:' + size + 'px;text-align:center;">' + count + '</div>',
+              className: 'marker-cluster marker-cluster-small',
+              iconSize: L.point(size, size)
+            });
+          }
         }).addTo(map)
       : L.layerGroup().addTo(map);
     let currentPlaces = [];
@@ -421,7 +433,7 @@ function buildMapHtml(): string {
         if (isSelected) {
           var icon = L.divIcon({
             className: "saved-map-marker-host",
-            html: '<div class="selected-marker-wrap"><div class="selected-marker-pill">' + esc(place.name) + '</div><div class="selected-marker-dot"></div></div>',
+            html: '<div class="selected-marker-wrap"><div class="selected-marker-pill">' + esc(place.name) + '</div><div class="selected-marker-dot" style="background:' + (place.color || '#2F80ED') + ';">' + (place.icon || '📍') + '</div></div>',
             iconSize: [0, 0],
             iconAnchor: [0, 0]
           });
@@ -438,7 +450,7 @@ function buildMapHtml(): string {
         } else if (isHighlighted) {
           var icon = L.divIcon({
             className: "saved-map-marker-host",
-            html: '<span class="saved-map-marker is-highlighted"><i>' + (stopNumber || '') + '</i></span>',
+            html: '<span class="saved-map-marker is-highlighted"><div class="wf-pin-circle" style="background:' + (place.color || '#FF5A4E') + ';font-weight:700;">' + (stopNumber || '') + '</div></span>',
             iconSize: [44, 44],
             iconAnchor: [22, 22]
           });
@@ -455,7 +467,7 @@ function buildMapHtml(): string {
         } else {
           var icon = L.divIcon({
             className: "saved-map-marker-host",
-            html: '<span class="saved-map-marker' + (isDimmed ? ' is-dimmed' : '') + '"><i></i></span>',
+            html: '<span class="saved-map-marker' + (isDimmed ? ' is-dimmed' : '') + '"><div class="wf-pin-circle" style="background:' + (place.color || '#6B7280') + ';">' + (place.icon || '📍') + '</div></span>',
             iconSize: [44, 44],
             iconAnchor: [22, 22]
           });
