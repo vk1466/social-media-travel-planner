@@ -15,7 +15,7 @@ import { useLibrary } from "@/src/context/LibraryContext";
 import { appHref } from "@/src/nav";
 import { proxiedMediaUrl, getPlaceBestImageUrl } from "@/src/postDisplayUtils";
 import { colors, radius, shadow } from "@/src/theme";
-import { CANONICAL_CATEGORIES, getCategoryVisual } from "@/src/categoryVisuals";
+import { CANONICAL_CATEGORIES, getCategoryVisual, type CategoryVisual } from "@/src/categoryVisuals";
 
 interface CollectionItem {
   id: string;
@@ -24,9 +24,18 @@ interface CollectionItem {
   count: number;
   thumbnails: string[];
   route: string;
+  visual?: CategoryVisual;
 }
 
-function MobileCollectionMosaic({ thumbnails, title }: { thumbnails: string[]; title: string }) {
+function MobileCollectionMosaic({
+  thumbnails,
+  title,
+  visual,
+}: {
+  thumbnails: string[];
+  title: string;
+  visual?: CategoryVisual;
+}) {
   const distinct = useMemo(() => {
     const set = new Set<string>();
     const res: string[] = [];
@@ -40,9 +49,21 @@ function MobileCollectionMosaic({ thumbnails, title }: { thumbnails: string[]; t
   }, [thumbnails]);
 
   if (distinct.length === 0) {
+    const vis = visual || getCategoryVisual(title);
     return (
-      <View style={styles.mosaicEmpty}>
-        <Text style={{ fontSize: 24, opacity: 0.6 }}>📍</Text>
+      <View
+        style={[
+          styles.mosaicEmpty,
+          {
+            backgroundColor: vis.tint,
+            borderColor: vis.hue + "33",
+            borderWidth: 1,
+            gap: 4,
+          },
+        ]}
+      >
+        <Text style={{ fontSize: 28 }}>{vis.glyph}</Text>
+        <Text style={{ fontSize: 12, fontWeight: "700", color: vis.hue }}>{title}</Text>
       </View>
     );
   }
@@ -120,46 +141,66 @@ export default function MobileCollectionsScreen() {
 
   // Auto-collections by City
   const cityCollections = useMemo<CollectionItem[]>(() => {
-    const map = new Map<string, { count: number; thumbs: string[] }>();
+    const map = new Map<string, { count: number; places: typeof places }>();
     for (const place of places) {
       const city = place.location?.city;
       if (!city) continue;
-      const data = map.get(city) || { count: 0, thumbs: [] };
+      const data = map.get(city) || { count: 0, places: [] };
       data.count += 1;
-      const img = getPlaceBestImageUrl(place, posts);
-      if (img && data.thumbs.length < 4 && !data.thumbs.includes(img)) {
-        data.thumbs.push(img);
-      }
+      data.places.push(place);
       map.set(city, data);
     }
-    // Also check posts matching city
-    for (const [city, data] of map.entries()) {
-      if (data.thumbs.length < 4) {
+    const sortedCities = Array.from(map.entries()).sort((a, b) => b[1].count - a[1].count);
+
+    const usedThumbs = new Set<string>();
+    return sortedCities.map(([city, data]) => {
+      const thumbs: string[] = [];
+      // 1. Pick images not yet used in previous city collection covers
+      for (const place of data.places) {
+        if (thumbs.length >= 4) break;
+        const img = getPlaceBestImageUrl(place, posts);
+        if (img && !usedThumbs.has(img) && !thumbs.includes(img)) {
+          thumbs.push(img);
+          usedThumbs.add(img);
+        }
+      }
+      // 2. Search matching posts not yet used
+      if (thumbs.length < 4) {
         for (const post of posts) {
-          if (data.thumbs.length >= 4) break;
+          if (thumbs.length >= 4) break;
           const matches = post.place_ids?.some(
             (pid) => places.find((pl) => pl.place_id === pid)?.location?.city === city
           );
-          if (matches && post.thumbnail_url && !data.thumbs.includes(post.thumbnail_url)) {
-            data.thumbs.push(post.thumbnail_url);
+          if (matches && post.thumbnail_url && !usedThumbs.has(post.thumbnail_url) && !thumbs.includes(post.thumbnail_url)) {
+            thumbs.push(post.thumbnail_url);
+            usedThumbs.add(post.thumbnail_url);
           }
         }
       }
-    }
-    return Array.from(map.entries())
-      .map(([city, data]) => ({
+      // 3. Fallback: if still completely empty, allow reused images
+      if (thumbs.length === 0) {
+        for (const place of data.places) {
+          if (thumbs.length >= 4) break;
+          const img = getPlaceBestImageUrl(place, posts);
+          if (img && !thumbs.includes(img)) {
+            thumbs.push(img);
+          }
+        }
+      }
+      return {
         id: `city-${city}`,
         title: city,
         subtitle: "City collection",
         count: data.count,
-        thumbnails: data.thumbs,
+        thumbnails: thumbs,
         route: "/(app)/(tabs)/travel",
-      }))
-      .sort((a, b) => b.count - a.count);
+      };
+    });
   }, [places, posts]);
 
   // Auto-collections by Category
   const categoryCollections = useMemo<CollectionItem[]>(() => {
+    const usedThumbs = new Set<string>();
     return CANONICAL_CATEGORIES.map((cat) => {
       const vis = getCategoryVisual(cat);
       const catPlaces = places.filter((p) => getCategoryVisual(p.category).name === cat);
@@ -167,16 +208,27 @@ export default function MobileCollectionsScreen() {
       for (const p of catPlaces) {
         if (thumbs.length >= 4) break;
         const img = getPlaceBestImageUrl(p, posts);
-        if (img && !thumbs.includes(img)) {
+        if (img && !usedThumbs.has(img) && !thumbs.includes(img)) {
           thumbs.push(img);
+          usedThumbs.add(img);
+        }
+      }
+      if (thumbs.length === 0) {
+        for (const p of catPlaces) {
+          if (thumbs.length >= 4) break;
+          const img = getPlaceBestImageUrl(p, posts);
+          if (img && !thumbs.includes(img)) {
+            thumbs.push(img);
+          }
         }
       }
       return {
         id: `cat-${cat}`,
-        title: `${vis.glyph} ${cat}`,
+        title: cat,
         subtitle: "Category collection",
         count: catPlaces.length,
         thumbnails: thumbs,
+        visual: vis,
         route: "/(app)/(tabs)/travel",
       };
     }).filter((c) => c.count > 0);
@@ -273,7 +325,7 @@ export default function MobileCollectionsScreen() {
             onPress={() => router.push(appHref(col.route as any))}
             style={styles.card}
           >
-            <MobileCollectionMosaic thumbnails={col.thumbnails} title={col.title} />
+            <MobileCollectionMosaic thumbnails={col.thumbnails} title={col.title} visual={col.visual} />
 
             {/* Info */}
             <View style={styles.cardInfo}>

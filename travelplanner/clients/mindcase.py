@@ -143,6 +143,7 @@ def fetch_google_maps_places(
   location: str | None = None,
   place_urls: list[str] | None = None,
   max_results: int = 1,
+  max_wait_seconds: float | None = 30.0,
 ) -> list[dict[str, Any]]:
   """Google Maps place listings via Mindcase (hours, phone, website, categories)."""
   wanted = max(1, max_results)
@@ -158,7 +159,12 @@ def fetch_google_maps_places(
     loc = (location or "").strip()
     if loc:
       params["location"] = loc
-  return _run_job(GOOGLE_MAPS_PLACES_RUN_PATH, params, ready_row_count=wanted)
+  return _run_job(
+    GOOGLE_MAPS_PLACES_RUN_PATH,
+    params,
+    ready_row_count=wanted,
+    max_wait_seconds=max_wait_seconds,
+  )
 
 
 def _run_job(

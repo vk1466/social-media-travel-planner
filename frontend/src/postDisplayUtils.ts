@@ -225,13 +225,14 @@ export function getPlaceBestImageUrl(place: Place, posts: SavedPost[] = []): str
 
   postsWithThumb.sort((a, b) => (a.place_ids?.length || 999) - (b.place_ids?.length || 999));
   const mostSpecific = postsWithThumb[0];
-  const placeCount = mostSpecific.place_ids?.length || 0;
 
-  // Deduplicate multi-stop reel thumbnail so sibling places don't look like duplicates
-  if (placeCount <= 1 || mostSpecific.place_ids?.[0] === place.place_id) {
-    return mostSpecific.thumbnail_url || (mostSpecific.slide_media_urls && mostSpecific.slide_media_urls[0]) || null;
+  // If this place corresponds to a specific slide/frame, use it
+  const placeIdx = mostSpecific.place_ids?.indexOf(place.place_id) ?? -1;
+  if (placeIdx >= 0 && mostSpecific.slide_media_urls && mostSpecific.slide_media_urls[placeIdx]) {
+    return mostSpecific.slide_media_urls[placeIdx];
   }
 
-  return null;
+  // Fall back to the post thumbnail so places have real imagery instead of placeholder icons
+  return mostSpecific.thumbnail_url || (mostSpecific.slide_media_urls && mostSpecific.slide_media_urls[0]) || null;
 }
 

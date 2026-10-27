@@ -18,6 +18,8 @@ from travelplanner.steps.extract_recipe import EXTRACT_RECIPE_STEP
 from travelplanner.steps.enrich_recipe import ENRICH_RECIPE_STEP
 from travelplanner.steps.calculate_recipe_nutrition import CALCULATE_RECIPE_NUTRITION_STEP
 
+from travelplanner.steps.enrich_place_facts import ENRICH_PLACE_FACTS_STEP
+
 INSTAGRAM_HEAD_STEPS = (
   SEED_INSTAGRAM_POST_STEP,
   FETCH_MEDIA_STEP,
@@ -30,6 +32,7 @@ PLACE_CLOSE_STEPS = (
   EXTRACT_REEL_FRAME_TEXT_STEP,
   EXTRACT_PLACES_STEP,
   PROCESS_MENTIONS_STEP,
+  ENRICH_PLACE_FACTS_STEP,
 )
 
 MOVIE_CLOSE_STEPS = (

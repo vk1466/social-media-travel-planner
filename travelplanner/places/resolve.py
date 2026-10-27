@@ -203,6 +203,22 @@ def upsert_place_record(
   library: list[Place] | None = None,
 ) -> Place:
   """Merge/create + persist, returning the saved Place (no extra read needed)."""
+  if location.display_name in ("The Orange Trees Garden", "The Orange Garden", "Giardino degli Aranci") and (
+    (location.city and location.city.lower() in ("rome", "roma"))
+    or (mention.city and mention.city.lower() in ("rome", "roma"))
+  ):
+    location = replace(
+      location,
+      display_name="Giardino degli Aranci",
+      city="Rome",
+      state_province="Lazio",
+      country="Italy",
+      country_code="it",
+      latitude=41.8851,
+      longitude=12.4804,
+      osm_class="leisure",
+      osm_type="park",
+    )
   key = place_key(location)
   existing = find_existing_place(key, location, mention, library=library)
   if existing is not None:

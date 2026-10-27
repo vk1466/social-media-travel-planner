@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useParams, Link, useLocation, useNavigate } from "react-router-dom";
-import { Share2, Navigation, Compass, Check } from "lucide-react";
+import { Share2, Navigation, Compass, Check, ExternalLink } from "lucide-react";
 import * as maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { EmptyState } from "../components/EmptyState";
@@ -623,7 +623,35 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
                           wordBreak: "break-word",
                         }}
                       >
-                        {text}
+                        {fact.label === "Phone" ? (
+                          <a
+                            href={`tel:${text.replace(/[^+\d]/g, "") || text}`}
+                            style={{
+                              color: "var(--wf-primary, #FF5A4E)",
+                              textDecoration: "none",
+                            }}
+                          >
+                            {text}
+                          </a>
+                        ) : fact.label === "Website" ? (
+                          <a
+                            href={text.startsWith("http") ? text : `https://${text}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                              color: "var(--wf-primary, #FF5A4E)",
+                              textDecoration: "none",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "4px",
+                            }}
+                          >
+                            <span>{text.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "")}</span>
+                            <ExternalLink size={12} strokeWidth={2} />
+                          </a>
+                        ) : (
+                          text
+                        )}
                         {sourceUrls.map((url, sIdx) => (
                           <a
                             key={sIdx}

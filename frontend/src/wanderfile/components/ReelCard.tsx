@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import type { SavedPost } from "../../api";
-import { proxiedMediaUrl } from "../../postDisplayUtils";
+import { getPostTitle, proxiedMediaUrl, truncateAtWordBoundary } from "../../postDisplayUtils";
 
 interface ReelCardProps {
   post: SavedPost;
@@ -16,7 +16,7 @@ export function ReelCard({ post, style }: ReelCardProps) {
 
   const rawUrl = post.thumbnail_url || (post.slide_media_urls && post.slide_media_urls[0]);
   const imageUrl = rawUrl ? proxiedMediaUrl(rawUrl) : null;
-  const spotCount = (post.place_ids?.length || 0) + (post.extracted_places?.length || 0);
+  const spotCount = post.extracted_places?.length || post.place_ids?.length || 0;
   const creator = post.author_handle || "instagram";
 
   return (
@@ -126,11 +126,13 @@ export function ReelCard({ post, style }: ReelCardProps) {
                 zIndex: 2,
               }}
             >
-              {spotCount} {spotCount === 1 ? "place" : "places"}
+              {post.expected_place_count
+                ? `${spotCount} of ${post.expected_place_count} places found`
+                : `${spotCount} ${spotCount === 1 ? "place" : "places"}`}
             </div>
           )}
 
-          {/* Bottom Gradient Overlay for Creator Name */}
+          {/* Bottom Gradient Overlay for Creator & Compact Engagement */}
           <div
             style={{
               position: "absolute",
@@ -142,17 +144,28 @@ export function ReelCard({ post, style }: ReelCardProps) {
               color: "#FFFFFF",
               fontSize: "12px",
               fontWeight: 600,
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: "6px",
             }}
           >
-            @{creator}
+            <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              @{creator}
+            </span>
+            <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "11px", flexShrink: 0, opacity: 0.95 }}>
+              {post.like_count != null && post.like_count > 0 && (
+                <span>♥ {post.like_count >= 1000 ? `${(post.like_count / 1000).toFixed(1)}k` : post.like_count}</span>
+              )}
+              {post.comment_count != null && post.comment_count > 0 && (
+                <span>💬 {post.comment_count >= 1000 ? `${(post.comment_count / 1000).toFixed(1)}k` : post.comment_count}</span>
+              )}
+            </div>
           </div>
         </div>
       </Link>
 
-      {/* 2-line caption below image */}
+      {/* 2-line clean title below image */}
       <div style={{ padding: "0 2px" }}>
         <p
           style={{
@@ -164,9 +177,11 @@ export function ReelCard({ post, style }: ReelCardProps) {
             WebkitLineClamp: 2,
             WebkitBoxOrient: "vertical",
             overflow: "hidden",
+            wordBreak: "normal",
+            overflowWrap: "break-word",
           }}
         >
-          {post.caption || post.title || "Saved reel"}
+          {truncateAtWordBoundary(getPostTitle(post), 75)}
         </p>
       </div>
     </div>

@@ -367,7 +367,7 @@ export default function MobileHomeScreen() {
                           {place.display_name}
                         </Text>
                         <View style={styles.rediscoverCatRow}>
-                          <Text style={{ fontSize: 12 }}>{vis.glyph}</Text>
+                          <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: vis.hue }} />
                           <Text style={[styles.rediscoverCategory, { color: vis.hue }]}>
                             {vis.name}
                           </Text>

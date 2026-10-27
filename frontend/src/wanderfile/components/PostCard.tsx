@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { MapPin, Utensils, Film, Sparkles, Scissors, Bookmark, MoreHorizontal, Edit3, Trash2, FolderPlus } from "lucide-react";
 import type { SavedPost } from "../../api";
-import { proxiedMediaUrl } from "../../postDisplayUtils";
+import { getPostTitle, proxiedMediaUrl, truncateAtWordBoundary } from "../../postDisplayUtils";
 
 interface PostCardProps {
   post: SavedPost;
@@ -54,12 +54,15 @@ export function PostCard({ post, onEdit, onDelete, onAddToCollection, style }: P
     ? `/place/${post.place_ids[0]}`
     : `/post/${post.post_id}`;
 
-  const displayTitle = post.title || post.caption || "Saved reel";
+  const rawTitle = getPostTitle(post);
+  const displayTitle = truncateAtWordBoundary(rawTitle, 75);
 
-  // Build caption line such as "3 places · Lisbon"
-  const placesCount = (post.place_ids?.length || 0) + (post.extracted_places?.length || 0);
+  // Consistent place count - never double count
+  const placesCount = post.extracted_places?.length || post.place_ids?.length || 0;
   let captionLine = post.author_handle ? `@${post.author_handle}` : "Instagram save";
-  if (placesCount > 0) {
+  if (post.expected_place_count) {
+    captionLine = `${placesCount} of ${post.expected_place_count} places found`;
+  } else if (placesCount > 0) {
     const spot = post.extracted_places?.[0]?.place_name;
     captionLine = `${placesCount} spot${placesCount === 1 ? "" : "s"}${spot ? ` · ${spot}` : ""}`;
   }
@@ -181,7 +184,8 @@ export function PostCard({ post, onEdit, onDelete, onAddToCollection, style }: P
               WebkitLineClamp: 2,
               WebkitBoxOrient: "vertical",
               overflow: "hidden",
-              wordBreak: "break-word",
+              wordBreak: "normal",
+              overflowWrap: "break-word",
             }}
           >
             {displayTitle}
@@ -200,11 +204,14 @@ export function PostCard({ post, onEdit, onDelete, onAddToCollection, style }: P
             <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>
               {captionLine}
             </span>
-            {post.like_count != null && post.like_count > 0 && (
-              <span style={{ fontSize: "11px", fontWeight: 600, color: "var(--wf-text-muted)", flexShrink: 0 }}>
-                ♥ {post.like_count >= 1000 ? `${(post.like_count / 1000).toFixed(1)}k` : post.like_count}
-              </span>
-            )}
+            <div style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0, fontSize: "11px", fontWeight: 600, color: "var(--wf-text-muted)" }}>
+              {post.like_count != null && post.like_count > 0 && (
+                <span>♥ {post.like_count >= 1000 ? `${(post.like_count / 1000).toFixed(1)}k` : post.like_count}</span>
+              )}
+              {post.comment_count != null && post.comment_count > 0 && (
+                <span>💬 {post.comment_count >= 1000 ? `${(post.comment_count / 1000).toFixed(1)}k` : post.comment_count}</span>
+              )}
+            </div>
           </div>
         </div>
       </Link>

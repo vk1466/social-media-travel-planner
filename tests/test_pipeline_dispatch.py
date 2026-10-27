@@ -32,6 +32,7 @@ def test_instagram_tail_by_resource_type() -> None:
     "extract_reel_frame_text",
     "extract_places",
     "process_place_mentions",
+    "enrich_place_facts",
   ]
   assert "analyze_video" not in {step.name for step in MOVIE_CLOSE_STEPS}
   assert "analyze_video" not in {step.name for step in RECIPE_CLOSE_STEPS}

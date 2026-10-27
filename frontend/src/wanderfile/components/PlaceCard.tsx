@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { MapPin } from "lucide-react";
 import type { Place, SavedPost } from "../../api";
 import { getCategoryVisual } from "../categoryVisuals";
 import { proxiedMediaUrl, getPlaceBestImageUrl } from "../../postDisplayUtils";
@@ -88,7 +89,7 @@ export function PlaceCard({ place, posts = [], isVisited = false, onToggleVisite
                 gap: "8px",
               }}
             >
-              <span style={{ fontSize: "42px" }}>{visual.glyph}</span>
+              <MapPin size={38} color={visual.hue} strokeWidth={1.75} />
             </div>
           )}
 

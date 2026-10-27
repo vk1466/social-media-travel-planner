@@ -227,6 +227,31 @@ def _is_visitable_result(result: GeocodeResult) -> bool:
   return True
 
 
+_CITY_EQUIVALENTS: dict[str, set[str]] = {
+  "rome": {"rome", "roma"},
+  "roma": {"rome", "roma"},
+  "florence": {"florence", "firenze"},
+  "firenze": {"florence", "firenze"},
+  "venice": {"venice", "venezia"},
+  "venezia": {"venice", "venezia"},
+  "naples": {"naples", "napoli"},
+  "napoli": {"naples", "napoli"},
+  "milan": {"milan", "milano"},
+  "milano": {"milan", "milano"},
+  "tokyo": {"tokyo", "tokyo-to", "tōkyō"},
+}
+
+
+def _cities_match(mention_city: str, candidate_city: str) -> bool:
+  m = mention_city.strip().lower()
+  c = candidate_city.strip().lower()
+  if m == c or m in c or c in m:
+    return True
+  if m in _CITY_EQUIVALENTS and c in _CITY_EQUIVALENTS[m]:
+    return True
+  return False
+
+
 def _region_agreement(mention: PlaceMention, result: GeocodeResult) -> float:
   score = 1.0
   if mention.country and (result.country or result.country_code):
@@ -237,6 +262,9 @@ def _region_agreement(mention: PlaceMention, result: GeocodeResult) -> float:
       result.state_province.strip().lower() not in mention.state_province.strip().lower()
     ):
       score -= 0.25
+  if mention.city and result.city:
+    if not _cities_match(mention.city, result.city):
+      score -= 0.6
   return max(0.0, score)
 
 

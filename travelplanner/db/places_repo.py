@@ -185,6 +185,15 @@ def batch_get_places(place_ids: list[str]) -> list[Place]:
   return [places_by_id[place_id] for place_id in place_ids if place_id in places_by_id]
 
 
+def delete_place(place_id: str) -> bool:
+  table = get_table("Places")
+  response = table.get_item(Key={"place_id": place_id})
+  if response.get("Item") is None:
+    return False
+  table.delete_item(Key={"place_id": place_id})
+  return True
+
+
 def delete_all_places() -> int:
   table = get_table("Places")
   deleted = 0

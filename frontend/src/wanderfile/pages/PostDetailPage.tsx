@@ -34,6 +34,7 @@ export function PostDetailPage({ posts, onRefresh }: PostDetailPageProps) {
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [captionExpanded, setCaptionExpanded] = useState(false);
+  const [ocrExpanded, setOcrExpanded] = useState(false);
   const [imgError, setImgError] = useState(false);
   const [customPlaces, setCustomPlaces] = useState<string[]>([]);
   const [newPlaceInput, setNewPlaceInput] = useState("");
@@ -320,16 +321,22 @@ export function PostDetailPage({ posts, onRefresh }: PostDetailPageProps) {
             <h2 className="wf-type-h2" style={{ margin: 0 }}>
               Extracted places ({extractedPlaces.length})
             </h2>
-            {post.expected_place_count && extractedPlaces.length < post.expected_place_count && (
+            {Boolean(post.expected_place_count) && (
               <span
                 style={{
                   fontSize: "12px",
                   fontWeight: 600,
                   padding: "2px 8px",
                   borderRadius: "999px",
-                  background: "rgba(234, 88, 12, 0.15)",
-                  color: "#ea580c",
-                  border: "1px solid rgba(234, 88, 12, 0.3)",
+                  background: extractedPlaces.length >= post.expected_place_count!
+                    ? "rgba(16, 185, 129, 0.12)"
+                    : "rgba(234, 88, 12, 0.15)",
+                  color: extractedPlaces.length >= post.expected_place_count!
+                    ? "#059669"
+                    : "#ea580c",
+                  border: extractedPlaces.length >= post.expected_place_count!
+                    ? "1px solid rgba(16, 185, 129, 0.3)"
+                    : "1px solid rgba(234, 88, 12, 0.3)",
                 }}
               >
                 {extractedPlaces.length} of {post.expected_place_count} places found
@@ -535,21 +542,44 @@ export function PostDetailPage({ posts, onRefresh }: PostDetailPageProps) {
             boxShadow: "var(--wf-shadow-card)",
           }}
         >
-          <h2 className="wf-type-h2" style={{ margin: "0 0 12px", fontSize: "17px" }}>
-            On-screen Text (OCR)
-          </h2>
-          <p
+          <button
+            type="button"
+            onClick={() => setOcrExpanded((prev) => !prev)}
             style={{
-              margin: 0,
-              fontSize: "13px",
-              lineHeight: "20px",
-              color: "var(--wf-text-muted)",
-              whiteSpace: "pre-wrap",
-              wordBreak: "break-word",
+              width: "100%",
+              background: "transparent",
+              border: "none",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              cursor: "pointer",
+              padding: 0,
+              minHeight: "44px",
             }}
           >
-            {post.image_text}
-          </p>
+            <h2 className="wf-type-h2" style={{ margin: 0, fontSize: "17px" }}>
+              On-screen Text (OCR)
+            </h2>
+            {ocrExpanded ? (
+              <ChevronUp size={20} color="var(--wf-text-muted)" />
+            ) : (
+              <ChevronDown size={20} color="var(--wf-text-muted)" />
+            )}
+          </button>
+          {ocrExpanded && (
+            <p
+              style={{
+                marginTop: "12px",
+                fontSize: "13px",
+                lineHeight: "20px",
+                color: "var(--wf-text-muted)",
+                whiteSpace: "pre-wrap",
+                wordBreak: "break-word",
+              }}
+            >
+              {post.image_text}
+            </p>
+          )}
         </section>
       )}
 

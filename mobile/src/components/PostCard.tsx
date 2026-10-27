@@ -4,7 +4,7 @@ import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 
 import type { SavedPost } from "../api";
 import { nativePostId } from "../api";
-import { proxiedMediaUrl } from "../postDisplayUtils";
+import { getPostTitle, proxiedMediaUrl, truncateAtWordBoundary } from "../postDisplayUtils";
 import { colors, radius, shadow } from "../theme";
 
 interface PostCardProps {
@@ -22,7 +22,7 @@ export const PostCard = memo(function PostCard({
   const [imgError, setImgError] = useState(false);
   const handle = post.author_handle || "instagram";
   const authorLine = handle.startsWith("@") ? handle : `@${handle}`;
-  const spotCount = (post.place_ids?.length || 0) + (post.extracted_places?.length || 0);
+  const spotCount = post.extracted_places?.length || post.place_ids?.length || 0;
   const imageUrl = proxiedMediaUrl(post.thumbnail_url);
 
   return (
@@ -55,7 +55,9 @@ export const PostCard = memo(function PostCard({
         {spotCount > 0 && (
           <View style={styles.spotCountBadge}>
             <Text style={styles.spotCountText}>
-              {spotCount} {spotCount === 1 ? "place" : "places"}
+              {post.expected_place_count
+                ? `${spotCount} of ${post.expected_place_count} places found`
+                : `${spotCount} ${spotCount === 1 ? "place" : "places"}`}
             </Text>
           </View>
         )}
@@ -65,16 +67,23 @@ export const PostCard = memo(function PostCard({
           <Text style={styles.creatorText} numberOfLines={1}>
             {authorLine}
           </Text>
-          {post.like_count != null && post.like_count > 0 ? (
-            <Text style={styles.likesText} numberOfLines={1}>
-              ♥ {post.like_count >= 1000 ? `${(post.like_count / 1000).toFixed(1)}k` : post.like_count}
-            </Text>
-          ) : null}
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+            {post.like_count != null && post.like_count > 0 ? (
+              <Text style={styles.likesText} numberOfLines={1}>
+                ♥ {post.like_count >= 1000 ? `${(post.like_count / 1000).toFixed(1)}k` : post.like_count}
+              </Text>
+            ) : null}
+            {post.comment_count != null && post.comment_count > 0 ? (
+              <Text style={styles.likesText} numberOfLines={1}>
+                💬 {post.comment_count >= 1000 ? `${(post.comment_count / 1000).toFixed(1)}k` : post.comment_count}
+              </Text>
+            ) : null}
+          </View>
         </View>
       </View>
 
       <Text style={styles.caption} numberOfLines={2}>
-        {post.caption || post.title || "Saved reel"}
+        {truncateAtWordBoundary(getPostTitle(post), 75)}
       </Text>
     </Pressable>
   );

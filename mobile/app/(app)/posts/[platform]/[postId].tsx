@@ -48,6 +48,7 @@ export default function PostDetailScreen() {
   const [editCategory, setEditCategory] = useState("other");
   const [savingEdit, setSavingEdit] = useState(false);
   const [heroError, setHeroError] = useState(false);
+  const [ocrExpanded, setOcrExpanded] = useState(false);
 
   const handleOpenEdit = () => {
     if (!post) return;
@@ -384,12 +385,23 @@ export default function PostDetailScreen() {
 
         {(post.place_ids.length > 0 || extracted.length > 0) && (
           <View style={styles.placesSection}>
-            {Boolean(
-              post.expected_place_count &&
-                extracted.length < post.expected_place_count
-            ) && (
-              <View style={styles.coverageBadge}>
-                <Text style={styles.coverageBadgeText}>
+            {Boolean(post.expected_place_count) && (
+              <View
+                style={[
+                  styles.coverageBadge,
+                  extracted.length >= post.expected_place_count!
+                    ? { backgroundColor: "rgba(16, 185, 129, 0.12)", borderColor: "rgba(16, 185, 129, 0.3)" }
+                    : null,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.coverageBadgeText,
+                    extracted.length >= post.expected_place_count!
+                      ? { color: "#059669" }
+                      : null,
+                  ]}
+                >
                   {extracted.length} of {post.expected_place_count} places found
                 </Text>
               </View>
@@ -454,8 +466,20 @@ export default function PostDetailScreen() {
 
         {post.image_text ? (
           <View style={styles.cardSection}>
-            <Text style={styles.sectionHeading}>On-screen Text (OCR)</Text>
-            <Text style={styles.ocrText}>{post.image_text}</Text>
+            <Pressable
+              onPress={() => setOcrExpanded((prev) => !prev)}
+              style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}
+            >
+              <Text style={styles.sectionHeading}>On-screen Text (OCR)</Text>
+              <Ionicons
+                name={ocrExpanded ? "chevron-up" : "chevron-down"}
+                size={18}
+                color={colors.muted}
+              />
+            </Pressable>
+            {ocrExpanded ? (
+              <Text style={[styles.ocrText, { marginTop: 8 }]}>{post.image_text}</Text>
+            ) : null}
           </View>
         ) : null}
 

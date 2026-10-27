@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import type { SavedPost, Place } from "../../api";
-import { CANONICAL_CATEGORIES, getCategoryVisual } from "../categoryVisuals";
+import { CANONICAL_CATEGORIES, getCategoryVisual, type CategoryVisual } from "../categoryVisuals";
 import { proxiedMediaUrl, getPlaceBestImageUrl } from "../../postDisplayUtils";
 
 interface CollectionsPageProps {
@@ -17,9 +17,18 @@ interface CollectionItem {
   count: number;
   thumbnails: string[];
   link: string;
+  visual?: CategoryVisual;
 }
 
-function CollectionMosaic({ thumbnails, title }: { thumbnails: string[]; title: string }) {
+function CollectionMosaic({
+  thumbnails,
+  title,
+  visual,
+}: {
+  thumbnails: string[];
+  title: string;
+  visual?: CategoryVisual;
+}) {
   const distinct = useMemo(() => {
     const set = new Set<string>();
     const res: string[] = [];
@@ -33,6 +42,7 @@ function CollectionMosaic({ thumbnails, title }: { thumbnails: string[]; title: 
   }, [thumbnails]);
 
   if (distinct.length === 0) {
+    const vis = visual || getCategoryVisual(title);
     return (
       <div
         style={{
@@ -40,17 +50,18 @@ function CollectionMosaic({ thumbnails, title }: { thumbnails: string[]; title: 
           aspectRatio: "1 / 1",
           borderRadius: "14px",
           overflow: "hidden",
-          background: "var(--surface-2, #F3F3F1)",
+          background: `radial-gradient(circle at 30% 30%, ${vis.tint}, rgba(255,255,255,0.02)), linear-gradient(135deg, ${vis.hue}18 0%, ${vis.hue}38 100%)`,
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
           gap: "8px",
-          color: "var(--ink-2, #5E636B)",
+          color: vis.hue,
+          border: `1px solid ${vis.hue}30`,
         }}
       >
-        <span style={{ fontSize: "28px", opacity: 0.7 }}>📍</span>
-        <span style={{ fontSize: "12px", fontWeight: 600 }}>{title}</span>
+        <span style={{ fontSize: "36px" }}>{vis.glyph}</span>
+        <span style={{ fontSize: "13px", fontWeight: 700, color: "var(--wf-text, #1B1D1F)" }}>{title}</span>
       </div>
     );
   }
@@ -191,47 +202,67 @@ export function CollectionsPage({ posts, places }: CollectionsPageProps) {
 
   // Auto-collections: By City
   const cityCollections = useMemo<CollectionItem[]>(() => {
-    const map = new Map<string, { count: number; thumbs: string[] }>();
+    const map = new Map<string, { count: number; places: typeof places }>();
     for (const place of places) {
       const city = place.location?.city;
       if (!city) continue;
-      const data = map.get(city) || { count: 0, thumbs: [] };
+      const data = map.get(city) || { count: 0, places: [] };
       data.count += 1;
-      const img = getPlaceBestImageUrl(place, posts);
-      if (img && data.thumbs.length < 4 && !data.thumbs.includes(img)) {
-        data.thumbs.push(img);
-      }
+      data.places.push(place);
       map.set(city, data);
     }
-    // If fewer than 4 thumbs, also search posts that mention this city
-    for (const [city, data] of map.entries()) {
-      if (data.thumbs.length < 4) {
+    const sortedCities = Array.from(map.entries()).sort((a, b) => b[1].count - a[1].count);
+
+    const usedThumbs = new Set<string>();
+    return sortedCities.map(([city, data]) => {
+      const thumbs: string[] = [];
+      // 1. Pick images not yet used in previous city collection covers
+      for (const place of data.places) {
+        if (thumbs.length >= 4) break;
+        const img = getPlaceBestImageUrl(place, posts);
+        if (img && !usedThumbs.has(img) && !thumbs.includes(img)) {
+          thumbs.push(img);
+          usedThumbs.add(img);
+        }
+      }
+      // 2. Search matching posts not yet used
+      if (thumbs.length < 4) {
         for (const post of posts) {
-          if (data.thumbs.length >= 4) break;
+          if (thumbs.length >= 4) break;
           const matches = post.place_ids?.some(
             (pid) => places.find((pl) => pl.place_id === pid)?.location?.city === city
           );
-          if (matches && post.thumbnail_url && !data.thumbs.includes(post.thumbnail_url)) {
-            data.thumbs.push(post.thumbnail_url);
+          if (matches && post.thumbnail_url && !usedThumbs.has(post.thumbnail_url) && !thumbs.includes(post.thumbnail_url)) {
+            thumbs.push(post.thumbnail_url);
+            usedThumbs.add(post.thumbnail_url);
           }
         }
       }
-    }
-    return Array.from(map.entries())
-      .map(([city, data]) => ({
+      // 3. Fallback: if still completely empty, allow reused images
+      if (thumbs.length === 0) {
+        for (const place of data.places) {
+          if (thumbs.length >= 4) break;
+          const img = getPlaceBestImageUrl(place, posts);
+          if (img && !thumbs.includes(img)) {
+            thumbs.push(img);
+          }
+        }
+      }
+      return {
         id: `city-${city}`,
         title: city,
         subtitle: "City collection",
         type: "city" as const,
         count: data.count,
-        thumbnails: data.thumbs,
+        thumbnails: thumbs,
         link: `/library?city=${encodeURIComponent(city)}&tab=places`,
-      }))
-      .sort((a, b) => b.count - a.count);
+      };
+    });
   }, [places, posts]);
 
   // Auto-collections: By Category
   const categoryCollections = useMemo<CollectionItem[]>(() => {
+    const usedThumbs = new Set<string>();
     return CANONICAL_CATEGORIES.map((cat) => {
       const vis = getCategoryVisual(cat);
       const catPlaces = places.filter((p) => getCategoryVisual(p.category).name === cat);
@@ -239,17 +270,28 @@ export function CollectionsPage({ posts, places }: CollectionsPageProps) {
       for (const p of catPlaces) {
         if (thumbs.length >= 4) break;
         const img = getPlaceBestImageUrl(p, posts);
-        if (img && !thumbs.includes(img)) {
+        if (img && !usedThumbs.has(img) && !thumbs.includes(img)) {
           thumbs.push(img);
+          usedThumbs.add(img);
+        }
+      }
+      if (thumbs.length === 0) {
+        for (const p of catPlaces) {
+          if (thumbs.length >= 4) break;
+          const img = getPlaceBestImageUrl(p, posts);
+          if (img && !thumbs.includes(img)) {
+            thumbs.push(img);
+          }
         }
       }
       return {
         id: `cat-${cat}`,
-        title: `${vis.glyph} ${cat}`,
+        title: cat,
         subtitle: "Category collection",
         type: "category" as const,
         count: catPlaces.length,
         thumbnails: thumbs,
+        visual: vis,
         link: `/library?category=${encodeURIComponent(cat)}&tab=places`,
       };
     }).filter((c) => c.count > 0);
@@ -382,7 +424,7 @@ export function CollectionsPage({ posts, places }: CollectionsPageProps) {
             className="wf-card-hover"
           >
             {/* Adaptive Thumbnail Mosaic */}
-            <CollectionMosaic thumbnails={col.thumbnails} title={col.title} />
+            <CollectionMosaic thumbnails={col.thumbnails} title={col.title} visual={col.visual} />
 
             {/* Collection Metadata */}
             <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>

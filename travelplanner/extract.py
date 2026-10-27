@@ -558,14 +558,42 @@ def generate_clean_title(
   max_length: int = 60,
 ) -> str:
   """Derive a clean, concise English title (<= max_length) without cutting mid-word."""
+  cap = (caption or "").strip()
+  if cap:
+    first_line = cap.split("\n")[0].strip()
+    cleaned = re.sub(r"[#@][A-Za-z0-9_.]+", "", first_line)
+    # Strip emojis and pictographs
+    cleaned = re.sub(r"[\U00010000-\U0010ffff]", "", cleaned)
+    cleaned = re.sub(r"[\u2600-\u27bf]", "", cleaned)
+    cleaned = re.sub(r"\s*\([^)]*\)", "", cleaned)  # remove parenthetical like (for first timers)
+    cleaned = re.sub(r"^(here\s+(is|are)\s+(our|my|a)\s+)", "", cleaned, flags=re.IGNORECASE)
+    cleaned = cleaned.strip(". !?:-")
+    # Clean up mixed shouting like "10 AMAZING things to do in TOKYO, Japan"
+    if any(w.isupper() and len(w) > 2 for w in cleaned.split()):
+      cleaned = cleaned.title()
+    elif cleaned.islower():
+      cleaned = cleaned.capitalize()
+    if 8 <= len(cleaned) <= max_length:
+      return cleaned
+    elif len(cleaned) > max_length:
+      return truncate_at_word_boundary(cleaned, max_length)
+
   if summary and summary.strip():
     cleaned_summary = summary.strip()
+    # Skip meta sentences like "This reel showcases..."
+    cleaned_summary = re.sub(
+      r"^(this|the)\s+(reel|video|post)\s+(showcases|highlights|features|explores|takes|shows)\s+",
+      "",
+      cleaned_summary,
+      flags=re.IGNORECASE,
+    )
     first_sentence = re.split(r"[.!?]\s+", cleaned_summary)[0].strip()
     if 10 <= len(first_sentence) <= max_length:
       return first_sentence
     if len(cleaned_summary) > max_length:
       return truncate_at_word_boundary(cleaned_summary, max_length)
-    return cleaned_summary
+    if cleaned_summary:
+      return cleaned_summary
 
   if places:
     cities = [p.city for p in places if p.city]
@@ -590,15 +618,8 @@ def generate_clean_title(
       if len(candidate) <= max_length:
         return candidate
 
-  cap = (caption or "").strip()
   if not cap:
-    return "Untitled Post"
-
-  first_line = cap.split("\n")[0].strip()
-  cleaned = re.sub(r"[#@][A-Za-z0-9_.]+", "", first_line)
-  cleaned = re.sub(r"^[\d\s.\-•*📍✨👉]+", "", cleaned).strip()
-  if cleaned:
-    return truncate_at_word_boundary(cleaned, max_length)
+    return "Saved reel"
 
   return truncate_at_word_boundary(first_line, max_length)
 
