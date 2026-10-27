@@ -6,8 +6,8 @@ import { ReelCard } from "../components/ReelCard";
 import { EditPostModal } from "../components/EditPostModal";
 import { useSavePipeline } from "../state/SavePipelineContext";
 import { useToast } from "../state/ToastContext";
-import { deletePost, parsePostId, type SavedPost, type Place } from "../../api";
-import { proxiedMediaUrl } from "../../postDisplayUtils";
+import { deletePost, parsePostId, fetchLinkPreview, type SavedPost, type Place, type LinkPreview } from "../../api";
+import { proxiedMediaUrl, getPlaceBestImageUrl } from "../../postDisplayUtils";
 import { getCategoryVisual } from "../categoryVisuals";
 
 interface HomePageProps {
@@ -25,6 +25,53 @@ export function HomePage({ posts, places, loading, loadError, onRefresh }: HomeP
   const [removedPostIds, setRemovedPostIds] = useState<Set<string>>(new Set());
   const [pasteInput, setPasteInput] = useState("");
   const [clipboardUrl, setClipboardUrl] = useState<string | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewData, setPreviewData] = useState<LinkPreview | null>(null);
+  const [previewError, setPreviewError] = useState(false);
+
+  useEffect(() => {
+    const trimmed = pasteInput.trim();
+    const isIg =
+      (trimmed.startsWith("http://") || trimmed.startsWith("https://")) &&
+      (trimmed.includes("instagram.com/") || trimmed.includes("instagr.am/"));
+
+    if (!isIg) {
+      setPreviewLoading(false);
+      setPreviewData(null);
+      setPreviewError(false);
+      return;
+    }
+
+    let cancelled = false;
+    setPreviewLoading(true);
+    setPreviewError(false);
+
+    const timer = setTimeout(async () => {
+      try {
+        const data = await fetchLinkPreview(trimmed);
+        if (!cancelled) {
+          setPreviewData(data);
+          setPreviewLoading(false);
+        }
+      } catch {
+        if (!cancelled) {
+          setPreviewData({
+            url: trimmed,
+            platform: "instagram",
+            is_available: true,
+            status: "unknown",
+            title: "Instagram Reel",
+          });
+          setPreviewLoading(false);
+        }
+      }
+    }, 250);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [pasteInput]);
 
   // Auto-read clipboard for instagram.com link on mount
   useEffect(() => {
@@ -193,11 +240,12 @@ export function HomePage({ posts, places, loading, loadError, onRefresh }: HomeP
           display: "flex",
           flexDirection: "column",
           gap: "8px",
-          padding: "8px 8px 8px 18px",
+          padding: (previewLoading || previewData) ? "10px 14px 14px" : "8px 8px 8px 18px",
           background: "var(--surface, #FFFFFF)",
           border: "1px solid var(--line, #E7E6E3)",
-          borderRadius: "999px",
+          borderRadius: (previewLoading || previewData) ? "20px" : "999px",
           boxShadow: "var(--shadow-sm, 0 1px 2px rgba(16,24,40,.06))",
+          transition: "all 0.2s ease",
         }}
       >
         <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
@@ -209,9 +257,12 @@ export function HomePage({ posts, places, loading, loadError, onRefresh }: HomeP
             onChange={(e) => setPasteInput(e.target.value)}
             onKeyDown={async (e) => {
               if (e.key === "Enter" && pasteInput.trim()) {
-                await saveUrl(pasteInput.trim());
-                openSaveSheet();
+                const url = pasteInput.trim();
                 setPasteInput("");
+                setPreviewData(null);
+                setPreviewLoading(false);
+                await saveUrl(url);
+                openSaveSheet(url);
               }
             }}
             style={{
@@ -229,9 +280,12 @@ export function HomePage({ posts, places, loading, loadError, onRefresh }: HomeP
             type="button"
             onClick={async () => {
               if (pasteInput.trim()) {
-                await saveUrl(pasteInput.trim());
-                openSaveSheet();
+                const url = pasteInput.trim();
                 setPasteInput("");
+                setPreviewData(null);
+                setPreviewLoading(false);
+                await saveUrl(url);
+                openSaveSheet(url);
               } else {
                 openSaveSheet();
               }
@@ -253,6 +307,124 @@ export function HomePage({ posts, places, loading, loadError, onRefresh }: HomeP
             Save
           </button>
         </div>
+
+        {/* Inline Preview State: Skeleton loading */}
+        {previewLoading && (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "12px",
+              padding: "10px 12px",
+              background: "var(--wf-surface-2, #F3F3F1)",
+              borderRadius: "14px",
+              marginTop: "4px",
+            }}
+          >
+            <div
+              style={{
+                width: "48px",
+                height: "64px",
+                borderRadius: "10px",
+                background: "var(--line, #E7E6E3)",
+                flexShrink: 0,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <span style={{ fontSize: "20px", opacity: 0.5 }}>🎬</span>
+            </div>
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "8px" }}>
+              <div style={{ height: "12px", width: "35%", background: "var(--line, #E7E6E3)", borderRadius: "4px" }} />
+              <div style={{ height: "14px", width: "70%", background: "var(--line, #E7E6E3)", borderRadius: "4px" }} />
+            </div>
+          </div>
+        )}
+
+        {/* Inline Preview State: Loaded card with thumbnail & graceful fallback */}
+        {!previewLoading && previewData && (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "12px",
+              padding: "10px 12px",
+              background: "var(--wf-surface-2, #F3F3F1)",
+              borderRadius: "14px",
+              marginTop: "4px",
+            }}
+          >
+            <div
+              style={{
+                width: "48px",
+                height: "64px",
+                borderRadius: "10px",
+                overflow: "hidden",
+                position: "relative",
+                background: "linear-gradient(135deg, #833AB4, #FD1D1D, #FCB045)",
+                flexShrink: 0,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "#FFFFFF",
+              }}
+            >
+              <span style={{ fontSize: "20px" }}>🎬</span>
+              {previewData.thumbnail_url && !previewError ? (
+                <img
+                  src={proxiedMediaUrl(previewData.thumbnail_url) || previewData.thumbnail_url}
+                  alt="Reel preview"
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    width: "100%",
+                    height: "100%",
+                    maxWidth: "100%",
+                    maxHeight: "100%",
+                    objectFit: "cover",
+                  }}
+                  onError={() => setPreviewError(true)}
+                />
+              ) : null}
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "2px" }}>
+                <span
+                  style={{
+                    fontSize: "10px",
+                    fontWeight: 800,
+                    letterSpacing: "0.06em",
+                    textTransform: "uppercase",
+                    color: "#C13584",
+                    background: "rgba(193, 53, 132, 0.12)",
+                    padding: "2px 6px",
+                    borderRadius: "999px",
+                  }}
+                >
+                  Reel
+                </span>
+                {previewData.author ? (
+                  <span style={{ fontSize: "12px", fontWeight: 700, color: "var(--wf-text)" }}>
+                    @{previewData.author.replace(/^@/, "")}
+                  </span>
+                ) : null}
+              </div>
+              <div
+                style={{
+                  fontSize: "13px",
+                  fontWeight: 600,
+                  color: "var(--ink, #16181B)",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {previewData.title || previewData.caption || "Ready to save"}
+              </div>
+            </div>
+          </div>
+        )}
 
         {clipboardUrl && (
           <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "4px 8px 4px 0" }}>
@@ -646,8 +818,8 @@ export function HomePage({ posts, places, loading, loadError, onRefresh }: HomeP
               <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
                 {rediscoverPlaces.map((place) => {
                   const vis = getCategoryVisual(place.category);
-                  const matchingPost = visiblePosts.find((p) => place.source_post_ids?.includes(p.post_id));
-                  const thumb = matchingPost?.thumbnail_url ? proxiedMediaUrl(matchingPost.thumbnail_url) : null;
+                  const rawThumb = getPlaceBestImageUrl(place, posts);
+                  const thumb = rawThumb ? proxiedMediaUrl(rawThumb) : null;
 
                   return (
                     <Link

@@ -7,7 +7,7 @@
 
 import type { Place, SavedPost } from "./api";
 import { categoryLabel, categoryTone } from "./categoryLabels";
-import { proxiedMediaUrl } from "./postDisplayUtils";
+import { proxiedMediaUrl, getPlaceBestImageUrl } from "./postDisplayUtils";
 
 export type AtlasLevel =
   | "world"
@@ -526,7 +526,7 @@ export function countByCategory(places: AtlasPlace[]): { category: string; label
 export function toAtlasPlace(
   place: Place,
   visitedIds: Set<string>,
-  thumbnailByPostId: ReadonlyMap<string, string>,
+  thumbnailByPostIdOrUrl?: ReadonlyMap<string, string> | string | null,
 ): AtlasPlace {
   const { continent, country, state_province: stateProvince, city, latitude, longitude } =
     place.location;
@@ -536,6 +536,15 @@ export function toAtlasPlace(
     stateProvince?.trim() || null,
     city?.trim() || null,
   ].filter((value): value is string => Boolean(value));
+
+  let imageUrl: string | null = null;
+  if (typeof thumbnailByPostIdOrUrl === "string") {
+    imageUrl = thumbnailByPostIdOrUrl;
+  } else if (thumbnailByPostIdOrUrl && typeof thumbnailByPostIdOrUrl === "object" && "get" in thumbnailByPostIdOrUrl) {
+    imageUrl = place.image_url ?? (place.source_post_ids.map((postId) => thumbnailByPostIdOrUrl.get(postId)).find(Boolean) ?? null);
+  } else {
+    imageUrl = place.image_url ?? null;
+  }
 
   return {
     placeId: place.place_id,
@@ -557,8 +566,7 @@ export function toAtlasPlace(
     tips: place.tips,
     attributes: place.attributes,
     bestTimeToVisit: place.facts?.best_time_to_visit ?? null,
-    imageUrl:
-      place.source_post_ids.map((postId) => thumbnailByPostId.get(postId)).find(Boolean) ?? null,
+    imageUrl,
     sourcePostIds: place.source_post_ids,
     parentPlaceId: place.parent_place_id ?? null,
   };
@@ -569,13 +577,10 @@ export function toAtlasPlaces(
   visitedIds: Set<string>,
   options: { posts?: SavedPost[] } = {},
 ): AtlasPlace[] {
-  const thumbnailByPostId = new Map(
-    (options.posts ?? [])
-      .filter((post): post is SavedPost & { thumbnail_url: string } => Boolean(post.thumbnail_url))
-      .map((post) => {
-        const url = proxiedMediaUrl(post.thumbnail_url) ?? post.thumbnail_url;
-        return [post.post_id, url];
-      }),
-  );
-  return apiPlaces.map((place) => toAtlasPlace(place, visitedIds, thumbnailByPostId));
+  const posts = options.posts ?? [];
+  return apiPlaces.map((place) => {
+    const rawUrl = getPlaceBestImageUrl(place, posts);
+    const imageUrl = rawUrl ? (proxiedMediaUrl(rawUrl) ?? rawUrl) : null;
+    return toAtlasPlace(place, visitedIds, imageUrl);
+  });
 }

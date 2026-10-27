@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import type { Place, SavedPost } from "../../api";
 import { getCategoryVisual } from "../categoryVisuals";
-import { proxiedMediaUrl } from "../../postDisplayUtils";
+import { proxiedMediaUrl, getPlaceBestImageUrl } from "../../postDisplayUtils";
 
 interface PlaceCardProps {
   place: Place;
@@ -16,11 +16,11 @@ export function PlaceCard({ place, posts = [], isVisited = false, onToggleVisite
   const location = useLocation();
   const visual = getCategoryVisual(place.category);
 
-  // Find thumbnail from matching source post
+  // Find best thumbnail (place photo, or most specific dedicated reel)
   const matchingPost = posts.find((p) => place.source_post_ids?.includes(p.post_id));
   const creatorHandle = matchingPost?.author_handle || "instagram";
   const reelCount = place.source_post_ids?.length || 1;
-  const rawImageUrl = matchingPost?.thumbnail_url || (matchingPost?.slide_media_urls && matchingPost.slide_media_urls[0]);
+  const rawImageUrl = getPlaceBestImageUrl(place, posts);
   const imageUrl = rawImageUrl ? proxiedMediaUrl(rawImageUrl) : null;
 
   const [imgError, setImgError] = useState(false);

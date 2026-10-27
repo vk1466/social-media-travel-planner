@@ -833,14 +833,14 @@ export function Header({
                 width: "36px",
                 height: "36px",
                 borderRadius: "50%",
-                border: "1px solid var(--wf-text)",
-                background: "var(--wf-text)",
-                color: "var(--wf-bg)",
+                border: "1px solid var(--accent, #FF5A4E)",
+                background: "var(--accent, #FF5A4E)",
+                color: "#FFFFFF",
                 cursor: "pointer",
                 flexShrink: 0,
               }}
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2.5">
                 <path d="M12 5v14M5 12h14" />
               </svg>
             </button>

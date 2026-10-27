@@ -10,7 +10,7 @@ import { EditPostModal } from "../components/EditPostModal";
 import { useSavePipeline } from "../state/SavePipelineContext";
 import { useToast } from "../state/ToastContext";
 import { deletePost, parsePostId, type SavedPost, type Place } from "../../api";
-import { proxiedMediaUrl } from "../../postDisplayUtils";
+import { proxiedMediaUrl, getPlaceBestImageUrl } from "../../postDisplayUtils";
 import { CANONICAL_CATEGORIES, getCategoryVisual } from "../categoryVisuals";
 
 interface LibraryPageProps {
@@ -535,8 +535,7 @@ export function LibraryPage({ posts, places = [], loading, onRefresh }: LibraryP
           <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
             {filteredPlaces.map((place) => {
               const vis = getCategoryVisual(place.category);
-              const matchingPost = posts.find((p) => place.source_post_ids?.includes(p.post_id));
-              const thumb = matchingPost?.thumbnail_url;
+              const thumb = getPlaceBestImageUrl(place, posts);
               return (
                 <Link
                   key={place.place_id}

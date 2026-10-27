@@ -8,7 +8,7 @@ import { useSavePipeline } from "../state/SavePipelineContext";
 import type { Place, SavedPost } from "../../api";
 import { getCategoryVisual, CANONICAL_CATEGORIES } from "../categoryVisuals";
 import { cartoMaplibreStyle } from "../../maps";
-import { proxiedMediaUrl } from "../../postDisplayUtils";
+import { proxiedMediaUrl, getPlaceBestImageUrl } from "../../postDisplayUtils";
 import "maplibre-gl/dist/maplibre-gl.css";
 
 interface MapPageProps {
@@ -35,19 +35,6 @@ export function MapPage({ places, posts, loading }: MapPageProps) {
   const [showSearchThisArea, setShowSearchThisArea] = useState<boolean>(false);
   const [mobileView, setMobileView] = useState<"map" | "list">("map");
 
-  // Map post by place ID if available
-  const postsByPlaceId = useMemo(() => {
-    if (!posts) return new Map<string, SavedPost>();
-    const map = new Map<string, SavedPost>();
-    for (const post of posts) {
-      if (post.place_ids && Array.isArray(post.place_ids)) {
-        for (const pid of post.place_ids) {
-          map.set(pid, post);
-        }
-      }
-    }
-    return map;
-  }, [posts]);
 
   // Filter mappable places with valid coordinates
   const mappablePlaces = useMemo(() => {
@@ -516,11 +503,7 @@ export function MapPage({ places, posts, loading }: MapPageProps) {
           {filteredPlaces.map((p) => {
             const isSelected = selectedPlaceId === p.place_id;
             const visual = getCategoryVisual(p.category);
-            const post = postsByPlaceId.get(p.place_id);
-            // Deduplicate multi-stop reel thumbnail so sibling places don't look like duplicates
-            const isMultiStop = (post?.place_ids?.length || 0) > 1;
-            const isFirstStop = post?.place_ids?.[0] === p.place_id;
-            const rawThumb = p.image_url || (!isMultiStop || isFirstStop ? (post?.thumbnail_url || (post?.slide_media_urls && post.slide_media_urls[0])) : null);
+            const rawThumb = getPlaceBestImageUrl(p, posts);
             const thumbnail = rawThumb ? proxiedMediaUrl(rawThumb) : null;
             const tip = p.tips?.[0];
 
@@ -553,6 +536,7 @@ export function MapPage({ places, posts, loading }: MapPageProps) {
                     height: "64px",
                     borderRadius: "14px",
                     overflow: "hidden",
+                    position: "relative",
                     flexShrink: 0,
                     background: visual.tint,
                     display: "flex",
@@ -570,6 +554,8 @@ export function MapPage({ places, posts, loading }: MapPageProps) {
                         inset: 0,
                         width: "100%",
                         height: "100%",
+                        maxWidth: "100%",
+                        maxHeight: "100%",
                         objectFit: "cover",
                       }}
                       loading="lazy"
@@ -706,8 +692,7 @@ export function MapPage({ places, posts, loading }: MapPageProps) {
           >
             {(() => {
               const visual = getCategoryVisual(selectedPlace.category);
-              const post = postsByPlaceId.get(selectedPlace.place_id);
-              const rawThumb = selectedPlace.image_url || post?.thumbnail_url;
+              const rawThumb = getPlaceBestImageUrl(selectedPlace, posts);
               const thumb = rawThumb ? proxiedMediaUrl(rawThumb) : null;
               return (
                 <>
@@ -733,6 +718,8 @@ export function MapPage({ places, posts, loading }: MapPageProps) {
                           inset: 0,
                           width: "100%",
                           height: "100%",
+                          maxWidth: "100%",
+                          maxHeight: "100%",
                           objectFit: "cover",
                         }}
                         onError={(e) => {

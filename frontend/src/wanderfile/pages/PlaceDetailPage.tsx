@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useParams, Link, useLocation, useNavigate } from "react-router-dom";
-import { Share2, Navigation, Compass } from "lucide-react";
+import { Share2, Navigation, Compass, Check } from "lucide-react";
 import * as maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { EmptyState } from "../components/EmptyState";
@@ -400,9 +400,10 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
             <button
               type="button"
               onClick={() => setVisited((v) => !v)}
+              aria-label={visited ? "Mark place as unvisited" : "Mark place as visited"}
               style={{
                 height: "44px",
-                padding: "0 22px",
+                padding: "0 20px",
                 borderRadius: "var(--wf-radius-pill)",
                 border: 0,
                 background: visited ? "var(--wf-success, #1F9D6B)" : "var(--wf-text, #16181B)",
@@ -417,7 +418,8 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
                 boxShadow: "var(--shadow-sm)",
               }}
             >
-              {visited ? "Visited ✓" : "Mark visited"}
+              <Check size={16} strokeWidth={2.5} color="#FFFFFF" />
+              <span>{visited ? "Visited" : "Mark visited"}</span>
             </button>
 
             {FeatureFlags.isEnabled("trips") && (

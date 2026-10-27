@@ -247,7 +247,9 @@ export function LinkSubmitForm({
       {/* Link Preview Card */}
       {previewLoading && (
         <View style={styles.previewCard}>
-          <View style={[styles.previewThumb, styles.previewSkeleton]} />
+          <View style={[styles.previewThumb, styles.previewSkeleton, { alignItems: "center", justifyContent: "center" }]}>
+            <ActivityIndicator size="small" color={colors.ink} />
+          </View>
           <View style={{ flex: 1, gap: 6 }}>
             <View style={[styles.previewSkeletonLine, { width: "40%" }]} />
             <View style={[styles.previewSkeletonLine, { width: "80%" }]} />
