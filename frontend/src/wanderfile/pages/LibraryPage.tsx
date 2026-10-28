@@ -279,8 +279,33 @@ export function LibraryPage({ posts, places = [], loading, onRefresh }: LibraryP
             type="text"
             placeholder={activeTab === "reels" ? "Search captions, creators..." : "Search places, cities..."}
             value={searchQuery}
+            onPaste={(e) => {
+              const pasted = e.clipboardData.getData("text")?.trim();
+              if (
+                pasted &&
+                (pasted.includes("instagram.com") ||
+                  pasted.includes("instagr.am") ||
+                  pasted.startsWith("http://") ||
+                  pasted.startsWith("https://"))
+              ) {
+                e.preventDefault();
+                openSaveSheet(pasted);
+              }
+            }}
             onChange={(e) => {
               const val = e.target.value;
+              if (
+                val.includes("instagram.com/reel") ||
+                val.includes("instagram.com/p/") ||
+                val.includes("instagr.am/") ||
+                ((val.includes("instagram.com") || val.includes("instagr.am")) &&
+                  (val.startsWith("http://") || val.startsWith("https://"))) ||
+                val.startsWith("http://") ||
+                val.startsWith("https://")
+              ) {
+                openSaveSheet(val.trim());
+                return;
+              }
               const next = new URLSearchParams(searchParams);
               if (val) next.set("q", val);
               else next.delete("q");

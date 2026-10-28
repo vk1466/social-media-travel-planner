@@ -431,11 +431,12 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
             })()}
           </div>
 
-          <div style={{ display: "flex", gap: "10px", marginTop: "24px", flexWrap: "wrap", alignItems: "center" }}>
+          <div className="wf-place-actions" style={{ display: "flex", gap: "10px", marginTop: "24px", alignItems: "center", flexWrap: "wrap" }}>
             <button
               type="button"
               onClick={() => setVisited((v) => !v)}
               aria-label={visited ? "Mark place as unvisited" : "Mark place as visited"}
+              className="wf-place-primary-action"
               style={{
                 height: "44px",
                 padding: "0 20px",
@@ -449,8 +450,10 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
                 cursor: "pointer",
                 display: "inline-flex",
                 alignItems: "center",
+                justifyContent: "center",
                 gap: "8px",
                 boxShadow: "var(--shadow-sm)",
+                flexShrink: 0,
               }}
             >
               <Check size={16} strokeWidth={2.5} color="#FFFFFF" />
@@ -481,9 +484,13 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
               href={googleMapsUrl}
               target="_blank"
               rel="noopener noreferrer"
+              title="Open in Google Maps"
+              aria-label="Open in Google Maps"
+              className="wf-place-icon-action"
               style={{
                 height: "44px",
-                padding: "0 16px",
+                minWidth: "44px",
+                padding: "0 14px",
                 borderRadius: "var(--wf-radius-pill)",
                 border: "1px solid var(--wf-border)",
                 background: "var(--wf-surface)",
@@ -493,20 +500,25 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
                 textDecoration: "none",
                 display: "inline-flex",
                 alignItems: "center",
+                justifyContent: "center",
                 gap: "6px",
               }}
             >
               <Navigation size={16} strokeWidth={2} />
-              <span>Google Maps</span>
+              <span className="wf-action-label">Google Maps</span>
             </a>
 
             <a
               href={appleMapsUrl}
               target="_blank"
               rel="noopener noreferrer"
+              title="Open in Apple Maps"
+              aria-label="Open in Apple Maps"
+              className="wf-place-icon-action"
               style={{
                 height: "44px",
-                padding: "0 16px",
+                minWidth: "44px",
+                padding: "0 14px",
                 borderRadius: "var(--wf-radius-pill)",
                 border: "1px solid var(--wf-border)",
                 background: "var(--wf-surface)",
@@ -516,15 +528,19 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
                 textDecoration: "none",
                 display: "inline-flex",
                 alignItems: "center",
+                justifyContent: "center",
                 gap: "6px",
               }}
             >
               <Compass size={16} strokeWidth={2} />
-              <span>Apple Maps</span>
+              <span className="wf-action-label">Apple Maps</span>
             </a>
 
             <button
               type="button"
+              title="Share link"
+              aria-label="Share link"
+              className="wf-place-icon-action"
               onClick={() => {
                 if (typeof navigator !== "undefined" && navigator.clipboard) {
                   navigator.clipboard.writeText(window.location.href);
@@ -533,7 +549,8 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
               }}
               style={{
                 height: "44px",
-                padding: "0 16px",
+                minWidth: "44px",
+                padding: "0 14px",
                 borderRadius: "var(--wf-radius-pill)",
                 border: "1px solid var(--wf-border)",
                 background: "var(--wf-surface)",
@@ -543,11 +560,12 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
                 cursor: "pointer",
                 display: "inline-flex",
                 alignItems: "center",
+                justifyContent: "center",
                 gap: "6px",
               }}
             >
               <Share2 size={16} strokeWidth={2} />
-              <span>Share</span>
+              <span className="wf-action-label">Share</span>
             </button>
           </div>
         </div>

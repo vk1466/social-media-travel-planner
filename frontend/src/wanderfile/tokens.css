@@ -556,3 +556,25 @@ body:has(.wf-map-main) {
   border: 2px solid rgba(255, 255, 255, 0.85) !important;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5), 0 0 0 5px rgba(255, 255, 255, 0.15) !important;
 }
+
+/* Compact single-row layout for place-detail actions on mobile */
+@media (max-width: 640px) {
+  .wf-place-actions {
+    flex-wrap: nowrap !important;
+    gap: 8px !important;
+  }
+  .wf-place-primary-action {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+  }
+  .wf-place-icon-action {
+    width: 44px !important;
+    min-width: 44px !important;
+    max-width: 44px !important;
+    padding: 0 !important;
+    flex-shrink: 0 !important;
+  }
+  .wf-place-icon-action .wf-action-label {
+    display: none !important;
+  }
+}

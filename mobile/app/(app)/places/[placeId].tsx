@@ -272,32 +272,38 @@ export default function PlaceDetailScreen() {
             ) : null}
             <View style={styles.headerActions}>
               <Pressable
-                style={[styles.actionChip, isVisited && styles.actionChipVisited]}
+                style={[styles.actionChip, styles.primaryActionChip, isVisited && styles.actionChipVisited]}
                 onPress={() => void handleToggleVisited()}
                 disabled={visitedSaving}
+                accessibilityRole="button"
+                accessibilityLabel={isVisited ? "Mark place as unvisited" : "Mark place as visited"}
               >
+                <Ionicons
+                  name={isVisited ? "checkmark-circle" : "checkmark-circle-outline"}
+                  size={16}
+                  color={isVisited ? colors.success : colors.brand}
+                />
                 <Text style={[styles.actionChipText, isVisited && styles.actionChipVisitedText]}>
-                  {visitedSaving ? "Saving…" : isVisited ? "✓ Visited" : "Mark visited"}
+                  {visitedSaving ? "Saving…" : isVisited ? "Visited" : "Mark visited"}
                 </Text>
               </Pressable>
-              {FeatureFlags.isEnabled("trips") ? (
+              {mapUrl ? (
                 <Pressable
                   accessibilityRole="button"
-                  onPress={() => router.push(appHref("/(app)/coming-soon"))}
-                  style={styles.actionChip}
+                  accessibilityLabel="Open in Google Maps"
+                  style={[styles.actionChip, styles.iconActionChip]}
+                  onPress={() => void Linking.openURL(mapUrl)}
                 >
-                  <Text style={styles.actionChipText}>Add to trip</Text>
+                  <Ionicons name="navigate-outline" size={18} color={colors.ink} />
                 </Pressable>
               ) : null}
-              {mapUrl ? (
-                <Pressable accessibilityRole="button" style={[styles.actionChip, styles.mapsAction]} onPress={() => void Linking.openURL(mapUrl)}>
-                  <Ionicons name="navigate-outline" size={16} color={colors.onFill} />
-                  <Text style={styles.mapsActionText}>Google Maps</Text>
-                </Pressable>
-              ) : null}
-              <Pressable accessibilityRole="button" style={[styles.actionChip, styles.mapsActionSecondary]} onPress={() => void Linking.openURL(appleMapUrl)}>
-                <Ionicons name="map-outline" size={16} color="#1B5E78" />
-                <Text style={styles.mapsActionSecondaryText}>Apple Maps</Text>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Open in Apple Maps"
+                style={[styles.actionChip, styles.iconActionChip]}
+                onPress={() => void Linking.openURL(appleMapUrl)}
+              >
+                <Ionicons name="map-outline" size={18} color={colors.ink} />
               </Pressable>
             </View>
           </View>
@@ -542,17 +548,25 @@ const styles = StyleSheet.create({
     lineHeight: 32,
   },
   aliases: { color: colors.faint, fontSize: 13, fontStyle: "italic" },
-  headerActions: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  headerActions: { flexDirection: "row", alignItems: "center", gap: 8 },
   actionChip: {
+    height: 44,
     minHeight: 44,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: radius.pill,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
     backgroundColor: colors.surface,
+  },
+  primaryActionChip: {
+    flex: 1,
+    flexDirection: "row",
+    gap: 6,
+    paddingHorizontal: 16,
+  },
+  iconActionChip: {
+    width: 44,
   },
   mapsAction: {
     flexDirection: "row",

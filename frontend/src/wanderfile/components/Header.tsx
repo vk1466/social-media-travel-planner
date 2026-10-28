@@ -951,7 +951,39 @@ export function Header({
                 aria-label="Search or paste link"
                 placeholder="Search or paste link..."
                 value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
+                onPaste={(e) => {
+                  const pasted = e.clipboardData.getData("text")?.trim();
+                  if (
+                    pasted &&
+                    (pasted.includes("instagram.com") ||
+                      pasted.includes("instagr.am") ||
+                      pasted.startsWith("http://") ||
+                      pasted.startsWith("https://"))
+                  ) {
+                    e.preventDefault();
+                    setInputValue("");
+                    setMobileSearchOpen(false);
+                    openSaveSheet(pasted);
+                  }
+                }}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (
+                    val.includes("instagram.com/reel") ||
+                    val.includes("instagram.com/p/") ||
+                    val.includes("instagr.am/") ||
+                    ((val.includes("instagram.com") || val.includes("instagr.am")) &&
+                      (val.startsWith("http://") || val.startsWith("https://"))) ||
+                    val.startsWith("http://") ||
+                    val.startsWith("https://")
+                  ) {
+                    setInputValue("");
+                    setMobileSearchOpen(false);
+                    openSaveSheet(val.trim());
+                    return;
+                  }
+                  setInputValue(val);
+                }}
                 style={{
                   flex: "1 1 0%",
                   width: "100%",

@@ -1,3 +1,15 @@
+import * as maplibregl from "maplibre-gl";
+
+// Ensure MapLibre web worker loads from the explicitly emitted static asset
+if (typeof window !== "undefined") {
+  try {
+    const workerUrl = new URL("/assets/maplibre-gl-worker.mjs", window.location.origin).href;
+    maplibregl.setWorkerUrl(workerUrl);
+  } catch (err) {
+    console.warn("Failed to set MapLibre workerUrl", err);
+  }
+}
+
 export interface GoogleMapsLocation {
   display_name?: string | null;
   city?: string | null;

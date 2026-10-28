@@ -1,4 +1,15 @@
 {
+  "headers": [
+    {
+      "source": "/assets/(.*\\.mjs)",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/javascript"
+        }
+      ]
+    }
+  ],
   "rewrites": [
     {
       "source": "/api",
@@ -9,7 +20,7 @@
       "destination": "https://tb5bi7r4sjpvsfxdulnpolhx2u0aswhk.lambda-url.us-west-2.on.aws/api/$1"
     },
     {
-      "source": "/((?!api(?:/|$)).*)",
+      "source": "/((?!api(?:/|$)|assets(?:/|$)).*)",
       "destination": "/index.html"
     }
   ]

@@ -1,4 +1,5 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
+import { useRouter } from "expo-router";
 import { useState, type ReactNode } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 
@@ -28,13 +29,31 @@ export function SearchField({
   placeholder: string;
   autoFocus?: boolean;
 }) {
+  const router = useRouter();
+
+  const handleChangeText = (text: string) => {
+    const trimmed = text.trim();
+    if (
+      trimmed.includes("instagram.com/reel") ||
+      trimmed.includes("instagram.com/p/") ||
+      trimmed.includes("instagr.am/") ||
+      ((trimmed.includes("instagram.com") || trimmed.includes("instagr.am")) &&
+        (trimmed.startsWith("http://") || trimmed.startsWith("https://")))
+    ) {
+      onChange("");
+      router.push({ pathname: "/(app)/ingest", params: { link: trimmed } });
+      return;
+    }
+    onChange(text);
+  };
+
   return (
     <View style={styles.search}>
       <Ionicons name="search" size={15} color={colors.muted} />
       <TextInput
         style={styles.searchInput}
         value={value}
-        onChangeText={onChange}
+        onChangeText={handleChangeText}
         placeholder={placeholder}
         placeholderTextColor={colors.muted}
         autoCorrect={false}

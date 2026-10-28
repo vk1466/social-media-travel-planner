@@ -511,7 +511,7 @@ export default function TravelScreen() {
           <Ionicons
             name="map"
             size={14}
-            color={pane === "map" ? "#FFFFFF" : "#1B1D1F"}
+            color={pane === "map" ? colors.bg : colors.muted}
           />
           <Text
             style={[
@@ -534,7 +534,7 @@ export default function TravelScreen() {
           <Ionicons
             name="list"
             size={14}
-            color={pane === "browse" ? "#FFFFFF" : "#1B1D1F"}
+            color={pane === "browse" ? colors.bg : colors.muted}
           />
           <Text
             style={[
@@ -884,9 +884,9 @@ const styles = StyleSheet.create({
     zIndex: 25,
     height: 40,
     borderRadius: 999,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: "#E6E3DC",
+    borderColor: colors.border,
     flexDirection: "row",
     alignItems: "center",
     padding: 3,
@@ -902,7 +902,7 @@ const styles = StyleSheet.create({
     borderRadius: 999,
   },
   toggleSegmentActive: {
-    backgroundColor: "#1B1D1F",
+    backgroundColor: colors.ink,
   },
   toggleSegmentInactive: {
     backgroundColor: "transparent",
@@ -913,10 +913,10 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bold,
   },
   toggleSegmentTextActive: {
-    color: "#FFFFFF",
+    color: colors.bg,
   },
   toggleSegmentTextInactive: {
-    color: "#1B1D1F",
+    color: colors.muted,
   },
   sheetHeaderRow: {
     flexDirection: "row",

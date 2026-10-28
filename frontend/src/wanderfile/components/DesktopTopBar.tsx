@@ -26,18 +26,25 @@ export function DesktopTopBar({ isSuperAdmin, onViewAsChange }: DesktopTopBarPro
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
+  const isUrlOrInstagram = (text: string) => {
+    const trimmed = text.trim();
+    return (
+      trimmed.includes("instagram.com/reel") ||
+      trimmed.includes("instagram.com/p/") ||
+      trimmed.includes("instagr.am/") ||
+      ((trimmed.includes("instagram.com") || trimmed.includes("instagr.am")) &&
+        (trimmed.startsWith("http://") || trimmed.startsWith("https://"))) ||
+      trimmed.startsWith("http://") ||
+      trimmed.startsWith("https://")
+    );
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = query.trim();
     if (!trimmed) return;
 
-    if (
-      trimmed.includes("instagram.com/reel") ||
-      trimmed.includes("instagram.com/p/") ||
-      trimmed.includes("instagr.am/") ||
-      trimmed.startsWith("http://") ||
-      trimmed.startsWith("https://")
-    ) {
+    if (isUrlOrInstagram(trimmed)) {
       setQuery("");
       openSaveSheet(trimmed);
       return;
@@ -47,15 +54,19 @@ export function DesktopTopBar({ isSuperAdmin, onViewAsChange }: DesktopTopBarPro
     navigate(`/library?q=${encodeURIComponent(trimmed)}`);
   };
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    if (isUrlOrInstagram(val)) {
+      setQuery("");
+      openSaveSheet(val.trim());
+      return;
+    }
+    setQuery(val);
+  };
+
   const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
     const pasted = e.clipboardData.getData("text")?.trim();
-    if (
-      pasted &&
-      (pasted.includes("instagram.com") ||
-        pasted.includes("instagr.am") ||
-        pasted.startsWith("http://") ||
-        pasted.startsWith("https://"))
-    ) {
+    if (pasted && isUrlOrInstagram(pasted)) {
       e.preventDefault();
       setQuery("");
       openSaveSheet(pasted);
@@ -108,7 +119,7 @@ export function DesktopTopBar({ isSuperAdmin, onViewAsChange }: DesktopTopBarPro
             ref={inputRef}
             type="text"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={handleInputChange}
             onPaste={handlePaste}
             placeholder="Search places, reels, or paste an Instagram link…"
             style={{

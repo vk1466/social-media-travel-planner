@@ -403,12 +403,22 @@ export function MapPage({ places, posts, loading }: MapPageProps) {
 
   // Update markers and fit bounds when mappable places become available
   useEffect(() => {
-    if (!mapRef.current) return;
-    if (mappablePlaces.length > 0 && !hasFittedInitialBoundsRef.current) {
-      hasFittedInitialBoundsRef.current = true;
-      fitToPlaces(filteredPlaces.length > 0 ? filteredPlaces : mappablePlaces, mapRef.current, true);
+    const map = mapRef.current;
+    if (!map) return;
+
+    const syncMarkersAndBounds = () => {
+      if (mappablePlaces.length > 0 && !hasFittedInitialBoundsRef.current) {
+        hasFittedInitialBoundsRef.current = true;
+        fitToPlaces(filteredPlaces.length > 0 ? filteredPlaces : mappablePlaces, map, true);
+      }
+      updateMapMarkers();
+    };
+
+    if (map.loaded()) {
+      syncMarkersAndBounds();
+    } else {
+      map.once("load", syncMarkersAndBounds);
     }
-    updateMapMarkers();
   }, [mappablePlaces, fitToPlaces, updateMapMarkers, filteredPlaces]);
 
   // When activeCity or activeCategory changes, re-fit map bounds to filtered places
@@ -500,35 +510,44 @@ export function MapPage({ places, posts, loading }: MapPageProps) {
                 }}
                 style={{
                   border: 0,
-                  background: "transparent",
-                  color: "var(--wf-text-muted)",
+                  background: mobileView === "map" ? "var(--wf-ink, #16181B)" : "transparent",
+                  color: mobileView === "map" ? "var(--wf-surface, #FFFFFF)" : "var(--wf-text-muted, #5E636B)",
                   padding: "4px 10px",
                   borderRadius: "var(--wf-radius-pill)",
                   fontSize: "12px",
                   fontWeight: 600,
                   cursor: "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "4px",
                 }}
               >
                 🗺️ Map
               </button>
               <button
                 type="button"
+                onClick={() => setMobileView("list")}
                 style={{
                   border: 0,
-                  background: "var(--wf-text)",
-                  color: "var(--wf-bg)",
+                  background: mobileView === "list" ? "var(--wf-ink, #16181B)" : "transparent",
+                  color: mobileView === "list" ? "var(--wf-surface, #FFFFFF)" : "var(--wf-text-muted, #5E636B)",
                   padding: "4px 10px",
                   borderRadius: "var(--wf-radius-pill)",
                   fontSize: "12px",
                   fontWeight: 600,
-                  cursor: "default",
+                  cursor: "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "4px",
                 }}
               >
-                ☰ Places ({filteredPlaces.length})
+                ☰ Places {loading && places.length === 0 ? "" : `(${filteredPlaces.length})`}
               </button>
             </div>
             <span style={{ fontSize: "13px", color: "var(--wf-text-muted)" }}>
-              {filteredPlaces.length} spot{filteredPlaces.length === 1 ? "" : "s"}
+              {loading && places.length === 0
+                ? "Loading spots…"
+                : `${filteredPlaces.length} spot${filteredPlaces.length === 1 ? "" : "s"}`}
             </span>
           </div>
 
@@ -600,7 +619,24 @@ export function MapPage({ places, posts, loading }: MapPageProps) {
 
         {/* Scrollable list of places */}
         <div className="wf-map-sidebar-list">
-          {filteredPlaces.map((p) => {
+          {loading && places.length === 0 ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "8px 0" }}>
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div
+                  key={i}
+                  style={{
+                    height: "84px",
+                    borderRadius: "14px",
+                    background: "var(--wf-surface-2, #F3F3F1)",
+                    border: "1px solid var(--wf-border, #E7E6E3)",
+                    opacity: 0.6,
+                    animation: "pulse 1.5s ease-in-out infinite",
+                  }}
+                />
+              ))}
+            </div>
+          ) : (
+            filteredPlaces.map((p) => {
             const isSelected = selectedPlaceId === p.place_id;
             const visual = getCategoryVisual(p.category);
             const rawThumb = getPlaceBestImageUrl(p, posts);
@@ -729,7 +765,7 @@ export function MapPage({ places, posts, loading }: MapPageProps) {
                 </div>
               </div>
             );
-          })}
+          }))}
         </div>
       </aside>
 
@@ -956,8 +992,8 @@ export function MapPage({ places, posts, loading }: MapPageProps) {
             }}
             style={{
               border: 0,
-              background: mobileView === "map" ? "var(--wf-text)" : "transparent",
-              color: mobileView === "map" ? "var(--wf-bg)" : "var(--wf-text-muted)",
+              background: mobileView === "map" ? "var(--wf-ink, #16181B)" : "transparent",
+              color: mobileView === "map" ? "var(--wf-surface, #FFFFFF)" : "var(--wf-text-muted, #5E636B)",
               padding: "6px 14px",
               borderRadius: "var(--wf-radius-pill)",
               fontSize: "13px",
@@ -975,8 +1011,8 @@ export function MapPage({ places, posts, loading }: MapPageProps) {
             onClick={() => setMobileView("list")}
             style={{
               border: 0,
-              background: mobileView === "list" ? "var(--wf-text)" : "transparent",
-              color: mobileView === "list" ? "var(--wf-bg)" : "var(--wf-text-muted)",
+              background: mobileView === "list" ? "var(--wf-ink, #16181B)" : "transparent",
+              color: mobileView === "list" ? "var(--wf-surface, #FFFFFF)" : "var(--wf-text-muted, #5E636B)",
               padding: "6px 14px",
               borderRadius: "var(--wf-radius-pill)",
               fontSize: "13px",
@@ -987,7 +1023,7 @@ export function MapPage({ places, posts, loading }: MapPageProps) {
               gap: "4px",
             }}
           >
-            ☰ Places ({filteredPlaces.length})
+            ☰ Places {loading && places.length === 0 ? "" : `(${filteredPlaces.length})`}
           </button>
         </div>
       </div>
