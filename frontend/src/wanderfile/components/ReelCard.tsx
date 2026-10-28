@@ -85,27 +85,42 @@ export function ReelCard({ post, style }: ReelCardProps) {
             </div>
           )}
 
-          {/* Top-Left IG Glyph Badge */}
+          {/* Top-Left Creator Avatar / Initials */}
           <div
             style={{
               position: "absolute",
               top: "12px",
               left: "12px",
-              width: "26px",
-              height: "26px",
+              width: "28px",
+              height: "28px",
               borderRadius: "50%",
-              background: "rgba(0, 0, 0, 0.6)",
+              background: "rgba(22, 24, 27, 0.75)",
               backdropFilter: "blur(8px)",
               WebkitBackdropFilter: "blur(8px)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               color: "#FFFFFF",
-              fontSize: "13px",
+              fontSize: "11px",
+              fontWeight: 700,
               zIndex: 2,
+              overflow: "hidden",
+              border: "1.5px solid rgba(255, 255, 255, 0.4)",
+              boxShadow: "0 2px 6px rgba(0,0,0,0.25)",
             }}
           >
-            📸
+            {post.author_avatar_url ? (
+              <img
+                src={proxiedMediaUrl(post.author_avatar_url) ?? undefined}
+                alt={creator}
+                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                onError={(e) => {
+                  e.currentTarget.style.display = "none";
+                }}
+              />
+            ) : (
+              <span>{(creator || "CR").slice(0, 2).toUpperCase()}</span>
+            )}
           </div>
 
           {/* Place-Count Badge */}
@@ -150,9 +165,39 @@ export function ReelCard({ post, style }: ReelCardProps) {
               gap: "6px",
             }}
           >
-            <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-              @{creator}
-            </span>
+            <div style={{ display: "flex", alignItems: "center", gap: "6px", minWidth: 0, overflow: "hidden" }}>
+              <div
+                style={{
+                  width: "18px",
+                  height: "18px",
+                  borderRadius: "50%",
+                  background: "rgba(255, 255, 255, 0.25)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "9px",
+                  fontWeight: 700,
+                  flexShrink: 0,
+                  overflow: "hidden",
+                }}
+              >
+                {post.author_avatar_url ? (
+                  <img
+                    src={proxiedMediaUrl(post.author_avatar_url) ?? undefined}
+                    alt=""
+                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                    onError={(e) => {
+                      e.currentTarget.style.display = "none";
+                    }}
+                  />
+                ) : (
+                  <span>{(creator || "CR")[0].toUpperCase()}</span>
+                )}
+              </div>
+              <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                @{creator}
+              </span>
+            </div>
             <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "11px", flexShrink: 0, opacity: 0.95 }}>
               {post.like_count != null && post.like_count > 0 && (
                 <span>♥ {post.like_count >= 1000 ? `${(post.like_count / 1000).toFixed(1)}k` : post.like_count}</span>

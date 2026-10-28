@@ -1,16 +1,16 @@
 import { useState, useRef, useEffect } from "react";
 import { useParams, Link, useLocation, useNavigate } from "react-router-dom";
-import { Share2, Navigation, Compass, Check, ExternalLink } from "lucide-react";
+import { Share2, Navigation, Compass, Check, ExternalLink, MapPin } from "lucide-react";
 import * as maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { EmptyState } from "../components/EmptyState";
 import { ComingSoonButton } from "../comingSoon/ComingSoonControl";
 import { FeatureFlags } from "../comingSoon/featureRegistry";
 import { useToast } from "../state/ToastContext";
-import { getPostTitle, proxiedMediaUrl, capitalizePlaceName, getEffectiveAddress } from "../../postDisplayUtils";
+import { getPostTitle, proxiedMediaUrl, capitalizePlaceName, getEffectiveAddress, getPlaceBestImageUrl } from "../../postDisplayUtils";
 import { getCategoryVisual } from "../categoryVisuals";
 import { cartoMaplibreStyle } from "../../maps";
-import type { Place, SavedPost } from "../../api";
+import { fetchPlaceDetail, type Place, type SavedPost } from "../../api";
 
 export interface FormattedTextResult {
   text: string;
@@ -111,9 +111,27 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
   const { id } = useParams<{ id: string }>();
   const location = useLocation();
   const navigate = useNavigate();
-  const place = places.find((p) => p.place_id === id);
+  const [fetchedPlace, setFetchedPlace] = useState<Place | null>(null);
+  const place = fetchedPlace || places.find((p) => p.place_id === id);
   const [visited, setVisited] = useState(false);
   const { showToast } = useToast();
+
+  useEffect(() => {
+    if (!id) return;
+    let cancelled = false;
+    fetchPlaceDetail(id)
+      .then((detail) => {
+        if (!cancelled && detail?.place) {
+          setFetchedPlace(detail.place);
+        }
+      })
+      .catch((err) => {
+        console.warn("Failed to fetch fresh place detail:", err);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
 
   // Consistent back navigation based on history/location state, defaulting to Map
   const from = (location.state as { from?: string } | null)?.from;
@@ -166,8 +184,11 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
   const relatedPosts = posts.filter(
     (p) => p.place_ids?.includes(place.place_id) || place.source_post_ids?.includes(p.post_id),
   );
+  const bestImg = getPlaceBestImageUrl(place, posts);
   const heroPost = relatedPosts.find((p) => p.thumbnail_url);
-  const heroImageUrl = heroPost?.thumbnail_url
+  const heroImageUrl = bestImg
+    ? proxiedMediaUrl(bestImg)
+    : heroPost?.thumbnail_url
     ? proxiedMediaUrl(heroPost.thumbnail_url)
     : "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80";
 
@@ -339,7 +360,7 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
             overflow: "hidden",
           }}
         >
-          <span style={{ fontSize: "48px" }}>{placeVisual.glyph}</span>
+          <MapPin size={48} color={placeVisual.hue} strokeWidth={1.75} />
           {heroImageUrl && (
             <img
               src={heroImageUrl}
@@ -380,6 +401,29 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
               <span style={{ fontSize: "14px", color: "var(--wf-text-muted, var(--ink-2, #5E636B))" }}>
                 {[place.location?.city, place.location?.state_province, place.location?.country].filter(Boolean).join(", ")}
               </span>
+              {place.facts?.rating != null && (
+                <span
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    fontSize: "13px",
+                    fontWeight: 700,
+                    color: "#D97706",
+                    background: "rgba(245, 158, 11, 0.12)",
+                    padding: "3px 9px",
+                    borderRadius: "999px",
+                    border: "1px solid rgba(245, 158, 11, 0.25)",
+                  }}
+                >
+                  ★ {place.facts.rating.toFixed(1)}
+                  {place.facts.reviews_count ? (
+                    <span style={{ fontWeight: 500, color: "var(--wf-text-muted, #5E636B)", fontSize: "12px" }}>
+                      ({place.facts.reviews_count.toLocaleString()} reviews)
+                    </span>
+                  ) : null}
+                </span>
+              )}
             </div>
 
             <h1

@@ -18,15 +18,17 @@ import {
 import { EmptyState } from "../components/EmptyState";
 import { EditPostModal } from "../components/EditPostModal";
 import { useToast } from "../state/ToastContext";
-import { deletePost, parsePostId, type SavedPost } from "../../api";
-import { proxiedMediaUrl } from "../../postDisplayUtils";
+import { deletePost, parsePostId, type SavedPost, type Place } from "../../api";
+import { proxiedMediaUrl, capitalizePlaceName, getPlaceBestImageUrl } from "../../postDisplayUtils";
+import { getCategoryVisual } from "../categoryVisuals";
 
 interface PostDetailPageProps {
   posts: SavedPost[];
+  places?: Place[];
   onRefresh?: () => void;
 }
 
-export function PostDetailPage({ posts, onRefresh }: PostDetailPageProps) {
+export function PostDetailPage({ posts, places = [], onRefresh }: PostDetailPageProps) {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { showToast } = useToast();
@@ -110,13 +112,49 @@ export function PostDetailPage({ posts, onRefresh }: PostDetailPageProps) {
   const displayTitle = post.title || post.caption || "Saved reel";
   const hasThumbnail = Boolean(post.thumbnail_url && !imgError);
 
-  const extractedPlaces = [
-    ...(post.extracted_places || []).map((p) => ({
+  const canonicalPlaceIds = post.place_ids || [];
+  const canonicalPlaces = canonicalPlaceIds.map((pid) => {
+    const pl = (places || []).find((p) => p.place_id === pid);
+    const vis = getCategoryVisual(pl?.category);
+    const img = pl ? getPlaceBestImageUrl(pl, posts) : null;
+    return {
+      placeId: pid,
+      name: pl ? capitalizePlaceName(pl.display_name) : pid,
+      area: pl ? [pl.location?.city, pl.location?.state_province, pl.location?.country].filter(Boolean).join(", ") : "",
+      category: pl?.category || null,
+      visual: vis,
+      imageUrl: img,
+      isCanonical: true,
+      link: `/place/${pid}`,
+    };
+  });
+
+  // Fallback for extracted places not covered in canonical place_ids
+  const unmappedExtracted = (post.extracted_places || [])
+    .filter((_, idx) => !post.place_ids?.[idx] && canonicalPlaces.length === 0)
+    .map((p) => ({
+      placeId: null,
       name: p.place_name,
       area: [p.city, p.state_province, p.country].filter(Boolean).join(", ") || p.tips?.[0] || "",
-    })),
-    ...customPlaces.map((name) => ({ name, area: "Custom spot" })),
-  ];
+      category: null,
+      visual: getCategoryVisual("other"),
+      imageUrl: null,
+      isCanonical: false,
+      link: null,
+    }));
+
+  const customList = customPlaces.map((name) => ({
+    placeId: null,
+    name,
+    area: "Custom spot",
+    category: null,
+    visual: getCategoryVisual("other"),
+    imageUrl: null,
+    isCanonical: false,
+    link: null,
+  }));
+
+  const resolvedPlaces = [...canonicalPlaces, ...unmappedExtracted, ...customList];
 
   return (
     <main
@@ -319,7 +357,7 @@ export function PostDetailPage({ posts, onRefresh }: PostDetailPageProps) {
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: "16px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
             <h2 className="wf-type-h2" style={{ margin: 0 }}>
-              Extracted places ({extractedPlaces.length})
+              Places in this save ({resolvedPlaces.length})
             </h2>
             {Boolean(post.expected_place_count) && (
               <span
@@ -328,18 +366,18 @@ export function PostDetailPage({ posts, onRefresh }: PostDetailPageProps) {
                   fontWeight: 600,
                   padding: "2px 8px",
                   borderRadius: "999px",
-                  background: extractedPlaces.length >= post.expected_place_count!
+                  background: resolvedPlaces.length >= post.expected_place_count!
                     ? "rgba(16, 185, 129, 0.12)"
                     : "rgba(234, 88, 12, 0.15)",
-                  color: extractedPlaces.length >= post.expected_place_count!
+                  color: resolvedPlaces.length >= post.expected_place_count!
                     ? "#059669"
                     : "#ea580c",
-                  border: extractedPlaces.length >= post.expected_place_count!
+                  border: resolvedPlaces.length >= post.expected_place_count!
                     ? "1px solid rgba(16, 185, 129, 0.3)"
                     : "1px solid rgba(234, 88, 12, 0.3)",
                 }}
               >
-                {extractedPlaces.length} of {post.expected_place_count} places found
+                {resolvedPlaces.length} of {post.expected_place_count} places found
               </span>
             )}
           </div>
@@ -410,60 +448,122 @@ export function PostDetailPage({ posts, onRefresh }: PostDetailPageProps) {
           </div>
         )}
 
-        {extractedPlaces.length === 0 ? (
+        {resolvedPlaces.length === 0 ? (
           <p style={{ color: "var(--wf-text-muted)", fontSize: "14px", margin: 0 }}>
             No specific places detected in this save yet.
           </p>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-            {extractedPlaces.map((item, idx) => (
-              <div
-                key={idx}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  padding: "12px 14px",
-                  borderRadius: "var(--wf-radius-control)",
-                  background: "var(--wf-surface-2)",
-                  border: "1px solid var(--wf-border)",
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                  <MapPin size={18} strokeWidth={1.75} color="var(--wf-primary)" />
-                  <div>
-                    <div style={{ fontSize: "15px", fontWeight: 600, color: "var(--wf-text)" }}>
-                      {item.name}
-                    </div>
-                    {item.area && (
-                      <div style={{ fontSize: "13px", color: "var(--wf-text-muted)" }}>
-                        {item.area}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <Link
-                  to="/map"
+            {resolvedPlaces.map((item, idx) => {
+              const thumbUrl = item.imageUrl ? proxiedMediaUrl(item.imageUrl) : null;
+              return (
+                <div
+                  key={idx}
                   style={{
-                    height: "36px",
-                    padding: "0 12px",
-                    borderRadius: "var(--wf-radius-pill)",
-                    background: "var(--wf-surface)",
-                    border: "1px solid var(--wf-border)",
-                    color: "var(--wf-text)",
-                    fontSize: "13px",
-                    fontWeight: 600,
-                    textDecoration: "none",
-                    display: "inline-flex",
+                    display: "flex",
                     alignItems: "center",
-                    gap: "4px",
+                    justifyContent: "space-between",
+                    padding: "10px 14px",
+                    borderRadius: "var(--wf-radius-control)",
+                    background: "var(--wf-surface-2)",
+                    border: "1px solid var(--wf-border)",
+                    gap: "12px",
                   }}
                 >
-                  <span>Map</span>
-                </Link>
-              </div>
-            ))}
+                  <div style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: 0 }}>
+                    {thumbUrl ? (
+                      <img
+                        src={thumbUrl}
+                        alt={item.name}
+                        style={{
+                          width: "44px",
+                          height: "44px",
+                          borderRadius: "10px",
+                          objectFit: "cover",
+                          flexShrink: 0,
+                        }}
+                      />
+                    ) : (
+                      <div
+                        style={{
+                          width: "44px",
+                          height: "44px",
+                          borderRadius: "10px",
+                          background: item.visual.tint,
+                          color: item.visual.hue,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontSize: "20px",
+                          flexShrink: 0,
+                        }}
+                      >
+                        {item.visual.glyph}
+                      </div>
+                    )}
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontSize: "15px", fontWeight: 700, color: "var(--wf-text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {item.link ? (
+                          <Link to={item.link} style={{ color: "inherit", textDecoration: "none" }} className="wf-hover-underline">
+                            {item.name}
+                          </Link>
+                        ) : (
+                          item.name
+                        )}
+                      </div>
+                      {item.area && (
+                        <div style={{ fontSize: "13px", color: "var(--wf-text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {item.area}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
+                    {item.link && (
+                      <Link
+                        to={item.link}
+                        style={{
+                          height: "36px",
+                          padding: "0 12px",
+                          borderRadius: "var(--wf-radius-pill)",
+                          background: "var(--wf-surface)",
+                          border: "1px solid var(--wf-border)",
+                          color: "var(--wf-primary)",
+                          fontSize: "13px",
+                          fontWeight: 600,
+                          textDecoration: "none",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "4px",
+                        }}
+                      >
+                        <span>Details</span>
+                      </Link>
+                    )}
+                    <Link
+                      to={item.placeId ? `/map?selected=${item.placeId}` : "/map"}
+                      style={{
+                        height: "36px",
+                        padding: "0 12px",
+                        borderRadius: "var(--wf-radius-pill)",
+                        background: "var(--wf-surface)",
+                        border: "1px solid var(--wf-border)",
+                        color: "var(--wf-text)",
+                        fontSize: "13px",
+                        fontWeight: 600,
+                        textDecoration: "none",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "4px",
+                      }}
+                    >
+                      <span>Map</span>
+                    </Link>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </section>

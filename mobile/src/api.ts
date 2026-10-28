@@ -161,6 +161,7 @@ export interface SavedPost {
   secondary_categories?: string[];
   extracted_fashion?: Record<string, any> | null;
   extracted_hair?: Record<string, any> | null;
+  author_avatar_url?: string | null;
 }
 
 export function parsePostId(postId: string): { platform: string; nativeId: string } {

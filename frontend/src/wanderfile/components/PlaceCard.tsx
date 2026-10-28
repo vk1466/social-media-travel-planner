@@ -181,17 +181,32 @@ export function PlaceCard({ place, posts = [], isVisited = false, onToggleVisite
             >
               {place.display_name}
             </h3>
-            <span
-              style={{
-                fontSize: "12px",
-                color: "rgba(255, 255, 255, 0.85)",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {locationText}
-            </span>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "6px" }}>
+              <span
+                style={{
+                  fontSize: "12px",
+                  color: "rgba(255, 255, 255, 0.85)",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                  flex: 1,
+                }}
+              >
+                {locationText}
+              </span>
+              {place.facts?.rating != null && (
+                <span
+                  style={{
+                    fontSize: "12px",
+                    fontWeight: 700,
+                    color: "#FDE047",
+                    flexShrink: 0,
+                  }}
+                >
+                  ★ {place.facts.rating.toFixed(1)}
+                </span>
+              )}
+            </div>
           </div>
         </div>
       </Link>
@@ -221,9 +236,21 @@ export function PlaceCard({ place, posts = [], isVisited = false, onToggleVisite
             fontWeight: 700,
             color: "var(--ink, #16181B)",
             flexShrink: 0,
+            overflow: "hidden",
           }}
         >
-          {creatorHandle[0].toUpperCase()}
+          {matchingPost?.author_avatar_url ? (
+            <img
+              src={proxiedMediaUrl(matchingPost.author_avatar_url) ?? undefined}
+              alt=""
+              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+              onError={(e) => {
+                e.currentTarget.style.display = "none";
+              }}
+            />
+          ) : (
+            creatorHandle[0].toUpperCase()
+          )}
         </div>
         <span style={{ fontWeight: 600, color: "var(--ink, #16181B)" }}>@{creatorHandle}</span>
         <span>·</span>

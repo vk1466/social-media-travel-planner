@@ -385,27 +385,29 @@ export default function PostDetailScreen() {
 
         {(post.place_ids.length > 0 || extracted.length > 0) && (
           <View style={styles.placesSection}>
-            {Boolean(post.expected_place_count) && (
-              <View
-                style={[
-                  styles.coverageBadge,
-                  extracted.length >= post.expected_place_count!
-                    ? { backgroundColor: "rgba(16, 185, 129, 0.12)", borderColor: "rgba(16, 185, 129, 0.3)" }
-                    : null,
-                ]}
-              >
-                <Text
+            {Boolean(post.expected_place_count) && (() => {
+              const count = Math.max(post.place_ids.length, extracted.length);
+              const isComplete = count >= post.expected_place_count!;
+              return (
+                <View
                   style={[
-                    styles.coverageBadgeText,
-                    extracted.length >= post.expected_place_count!
-                      ? { color: "#059669" }
+                    styles.coverageBadge,
+                    isComplete
+                      ? { backgroundColor: "rgba(16, 185, 129, 0.12)", borderColor: "rgba(16, 185, 129, 0.3)" }
                       : null,
                   ]}
                 >
-                  {extracted.length} of {post.expected_place_count} places found
-                </Text>
-              </View>
-            )}
+                  <Text
+                    style={[
+                      styles.coverageBadgeText,
+                      isComplete ? { color: "#059669" } : null,
+                    ]}
+                  >
+                    {count} of {post.expected_place_count} places found
+                  </Text>
+                </View>
+              );
+            })()}
             {post.place_ids.map((placeId) => (
               <Pressable
                 key={placeId}

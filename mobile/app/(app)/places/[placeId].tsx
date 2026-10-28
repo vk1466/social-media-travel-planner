@@ -27,7 +27,7 @@ import { useLibrary } from "@/src/context/LibraryContext";
 import { googleMapsUrl } from "@/src/maps";
 import { compactMentionDetails } from "@/src/mentionDetails";
 import { factsAttribution, factsStructuredRows, stripSourceRef } from "@/src/placeFacts";
-import { capitalizePlaceName, getPlatformLabel, getPostTitle, proxiedMediaUrl } from "@/src/postDisplayUtils";
+import { capitalizePlaceName, getPlatformLabel, getPostTitle, proxiedMediaUrl, getPlaceBestImageUrl } from "@/src/postDisplayUtils";
 import { FeatureFlags } from "@/src/featureRegistry";
 import { appHref } from "@/src/nav";
 import { colors, radius, shadow, spacing } from "@/src/theme";
@@ -186,8 +186,13 @@ export default function PlaceDetailScreen() {
     ? `https://maps.apple.com/?q=${encodeURIComponent(place.display_name)}&ll=${place.location.latitude},${place.location.longitude}`
     : `https://maps.apple.com/?q=${encodeURIComponent(place.display_name)}`;
   const breadcrumb = locationBreadcrumb(place);
+  const bestImg = getPlaceBestImageUrl(place, sourcePosts);
   const heroPost = sourcePosts.find((p) => p.thumbnail_url);
-  const heroImageUrl = heroPost?.thumbnail_url ? proxiedMediaUrl(heroPost.thumbnail_url) : null;
+  const heroImageUrl = bestImg
+    ? proxiedMediaUrl(bestImg)
+    : heroPost?.thumbnail_url
+    ? proxiedMediaUrl(heroPost.thumbnail_url)
+    : null;
   const postTips = sourcePosts.flatMap((p) => (p.extracted_places || []).flatMap((ep) => ep.tips || []));
   const rawTips = Array.from(new Set([...(place.tips || []), ...postTips].filter(Boolean)));
   const summaryLower = (place.summary || "").trim().toLowerCase();
@@ -261,6 +266,18 @@ export default function PlaceDetailScreen() {
               {(place.attributes ?? []).map((attr) => (
                 <TagChip key={attr} label={attr} />
               ))}
+              {place.facts?.rating != null ? (
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 3, backgroundColor: "#FEF3C7", paddingHorizontal: 8, paddingVertical: 4, borderRadius: 999, borderWidth: 1, borderColor: "#FDE68A" }}>
+                  <Text style={{ fontSize: 12, fontWeight: "700", color: "#B45309" }}>
+                    ★ {place.facts.rating.toFixed(1)}
+                  </Text>
+                  {place.facts.reviews_count ? (
+                    <Text style={{ fontSize: 11, fontWeight: "500", color: "#92400E" }}>
+                      ({place.facts.reviews_count >= 1000 ? `${Math.round(place.facts.reviews_count / 1000)}k` : place.facts.reviews_count})
+                    </Text>
+                  ) : null}
+                </View>
+              ) : null}
             </View>
             <Text style={styles.breadcrumb}>{breadcrumb}</Text>
             <Text style={styles.title}>{placeTitle}</Text>

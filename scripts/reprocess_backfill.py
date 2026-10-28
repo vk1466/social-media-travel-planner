@@ -133,6 +133,46 @@ CURATED_FACTS: dict[str, dict] = {
     "admission": "Free public landmark",
     "famous_for": "World-famous pedestrian scramble crossing in Tokyo",
   },
+  "it-lazio-rome-trastevere": {
+    "hours": ["Open 24 hours daily"],
+    "rating": 4.7,
+    "reviews": 48000,
+    "admission": "Free public neighborhood",
+    "famous_for": "Charming bohemian medieval neighborhood famous for lively piazzas and trattorias",
+  },
+  "it-lazio-rome-spanish-steps": {
+    "hours": ["Open 24 hours daily"],
+    "rating": 4.6,
+    "reviews": 185000,
+    "admission": "Free public monument",
+    "famous_for": "Monumental stairway of 135 steps connecting Piazza di Spagna and Trinità dei Monti",
+  },
+  "it-lazio-rome-villa-borghese-park": {
+    "hours": ["Open daily from dawn to dusk"],
+    "rating": 4.7,
+    "reviews": 95000,
+    "admission": "Free public park",
+    "famous_for": "Expansive landscaped public park featuring museums, gardens, and scenic walking paths",
+  },
+  "br-espirito-santo-vila-velha-ponte-deputado-darcy-castello-de-mendonca": {
+    "hours": ["Open 24 hours daily"],
+    "rating": 4.8,
+    "reviews": 22000,
+    "admission": "Free public bridge",
+    "famous_for": "Iconic cable-stayed bridge spanning the bay between Vitória and Vila Velha",
+  },
+}
+
+CURATED_PHOTOS: dict[str, str] = {
+  "it-lazio-rome-colosseum": "https://images.unsplash.com/photo-1509356843151-3e7d96241e11?auto=format&fit=crop&w=1000&q=80",
+  "it-lazio-rome-roman-forum": "https://images.unsplash.com/photo-1552832230-c0197dd311b5?auto=format&fit=crop&w=1000&q=80",
+  "jp-sumida-thap-truyen-hinh-sky-tree": "https://images.unsplash.com/photo-1542051841857-5f90071e7989?auto=format&fit=crop&w=1000&q=80",
+  "it-lazio-rome-trastevere": "https://images.unsplash.com/photo-1529260830199-42c24126f198?auto=format&fit=crop&w=1000&q=80",
+  "it-lazio-rome-trevi-fountain": "https://images.unsplash.com/photo-1525874684015-58379d421a52?auto=format&fit=crop&w=1000&q=80",
+  "it-lazio-rome-spanish-steps": "https://images.unsplash.com/photo-1515542622106-78bda8ba0e5b?auto=format&fit=crop&w=1000&q=80",
+  "it-lazio-rome-villa-borghese-park": "https://images.unsplash.com/photo-1516483638261-f4dbaf036963?auto=format&fit=crop&w=1000&q=80",
+  "br-espirito-santo-vila-velha-ponte-deputado-darcy-castello-de-mendonca": "https://images.unsplash.com/photo-1596484552834-6a58f850e0a1?auto=format&fit=crop&w=1000&q=80",
+  "it-lazio-rome-giardino-degli-aranci": "https://images.unsplash.com/photo-1531572753322-ad063cecc140?auto=format&fit=crop&w=1000&q=80",
 }
 
 
@@ -200,6 +240,7 @@ def fix_orange_garden(dry_run: bool = False) -> None:
     summary="Park on the Aventine Hill in Rome, Italy, famous for fragrant bitter orange trees and panoramic terrace views.",
     source_post_ids=source_post_ids,
     facts=facts,
+    image_url=CURATED_PHOTOS.get(target_place_id),
   )
 
   if not dry_run:
@@ -255,8 +296,8 @@ def fix_orange_garden(dry_run: bool = False) -> None:
 
 
 def enrich_facts_for_places(dry_run: bool = False) -> None:
-  """Populate place facts for key places."""
-  logger.info("Enriching place facts for key places...")
+  """Populate place facts and photos for key places."""
+  logger.info("Enriching place facts and photos for key places...")
   for place_id, data in CURATED_FACTS.items():
     place = load_place(place_id)
     if not place:
@@ -293,12 +334,27 @@ def enrich_facts_for_places(dry_run: bool = False) -> None:
       ),
     )
 
-    updated = replace(place, display_name=display_name, facts=facts)
+    photo_url = CURATED_PHOTOS.get(place_id) or place.image_url
+    updated = replace(place, display_name=display_name, facts=facts, image_url=photo_url)
     if not dry_run:
       save_place(updated)
-      logger.info("Enriched facts for %s (%s)", place_id, display_name)
+      logger.info("Enriched facts & photo for %s (%s, photo=%s)", place_id, display_name, bool(photo_url))
     else:
-      logger.info("[DRY RUN] Would enrich facts for %s (%s)", place_id, display_name)
+      logger.info("[DRY RUN] Would enrich facts & photo for %s (%s)", place_id, display_name)
+
+  # Also ensure any other places in CURATED_PHOTOS have image_url set
+  for place_id, photo_url in CURATED_PHOTOS.items():
+    if place_id in CURATED_FACTS:
+      continue
+    place = load_place(place_id)
+    if not place:
+      continue
+    updated = replace(place, image_url=photo_url)
+    if not dry_run:
+      save_place(updated)
+      logger.info("Enriched photo for %s (%s)", place_id, place.display_name)
+    else:
+      logger.info("[DRY RUN] Would enrich photo for %s (%s)", place_id, place.display_name)
 
 
 def reprocess_all_posts(dry_run: bool = False) -> int:

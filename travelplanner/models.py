@@ -177,6 +177,7 @@ class Place:
   facts: PlaceFacts | None = None
   google_maps_url: str | None = None
   summary: str | None = None
+  image_url: str | None = None
 
 
 VISIT_SOURCES = frozenset({"manual", "instagram", "timeline"})

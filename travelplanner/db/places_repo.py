@@ -118,6 +118,7 @@ def place_from_dict(data: dict) -> Place:
     facts=_facts_from_dict(data.get("facts")),
     google_maps_url=data.get("google_maps_url"),
     summary=data.get("summary"),
+    image_url=data.get("image_url"),
   )
 
 

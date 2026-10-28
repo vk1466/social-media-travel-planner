@@ -75,7 +75,8 @@ export const OSM_BASEMAP_ATTR =
 export const OPENFREEMAP_BASEMAP_ATTR =
   '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://openfreemap.org">OpenFreeMap</a>';
 
-export const CARTO_BASEMAP_ATTR = OPENFREEMAP_BASEMAP_ATTR;
+export const CARTO_BASEMAP_ATTR =
+  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>';
 
 export function osmStandardTileUrl(): string {
   return "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
@@ -106,9 +107,36 @@ export function cartoDarkTileUrl(): string {
   return "https://a.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}@2x.png";
 }
 
-/** MapLibre style definition for OpenFreeMap Positron / CARTO Dark Matter basemaps (zero watermark). */
-export function cartoMaplibreStyle(isDark = false): string {
-  return openFreeMapStyleUrl(isDark);
+/** MapLibre style definition for CARTO Voyager (light) / Dark Matter (dark) basemaps (clean minimal basemap showing subtle land, water, major roads, zero POI clutter). */
+export function cartoMaplibreStyle(isDark = false): maplibregl.StyleSpecification {
+  const tileBase = isDark
+    ? "https://{s}.basemaps.cartocdn.com/rastertiles/dark_nolabels/{z}/{x}/{y}@2x.png"
+    : "https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}@2x.png";
+
+  const subdomains = ["a", "b", "c", "d"];
+  const tiles = subdomains.map((s) => tileBase.replace("{s}", s));
+
+  return {
+    version: 8,
+    name: isDark ? "CARTO Dark" : "CARTO Voyager",
+    sources: {
+      "carto-tiles": {
+        type: "raster",
+        tiles,
+        tileSize: 256,
+        attribution: CARTO_BASEMAP_ATTR,
+      },
+    },
+    layers: [
+      {
+        id: "carto-tiles-layer",
+        type: "raster",
+        source: "carto-tiles",
+        minzoom: 0,
+        maxzoom: 20,
+      },
+    ],
+  };
 }
 
 /** OpenStreetMap embed (no API key) for a Google-Maps-like preview. */

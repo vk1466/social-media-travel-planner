@@ -85,7 +85,7 @@ export function WanderfileApp({
                   <Route path="/places/:placeId" element={<Navigate to="/map" replace />} />
                   <Route path="/collections" element={<CollectionsPage posts={posts} places={places} />} />
                   <Route path="/collections/:id" element={<CollectionDetailPage posts={posts} />} />
-                  <Route path="/post/:id" element={<PostDetailPage posts={posts} onRefresh={onRefresh} />} />
+                  <Route path="/post/:id" element={<PostDetailPage posts={posts} places={places} onRefresh={onRefresh} />} />
                   <Route path="/place/:id" element={<PlaceDetailPage places={places} posts={posts} />} />
                   <Route path="/settings" element={<SettingsPage posts={posts} places={places} isAdmin={isAdmin} onRefresh={onRefresh} />} />
                   <Route path="/inbox" element={<NeedsAttentionPage />} />

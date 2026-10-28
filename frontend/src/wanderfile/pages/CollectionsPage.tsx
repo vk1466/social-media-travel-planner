@@ -29,6 +29,7 @@ function CollectionMosaic({
   title: string;
   visual?: CategoryVisual;
 }) {
+  const vis = visual || getCategoryVisual(title);
   const distinct = useMemo(() => {
     const set = new Set<string>();
     const res: string[] = [];
@@ -41,8 +42,11 @@ function CollectionMosaic({
     return res;
   }, [thumbnails]);
 
-  if (distinct.length === 0) {
-    const vis = visual || getCategoryVisual(title);
+  const [failedIndices, setFailedIndices] = useState<Set<number>>(new Set());
+
+  const validThumbs = distinct.filter((_, idx) => !failedIndices.has(idx));
+
+  if (validThumbs.length === 0) {
     return (
       <div
         style={{
@@ -66,7 +70,7 @@ function CollectionMosaic({
     );
   }
 
-  if (distinct.length === 1) {
+  if (validThumbs.length === 1) {
     return (
       <div
         style={{
@@ -75,23 +79,21 @@ function CollectionMosaic({
           borderRadius: "14px",
           overflow: "hidden",
           position: "relative",
-          background: "var(--surface-2, #F3F3F1)",
+          background: vis.tint,
         }}
       >
         <img
-          src={proxiedMediaUrl(distinct[0]) ?? undefined}
+          src={proxiedMediaUrl(validThumbs[0]) ?? undefined}
           alt=""
           loading="lazy"
           style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-          onError={(e) => {
-            e.currentTarget.style.display = "none";
-          }}
+          onError={() => setFailedIndices((prev) => new Set([...prev, 0]))}
         />
       </div>
     );
   }
 
-  if (distinct.length === 2) {
+  if (validThumbs.length === 2) {
     return (
       <div
         style={{
@@ -102,19 +104,17 @@ function CollectionMosaic({
           display: "grid",
           gridTemplateColumns: "1fr 1fr",
           gap: "3px",
-          background: "var(--surface-2, #F3F3F1)",
+          background: vis.tint,
         }}
       >
-        {distinct.slice(0, 2).map((thumb, idx) => (
+        {validThumbs.slice(0, 2).map((thumb, idx) => (
           <div key={idx} style={{ position: "relative", width: "100%", height: "100%", overflow: "hidden" }}>
             <img
               src={proxiedMediaUrl(thumb) ?? undefined}
               alt=""
               loading="lazy"
               style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-              onError={(e) => {
-                e.currentTarget.style.display = "none";
-              }}
+              onError={() => setFailedIndices((prev) => new Set([...prev, idx]))}
             />
           </div>
         ))}
@@ -122,7 +122,7 @@ function CollectionMosaic({
     );
   }
 
-  if (distinct.length === 3) {
+  if (validThumbs.length === 3) {
     return (
       <div
         style={{
@@ -134,30 +134,26 @@ function CollectionMosaic({
           gridTemplateColumns: "1fr 1fr",
           gridTemplateRows: "1.2fr 1fr",
           gap: "3px",
-          background: "var(--surface-2, #F3F3F1)",
+          background: vis.tint,
         }}
       >
         <div style={{ gridColumn: "1 / -1", position: "relative", width: "100%", height: "100%", overflow: "hidden" }}>
           <img
-            src={proxiedMediaUrl(distinct[0]) ?? undefined}
+            src={proxiedMediaUrl(validThumbs[0]) ?? undefined}
             alt=""
             loading="lazy"
             style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-            onError={(e) => {
-              e.currentTarget.style.display = "none";
-            }}
+            onError={() => setFailedIndices((prev) => new Set([...prev, 0]))}
           />
         </div>
-        {distinct.slice(1, 3).map((thumb, idx) => (
+        {validThumbs.slice(1, 3).map((thumb, idx) => (
           <div key={idx} style={{ position: "relative", width: "100%", height: "100%", overflow: "hidden" }}>
             <img
               src={proxiedMediaUrl(thumb) ?? undefined}
               alt=""
               loading="lazy"
               style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-              onError={(e) => {
-                e.currentTarget.style.display = "none";
-              }}
+              onError={() => setFailedIndices((prev) => new Set([...prev, idx + 1]))}
             />
           </div>
         ))}
@@ -177,19 +173,17 @@ function CollectionMosaic({
         gridTemplateColumns: "1fr 1fr",
         gridTemplateRows: "1fr 1fr",
         gap: "3px",
-        background: "var(--surface-2, #F3F3F1)",
+        background: vis.tint,
       }}
     >
-      {distinct.slice(0, 4).map((thumb, idx) => (
+      {validThumbs.slice(0, 4).map((thumb, idx) => (
         <div key={idx} style={{ position: "relative", width: "100%", height: "100%", overflow: "hidden" }}>
           <img
             src={proxiedMediaUrl(thumb) ?? undefined}
             alt=""
             loading="lazy"
             style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-            onError={(e) => {
-              e.currentTarget.style.display = "none";
-            }}
+            onError={() => setFailedIndices((prev) => new Set([...prev, idx]))}
           />
         </div>
       ))}
@@ -200,23 +194,24 @@ function CollectionMosaic({
 export function CollectionsPage({ posts, places }: CollectionsPageProps) {
   const [activeFilter, setActiveFilter] = useState<"all" | "city" | "category" | "creator">("all");
 
-  // Auto-collections: By City
-  const cityCollections = useMemo<CollectionItem[]>(() => {
-    const map = new Map<string, { count: number; places: typeof places }>();
+  const { cityCollections, categoryCollections, creatorCollections } = useMemo(() => {
+    const usedThumbs = new Set<string>();
+
+    // 1. City collections
+    const cityMap = new Map<string, { count: number; places: typeof places }>();
     for (const place of places) {
       const city = place.location?.city;
       if (!city) continue;
-      const data = map.get(city) || { count: 0, places: [] };
+      const data = cityMap.get(city) || { count: 0, places: [] };
       data.count += 1;
       data.places.push(place);
-      map.set(city, data);
+      cityMap.set(city, data);
     }
-    const sortedCities = Array.from(map.entries()).sort((a, b) => b[1].count - a[1].count);
+    const sortedCities = Array.from(cityMap.entries()).sort((a, b) => b[1].count - a[1].count);
 
-    const usedThumbs = new Set<string>();
-    return sortedCities.map(([city, data]) => {
+    const cities: CollectionItem[] = sortedCities.map(([city, data]) => {
       const thumbs: string[] = [];
-      // 1. Pick images not yet used in previous city collection covers
+      // Pick images not yet used in previous collection covers
       for (const place of data.places) {
         if (thumbs.length >= 4) break;
         const img = getPlaceBestImageUrl(place, posts);
@@ -225,7 +220,7 @@ export function CollectionsPage({ posts, places }: CollectionsPageProps) {
           usedThumbs.add(img);
         }
       }
-      // 2. Search matching posts not yet used
+      // Search matching posts if needed
       if (thumbs.length < 4) {
         for (const post of posts) {
           if (thumbs.length >= 4) break;
@@ -238,16 +233,7 @@ export function CollectionsPage({ posts, places }: CollectionsPageProps) {
           }
         }
       }
-      // 3. Fallback: if still completely empty, allow reused images
-      if (thumbs.length === 0) {
-        for (const place of data.places) {
-          if (thumbs.length >= 4) break;
-          const img = getPlaceBestImageUrl(place, posts);
-          if (img && !thumbs.includes(img)) {
-            thumbs.push(img);
-          }
-        }
-      }
+      // Never allow reused images! If 0 images, fallback to designed gradient cover
       return {
         id: `city-${city}`,
         title: city,
@@ -258,12 +244,9 @@ export function CollectionsPage({ posts, places }: CollectionsPageProps) {
         link: `/library?city=${encodeURIComponent(city)}&tab=places`,
       };
     });
-  }, [places, posts]);
 
-  // Auto-collections: By Category
-  const categoryCollections = useMemo<CollectionItem[]>(() => {
-    const usedThumbs = new Set<string>();
-    return CANONICAL_CATEGORIES.map((cat) => {
+    // 2. Category collections
+    const categories: CollectionItem[] = CANONICAL_CATEGORIES.map((cat) => {
       const vis = getCategoryVisual(cat);
       const catPlaces = places.filter((p) => getCategoryVisual(p.category).name === cat);
       const thumbs: string[] = [];
@@ -275,15 +258,7 @@ export function CollectionsPage({ posts, places }: CollectionsPageProps) {
           usedThumbs.add(img);
         }
       }
-      if (thumbs.length === 0) {
-        for (const p of catPlaces) {
-          if (thumbs.length >= 4) break;
-          const img = getPlaceBestImageUrl(p, posts);
-          if (img && !thumbs.includes(img)) {
-            thumbs.push(img);
-          }
-        }
-      }
+      // Never allow reused images! If 0 images, fallback to designed gradient cover
       return {
         id: `cat-${cat}`,
         title: cat,
@@ -295,33 +270,32 @@ export function CollectionsPage({ posts, places }: CollectionsPageProps) {
         link: `/library?category=${encodeURIComponent(cat)}&tab=places`,
       };
     }).filter((c) => c.count > 0);
-  }, [places, posts]);
 
-  // Auto-collections: By Creator
-  const creatorCollections = useMemo<CollectionItem[]>(() => {
-    const map = new Map<string, { count: number; thumbs: string[] }>();
+    // 3. Creator collections
+    const creatorMap = new Map<string, { count: number; thumbs: string[] }>();
     for (const post of posts) {
       const creator = post.author_handle;
       if (!creator) continue;
-      const data = map.get(creator) || { count: 0, thumbs: [] };
+      const data = creatorMap.get(creator) || { count: 0, thumbs: [] };
       data.count += (post.place_ids?.length || 1);
-      if (post.thumbnail_url && data.thumbs.length < 4 && !data.thumbs.includes(post.thumbnail_url)) {
+      if (post.thumbnail_url && data.thumbs.length < 4 && !usedThumbs.has(post.thumbnail_url) && !data.thumbs.includes(post.thumbnail_url)) {
         data.thumbs.push(post.thumbnail_url);
+        usedThumbs.add(post.thumbnail_url);
       }
-      // Also check places from this post
       for (const pid of post.place_ids || []) {
         if (data.thumbs.length >= 4) break;
         const pl = places.find((p) => p.place_id === pid);
         if (pl) {
           const img = getPlaceBestImageUrl(pl, posts);
-          if (img && !data.thumbs.includes(img)) {
+          if (img && !usedThumbs.has(img) && !data.thumbs.includes(img)) {
             data.thumbs.push(img);
+            usedThumbs.add(img);
           }
         }
       }
-      map.set(creator, data);
+      creatorMap.set(creator, data);
     }
-    return Array.from(map.entries())
+    const creators: CollectionItem[] = Array.from(creatorMap.entries())
       .map(([creator, data]) => ({
         id: `creator-${creator}`,
         title: `@${creator}`,
@@ -333,6 +307,8 @@ export function CollectionsPage({ posts, places }: CollectionsPageProps) {
       }))
       .filter((c) => c.count > 1)
       .sort((a, b) => b.count - a.count);
+
+    return { cityCollections: cities, categoryCollections: categories, creatorCollections: creators };
   }, [places, posts]);
 
   const allAutoCollections = useMemo(() => {

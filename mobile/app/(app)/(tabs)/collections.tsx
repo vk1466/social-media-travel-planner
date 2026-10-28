@@ -139,23 +139,24 @@ export default function MobileCollectionsScreen() {
   const { posts, places } = useLibrary();
   const [activeFilter, setActiveFilter] = useState<"all" | "city" | "category" | "creator">("all");
 
-  // Auto-collections by City
-  const cityCollections = useMemo<CollectionItem[]>(() => {
-    const map = new Map<string, { count: number; places: typeof places }>();
+  const { cityCollections, categoryCollections, creatorCollections } = useMemo(() => {
+    const usedThumbs = new Set<string>();
+
+    // 1. City collections
+    const cityMap = new Map<string, { count: number; places: typeof places }>();
     for (const place of places) {
       const city = place.location?.city;
       if (!city) continue;
-      const data = map.get(city) || { count: 0, places: [] };
+      const data = cityMap.get(city) || { count: 0, places: [] };
       data.count += 1;
       data.places.push(place);
-      map.set(city, data);
+      cityMap.set(city, data);
     }
-    const sortedCities = Array.from(map.entries()).sort((a, b) => b[1].count - a[1].count);
+    const sortedCities = Array.from(cityMap.entries()).sort((a, b) => b[1].count - a[1].count);
 
-    const usedThumbs = new Set<string>();
-    return sortedCities.map(([city, data]) => {
+    const cities: CollectionItem[] = sortedCities.map(([city, data]) => {
       const thumbs: string[] = [];
-      // 1. Pick images not yet used in previous city collection covers
+      // Pick images not yet used in previous collection covers
       for (const place of data.places) {
         if (thumbs.length >= 4) break;
         const img = getPlaceBestImageUrl(place, posts);
@@ -164,7 +165,7 @@ export default function MobileCollectionsScreen() {
           usedThumbs.add(img);
         }
       }
-      // 2. Search matching posts not yet used
+      // Search matching posts if needed
       if (thumbs.length < 4) {
         for (const post of posts) {
           if (thumbs.length >= 4) break;
@@ -177,16 +178,6 @@ export default function MobileCollectionsScreen() {
           }
         }
       }
-      // 3. Fallback: if still completely empty, allow reused images
-      if (thumbs.length === 0) {
-        for (const place of data.places) {
-          if (thumbs.length >= 4) break;
-          const img = getPlaceBestImageUrl(place, posts);
-          if (img && !thumbs.includes(img)) {
-            thumbs.push(img);
-          }
-        }
-      }
       return {
         id: `city-${city}`,
         title: city,
@@ -196,12 +187,9 @@ export default function MobileCollectionsScreen() {
         route: "/(app)/(tabs)/travel",
       };
     });
-  }, [places, posts]);
 
-  // Auto-collections by Category
-  const categoryCollections = useMemo<CollectionItem[]>(() => {
-    const usedThumbs = new Set<string>();
-    return CANONICAL_CATEGORIES.map((cat) => {
+    // 2. Category collections
+    const categories: CollectionItem[] = CANONICAL_CATEGORIES.map((cat) => {
       const vis = getCategoryVisual(cat);
       const catPlaces = places.filter((p) => getCategoryVisual(p.category).name === cat);
       const thumbs: string[] = [];
@@ -211,15 +199,6 @@ export default function MobileCollectionsScreen() {
         if (img && !usedThumbs.has(img) && !thumbs.includes(img)) {
           thumbs.push(img);
           usedThumbs.add(img);
-        }
-      }
-      if (thumbs.length === 0) {
-        for (const p of catPlaces) {
-          if (thumbs.length >= 4) break;
-          const img = getPlaceBestImageUrl(p, posts);
-          if (img && !thumbs.includes(img)) {
-            thumbs.push(img);
-          }
         }
       }
       return {
@@ -232,33 +211,45 @@ export default function MobileCollectionsScreen() {
         route: "/(app)/(tabs)/travel",
       };
     }).filter((c) => c.count > 0);
-  }, [places, posts]);
 
-  // Auto-collections by Creator
-  const creatorCollections = useMemo<CollectionItem[]>(() => {
-    const map = new Map<string, { count: number; thumbs: string[] }>();
+    // 3. Creator collections
+    const creatorMap = new Map<string, { count: number; thumbs: string[] }>();
     for (const post of posts) {
       const creator = post.author_handle;
       if (!creator) continue;
-      const data = map.get(creator) || { count: 0, thumbs: [] };
+      const data = creatorMap.get(creator) || { count: 0, thumbs: [] };
       data.count += (post.place_ids?.length || 1);
-      if (post.thumbnail_url && data.thumbs.length < 4 && !data.thumbs.includes(post.thumbnail_url)) {
+      if (post.thumbnail_url && data.thumbs.length < 4 && !usedThumbs.has(post.thumbnail_url) && !data.thumbs.includes(post.thumbnail_url)) {
         data.thumbs.push(post.thumbnail_url);
+        usedThumbs.add(post.thumbnail_url);
       }
-      map.set(creator, data);
+      for (const pid of post.place_ids || []) {
+        if (data.thumbs.length >= 4) break;
+        const pl = places.find((p) => p.place_id === pid);
+        if (pl) {
+          const img = getPlaceBestImageUrl(pl, posts);
+          if (img && !usedThumbs.has(img) && !data.thumbs.includes(img)) {
+            data.thumbs.push(img);
+            usedThumbs.add(img);
+          }
+        }
+      }
+      creatorMap.set(creator, data);
     }
-    return Array.from(map.entries())
+    const creators: CollectionItem[] = Array.from(creatorMap.entries())
       .map(([creator, data]) => ({
         id: `creator-${creator}`,
         title: `@${creator}`,
         subtitle: "Creator guides",
         count: data.count,
         thumbnails: data.thumbs,
-        route: "/(app)/(tabs)/posts",
+        route: "/(app)/(tabs)/travel",
       }))
       .filter((c) => c.count > 1)
       .sort((a, b) => b.count - a.count);
-  }, [posts]);
+
+    return { cityCollections: cities, categoryCollections: categories, creatorCollections: creators };
+  }, [places, posts]);
 
   const displayedCollections = useMemo(() => {
     if (activeFilter === "city") return cityCollections;
