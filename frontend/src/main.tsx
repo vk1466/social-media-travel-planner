@@ -114,6 +114,23 @@ function MissingClerkKey() {
   );
 }
 
+function AuthLoadingSkeleton() {
+  const { isLoaded } = useAuth();
+  if (isLoaded) {
+    return null;
+  }
+  return (
+    <div className="wf-boot-skeleton" aria-busy="true" aria-label="Loading Wanderfile">
+      <div className="wf-boot-bar" />
+      <div className="wf-boot-grid">
+        {[0, 1, 2, 3, 4, 5].map((i) => (
+          <div key={i} className="wf-boot-card" />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function Root() {
   if (useLocalDevAuth) {
     return (
@@ -138,6 +155,7 @@ function Root() {
               path="*"
               element={
                 <>
+                  <AuthLoadingSkeleton />
                   <Show when="signed-out">
                     <SignedOutGate />
                   </Show>

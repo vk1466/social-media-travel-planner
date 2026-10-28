@@ -89,67 +89,67 @@ export function openFreeMapStyleUrl(isDark = false): string {
     : "https://tiles.openfreemap.org/styles/positron";
 }
 
-/** Clean, keyless raster tiles with zero watermark (fallback for Leaflet). */
-export function cartoPositronTileUrl(_isDark = false): string {
-  return osmStandardTileUrl();
+export const ESRI_BASEMAP_ATTR =
+  'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ, &copy; OpenStreetMap contributors';
+
+export function cartoPositronTileUrl(isDark = false): string {
+  return isDark
+    ? "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}"
+    : "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}";
 }
 
 /** Legacy alias */
 export function cartoVoyagerTileUrl(): string {
-  return osmStandardTileUrl();
+  return cartoPositronTileUrl(false);
 }
 
 export function cartoLightNoLabelsTileUrl(): string {
-  return osmStandardTileUrl();
+  return cartoPositronTileUrl(false);
 }
 
 export function cartoDarkTileUrl(): string {
-  return "https://a.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}@2x.png";
+  return cartoPositronTileUrl(true);
 }
 
-/** MapLibre style definition for CARTO Voyager (light) / Dark Matter (dark) basemaps (clean minimal basemap showing subtle land, water, major roads, and city/area labels only, zero POI/shop clutter). */
+/** MapLibre style definition for minimal basemap (subtle land, water, major roads, and minimal labels, zero POI/shop clutter). */
 export function cartoMaplibreStyle(isDark = false): maplibregl.StyleSpecification {
   const baseTile = isDark
-    ? "https://{s}.basemaps.cartocdn.com/rastertiles/dark_nolabels/{z}/{x}/{y}@2x.png"
-    : "https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}@2x.png";
+    ? "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}"
+    : "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}";
   const labelTile = isDark
-    ? "https://{s}.basemaps.cartocdn.com/rastertiles/dark_only_labels/{z}/{x}/{y}@2x.png"
-    : "https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}@2x.png";
-
-  const subdomains = ["a", "b", "c", "d"];
-  const baseTiles = subdomains.map((s) => baseTile.replace("{s}", s));
-  const labelTiles = subdomains.map((s) => labelTile.replace("{s}", s));
+    ? "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}"
+    : "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}";
 
   return {
     version: 8,
-    name: isDark ? "CARTO Dark Minimal" : "CARTO Voyager Minimal",
+    name: isDark ? "Esri Dark Canvas Minimal" : "Esri Light Canvas Minimal",
     sources: {
-      "carto-base": {
+      "esri-base": {
         type: "raster",
-        tiles: baseTiles,
+        tiles: [baseTile],
         tileSize: 256,
-        attribution: CARTO_BASEMAP_ATTR,
+        attribution: ESRI_BASEMAP_ATTR,
       },
-      "carto-labels": {
+      "esri-labels": {
         type: "raster",
-        tiles: labelTiles,
+        tiles: [labelTile],
         tileSize: 256,
       },
     },
     layers: [
       {
-        id: "carto-base-layer",
+        id: "esri-base-layer",
         type: "raster",
-        source: "carto-base",
+        source: "esri-base",
         minzoom: 0,
-        maxzoom: 20,
+        maxzoom: 19,
       },
       {
-        id: "carto-labels-layer",
+        id: "esri-labels-layer",
         type: "raster",
-        source: "carto-labels",
+        source: "esri-labels",
         minzoom: 0,
-        maxzoom: 20,
+        maxzoom: 19,
       },
     ],
   };

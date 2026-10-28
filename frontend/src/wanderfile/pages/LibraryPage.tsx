@@ -292,20 +292,25 @@ export function LibraryPage({ posts, places = [], loading, onRefresh }: LibraryP
                 openSaveSheet(pasted);
               }
             }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                const trimmed = searchQuery.trim();
+                if (
+                  trimmed.startsWith("http://") ||
+                  trimmed.startsWith("https://") ||
+                  trimmed.includes("instagram.com") ||
+                  trimmed.includes("instagr.am")
+                ) {
+                  e.preventDefault();
+                  const cleared = new URLSearchParams(searchParams);
+                  cleared.delete("q");
+                  setSearchParams(cleared);
+                  openSaveSheet(trimmed);
+                }
+              }
+            }}
             onChange={(e) => {
               const val = e.target.value;
-              if (
-                val.includes("instagram.com/reel") ||
-                val.includes("instagram.com/p/") ||
-                val.includes("instagr.am/") ||
-                ((val.includes("instagram.com") || val.includes("instagr.am")) &&
-                  (val.startsWith("http://") || val.startsWith("https://"))) ||
-                val.startsWith("http://") ||
-                val.startsWith("https://")
-              ) {
-                openSaveSheet(val.trim());
-                return;
-              }
               const next = new URLSearchParams(searchParams);
               if (val) next.set("q", val);
               else next.delete("q");

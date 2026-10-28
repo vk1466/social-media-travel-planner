@@ -227,11 +227,11 @@ function markerPayload(places: Place[], visitedPlaceIds: ReadonlySet<string>): s
 
 function buildMapHtml(isDark = false): string {
   const baseTileUrl = isDark
-    ? "https://{s}.basemaps.cartocdn.com/rastertiles/dark_nolabels/{z}/{x}/{y}@2x.png"
-    : "https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}@2x.png";
+    ? "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}"
+    : "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}";
   const labelsTileUrl = isDark
-    ? "https://{s}.basemaps.cartocdn.com/rastertiles/dark_only_labels/{z}/{x}/{y}@2x.png"
-    : "https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}@2x.png";
+    ? "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}"
+    : "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}";
   const bgColor = isDark ? "#0E0F11" : "#FAFAF9";
   const inkColor = isDark ? "#23272E" : "#16181B";
   const haloColor = isDark ? "rgba(255, 255, 255, 0.15)" : "rgba(22, 24, 27, 0.18)";
@@ -378,13 +378,11 @@ function buildMapHtml(isDark = false): string {
     L.control.attribution({ position: "bottomleft", prefix: false }).addTo(map);
 
     L.tileLayer(${JSON.stringify(baseTileUrl)}, {
-      subdomains: "abcd",
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+      attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ',
       maxZoom: 19
     }).addTo(map);
 
     L.tileLayer(${JSON.stringify(labelsTileUrl)}, {
-      subdomains: "abcd",
       maxZoom: 19
     }).addTo(map);
 

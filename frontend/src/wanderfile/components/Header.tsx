@@ -650,18 +650,7 @@ export function Header({
                 }
               }}
               onChange={(e) => {
-                const val = e.target.value;
-                if (
-                  /\/reel\/[\w-]+/.test(val) ||
-                  /\/reels\/[\w-]+/.test(val) ||
-                  /\/p\/[\w-]+/.test(val) ||
-                  /instagr\.am\/[\w-]+/.test(val)
-                ) {
-                  setInputValue("");
-                  openSaveSheet(val.trim());
-                  return;
-                }
-                setInputValue(val);
+                setInputValue(e.target.value);
               }}
               style={{
                 flex: "1 1 0%",
@@ -968,22 +957,7 @@ export function Header({
                   }
                 }}
                 onChange={(e) => {
-                  const val = e.target.value;
-                  if (
-                    val.includes("instagram.com/reel") ||
-                    val.includes("instagram.com/p/") ||
-                    val.includes("instagr.am/") ||
-                    ((val.includes("instagram.com") || val.includes("instagr.am")) &&
-                      (val.startsWith("http://") || val.startsWith("https://"))) ||
-                    val.startsWith("http://") ||
-                    val.startsWith("https://")
-                  ) {
-                    setInputValue("");
-                    setMobileSearchOpen(false);
-                    openSaveSheet(val.trim());
-                    return;
-                  }
-                  setInputValue(val);
+                  setInputValue(e.target.value);
                 }}
                 style={{
                   flex: "1 1 0%",

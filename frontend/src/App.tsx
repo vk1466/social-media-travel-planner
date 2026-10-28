@@ -30,7 +30,7 @@ function AppRoutes({ authReady }: { authReady: boolean }) {
   const location = useLocation();
   const [posts, setPosts] = useState<SavedPost[]>(() => {
     try {
-      const cached = sessionStorage.getItem("wf_cached_posts");
+      const cached = localStorage.getItem("wf_cached_posts") || sessionStorage.getItem("wf_cached_posts");
       return cached ? dedupePosts(JSON.parse(cached)) : [];
     } catch {
       return [];
@@ -38,7 +38,7 @@ function AppRoutes({ authReady }: { authReady: boolean }) {
   });
   const [places, setPlaces] = useState<Place[]>(() => {
     try {
-      const cached = sessionStorage.getItem("wf_cached_places");
+      const cached = localStorage.getItem("wf_cached_places") || sessionStorage.getItem("wf_cached_places");
       return cached ? JSON.parse(cached) : [];
     } catch {
       return [];
@@ -46,7 +46,7 @@ function AppRoutes({ authReady }: { authReady: boolean }) {
   });
   const [loadingPosts, setLoadingPosts] = useState(() => {
     try {
-      return !sessionStorage.getItem("wf_cached_posts");
+      return !(localStorage.getItem("wf_cached_posts") || sessionStorage.getItem("wf_cached_posts"));
     } catch {
       return true;
     }
@@ -66,12 +66,14 @@ function AppRoutes({ authReady }: { authReady: boolean }) {
         const deduped = dedupePosts(postsResult.value);
         setPosts(deduped);
         try {
+          localStorage.setItem("wf_cached_posts", JSON.stringify(deduped));
           sessionStorage.setItem("wf_cached_posts", JSON.stringify(deduped));
         } catch {}
       }
       if (placesResult.status === "fulfilled") {
         setPlaces(placesResult.value);
         try {
+          localStorage.setItem("wf_cached_places", JSON.stringify(placesResult.value));
           sessionStorage.setItem("wf_cached_places", JSON.stringify(placesResult.value));
         } catch {}
       }

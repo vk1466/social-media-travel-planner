@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
@@ -18,7 +18,7 @@ import {
 import { EmptyState } from "../components/EmptyState";
 import { EditPostModal } from "../components/EditPostModal";
 import { useToast } from "../state/ToastContext";
-import { deletePost, parsePostId, type SavedPost, type Place } from "../../api";
+import { deletePost, parsePostId, fetchPost, type SavedPost, type Place } from "../../api";
 import { proxiedMediaUrl, capitalizePlaceName, getPlaceBestImageUrl } from "../../postDisplayUtils";
 import { getCategoryVisual } from "../categoryVisuals";
 
@@ -32,7 +32,9 @@ export function PostDetailPage({ posts, places = [], onRefresh }: PostDetailPage
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { showToast } = useToast();
-  const post = posts.find((p) => p.post_id === id);
+  const foundPost = posts.find((p) => p.post_id === id);
+  const [fetchedPost, setFetchedPost] = useState<SavedPost | null>(null);
+  const [fetching, setFetching] = useState<boolean>(!foundPost);
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [captionExpanded, setCaptionExpanded] = useState(false);
@@ -42,7 +44,62 @@ export function PostDetailPage({ posts, places = [], onRefresh }: PostDetailPage
   const [newPlaceInput, setNewPlaceInput] = useState("");
   const [showAddPlace, setShowAddPlace] = useState(false);
 
+  useEffect(() => {
+    if (foundPost) {
+      setFetching(false);
+      return;
+    }
+    if (!id) {
+      setFetching(false);
+      return;
+    }
+    let cancelled = false;
+    setFetching(true);
+    try {
+      const { platform, nativeId } = parsePostId(id);
+      fetchPost(platform, nativeId)
+        .then((data) => {
+          if (!cancelled && data) {
+            setFetchedPost(data);
+          }
+        })
+        .catch(() => {
+          // ignore error
+        })
+        .finally(() => {
+          if (!cancelled) setFetching(false);
+        });
+    } catch {
+      setFetching(false);
+    }
+    return () => {
+      cancelled = true;
+    };
+  }, [id, foundPost]);
+
+  const post = foundPost || fetchedPost;
+
   if (!post) {
+    if (fetching) {
+      return (
+        <main style={{ maxWidth: "1040px", margin: "0 auto", padding: "24px 20px 80px", width: "100%", boxSizing: "border-box" }}>
+          <div style={{ height: "24px", width: "120px", background: "var(--wf-surface-2, #F3F3F1)", borderRadius: "8px", marginBottom: "20px" }} />
+          <div style={{ display: "flex", gap: "24px", flexWrap: "wrap", marginBottom: "32px" }}>
+            <div style={{ width: "320px", height: "320px", background: "var(--wf-surface-2, #F3F3F1)", borderRadius: "16px" }} />
+            <div style={{ flex: 1, minWidth: "260px", display: "flex", flexDirection: "column", gap: "12px" }}>
+              <div style={{ height: "32px", width: "70%", background: "var(--wf-surface-2, #F3F3F1)", borderRadius: "8px" }} />
+              <div style={{ height: "18px", width: "40%", background: "var(--wf-surface-2, #F3F3F1)", borderRadius: "8px" }} />
+              <div style={{ height: "80px", width: "100%", background: "var(--wf-surface-2, #F3F3F1)", borderRadius: "8px", marginTop: "12px" }} />
+            </div>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+            {[1, 2, 3].map((n) => (
+              <div key={n} style={{ height: "64px", background: "var(--wf-surface-2, #F3F3F1)", borderRadius: "12px" }} />
+            ))}
+          </div>
+        </main>
+      );
+    }
     return (
       <main style={{ maxWidth: "1280px", margin: "0 auto", padding: "60px 16px 80px", width: "100%", boxSizing: "border-box" }}>
         <EmptyState
@@ -57,9 +114,11 @@ export function PostDetailPage({ posts, places = [], onRefresh }: PostDetailPage
     );
   }
 
+  const currentPost = post;
+
   // Delete with 5s Undo Toast (no window.confirm dialog per spec)
   const handleDelete = () => {
-    const postId = post.post_id;
+    const postId = currentPost.post_id;
     navigate("/library");
 
     let undone = false;
@@ -89,7 +148,7 @@ export function PostDetailPage({ posts, places = [], onRefresh }: PostDetailPage
     );
   };
 
-  const category = post.content_category || "other";
+  const category = currentPost.content_category || "other";
 
   const getCategoryIcon = (cat: string) => {
     switch (cat) {
@@ -109,10 +168,10 @@ export function PostDetailPage({ posts, places = [], onRefresh }: PostDetailPage
   };
 
   const CategoryIcon = getCategoryIcon(category);
-  const displayTitle = post.title || post.caption || "Saved reel";
-  const hasThumbnail = Boolean(post.thumbnail_url && !imgError);
+  const displayTitle = currentPost.title || currentPost.caption || "Saved reel";
+  const hasThumbnail = Boolean(currentPost.thumbnail_url && !imgError);
 
-  const canonicalPlaceIds = post.place_ids || [];
+  const canonicalPlaceIds = currentPost.place_ids || [];
   const canonicalPlaces = canonicalPlaceIds.map((pid) => {
     const pl = (places || []).find((p) => p.place_id === pid);
     const vis = getCategoryVisual(pl?.category);
@@ -130,14 +189,14 @@ export function PostDetailPage({ posts, places = [], onRefresh }: PostDetailPage
   });
 
   // Fallback for extracted places not covered in canonical place_ids
-  const unmappedExtracted = (post.extracted_places || [])
-    .filter((_, idx) => !post.place_ids?.[idx] && canonicalPlaces.length === 0)
+  const unmappedExtracted = (currentPost.extracted_places || [])
+    .filter((_, idx) => !currentPost.place_ids?.[idx] && canonicalPlaces.length === 0)
     .map((p) => ({
       placeId: null,
-      name: p.place_name,
+      name: capitalizePlaceName(p.place_name),
       area: [p.city, p.state_province, p.country].filter(Boolean).join(", ") || p.tips?.[0] || "",
-      category: null,
-      visual: getCategoryVisual("other"),
+      category: p.category || null,
+      visual: getCategoryVisual(p.category || "other"),
       imageUrl: null,
       isCanonical: false,
       link: null,
@@ -502,17 +561,36 @@ export function PostDetailPage({ posts, places = [], onRefresh }: PostDetailPage
                       </div>
                     )}
                     <div style={{ minWidth: 0 }}>
-                      <div style={{ fontSize: "15px", fontWeight: 700, color: "var(--wf-text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        {item.link ? (
-                          <Link to={item.link} style={{ color: "inherit", textDecoration: "none" }} className="wf-hover-underline">
-                            {item.name}
-                          </Link>
-                        ) : (
-                          item.name
-                        )}
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+                        <span style={{ fontSize: "15px", fontWeight: 700, color: "var(--wf-text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {item.link ? (
+                            <Link to={item.link} style={{ color: "inherit", textDecoration: "none" }} className="wf-hover-underline">
+                              {item.name}
+                            </Link>
+                          ) : (
+                            item.name
+                          )}
+                        </span>
+                        <span
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "4px",
+                            fontSize: "11px",
+                            fontWeight: 700,
+                            padding: "2px 8px",
+                            borderRadius: "999px",
+                            background: item.visual.tint,
+                            color: item.visual.hue,
+                            flexShrink: 0,
+                          }}
+                        >
+                          <span>{item.visual.glyph}</span>
+                          <span>{item.visual.name}</span>
+                        </span>
                       </div>
                       {item.area && (
-                        <div style={{ fontSize: "13px", color: "var(--wf-text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        <div style={{ fontSize: "13px", color: "var(--wf-text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginTop: "2px" }}>
                           {item.area}
                         </div>
                       )}

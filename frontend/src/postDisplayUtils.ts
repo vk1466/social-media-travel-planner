@@ -128,7 +128,8 @@ export function proxiedMediaUrl(url: string | null | undefined): string | null {
 
 const LOWERCASE_ARTICLES = new Set([
   "a", "an", "the", "and", "but", "or", "for", "nor", "on", "at", "to", "from", "by", "with", "in", "of",
-  "de", "del", "della", "delle", "di", "da", "la", "le", "il", "lo", "el", "los", "las", "du", "des", "van", "von"
+  "de", "del", "della", "delle", "degli", "dei", "dello", "di", "da", "la", "le", "il", "lo", "el", "los", "las", "du", "des", "van", "von",
+  "agli", "alle", "ai", "al", "dalla", "dalle", "dai", "dal"
 ]);
 
 export function capitalizePlaceName(name: string | null | undefined): string {
@@ -140,10 +141,12 @@ export function capitalizePlaceName(name: string | null | undefined): string {
       const lower = word.toLowerCase();
       const hasInternalCaps = /[a-z][A-Z]/.test(word);
       if (hasInternalCaps) return word;
+      if (i > 0 && LOWERCASE_ARTICLES.has(lower)) {
+        return lower;
+      }
       if (word.length > 0 && word[0] === word[0].toUpperCase() && word[0] !== word[0].toLowerCase()) {
         return word;
       }
-      if (i > 0 && LOWERCASE_ARTICLES.has(lower)) return lower;
       return word.charAt(0).toUpperCase() + word.slice(1);
     })
     .join(" ");
@@ -193,8 +196,8 @@ export function getEffectiveAddress(place: {
  * Prioritizes:
  * 1. place.image_url (per-place photo)
  * 2. Dedicated single-place reel thumbnail
- * 3. Most specific reel (fewest places) ONLY IF this place is the first/primary place of that reel
- * Returns null if the place is a secondary stop in a multi-place reel (falling back to category glyph).
+ * 3. Specific slide/frame in a carousel
+ * Secondary stops in multi-place posts NEVER steal the reel thumbnail (returning null to fall back to designed gradient + glyph).
  */
 export function getPlaceBestImageUrl(place: Place, posts: SavedPost[] = []): string | null {
   if (place.image_url) {
@@ -232,7 +235,11 @@ export function getPlaceBestImageUrl(place: Place, posts: SavedPost[] = []): str
     return mostSpecific.slide_media_urls[placeIdx];
   }
 
-  // Fall back to the post thumbnail so places have real imagery instead of placeholder icons
+  // Secondary stops in multi-place reels must not steal the reel thumbnail
+  if (placeIdx > 0 || (mostSpecific.place_ids && mostSpecific.place_ids.length > 1)) {
+    return null;
+  }
+
   return mostSpecific.thumbnail_url || (mostSpecific.slide_media_urls && mostSpecific.slide_media_urls[0]) || null;
 }
 

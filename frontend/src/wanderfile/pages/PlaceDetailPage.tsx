@@ -416,10 +416,10 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
                     border: "1px solid rgba(245, 158, 11, 0.25)",
                   }}
                 >
-                  ★ {place.facts.rating.toFixed(1)}
-                  {place.facts.reviews_count ? (
+                  ★ {Number(place.facts.rating).toFixed(1)}
+                  {place.facts.reviews_count != null ? (
                     <span style={{ fontWeight: 500, color: "var(--wf-text-muted, #5E636B)", fontSize: "12px" }}>
-                      ({place.facts.reviews_count.toLocaleString()} reviews)
+                      ({Number(place.facts.reviews_count).toLocaleString()} reviews)
                     </span>
                   ) : null}
                 </span>
@@ -440,6 +440,30 @@ export function PlaceDetailPage({ places, posts }: PlaceDetailPageProps) {
             >
               {displayName || place.display_name}
             </h1>
+
+            {place.facts?.rating != null && (
+              <div
+                className="wf-place-rating-row"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  marginTop: "2px",
+                  marginBottom: "12px",
+                  fontSize: "15px",
+                  fontWeight: 600,
+                  color: "var(--wf-text, #16181B)",
+                }}
+              >
+                <span style={{ color: "#D97706", fontSize: "16px" }}>★</span>
+                <span style={{ fontWeight: 700 }}>{Number(place.facts.rating).toFixed(1)}</span>
+                {place.facts.reviews_count != null && (
+                  <span style={{ color: "var(--wf-text-muted, #5E636B)", fontWeight: 400, fontSize: "14px" }}>
+                    ({Number(place.facts.reviews_count).toLocaleString()} reviews)
+                  </span>
+                )}
+              </div>
+            )}
 
             {distinctAliases.length > 0 && (
               <div

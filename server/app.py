@@ -95,7 +95,11 @@ from server.timeline_runner import create_and_start_timeline_job
 configure_logging()
 logger = logging.getLogger(__name__)
 
+from starlette.middleware.gzip import GZipMiddleware
+
 app = FastAPI(title="Travel Post Ingest API", version="0.1.0")
+
+app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 app.add_middleware(
   CORSMiddleware,

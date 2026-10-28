@@ -157,13 +157,24 @@ export function MapPage({ places, posts, loading }: MapPageProps) {
         el.style.fontWeight = "700";
         el.style.fontSize = "13px";
         el.style.cursor = "pointer";
-        el.innerText = `${count}`;
-
-        el.addEventListener("click", (e) => {
+        const handleExpand = (e: Event) => {
           e.stopPropagation();
-          const expansionZoom = Math.min(superclusterIndex.getClusterExpansionZoom(clusterId), 17);
-          map.flyTo({ center: [lng, lat], zoom: expansionZoom, duration: 600 });
-        });
+          e.preventDefault();
+          const currentZoom = map.getZoom();
+          let targetZoom = currentZoom + 3;
+          try {
+            const expZoom = superclusterIndex.getClusterExpansionZoom(clusterId);
+            targetZoom = Math.min(Math.max(expZoom, Math.floor(currentZoom) + 2), 17);
+          } catch {
+            targetZoom = Math.min(Math.floor(currentZoom) + 2, 17);
+          }
+          map.flyTo({ center: [lng, lat], zoom: targetZoom, duration: 500 });
+        };
+
+        el.addEventListener("pointerdown", (e) => e.stopPropagation());
+        el.addEventListener("mousedown", (e) => e.stopPropagation());
+        el.addEventListener("touchstart", (e) => e.stopPropagation(), { passive: true });
+        el.addEventListener("click", handleExpand);
 
         const marker = new maplibregl.Marker({ element: el }).setLngLat([lng, lat]).addTo(map);
         markersRef.current.push(marker);
@@ -204,6 +215,10 @@ export function MapPage({ places, posts, loading }: MapPageProps) {
         dot.innerText = visual.glyph || "📍";
 
         el.appendChild(dot);
+
+        el.addEventListener("pointerdown", (e) => e.stopPropagation());
+        el.addEventListener("mousedown", (e) => e.stopPropagation());
+        el.addEventListener("touchstart", (e) => e.stopPropagation(), { passive: true });
 
         el.addEventListener("click", (e) => {
           e.stopPropagation();
@@ -251,17 +266,33 @@ export function MapPage({ places, posts, loading }: MapPageProps) {
     }
 
     const b = new maplibregl.LngLatBounds();
+    let validCount = 0;
     for (const p of placesToFit) {
-      b.extend([p.location.longitude!, p.location.latitude!]);
+      if (typeof p.location?.longitude === "number" && typeof p.location?.latitude === "number") {
+        b.extend([p.location.longitude, p.location.latitude]);
+        validCount++;
+      }
     }
+    if (validCount === 0) return;
     const isDesktop = typeof window !== "undefined" && window.innerWidth >= 1024;
-    targetMap.fitBounds(b, {
-      padding: isDesktop
-        ? { top: 60, bottom: 60, left: 60, right: 60 }
-        : { top: 70, bottom: 120, left: 32, right: 32 },
-      maxZoom: 14,
-      duration: immediate ? 0 : 500,
-    });
+    const doFit = () => {
+      try {
+        targetMap.fitBounds(b, {
+          padding: isDesktop
+            ? { top: 60, bottom: 60, left: 60, right: 60 }
+            : { top: 70, bottom: 120, left: 32, right: 32 },
+          maxZoom: 14,
+          duration: immediate ? 0 : 500,
+        });
+      } catch {
+        // Fallback if camera transition is busy
+      }
+    };
+    if (targetMap.isStyleLoaded()) {
+      doFit();
+    } else {
+      targetMap.once("load", doFit);
+    }
   }, [filteredPlaces, mappablePlaces]);
 
   // Initialize MapLibre GL

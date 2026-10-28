@@ -20,14 +20,102 @@ interface CollectionItem {
   visual?: CategoryVisual;
 }
 
+function getCollectionGradient(title: string, type?: string): { gradient: string; glyph: string; badge: string } {
+  const lower = title.toLowerCase().trim();
+  if (lower.includes("food") || lower.includes("restaurant") || lower.includes("eats")) {
+    return {
+      gradient: "linear-gradient(135deg, #FF5E3A 0%, #FF9500 100%)",
+      glyph: "🍴",
+      badge: "Food & Dining",
+    };
+  }
+  if (lower.includes("shop") || lower.includes("market") || lower.includes("boutique")) {
+    return {
+      gradient: "linear-gradient(135deg, #F59E0B 0%, #EC4899 100%)",
+      glyph: "🛍️",
+      badge: "Shopping & Markets",
+    };
+  }
+  if (lower.includes("nature") || lower.includes("park") || lower.includes("outdoor") || lower.includes("hike")) {
+    return {
+      gradient: "linear-gradient(135deg, #059669 0%, #10B981 50%, #34D399 100%)",
+      glyph: "🌲",
+      badge: "Nature & Outdoors",
+    };
+  }
+  if (lower.includes("cafe") || lower.includes("coffee")) {
+    return {
+      gradient: "linear-gradient(135deg, #92400E 0%, #D97706 100%)",
+      glyph: "☕",
+      badge: "Coffee & Cafes",
+    };
+  }
+  if (lower.includes("taito")) {
+    return {
+      gradient: "linear-gradient(135deg, #4F46E5 0%, #7C3AED 50%, #EC4899 100%)",
+      glyph: "🏮",
+      badge: "Taito, Tokyo",
+    };
+  }
+  if (lower.includes("rome")) {
+    return {
+      gradient: "linear-gradient(135deg, #C2410C 0%, #EA580C 50%, #F59E0B 100%)",
+      glyph: "🏛️",
+      badge: "Rome, Italy",
+    };
+  }
+  if (lower.includes("vila velha")) {
+    return {
+      gradient: "linear-gradient(135deg, #0284C7 0%, #06B6D4 100%)",
+      glyph: "🌊",
+      badge: "Vila Velha, Brazil",
+    };
+  }
+  if (lower.includes("anywhere_we_roam")) {
+    return {
+      gradient: "linear-gradient(135deg, #4338CA 0%, #6366F1 50%, #8B5CF6 100%)",
+      glyph: "🧭",
+      badge: "@anywhere_we_roam",
+    };
+  }
+  if (lower.includes("marissa.daily")) {
+    return {
+      gradient: "linear-gradient(135deg, #DB2777 0%, #F43F5E 50%, #FB7185 100%)",
+      glyph: "✨",
+      badge: "@marissa.daily",
+    };
+  }
+  if (lower.includes("hotelsantorinivv") || lower.includes("santorini")) {
+    return {
+      gradient: "linear-gradient(135deg, #0284C7 0%, #2563EB 50%, #4F46E5 100%)",
+      glyph: "🏛️",
+      badge: "@hotelsantorinivv",
+    };
+  }
+  if (type === "creator" || title.startsWith("@")) {
+    return {
+      gradient: "linear-gradient(135deg, #7C3AED 0%, #A855F7 50%, #EC4899 100%)",
+      glyph: "📸",
+      badge: "Creator Collection",
+    };
+  }
+  return {
+    gradient: "linear-gradient(135deg, #3B82F6 0%, #8B5CF6 100%)",
+    glyph: "📍",
+    badge: title,
+  };
+}
+
 function CollectionMosaic({
   thumbnails,
   title,
   visual,
+  type,
 }: {
   thumbnails: string[];
   title: string;
   visual?: CategoryVisual;
+  type?: string;
 }) {
   const vis = visual || getCategoryVisual(title);
   const distinct = useMemo(() => {
@@ -47,6 +135,7 @@ function CollectionMosaic({
   const validThumbs = distinct.filter((_, idx) => !failedIndices.has(idx));
 
   if (validThumbs.length === 0) {
+    const theme = getCollectionGradient(title, type || visual?.name);
     return (
       <div
         style={{
@@ -54,18 +143,45 @@ function CollectionMosaic({
           aspectRatio: "1 / 1",
           borderRadius: "14px",
           overflow: "hidden",
-          background: `radial-gradient(circle at 30% 30%, ${vis.tint}, rgba(255,255,255,0.02)), linear-gradient(135deg, ${vis.hue}18 0%, ${vis.hue}38 100%)`,
+          background: theme.gradient,
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          gap: "8px",
-          color: vis.hue,
-          border: `1px solid ${vis.hue}30`,
+          gap: "10px",
+          color: "#FFFFFF",
+          padding: "16px",
+          boxSizing: "border-box",
+          position: "relative",
+          boxShadow: "0 4px 14px rgba(0,0,0,0.12)",
         }}
       >
-        <span style={{ fontSize: "36px" }}>{vis.glyph}</span>
-        <span style={{ fontSize: "13px", fontWeight: 700, color: "var(--wf-text, #1B1D1F)" }}>{title}</span>
+        <div
+          style={{
+            width: "56px",
+            height: "56px",
+            borderRadius: "50%",
+            background: "rgba(255, 255, 255, 0.22)",
+            backdropFilter: "blur(8px)",
+            WebkitBackdropFilter: "blur(8px)",
+            border: "1px solid rgba(255, 255, 255, 0.4)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: "28px",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+          }}
+        >
+          {theme.glyph}
+        </div>
+        <div style={{ textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: "2px" }}>
+          <span style={{ fontSize: "14px", fontWeight: 700, color: "#FFFFFF", textShadow: "0 1px 3px rgba(0,0,0,0.3)" }}>
+            {title}
+          </span>
+          <span style={{ fontSize: "11px", fontWeight: 600, color: "rgba(255,255,255,0.85)", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+            {theme.badge}
+          </span>
+        </div>
       </div>
     );
   }
@@ -253,12 +369,10 @@ export function CollectionsPage({ posts, places }: CollectionsPageProps) {
       for (const p of catPlaces) {
         if (thumbs.length >= 4) break;
         const img = getPlaceBestImageUrl(p, posts);
-        if (img && !usedThumbs.has(img) && !thumbs.includes(img)) {
+        if (img && !thumbs.includes(img)) {
           thumbs.push(img);
-          usedThumbs.add(img);
         }
       }
-      // Never allow reused images! If 0 images, fallback to designed gradient cover
       return {
         id: `cat-${cat}`,
         title: cat,
@@ -278,18 +392,16 @@ export function CollectionsPage({ posts, places }: CollectionsPageProps) {
       if (!creator) continue;
       const data = creatorMap.get(creator) || { count: 0, thumbs: [] };
       data.count += (post.place_ids?.length || 1);
-      if (post.thumbnail_url && data.thumbs.length < 4 && !usedThumbs.has(post.thumbnail_url) && !data.thumbs.includes(post.thumbnail_url)) {
+      if (post.thumbnail_url && data.thumbs.length < 4 && !data.thumbs.includes(post.thumbnail_url)) {
         data.thumbs.push(post.thumbnail_url);
-        usedThumbs.add(post.thumbnail_url);
       }
       for (const pid of post.place_ids || []) {
         if (data.thumbs.length >= 4) break;
         const pl = places.find((p) => p.place_id === pid);
         if (pl) {
           const img = getPlaceBestImageUrl(pl, posts);
-          if (img && !usedThumbs.has(img) && !data.thumbs.includes(img)) {
+          if (img && !data.thumbs.includes(img)) {
             data.thumbs.push(img);
-            usedThumbs.add(img);
           }
         }
       }
@@ -400,7 +512,7 @@ export function CollectionsPage({ posts, places }: CollectionsPageProps) {
             className="wf-card-hover"
           >
             {/* Adaptive Thumbnail Mosaic */}
-            <CollectionMosaic thumbnails={col.thumbnails} title={col.title} visual={col.visual} />
+            <CollectionMosaic thumbnails={col.thumbnails} title={col.title} visual={col.visual} type={col.type} />
 
             {/* Collection Metadata */}
             <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
