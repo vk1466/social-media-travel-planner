@@ -652,9 +652,10 @@ export function Header({
               onChange={(e) => {
                 const val = e.target.value;
                 if (
-                  val.includes("instagram.com/reel") ||
-                  val.includes("instagram.com/p/") ||
-                  val.includes("instagr.am/")
+                  /\/reel\/[\w-]+/.test(val) ||
+                  /\/reels\/[\w-]+/.test(val) ||
+                  /\/p\/[\w-]+/.test(val) ||
+                  /instagr\.am\/[\w-]+/.test(val)
                 ) {
                   setInputValue("");
                   openSaveSheet(val.trim());

@@ -26,6 +26,16 @@ export function DesktopTopBar({ isSuperAdmin, onViewAsChange }: DesktopTopBarPro
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
+  const isCompleteInstagramUrl = (text: string) => {
+    const trimmed = text.trim();
+    return (
+      /\/reel\/[\w-]+/.test(trimmed) ||
+      /\/reels\/[\w-]+/.test(trimmed) ||
+      /\/p\/[\w-]+/.test(trimmed) ||
+      /instagr\.am\/[\w-]+/.test(trimmed)
+    );
+  };
+
   const isUrlOrInstagram = (text: string) => {
     const trimmed = text.trim();
     return (
@@ -56,7 +66,7 @@ export function DesktopTopBar({ isSuperAdmin, onViewAsChange }: DesktopTopBarPro
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
-    if (isUrlOrInstagram(val)) {
+    if (isCompleteInstagramUrl(val)) {
       setQuery("");
       openSaveSheet(val.trim());
       return;

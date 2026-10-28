@@ -116,7 +116,7 @@ export function MapPage({ places, posts, loading }: MapPageProps) {
       bounds.getEast() !== bounds.getWest()
     ) {
       bbox =
-        zoom <= 3 || bounds.getEast() - bounds.getWest() > 300
+        zoom <= 4 || bounds.getEast() - bounds.getWest() > 180
           ? [-180, -85, 180, 85]
           : [
               Math.max(-180, bounds.getWest()),
@@ -406,19 +406,25 @@ export function MapPage({ places, posts, loading }: MapPageProps) {
     const map = mapRef.current;
     if (!map) return;
 
-    const syncMarkersAndBounds = () => {
+    const syncMarkersAndBounds = (immediate = false) => {
       if (mappablePlaces.length > 0 && !hasFittedInitialBoundsRef.current) {
         hasFittedInitialBoundsRef.current = true;
-        fitToPlaces(filteredPlaces.length > 0 ? filteredPlaces : mappablePlaces, map, true);
+        fitToPlaces(filteredPlaces.length > 0 ? filteredPlaces : mappablePlaces, map, immediate);
       }
       updateMapMarkers();
     };
 
-    if (map.loaded()) {
-      syncMarkersAndBounds();
-    } else {
-      map.once("load", syncMarkersAndBounds);
-    }
+    // Run immediately so markers & bounds are never blocked by load event race conditions
+    syncMarkersAndBounds(false);
+
+    const handleMapReady = () => syncMarkersAndBounds(false);
+    map.on("style.load", handleMapReady);
+    map.on("load", handleMapReady);
+
+    return () => {
+      map.off("style.load", handleMapReady);
+      map.off("load", handleMapReady);
+    };
   }, [mappablePlaces, fitToPlaces, updateMapMarkers, filteredPlaces]);
 
   // When activeCity or activeCategory changes, re-fit map bounds to filtered places
@@ -467,8 +473,9 @@ export function MapPage({ places, posts, loading }: MapPageProps) {
   }
 
   const categoryChips = useMemo(() => {
+    const allCount: string | number = loading && places.length === 0 ? "…" : mappablePlaces.length;
     const list = [
-      { key: "all", label: "All places", glyph: "🗺️", count: mappablePlaces.length },
+      { key: "all", label: "All places", glyph: "🗺️", count: allCount },
     ];
     for (const cat of CANONICAL_CATEGORIES) {
       const vis = getCategoryVisual(cat);
@@ -992,8 +999,8 @@ export function MapPage({ places, posts, loading }: MapPageProps) {
             }}
             style={{
               border: 0,
-              background: mobileView === "map" ? "var(--wf-ink, #16181B)" : "transparent",
-              color: mobileView === "map" ? "var(--wf-surface, #FFFFFF)" : "var(--wf-text-muted, #5E636B)",
+              background: mobileView === "map" ? "var(--ink, #16181B)" : "transparent",
+              color: mobileView === "map" ? "var(--surface, #FFFFFF)" : "var(--ink-2, #5E636B)",
               padding: "6px 14px",
               borderRadius: "var(--wf-radius-pill)",
               fontSize: "13px",
@@ -1011,8 +1018,8 @@ export function MapPage({ places, posts, loading }: MapPageProps) {
             onClick={() => setMobileView("list")}
             style={{
               border: 0,
-              background: mobileView === "list" ? "var(--wf-ink, #16181B)" : "transparent",
-              color: mobileView === "list" ? "var(--wf-surface, #FFFFFF)" : "var(--wf-text-muted, #5E636B)",
+              background: mobileView === "list" ? "var(--ink, #16181B)" : "transparent",
+              color: mobileView === "list" ? "var(--surface, #FFFFFF)" : "var(--ink-2, #5E636B)",
               padding: "6px 14px",
               borderRadius: "var(--wf-radius-pill)",
               fontSize: "13px",

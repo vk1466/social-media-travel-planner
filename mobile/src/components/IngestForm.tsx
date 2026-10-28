@@ -257,19 +257,23 @@ export function LinkSubmitForm({
         </View>
       )}
 
-      {!previewLoading && previewData && (previewData.status === "unavailable" || !previewData.is_available) && (
-        <View style={styles.previewErrorCard}>
-          <Ionicons name="alert-circle" size={20} color="#DC2626" />
-          <View style={{ flex: 1 }}>
-            <Text style={styles.previewErrorTitle}>
-              {previewData.error_message || "Private or deleted post"}
-            </Text>
-            <Text style={styles.previewErrorSub}>
-              This post cannot be viewed or saved because it is private or has been removed.
-            </Text>
+      {!previewLoading && previewData && (previewData.status === "unavailable" || !previewData.is_available) && (() => {
+        const errMsg = previewData.error_message || "";
+        const isPrivateOrRemoved = /private|deleted|removed/i.test(errMsg) || !errMsg;
+        const title = isPrivateOrRemoved ? (errMsg || "Private or deleted post") : errMsg;
+        const subtitle = isPrivateOrRemoved
+          ? "This post cannot be viewed or saved because it is private or has been removed."
+          : "Check the link format and try again.";
+        return (
+          <View style={styles.previewErrorCard}>
+            <Ionicons name="alert-circle" size={20} color="#DC2626" />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.previewErrorTitle}>{title}</Text>
+              <Text style={styles.previewErrorSub}>{subtitle}</Text>
+            </View>
           </View>
-        </View>
-      )}
+        );
+      })()}
 
       {!previewLoading && previewData && previewData.is_available && previewData.status !== "unavailable" && (
         <View style={styles.previewCard}>

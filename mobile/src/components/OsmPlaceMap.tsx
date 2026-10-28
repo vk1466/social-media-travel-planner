@@ -57,9 +57,17 @@ export function OsmPlaceMap({
   }, []);
 
   const pushPlaces = useCallback(() => {
-    webViewRef.current?.injectJavaScript(
-      `window.__setPlaces && window.__setPlaces(${payloadRef.current}, ${JSON.stringify(selectedRef.current ?? null)}); true;`,
-    );
+    const jsonPlaces = payloadRef.current;
+    const jsonSelected = JSON.stringify(selectedRef.current ?? null);
+    const js = `
+      if (typeof window.__setPlaces === "function") {
+        window.__setPlaces(${jsonPlaces}, ${jsonSelected});
+      } else {
+        window.__pendingPlaces = { places: ${jsonPlaces}, selectedId: ${jsonSelected} };
+      }
+      true;
+    `;
+    webViewRef.current?.injectJavaScript(js);
   }, []);
 
   const pushSelected = useCallback((id: string | null | undefined) => {
@@ -147,6 +155,16 @@ export function OsmPlaceMap({
           cacheEnabled
           onMessage={(event) => {
             const data = event.nativeEvent.data;
+            if (data === "__MAP_READY__") {
+              readyRef.current = true;
+              applyFrame(frame.width, frame.height);
+              pushPlaces();
+              pushHighlights(highlightedPlaceIds);
+              if (fitPlaceIds && fitPlaceIds.length > 0) {
+                pushFitPlaces(fitPlaceIds);
+              }
+              return;
+            }
             if (data === "__DESELECT__") {
               onSelectPlace?.(null);
               return;
@@ -208,9 +226,12 @@ function markerPayload(places: Place[], visitedPlaceIds: ReadonlySet<string>): s
 }
 
 function buildMapHtml(isDark = false): string {
-  const tileUrl = isDark
-    ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-    : "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png";
+  const baseTileUrl = isDark
+    ? "https://{s}.basemaps.cartocdn.com/rastertiles/dark_nolabels/{z}/{x}/{y}@2x.png"
+    : "https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}@2x.png";
+  const labelsTileUrl = isDark
+    ? "https://{s}.basemaps.cartocdn.com/rastertiles/dark_only_labels/{z}/{x}/{y}@2x.png"
+    : "https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}@2x.png";
   const bgColor = isDark ? "#0E0F11" : "#FAFAF9";
   const inkColor = isDark ? "#23272E" : "#16181B";
   const haloColor = isDark ? "rgba(255, 255, 255, 0.15)" : "rgba(22, 24, 27, 0.18)";
@@ -355,17 +376,17 @@ function buildMapHtml(isDark = false): string {
       zoomAnimation: true
     });
     L.control.attribution({ position: "bottomleft", prefix: false }).addTo(map);
-    var openFreeMapStyle = ${JSON.stringify(isDark ? "https://tiles.openfreemap.org/styles/dark" : "https://tiles.openfreemap.org/styles/positron")};
-    if (typeof L.maplibreGL === "function") {
-      L.maplibreGL({
-        style: openFreeMapStyle
-      }).addTo(map);
-    } else {
-      L.tileLayer(${JSON.stringify(tileUrl)}, {
-        attribution: isDark ? '&copy; OpenStreetMap contributors &copy; CARTO' : '&copy; OpenStreetMap contributors &copy; OpenFreeMap',
-        maxZoom: 19
-      }).addTo(map);
-    }
+
+    L.tileLayer(${JSON.stringify(baseTileUrl)}, {
+      subdomains: "abcd",
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+      maxZoom: 19
+    }).addTo(map);
+
+    L.tileLayer(${JSON.stringify(labelsTileUrl)}, {
+      subdomains: "abcd",
+      maxZoom: 19
+    }).addTo(map);
 
     const markersGroup = (typeof L.markerClusterGroup === 'function')
       ? L.markerClusterGroup({
@@ -555,6 +576,14 @@ function buildMapHtml(isDark = false): string {
         });
       }
     };
+
+    if (window.__pendingPlaces) {
+      window.__setPlaces(window.__pendingPlaces.places, window.__pendingPlaces.selectedId);
+      window.__pendingPlaces = null;
+    }
+    if (window.ReactNativeWebView) {
+      window.ReactNativeWebView.postMessage("__MAP_READY__");
+    }
   </script>
 </body>
 </html>`;

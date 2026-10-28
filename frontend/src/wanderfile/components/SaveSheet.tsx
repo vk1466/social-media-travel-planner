@@ -292,6 +292,10 @@ export function SaveSheet() {
                 resize: "none",
                 outline: "none",
                 boxSizing: "border-box",
+                wordBreak: "break-all",
+                overflowWrap: "anywhere",
+                whiteSpace: "pre-wrap",
+                overflowY: "auto",
               }}
             />
 
@@ -409,35 +413,44 @@ export function SaveSheet() {
                   )}
 
                   {/* Preview State: Deleted or Private Post Warning */}
-                  {!previewLoading && previewData && (previewData.status === "unavailable" || !previewData.is_available) && (
-                    <div
-                      style={{
-                        marginTop: "12px",
-                        padding: "12px 16px",
-                        borderRadius: "16px",
-                        border: "1.5px solid var(--accent, #F8D7DA)",
-                        background: "var(--wf-surface-2)",
-                        display: "flex",
-                        gap: "12px",
-                        alignItems: "center",
-                        color: "var(--accent, #C53B27)",
-                      }}
-                    >
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ flexShrink: 0 }}>
-                        <circle cx="12" cy="12" r="10" />
-                        <line x1="12" y1="8" x2="12" y2="12" />
-                        <line x1="12" y1="16" x2="12.01" y2="16" />
-                      </svg>
-                      <div>
-                        <div style={{ fontWeight: 700, fontSize: "14px" }}>
-                          {previewData.error_message || "Private or deleted post"}
-                        </div>
-                        <div style={{ fontSize: "12px", color: "var(--wf-text-muted)", marginTop: "2px" }}>
-                          This post cannot be viewed or saved because it is private or has been removed.
+                  {!previewLoading && previewData && (previewData.status === "unavailable" || !previewData.is_available) && (() => {
+                    const errMsg = previewData.error_message || "";
+                    const isPrivateOrRemoved = /private|deleted|removed/i.test(errMsg) || !errMsg;
+                    const title = isPrivateOrRemoved ? (errMsg || "Private or deleted post") : errMsg;
+                    const subtitle = isPrivateOrRemoved
+                      ? "This post cannot be viewed or saved because it is private or has been removed."
+                      : "Check the link format and try again.";
+
+                    return (
+                      <div
+                        style={{
+                          marginTop: "12px",
+                          padding: "12px 16px",
+                          borderRadius: "16px",
+                          border: "1.5px solid var(--accent, #F8D7DA)",
+                          background: "var(--wf-surface-2)",
+                          display: "flex",
+                          gap: "12px",
+                          alignItems: "center",
+                          color: "var(--accent, #C53B27)",
+                        }}
+                      >
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ flexShrink: 0 }}>
+                          <circle cx="12" cy="12" r="10" />
+                          <line x1="12" y1="8" x2="12" y2="12" />
+                          <line x1="12" y1="16" x2="12.01" y2="16" />
+                        </svg>
+                        <div>
+                          <div style={{ fontWeight: 700, fontSize: "14px" }}>
+                            {title}
+                          </div>
+                          <div style={{ fontSize: "12px", color: "var(--wf-text-muted)", marginTop: "2px" }}>
+                            {subtitle}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  )}
+                    );
+                  })()}
 
                   {/* Preview State: Available Preview Card */}
                   {!previewLoading && previewData && previewData.is_available && previewData.status !== "unavailable" && (
