@@ -26,6 +26,7 @@ interface WanderfileAppProps {
   posts: SavedPost[];
   places: Place[];
   loading: boolean;
+  loadingPlaces?: boolean;
   loadError?: string | null;
   onRefresh?: () => void;
   isAdmin?: boolean;
@@ -37,12 +38,14 @@ export function WanderfileApp({
   posts,
   places,
   loading,
+  loadingPlaces,
   loadError,
   onRefresh,
   isAdmin = false,
   isSuperAdmin = false,
   onViewAsChange,
 }: WanderfileAppProps) {
+  const mapLoading = loadingPlaces ?? loading;
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -79,8 +82,8 @@ export function WanderfileApp({
                 <Routes>
                   <Route path="/" element={<HomePage posts={posts} places={places} loading={loading} loadError={loadError} onRefresh={onRefresh} />} />
                   <Route path="/library" element={<LibraryPage posts={posts} places={places} loading={loading} onRefresh={onRefresh} />} />
-                  <Route path="/map" element={<MapPage places={places} posts={posts} loading={loading} />} />
-                  <Route path="/map/:placeId" element={<MapPage places={places} posts={posts} loading={loading} />} />
+                  <Route path="/map" element={<MapPage places={places} posts={posts} loading={mapLoading} />} />
+                  <Route path="/map/:placeId" element={<MapPage places={places} posts={posts} loading={mapLoading} />} />
                   <Route path="/places" element={<Navigate to="/map" replace />} />
                   <Route path="/places/:placeId" element={<Navigate to="/map" replace />} />
                   <Route path="/collections" element={<CollectionsPage posts={posts} places={places} />} />

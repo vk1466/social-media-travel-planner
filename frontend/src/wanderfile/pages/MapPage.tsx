@@ -26,19 +26,43 @@ export function MapPage({ places, posts, loading }: MapPageProps) {
   const mapRef = useRef<maplibregl.Map | null>(null);
   const markersRef = useRef<maplibregl.Marker[]>([]);
   const hasFittedInitialBoundsRef = useRef<boolean>(false);
+  const markerSignatureRef = useRef<string>("");
 
   const cityParam = searchParams.get("city");
+  const selectedParam = searchParams.get("selected");
   const [activeCity, setActiveCity] = useState<string | null>(cityParam || null);
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(
-    placeId || searchParams.get("selected") || null
+    placeId || selectedParam || null
   );
   const [hoveredPlaceId, setHoveredPlaceId] = useState<string | null>(null);
   const [activeCategory, setActiveCategory] = useState<string>("all");
   const [showSearchThisArea, setShowSearchThisArea] = useState<boolean>(false);
+  const [areaBounds, setAreaBounds] = useState<[number, number, number, number] | null>(null);
   const [mobileView, setMobileView] = useState<"map" | "list">("map");
+
+  const updateSelectedParam = useCallback(
+    (nextSelectedId: string | null) => {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          if (nextSelectedId) {
+            next.set("selected", nextSelectedId);
+          } else {
+            next.delete("selected");
+          }
+          return next;
+        },
+        { replace: true }
+      );
+    },
+    [setSearchParams]
+  );
 
   useEffect(() => {
     setActiveCity(cityParam || null);
+    if (cityParam) {
+      setAreaBounds(null);
+    }
   }, [cityParam]);
 
   // Filter mappable places with valid coordinates
@@ -48,28 +72,45 @@ export function MapPage({ places, posts, loading }: MapPageProps) {
     );
   }, [places]);
 
-  const filteredPlaces = useMemo(() => {
+  const areaFilteredPlaces = useMemo(() => {
     let list = mappablePlaces;
     if (activeCity) {
       const lower = activeCity.toLowerCase();
       list = list.filter((p) => p.location?.city?.toLowerCase() === lower);
     }
+    if (areaBounds) {
+      const [west, south, east, north] = areaBounds;
+      list = list.filter((p) => {
+        const lng = p.location.longitude!;
+        const lat = p.location.latitude!;
+        const inLat = lat >= south && lat <= north;
+        const inLng = west <= east ? lng >= west && lng <= east : lng >= west || lng <= east;
+        return inLat && inLng;
+      });
+    }
+    return list;
+  }, [mappablePlaces, activeCity, areaBounds]);
+
+  const filteredPlaces = useMemo(() => {
+    let list = areaFilteredPlaces;
     if (activeCategory !== "all") {
       list = list.filter((p) => getCategoryVisual(p.category).name === activeCategory);
     }
     return list;
-  }, [mappablePlaces, activeCity, activeCategory]);
+  }, [areaFilteredPlaces, activeCategory]);
 
   const selectedPlace = useMemo(() => {
     return mappablePlaces.find((p) => p.place_id === selectedPlaceId) || null;
   }, [mappablePlaces, selectedPlaceId]);
 
-  // Sync route param with selected place
+  // Sync route param or query param with selected place
   useEffect(() => {
     if (placeId) {
       setSelectedPlaceId(placeId);
+    } else if (selectedParam) {
+      setSelectedPlaceId(selectedParam);
     }
-  }, [placeId]);
+  }, [placeId, selectedParam]);
 
   // Build Supercluster index
   const superclusterIndex = useMemo(() => {
@@ -94,19 +135,21 @@ export function MapPage({ places, posts, loading }: MapPageProps) {
     return sc;
   }, [filteredPlaces]);
 
+  useEffect(() => {
+    markerSignatureRef.current = "";
+  }, [superclusterIndex]);
+
   // Render or update pins & clusters on map
   const updateMapMarkers = useCallback(() => {
     const map = mapRef.current;
     if (!map) return;
 
-    // Remove existing markers
-    for (const marker of markersRef.current) {
-      marker.remove();
-    }
-    markersRef.current = [];
+    const isDarkForSignature =
+      typeof document !== "undefined" &&
+      (document.documentElement.getAttribute("data-theme") === "dark");
 
     const bounds = map.getBounds();
-    const zoom = Math.floor(map.getZoom() || 11);
+    const zoom = Math.floor(map.getZoom());
     // At world zoom (<= 3), degenerate container, or across antimeridian, query full global bounds
     let bbox: [number, number, number, number] = [-180, -85, 180, 85];
     if (
@@ -127,6 +170,38 @@ export function MapPage({ places, posts, loading }: MapPageProps) {
     }
     const clusters = superclusterIndex.getClusters(bbox, zoom);
 
+    // Skip rebuilding when nothing visible changed, so a click is never lost to a DOM swap.
+    const signature = [
+      isDarkForSignature ? "d" : "l",
+      selectedPlaceId ?? "",
+      hoveredPlaceId ?? "",
+      ...clusters.map((f) =>
+        f.properties.cluster
+          ? `c${f.properties.cluster_id}:${f.properties.point_count}:${f.geometry.coordinates}`
+          : `p${f.properties.placeId}:${f.geometry.coordinates}`
+      ),
+    ].join("|");
+    if (signature === markerSignatureRef.current && markersRef.current.length > 0) return;
+    markerSignatureRef.current = signature;
+
+    // Remove existing markers
+    for (const marker of markersRef.current) {
+      marker.remove();
+    }
+    markersRef.current = [];
+
+    // Group unclustered features by coordinate so co-located places can be slightly fanned out
+    const coordGroups = new Map<string, string[]>();
+    for (const feature of clusters) {
+      if (!feature.properties.cluster) {
+        const [fLng, fLat] = feature.geometry.coordinates;
+        const key = `${fLng.toFixed(5)},${fLat.toFixed(5)}`;
+        const arr = coordGroups.get(key) || [];
+        arr.push(feature.properties.placeId);
+        coordGroups.set(key, arr);
+      }
+    }
+
     for (const feature of clusters) {
       const [lng, lat] = feature.geometry.coordinates;
       const isCluster = feature.properties.cluster;
@@ -137,13 +212,16 @@ export function MapPage({ places, posts, loading }: MapPageProps) {
         const size = count < 10 ? 32 : count < 50 ? 40 : 48;
         const isDarkNow =
           typeof document !== "undefined" &&
-          (document.documentElement.getAttribute("data-theme") === "dark" ||
-            window.matchMedia("(prefers-color-scheme: dark)").matches);
+          (document.documentElement.getAttribute("data-theme") === "dark");
 
-        const el = document.createElement("div");
+        const el = document.createElement("button");
+        el.type = "button";
+        el.setAttribute("aria-label", `Zoom into ${count} places`);
         el.className = "wf-cluster-marker";
         el.style.width = `${size}px`;
         el.style.height = `${size}px`;
+        el.style.minHeight = `${size}px`;
+        el.style.padding = "0";
         el.style.borderRadius = "9999px";
         el.style.background = isDarkNow ? "#23272E" : "#16181B";
         el.style.border = isDarkNow ? "2px solid rgba(255, 255, 255, 0.85)" : "2px solid #FFFFFF";
@@ -154,21 +232,51 @@ export function MapPage({ places, posts, loading }: MapPageProps) {
         el.style.alignItems = "center";
         el.style.justifyContent = "center";
         el.style.color = "#FFFFFF";
+        el.style.fontFamily = "inherit";
         el.style.fontWeight = "700";
         el.style.fontSize = "13px";
+        el.style.lineHeight = "1";
         el.style.cursor = "pointer";
+        el.textContent = String(count);
+
         const handleExpand = (e: Event) => {
           e.stopPropagation();
           e.preventDefault();
           const currentZoom = map.getZoom();
-          let targetZoom = currentZoom + 3;
+          let expansionZoom = Math.min(Math.floor(currentZoom) + 2, 17);
           try {
-            const expZoom = superclusterIndex.getClusterExpansionZoom(clusterId);
-            targetZoom = Math.min(Math.max(expZoom, Math.floor(currentZoom) + 2), 17);
+            expansionZoom = Math.min(superclusterIndex.getClusterExpansionZoom(clusterId), 17);
           } catch {
-            targetZoom = Math.min(Math.floor(currentZoom) + 2, 17);
+            // fallback to currentZoom + 2
           }
-          map.flyTo({ center: [lng, lat], zoom: targetZoom, duration: 500 });
+          let targetZoom = Math.min(Math.max(expansionZoom, Math.floor(currentZoom) + 1), 17);
+          let targetCenter: [number, number] = [lng, lat];
+          try {
+            const leaves = superclusterIndex.getLeaves(clusterId, Infinity);
+            const leafBounds = new maplibregl.LngLatBounds();
+            for (const leaf of leaves) {
+              leafBounds.extend(leaf.geometry.coordinates as [number, number]);
+            }
+            const camera = map.cameraForBounds(leafBounds, {
+              padding: { top: 90, bottom: 90, left: 60, right: 60 },
+              maxZoom: 17,
+            });
+            if (camera) {
+              if (camera.zoom != null) {
+                targetZoom = Math.min(
+                  Math.max(expansionZoom, camera.zoom, Math.floor(currentZoom) + 1),
+                  17
+                );
+              }
+              if (camera.center) {
+                const c = maplibregl.LngLat.convert(camera.center);
+                targetCenter = [c.lng, c.lat];
+              }
+            }
+          } catch {
+            targetZoom = Math.min(Math.max(expansionZoom, Math.floor(currentZoom) + 2), 17);
+          }
+          map.easeTo({ center: targetCenter, zoom: targetZoom, duration: 500 });
         };
 
         el.addEventListener("pointerdown", (e) => e.stopPropagation());
@@ -185,6 +293,18 @@ export function MapPage({ places, posts, loading }: MapPageProps) {
         const visual = getCategoryVisual(place.category);
         const pinColor = visual.hue;
 
+        let markerLng = lng;
+        let markerLat = lat;
+        const coordKey = `${lng.toFixed(5)},${lat.toFixed(5)}`;
+        const siblings = coordGroups.get(coordKey);
+        if (siblings && siblings.length > 1) {
+          const siblingIdx = siblings.indexOf(place.place_id);
+          const angle = (2 * Math.PI * siblingIdx) / siblings.length;
+          const radiusDeg = 0.00018 * Math.pow(2, Math.max(0, 15 - map.getZoom()));
+          markerLng = lng + radiusDeg * Math.cos(angle);
+          markerLat = lat + radiusDeg * Math.sin(angle);
+        }
+
         // Outer 44px tap target container
         const el = document.createElement("div");
         el.className = "wf-place-marker";
@@ -194,6 +314,7 @@ export function MapPage({ places, posts, loading }: MapPageProps) {
         el.style.alignItems = "center";
         el.style.justifyContent = "center";
         el.style.cursor = "pointer";
+        el.style.zIndex = isSelected ? "10" : isHovered ? "5" : "1";
 
         // Inner visual 32px circle
         const dot = document.createElement("div");
@@ -223,7 +344,7 @@ export function MapPage({ places, posts, loading }: MapPageProps) {
         el.addEventListener("click", (e) => {
           e.stopPropagation();
           setSelectedPlaceId(place.place_id);
-          setSearchParams({ selected: place.place_id });
+          updateSelectedParam(place.place_id);
           map.flyTo({ center: [lng, lat], zoom: Math.max(map.getZoom(), 14), duration: 600 });
           const listItem = document.getElementById(`wf-place-item-${place.place_id}`);
           if (listItem) {
@@ -232,12 +353,16 @@ export function MapPage({ places, posts, loading }: MapPageProps) {
         });
 
         const marker = new maplibregl.Marker({ element: el })
-          .setLngLat([lng, lat])
+          .setLngLat([markerLng, markerLat])
           .addTo(map);
         markersRef.current.push(marker);
       }
     }
-  }, [superclusterIndex, selectedPlaceId, hoveredPlaceId, setSearchParams]);
+  }, [superclusterIndex, selectedPlaceId, hoveredPlaceId, updateSelectedParam]);
+
+  // Map listeners are installed once; always dispatch to the latest place index.
+  const updateMapMarkersRef = useRef(updateMapMarkers);
+  updateMapMarkersRef.current = updateMapMarkers;
 
   const fitToPlaces = useCallback((targetPlaces?: Place[], mapInstance?: maplibregl.Map | null, immediate = false) => {
     const targetMap = mapInstance || mapRef.current;
@@ -295,9 +420,11 @@ export function MapPage({ places, posts, loading }: MapPageProps) {
     }
   }, [filteredPlaces, mappablePlaces]);
 
+  const showEmptyState = !loading && mappablePlaces.length === 0;
+
   // Initialize MapLibre GL
   useEffect(() => {
-    if (!mapContainerRef.current) return;
+    if (showEmptyState || !mapContainerRef.current) return;
 
     const calculateBounds = () => {
       const targetPlaces = filteredPlaces.length > 0 ? filteredPlaces : mappablePlaces;
@@ -310,22 +437,24 @@ export function MapPage({ places, posts, loading }: MapPageProps) {
     };
 
     const allBounds = calculateBounds();
-    const initialCenter: [number, number] = allBounds
-      ? [allBounds.getCenter().lng, allBounds.getCenter().lat]
-      : mappablePlaces[0]?.location?.longitude != null && mappablePlaces[0]?.location?.latitude != null
-      ? [mappablePlaces[0].location.longitude, mappablePlaces[0].location.latitude]
-      : [12.4964, 41.9028];
+    const initialCenter: [number, number] =
+      selectedPlace?.location?.longitude != null && selectedPlace?.location?.latitude != null
+        ? [selectedPlace.location.longitude, selectedPlace.location.latitude]
+        : allBounds
+        ? [allBounds.getCenter().lng, allBounds.getCenter().lat]
+        : mappablePlaces[0]?.location?.longitude != null && mappablePlaces[0]?.location?.latitude != null
+        ? [mappablePlaces[0].location.longitude, mappablePlaces[0].location.latitude]
+        : [12.4964, 41.9028];
 
     const isDark =
       typeof document !== "undefined" &&
-      (document.documentElement.getAttribute("data-theme") === "dark" ||
-        window.matchMedia("(prefers-color-scheme: dark)").matches);
+      (document.documentElement.getAttribute("data-theme") === "dark");
 
     const map = new maplibregl.Map({
       container: mapContainerRef.current,
       style: cartoMaplibreStyle(isDark),
       center: initialCenter,
-      zoom: mappablePlaces.length > 0 ? 12 : 4,
+      zoom: selectedPlace ? 14 : mappablePlaces.length > 0 ? 12 : 4,
       minZoom: 2,
       maxZoom: 22,
     });
@@ -333,23 +462,16 @@ export function MapPage({ places, posts, loading }: MapPageProps) {
     mapRef.current = map;
 
     map.on("load", () => {
-      // InvalidateSize / map resize handled automatically on viewport changes
       map.resize();
-      if (filteredPlaces.length > 0 || mappablePlaces.length > 0) {
+      if (!hasFittedInitialBoundsRef.current && (filteredPlaces.length > 0 || mappablePlaces.length > 0)) {
         hasFittedInitialBoundsRef.current = true;
-        fitToPlaces(filteredPlaces.length > 0 ? filteredPlaces : mappablePlaces, map, true);
-      }
-      updateMapMarkers();
-    });
-
-    map.on("error", () => {
-      if (isDark && mapRef.current) {
-        try {
-          mapRef.current.setStyle(cartoMaplibreStyle(false));
-        } catch {
-          // ignore
+        if (selectedPlace) {
+          fitToPlaces([selectedPlace], map, true);
+        } else {
+          fitToPlaces(filteredPlaces.length > 0 ? filteredPlaces : mappablePlaces, map, true);
         }
       }
+      updateMapMarkersRef.current();
     });
 
     map.on("dragstart", () => {
@@ -357,7 +479,7 @@ export function MapPage({ places, posts, loading }: MapPageProps) {
     });
 
     map.on("moveend", () => {
-      updateMapMarkers();
+      updateMapMarkersRef.current();
     });
 
     // Handle container resize & orientation changes without layout flash
@@ -375,7 +497,11 @@ export function MapPage({ places, posts, loading }: MapPageProps) {
           mapRef.current.resize();
           if (!hasFittedInitialBoundsRef.current && (filteredPlaces.length > 0 || mappablePlaces.length > 0)) {
             hasFittedInitialBoundsRef.current = true;
-            fitToPlaces(filteredPlaces.length > 0 ? filteredPlaces : mappablePlaces, mapRef.current, true);
+            if (selectedPlace) {
+              fitToPlaces([selectedPlace], mapRef.current, true);
+            } else {
+              fitToPlaces(filteredPlaces.length > 0 ? filteredPlaces : mappablePlaces, mapRef.current, true);
+            }
           }
         }
       }
@@ -389,7 +515,11 @@ export function MapPage({ places, posts, loading }: MapPageProps) {
         mapRef.current.resize();
         if ((filteredPlaces.length > 0 || mappablePlaces.length > 0) && !hasFittedInitialBoundsRef.current) {
           hasFittedInitialBoundsRef.current = true;
-          fitToPlaces(filteredPlaces.length > 0 ? filteredPlaces : mappablePlaces, mapRef.current, true);
+          if (selectedPlace) {
+            fitToPlaces([selectedPlace], mapRef.current, true);
+          } else {
+            fitToPlaces(filteredPlaces.length > 0 ? filteredPlaces : mappablePlaces, mapRef.current, true);
+          }
         }
       }
     }, 150);
@@ -398,11 +528,10 @@ export function MapPage({ places, posts, loading }: MapPageProps) {
     const handleThemeChange = () => {
       if (!mapRef.current) return;
       const nextIsDark =
-        document.documentElement.getAttribute("data-theme") === "dark" ||
-        window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.getAttribute("data-theme") === "dark";
       mapRef.current.setStyle(cartoMaplibreStyle(nextIsDark));
       mapRef.current.once("style.load", () => {
-        updateMapMarkers();
+        updateMapMarkersRef.current();
       });
     };
 
@@ -430,22 +559,28 @@ export function MapPage({ places, posts, loading }: MapPageProps) {
       map.remove();
       mapRef.current = null;
     };
-  }, []);
+  }, [showEmptyState]);
 
-  // Update markers and fit bounds when mappable places become available
+  // Update markers and fit initial bounds when mappable places become available
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
 
     const syncMarkersAndBounds = (immediate = false) => {
       if (mappablePlaces.length > 0 && !hasFittedInitialBoundsRef.current) {
-        hasFittedInitialBoundsRef.current = true;
-        fitToPlaces(filteredPlaces.length > 0 ? filteredPlaces : mappablePlaces, map, immediate);
+        const container = mapContainerRef.current;
+        if (container && container.clientWidth > 0 && container.clientHeight > 0) {
+          hasFittedInitialBoundsRef.current = true;
+          if (selectedPlace) {
+            fitToPlaces([selectedPlace], map, immediate);
+          } else {
+            fitToPlaces(filteredPlaces.length > 0 ? filteredPlaces : mappablePlaces, map, immediate);
+          }
+        }
       }
       updateMapMarkers();
     };
 
-    // Run immediately so markers & bounds are never blocked by load event race conditions
     syncMarkersAndBounds(false);
 
     const handleMapReady = () => syncMarkersAndBounds(false);
@@ -456,25 +591,41 @@ export function MapPage({ places, posts, loading }: MapPageProps) {
       map.off("style.load", handleMapReady);
       map.off("load", handleMapReady);
     };
-  }, [mappablePlaces, fitToPlaces, updateMapMarkers, filteredPlaces]);
+  }, [mappablePlaces, fitToPlaces, updateMapMarkers, filteredPlaces, selectedPlace]);
 
-  // When activeCity or activeCategory changes, re-fit map bounds to filtered places
+  // Only re-fit map bounds when activeCity or activeCategory explicitly changes
+  const prevFilterKeyRef = useRef<string>(`${activeCity ?? ""}::${activeCategory}`);
   useEffect(() => {
+    const nextFilterKey = `${activeCity ?? ""}::${activeCategory}`;
+    if (prevFilterKeyRef.current === nextFilterKey) return;
+    prevFilterKeyRef.current = nextFilterKey;
     if (!mapRef.current || !hasFittedInitialBoundsRef.current || filteredPlaces.length === 0) return;
     fitToPlaces(filteredPlaces, mapRef.current, false);
   }, [activeCity, activeCategory, fitToPlaces, filteredPlaces]);
 
   // When switching mobile view between map and list
+  const prevMobileViewRef = useRef(mobileView);
   useEffect(() => {
+    if (prevMobileViewRef.current === mobileView) return;
+    prevMobileViewRef.current = mobileView;
     if (mobileView === "map" && mapRef.current) {
       requestAnimationFrame(() => {
         if (mapRef.current) {
           mapRef.current.resize();
-          fitToPlaces(filteredPlaces.length > 0 ? filteredPlaces : mappablePlaces, mapRef.current, false);
+          if (selectedPlace) {
+            mapRef.current.flyTo({
+              center: [selectedPlace.location.longitude!, selectedPlace.location.latitude!],
+              zoom: Math.max(mapRef.current.getZoom(), 14),
+              duration: 500,
+            });
+          } else {
+            fitToPlaces(filteredPlaces.length > 0 ? filteredPlaces : mappablePlaces, mapRef.current, false);
+          }
+          updateMapMarkersRef.current();
         }
       });
     }
-  }, [mobileView, filteredPlaces, mappablePlaces, fitToPlaces]);
+  }, [mobileView, filteredPlaces, mappablePlaces, fitToPlaces, selectedPlace]);
 
   // When selected place changes externally, center map
   useEffect(() => {
@@ -486,7 +637,22 @@ export function MapPage({ places, posts, loading }: MapPageProps) {
     });
   }, [selectedPlace]);
 
-  if (!loading && mappablePlaces.length === 0) {
+  const categoryChips = useMemo(() => {
+    const allCount: string | number = loading && places.length === 0 ? "…" : areaFilteredPlaces.length;
+    const list = [
+      { key: "all", label: "All places", glyph: "🗺️", count: allCount },
+    ];
+    for (const cat of CANONICAL_CATEGORIES) {
+      const vis = getCategoryVisual(cat);
+      const count = areaFilteredPlaces.filter((p) => getCategoryVisual(p.category).name === cat).length;
+      if (count > 0) {
+        list.push({ key: cat, label: cat, glyph: vis.glyph, count });
+      }
+    }
+    return list;
+  }, [areaFilteredPlaces, loading, places.length]);
+
+  if (showEmptyState) {
     return (
       <main style={{ maxWidth: "1280px", margin: "0 auto", padding: "60px 16px", width: "100%" }}>
         <EmptyState
@@ -502,21 +668,6 @@ export function MapPage({ places, posts, loading }: MapPageProps) {
       </main>
     );
   }
-
-  const categoryChips = useMemo(() => {
-    const allCount: string | number = loading && places.length === 0 ? "…" : mappablePlaces.length;
-    const list = [
-      { key: "all", label: "All places", glyph: "🗺️", count: allCount },
-    ];
-    for (const cat of CANONICAL_CATEGORIES) {
-      const vis = getCategoryVisual(cat);
-      const count = mappablePlaces.filter((p) => getCategoryVisual(p.category).name === cat).length;
-      if (count > 0) {
-        list.push({ key: cat, label: cat, glyph: vis.glyph, count });
-      }
-    }
-    return list;
-  }, [mappablePlaces]);
 
   return (
     <main className="wf-map-main" data-mobile-view={mobileView} style={{ position: "relative", width: "100%", height: "100%" }}>
@@ -595,8 +746,14 @@ export function MapPage({ places, posts, loading }: MapPageProps) {
                 type="button"
                 onClick={() => {
                   setActiveCity(null);
-                  searchParams.delete("city");
-                  setSearchParams(searchParams);
+                  setSearchParams(
+                    (prev) => {
+                      const next = new URLSearchParams(prev);
+                      next.delete("city");
+                      return next;
+                    },
+                    { replace: true }
+                  );
                 }}
                 style={{
                   height: "32px",
@@ -617,6 +774,35 @@ export function MapPage({ places, posts, loading }: MapPageProps) {
                 }}
               >
                 <span>📍 {activeCity}</span>
+                <span style={{ fontSize: "11px", opacity: 0.85 }}>✕</span>
+              </button>
+            )}
+            {areaBounds && (
+              <button
+                type="button"
+                onClick={() => {
+                  setAreaBounds(null);
+                  setShowSearchThisArea(false);
+                }}
+                style={{
+                  height: "32px",
+                  padding: "0 12px",
+                  borderRadius: "999px",
+                  border: "1px solid var(--accent, #FF5A4E)",
+                  background: "var(--accent, #FF5A4E)",
+                  color: "#FFFFFF",
+                  fontFamily: "inherit",
+                  fontSize: "12px",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  whiteSpace: "nowrap",
+                  flexShrink: 0,
+                }}
+              >
+                <span>📍 In map area</span>
                 <span style={{ fontSize: "11px", opacity: 0.85 }}>✕</span>
               </button>
             )}
@@ -673,6 +859,55 @@ export function MapPage({ places, posts, loading }: MapPageProps) {
                 />
               ))}
             </div>
+          ) : filteredPlaces.length === 0 ? (
+            <div
+              style={{
+                padding: "32px 16px",
+                textAlign: "center",
+                color: "var(--wf-text-muted, #5E636B)",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: "10px",
+              }}
+            >
+              <span style={{ fontSize: "14px" }}>No places match the current map filters.</span>
+              {(activeCity || areaBounds || activeCategory !== "all") && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveCategory("all");
+                    setAreaBounds(null);
+                    setActiveCity(null);
+                    setShowSearchThisArea(false);
+                    setSearchParams(
+                      (prev) => {
+                        const next = new URLSearchParams(prev);
+                        next.delete("city");
+                        return next;
+                      },
+                      { replace: true }
+                    );
+                    if (mapRef.current) {
+                      fitToPlaces(mappablePlaces, mapRef.current, false);
+                    }
+                  }}
+                  style={{
+                    height: "32px",
+                    padding: "0 14px",
+                    borderRadius: "999px",
+                    border: "1px solid var(--wf-border, #E7E6E3)",
+                    background: "var(--wf-surface-2, #F3F3F1)",
+                    color: "var(--wf-text, #16181B)",
+                    fontSize: "12px",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                  }}
+                >
+                  Reset filters
+                </button>
+              )}
+            </div>
           ) : (
             filteredPlaces.map((p) => {
             const isSelected = selectedPlaceId === p.place_id;
@@ -689,7 +924,14 @@ export function MapPage({ places, posts, loading }: MapPageProps) {
                 onMouseLeave={() => setHoveredPlaceId(null)}
                 onClick={() => {
                   setSelectedPlaceId(p.place_id);
-                  setSearchParams({ selected: p.place_id });
+                  updateSelectedParam(p.place_id);
+                  if (mapRef.current && p.location?.longitude != null && p.location?.latitude != null) {
+                    mapRef.current.flyTo({
+                      center: [p.location.longitude, p.location.latitude],
+                      zoom: Math.max(mapRef.current.getZoom(), 14),
+                      duration: 600,
+                    });
+                  }
                 }}
                 style={{
                   padding: "10px",
@@ -778,7 +1020,7 @@ export function MapPage({ places, posts, loading }: MapPageProps) {
                   )}
 
                   {isSelected && (
-                    <div style={{ display: "flex", gap: "8px", marginTop: "6px" }}>
+                    <div style={{ display: "flex", gap: "8px", marginTop: "6px", flexWrap: "wrap" }}>
                       <Link
                         to={`/place/${p.place_id}`}
                         state={{ from: "/map" }}
@@ -798,6 +1040,30 @@ export function MapPage({ places, posts, loading }: MapPageProps) {
                       >
                         View details
                       </Link>
+                      {mobileView === "list" && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setMobileView("map");
+                          }}
+                          style={{
+                            padding: "4px 10px",
+                            borderRadius: "999px",
+                            border: "1px solid var(--line, #E7E6E3)",
+                            background: "var(--surface, #FFFFFF)",
+                            color: "var(--ink, #16181B)",
+                            fontSize: "11px",
+                            fontWeight: 600,
+                            cursor: "pointer",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "4px",
+                          }}
+                        >
+                          🗺️ Show on map
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>
@@ -817,6 +1083,13 @@ export function MapPage({ places, posts, loading }: MapPageProps) {
             type="button"
             onClick={() => {
               setShowSearchThisArea(false);
+              const map = mapRef.current;
+              if (map) {
+                const b = map.getBounds();
+                if (b && !isNaN(b.getWest()) && !isNaN(b.getEast())) {
+                  setAreaBounds([b.getWest(), b.getSouth(), b.getEast(), b.getNorth()]);
+                }
+              }
               updateMapMarkers();
             }}
             style={{
@@ -906,7 +1179,7 @@ export function MapPage({ places, posts, loading }: MapPageProps) {
                       aria-label="Close"
                       onClick={() => {
                         setSelectedPlaceId(null);
-                        setSearchParams({});
+                        updateSelectedParam(null);
                       }}
                       style={{
                         position: "absolute",
@@ -914,6 +1187,8 @@ export function MapPage({ places, posts, loading }: MapPageProps) {
                         right: "12px",
                         width: "32px",
                         height: "32px",
+                        minHeight: "32px",
+                        padding: 0,
                         borderRadius: "50%",
                         border: "none",
                         background: "rgba(0,0,0,0.45)",

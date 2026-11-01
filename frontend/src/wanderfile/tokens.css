@@ -330,10 +330,19 @@ body:has(.wf-map-main) {
   overflow: hidden !important;
 }
 
+.wf-shell-container:has(.wf-map-main) > div {
+  height: 100% !important;
+  max-height: 100% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
 .wf-main-content:has(.wf-map-main) {
   flex: 1 1 0% !important;
-  height: calc(100vh - 69px) !important;
-  max-height: calc(100vh - 69px) !important;
+  height: calc(100vh - 64px) !important;
+  height: calc(100dvh - 64px) !important;
+  max-height: calc(100vh - 64px) !important;
+  max-height: calc(100dvh - 64px) !important;
   min-height: 0 !important;
   overflow: hidden !important;
   padding-bottom: 0 !important;
@@ -397,6 +406,12 @@ body:has(.wf-map-main) {
   display: block;
 }
 
+.wf-cluster-marker,
+.wf-map-main button,
+.wf-map-pane .maplibregl-ctrl button {
+  min-height: 0;
+}
+
 .wf-map-pane .leaflet-container,
 .wf-map-pane .maplibregl-map {
   position: absolute !important;
@@ -434,9 +449,14 @@ body:has(.wf-map-main) {
     position: absolute !important;
     inset: 0 !important;
   }
-  /* Keep attribution strip above the floating Map/Places toggle pill to prevent overlap */
+  /* Keep attribution strip and selected place card above the floating Map/Places toggle pill */
   .wf-map-pane .maplibregl-ctrl-bottom-right {
     bottom: 68px !important;
+  }
+  .wf-map-selected-card {
+    bottom: 68px !important;
+    left: 12px !important;
+    width: calc(100% - 24px) !important;
   }
   .wf-map-main[data-mobile-view="list"] .wf-map-sidebar {
     display: flex !important;

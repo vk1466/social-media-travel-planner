@@ -51,32 +51,42 @@ function AppRoutes({ authReady }: { authReady: boolean }) {
       return true;
     }
   });
+  const [loadingPlaces, setLoadingPlaces] = useState(() => {
+    try {
+      return !(localStorage.getItem("wf_cached_places") || sessionStorage.getItem("wf_cached_places"));
+    } catch {
+      return true;
+    }
+  });
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
   const refresh = useCallback(async () => {
     setLoadingPosts((prev) => (posts.length > 0 ? false : prev));
+    setLoadingPlaces((prev) => (places.length > 0 ? false : prev));
     try {
       const [postsResult, placesResult] = await Promise.allSettled([
-        fetchPosts(),
-        fetchPlaces(),
+        fetchPosts().then((nextPosts) => {
+          const deduped = dedupePosts(nextPosts);
+          setPosts(deduped);
+          setLoadingPosts(false);
+          try {
+            localStorage.setItem("wf_cached_posts", JSON.stringify(deduped));
+            sessionStorage.setItem("wf_cached_posts", JSON.stringify(deduped));
+          } catch {}
+          return deduped;
+        }),
+        fetchPlaces().then((nextPlaces) => {
+          setPlaces(nextPlaces);
+          setLoadingPlaces(false);
+          try {
+            localStorage.setItem("wf_cached_places", JSON.stringify(nextPlaces));
+            sessionStorage.setItem("wf_cached_places", JSON.stringify(nextPlaces));
+          } catch {}
+          return nextPlaces;
+        }),
       ]);
-      if (postsResult.status === "fulfilled") {
-        const deduped = dedupePosts(postsResult.value);
-        setPosts(deduped);
-        try {
-          localStorage.setItem("wf_cached_posts", JSON.stringify(deduped));
-          sessionStorage.setItem("wf_cached_posts", JSON.stringify(deduped));
-        } catch {}
-      }
-      if (placesResult.status === "fulfilled") {
-        setPlaces(placesResult.value);
-        try {
-          localStorage.setItem("wf_cached_places", JSON.stringify(placesResult.value));
-          sessionStorage.setItem("wf_cached_places", JSON.stringify(placesResult.value));
-        } catch {}
-      }
 
       const failures: { name: string; reason: unknown }[] = [];
       if (postsResult.status === "rejected") failures.push({ name: "posts", reason: postsResult.reason });
@@ -91,8 +101,9 @@ function AppRoutes({ authReady }: { authReady: boolean }) {
       }
     } finally {
       setLoadingPosts(false);
+      setLoadingPlaces(false);
     }
-  }, [posts.length]);
+  }, [posts.length, places.length]);
 
   const handleLibraryChanged = useCallback(() => {
     void refresh();
@@ -172,6 +183,7 @@ function AppRoutes({ authReady }: { authReady: boolean }) {
             posts={posts}
             places={places}
             loading={loadingPosts}
+            loadingPlaces={loadingPlaces}
             loadError={loadError}
             onRefresh={handleLibraryChanged}
             isAdmin={isAdmin}
